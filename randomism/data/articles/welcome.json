@@ -1,0 +1,34 @@
+{
+  "published": true,
+  "publishDate": "2026-07-01",
+  "title": "Welcome to Randomism",
+  "description": "An introduction to the Randomism JSON-driven blog.",
+  "ogImage": "/images/welcome.svg",
+  "blocks": [
+    {
+      "componentType": "Heading",
+      "level": 1,
+      "content": "Welcome to Randomism"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Randomism is a static blog where each article is a JSON file. Page copy lives in data, and the app only validates and renders blocks through a registry."
+    },
+    {
+      "componentType": "Image",
+      "content": {
+        "src": "/images/welcome.svg",
+        "alt": "Abstract teal and cream geometric shapes representing Randomism"
+      }
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "What you will find here"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Articles are listed on the home page when marked published, sorted by publish date. Drafts stay in the data folder but never appear publicly."
+    }
+  ]
+}

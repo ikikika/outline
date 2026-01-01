@@ -1,0 +1,11 @@
+{
+  "published": false,
+  "title": "Draft: Future Topic",
+  "description": "A valid draft that must not appear on the home list or public routes.",
+  "blocks": [
+    {
+      "componentType": "Paragraph",
+      "content": "This draft validates at build time but stays unpublished."
+    }
+  ]
+}

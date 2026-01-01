@@ -1,0 +1,34 @@
+{
+  "published": true,
+  "publishDate": "2026-08-01",
+  "title": "Getting Started with Content Blocks",
+  "description": "How Heading, Paragraph, and Image blocks compose an article body.",
+  "ogImage": "/images/getting-started.svg",
+  "blocks": [
+    {
+      "componentType": "Heading",
+      "level": 1,
+      "content": "Getting Started with Content Blocks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Each block declares a componentType and a content payload. The registry maps that type to a single React renderer."
+    },
+    {
+      "componentType": "Image",
+      "content": {
+        "src": "/images/getting-started.svg",
+        "alt": "Diagram-like illustration of stacked content blocks"
+      }
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Authoring tips"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Add a new file under data/articles/, set published to true with a publishDate, and rebuild. The home list updates automatically."
+    }
+  ]
+}
