@@ -34,3 +34,10 @@ export function listPublishedArticles(): ArticleListItem[] {
 export function listPublishedSlugs(): string[] {
   return listPublishedArticles().map((item) => item.slug);
 }
+
+/** All article slugs (published and draft) for static generation. */
+export function listAllSlugs(): string[] {
+  return loadAllArticles()
+    .map((article) => article.slug)
+    .sort((a, b) => a.localeCompare(b));
+}

@@ -21,8 +21,8 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Authoring articles
 
 1. Add `data/articles/{slug}.json` (slug = filename stem, lowercase kebab-case).
-2. Set `"published": true` and a `publishDate` to list and route the article.
-3. Drafts use `"published": false` (still must pass schema validation on build).
+2. Set `"published": true` and a `publishDate` to list the article on the home page.
+3. Drafts use `"published": false` — they still render at `/articles/{slug}` with a Draft tag, but do not appear in the home list (and are marked `noindex`).
 4. Body is an ordered `blocks` array with `componentType` values: `Heading`, `Paragraph`, `Image`.
 
 See `specs/001-content-page-foundation/contracts/article-schema.md` for the full contract.

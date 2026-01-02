@@ -57,9 +57,12 @@ export function loadAllArticles(): Article[] {
   return articles;
 }
 
+export function loadArticleBySlug(slug: string): Article | null {
+  return loadAllArticles().find((article) => article.slug === slug) ?? null;
+}
+
 export function loadPublishedArticleBySlug(slug: string): Article | null {
-  const articles = loadAllArticles();
-  const match = articles.find((article) => article.slug === slug);
+  const match = loadArticleBySlug(slug);
   if (!match || !match.published) {
     return null;
   }
