@@ -86,7 +86,7 @@ data/
 └── articles/                  # Only *.json are articles
     ├── welcome.json
     ├── getting-started.json   # second published sample (different date)
-    └── draft-example.json     # optional unpublished valid draft
+    └── draft-example.json     # unpublished draft (URL-reachable, not listed)
 lib/
 ├── site.ts                    # Site name, default title/description, base URL
 ├── articles/

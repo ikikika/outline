@@ -19,11 +19,12 @@
 - Q: What SEO metadata does the home page require? → A: Title + description required; canonical/Open Graph MAY derive from site defaults
 - Q: Must pages be mobile responsive? → A: Yes — all public pages MUST be usable on mobile viewports without horizontal scrolling of primary content
 - Q: What is the home page? → A: A list of articles generated from article JSON files stored in `data/articles/`; each article has its own JSON file
-- Q: Which `data/` files appear on the home list / public routes? → A: Only articles with an explicit published/visible flag; list ordered by publish date
+- Q: Which `data/` files appear on the home list / public routes? → A: Only articles with an explicit published/visible flag appear on the home list (ordered by publish date). Drafts are omitted from the list but remain reachable at `/articles/{slug}` with a Draft tag (amended).
 - Q: How is an article’s slug determined? → A: Filename is the slug (`welcome.json` → `welcome` → `/articles/welcome`)
 - Q: Where under `data/` do article JSON files live? → A: Nested — only `data/articles/*.json` are articles
 - Q: How should non-`.json` files inside `data/articles/` be handled? → A: Ignore them; only `*.json` files are considered articles
 - Q: Must unpublished (draft) article JSON still pass schema validation on publish/build? → A: Yes — validate every `data/articles/*.json`; invalid drafts also fail publish/build
+- Q: Can unpublished drafts be opened by URL? → A: Yes — drafts render at `/articles/{slug}` with a visible Draft tag and MUST NOT appear on the home list; missing slugs still 404
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -47,17 +48,19 @@ A visitor opens the Randomism home page and sees a list of **published** article
 
 ### User Story 2 - Read an individual article (Priority: P2)
 
-A visitor opens an article URL and reads its full body as structured blocks from that article’s JSON file, with correct document metadata (title, description, canonical URL, Open Graph).
+A visitor opens an article URL and reads its full body as structured blocks from that article’s JSON file, with correct document metadata (title, description, canonical URL, Open Graph). Draft articles opened by direct URL show a Draft indicator and stay off the home list.
 
-**Why this priority**: Articles are the core blog deliverable; each article’s JSON is the source of truth for body and metadata.
+**Why this priority**: Articles are the core blog deliverable; each article’s JSON is the source of truth for body and metadata. Direct draft URLs support preview without listing.
 
-**Independent Test**: Open `/articles/welcome` (and any other sample article) directly and verify body content plus metadata fields match that article’s JSON file.
+**Independent Test**: Open `/articles/welcome` and verify body + metadata. Open a draft slug and confirm it renders with a Draft indicator and does not appear on `/`.
 
 **Acceptance Scenarios**:
 
 1. **Given** an article JSON file exists for slug `welcome`, **When** a visitor opens `/articles/welcome`, **Then** heading, paragraph, and image blocks from that file render in authored order.
 2. **Given** an article page, **When** metadata is inspected, **Then** title, description, canonical URL, and Open Graph title/description/URL (and image when defined) match that article’s JSON metadata.
 3. **Given** a meaningful image block on the article, **When** the page is rendered, **Then** the image includes appropriate alternative text.
+4. **Given** a draft article JSON (`published: false`) for a known slug, **When** a visitor opens `/articles/{slug}`, **Then** the page renders with a visible Draft indicator and the draft does not appear on the home list.
+5. **Given** no article file exists for a slug, **When** a visitor opens `/articles/{slug}`, **Then** the response is not found (404).
 
 ---
 
@@ -82,7 +85,7 @@ A content author (or developer acting as author) relies on documented content ru
 
 - Missing required metadata on an article (title or description): content MUST NOT be treated as valid; publish/build MUST fail for that `*.json` file whether published or draft.
 - Empty `data/articles/` folder (no article files): home MAY show an empty list in development; shipped foundation MUST include at least one valid **published** sample article file.
-- Unpublished (not published/visible) article files MAY exist under `data/articles/` for authoring; they MUST NOT appear on the home list and MUST NOT be publicly routable, but they MUST still pass full schema validation on publish/build.
+- Unpublished (not published/visible) article files MAY exist under `data/articles/` for authoring; they MUST NOT appear on the home list, but MUST remain reachable at `/articles/{slug}` with a visible Draft indicator. They MUST still pass full schema validation on publish/build. Missing slugs MUST 404.
 - Non-`.json` files in `data/articles/`: MUST be ignored for discovery; MUST NOT fail publish/build by presence alone.
 - JSON files elsewhere under `data/` (outside `data/articles/`) MUST NOT be treated as articles.
 - Published articles missing a publish date: MUST fail schema validation / publish/build. Publish date is required when published/visible is true; unpublished drafts MAY omit publish date.
@@ -98,14 +101,14 @@ A content author (or developer acting as author) relies on documented content ru
 ### Functional Requirements
 
 - **FR-001**: Visitors MUST be able to open a public home page that displays a list of **published** articles generated from article JSON files stored in `data/articles/` (not from a CMS or live backend, and not from a separately maintained homepage article list file).
-- **FR-002**: Each article MUST be defined by exactly one corresponding JSON file under `data/articles/` (e.g. `data/articles/welcome.json`). Visitors MUST be able to open each **published** article at `/articles/{slug}` (sample includes `/articles/welcome`). Unpublished articles MUST NOT be publicly routable.
+- **FR-002**: Each article MUST be defined by exactly one corresponding JSON file under `data/articles/` (e.g. `data/articles/welcome.json`). Visitors MUST be able to open each article (published or draft) at `/articles/{slug}` (sample includes `/articles/welcome`). Unpublished (draft) articles MUST render with a visible Draft indicator and MUST NOT appear on the home list. Unknown/missing slugs MUST 404.
 - **FR-003**: Article bodies MUST be ordered collections of content blocks defined in that article’s JSON file.
 - **FR-004**: Each block MUST declare a block type identifier (`componentType`) and a content payload (`content` or documented equivalent fields).
 - **FR-005**: The system MUST support exactly these block types in the foundation: Heading, Paragraph, and Image (no Link block required for the home listing).
 - **FR-006**: Each supported block type MUST map through a single shared registry to exactly one renderer; article pages MUST NOT use ad-hoc per-page rendering switches for these types.
-- **FR-007**: Every `*.json` file under `data/articles/` MUST be validated against a documented schema before publish/build succeeds—including unpublished/draft articles. Undeclared fields MUST cause validation failure (rejection), not silent ignore. Schema-invalid shipped article files under `data/articles/` MUST fail the publish/build. Unpublished articles that pass validation still MUST NOT appear on the home list or be publicly routable.
-- **FR-008**: Example fixtures MUST exist: at least two published sample article JSON files under `data/articles/` with different publish dates (including `welcome`), covering Heading, Paragraph, and Image block usage; an unpublished draft fixture MAY be included to demonstrate exclusion.
-- **FR-009**: Every article MUST provide title, description, canonical URL, and Open Graph metadata for sharing/discovery.
+- **FR-007**: Every `*.json` file under `data/articles/` MUST be validated against a documented schema before publish/build succeeds—including unpublished/draft articles. Undeclared fields MUST cause validation failure (rejection), not silent ignore. Schema-invalid shipped article files under `data/articles/` MUST fail the publish/build. Unpublished articles that pass validation MUST NOT appear on the home list but MUST remain reachable by direct URL with a Draft indicator.
+- **FR-008**: Example fixtures MUST exist: at least two published sample article JSON files under `data/articles/` with different publish dates (including `welcome`), covering Heading, Paragraph, and Image block usage; an unpublished draft fixture SHOULD be included to demonstrate list exclusion while remaining URL-reachable.
+- **FR-009**: Every article MUST provide title, description, canonical URL, and Open Graph metadata for sharing/discovery. Draft article pages SHOULD be marked non-indexable for crawlers (e.g. `noindex`).
 - **FR-010**: Pages MUST use semantic structure (appropriate landmarks/headings), maintain heading hierarchy consistent with Heading blocks, support keyboard access for interactive elements (including list links), meet sufficient text contrast for default styling, and require alt text for meaningful images.
 - **FR-011**: Unknown block types MUST fail loudly in development and degrade safely in production (skip block, keep page usable).
 - **FR-012**: The foundation MUST NOT include a CMS, application backend, authentication, or automated test suites.
@@ -115,14 +118,14 @@ A content author (or developer acting as author) relies on documented content ru
 - **FR-016**: All public pages (home, article, and shared chrome) MUST be mobile responsive: primary content and navigation MUST remain readable and usable on common phone-width viewports without requiring horizontal scrolling of the page content.
 - **FR-017**: Each article’s slug MUST be derived from its JSON filename under `data/articles/` (without extension). Example: `data/articles/welcome.json` → slug `welcome` → path `/articles/welcome`. Filenames MUST be unique among article files.
 - **FR-018**: Each home list entry MUST expose at least the article title and a navigable control to the article URL; description MAY be shown as a summary when present in article metadata.
-- **FR-019**: Each article JSON MUST include an explicit published/visible flag. Only articles with that flag set to published/visible MUST appear on the home list and receive a public article route.
+- **FR-019**: Each article JSON MUST include an explicit published/visible flag. Only articles with that flag set to published/visible MUST appear on the home list. All valid article files (published or draft) MUST receive a `/articles/{slug}` route; drafts MUST show a Draft indicator on the page.
 - **FR-020**: Published articles MUST include a publish date. The home list MUST be ordered by publish date (newest first). Unpublished drafts MAY omit publish date.
 - **FR-021**: Article discovery MUST consider only `*.json` files directly under `data/articles/`. Non-`.json` files in that folder MUST be ignored and MUST NOT cause publish/build failure by presence alone. Unreadable or malformed `.json` files that cannot be parsed MUST fail validation/build when they are part of the article candidate set.
 
 ### Key Entities
 
-- **Article file**: One JSON document under `data/articles/` whose filename (without extension) is the article slug, containing published/visible flag, publish date when published, SEO metadata, and ordered blocks. Source of truth for that article’s page (when published) and its home-list entry.
-- **Article**: A public long-form page at `/articles/{slug}` for published articles only (`{slug}` = filename stem), with required SEO metadata and an ordered list of blocks, rendered from its article file.
+- **Article file**: One JSON document under `data/articles/` whose filename (without extension) is the article slug, containing published/visible flag, publish date when published, SEO metadata, and ordered blocks. Source of truth for that article’s page and (when published) its home-list entry.
+- **Article**: A long-form page at `/articles/{slug}` (`{slug}` = filename stem) for every valid article file, with required SEO metadata and an ordered list of blocks. Drafts (`published: false`) show a Draft indicator and are omitted from the home list.
 - **Article list (home)**: The public home page view generated by aggregating metadata from published article files in `data/articles/`, ordered by publish date (newest first).
 - **Block**: A single content unit with `componentType`, content payload, and type-specific fields (e.g., heading level/text, paragraph text, image source and alt text).
 - **Block type catalog**: The set of known `componentType` values for this feature: Heading, Paragraph, Image—each with documented fields and example usage in sample article files.
@@ -132,7 +135,7 @@ A content author (or developer acting as author) relies on documented content ru
 
 - **Schema changes**: Introduce article document shape stored under `data/articles/` (identity via filename slug, published/visible flag, publish date, SEO metadata, ordered blocks) and block schemas for Heading, Paragraph, and Image. Home has no separate page body JSON; it is derived from **published** article files, ordered by publish date.
 - **componentType changes**: Add `Heading`, `Paragraph`, and `Image`.
-- **Example fixture**: At least two published article JSON files in `data/articles/` with different publish dates (including `welcome`); optionally one unpublished draft file to demonstrate exclusion; block usage demonstrated inside article fixtures.
+- **Example fixture**: At least two published article JSON files in `data/articles/` with different publish dates (including `welcome`); one unpublished draft file to demonstrate list exclusion while remaining URL-reachable with a Draft indicator; block usage demonstrated inside article fixtures.
 
 ### Article / Page Quality *(mandatory when articles or public pages change)*
 
@@ -151,7 +154,7 @@ A content author (or developer acting as author) relies on documented content ru
 - **SC-004**: Given a deliberately invalid article JSON under `data/articles/`—published or unpublished—(missing required field, undeclared field, or unknown block type), a developer can identify the problem during local preview within one attempt, and a publish/build that includes that invalid file fails instead of succeeding.
 - **SC-005**: The delivered foundation includes no CMS, auth flow, or backend content API—visitors only consume preauthored in-repo article JSON under `data/articles/`.
 - **SC-006**: On a phone-width viewport (~375px wide), a visitor can browse the home article list and read a sample article without horizontal scrolling of primary content.
-- **SC-007**: After adding a new valid **published** article JSON file under `data/articles/` (with publish date) and rebuilding, the home list entry count increases by one without editing any homepage-specific content file; unpublished files do not appear on the list or as public routes.
+- **SC-007**: After adding a new valid **published** article JSON file under `data/articles/` (with publish date) and rebuilding, the home list entry count increases by one without editing any homepage-specific content file; unpublished files do not appear on the list but remain openable at `/articles/{slug}` with a Draft indicator.
 - **SC-008**: On the home list, articles appear in newest-first publish-date order (verifiable with at least two published sample articles that have different dates).
 
 ## Assumptions
@@ -162,7 +165,7 @@ A content author (or developer acting as author) relies on documented content ru
 - Foundation ships with at least one sample **published** article file for slug `welcome` at `/articles/welcome` (`data/articles/welcome.json`); a second published sample with a different publish date is required to demonstrate list ordering (SC-008).
 - Home is a generated article index of published articles only, not a block-composed marketing page; no separate homepage body JSON is required.
 - Home list links are ordinary navigational links in the UI (not a content `Link` block type).
-- Article JSON includes an explicit published/visible flag; only published articles are listed and publicly routed.
+- Article JSON includes an explicit published/visible flag; only published articles are listed on home. Drafts remain reachable by direct URL with a Draft indicator (and SHOULD be `noindex`).
 - Published articles require a publish date; home list is ordered newest-first by that date.
 - Article slug is the JSON filename stem (no separate slug field required in foundation).
 - List ordering no longer falls back to filename when published (publish date is mandatory for published articles).

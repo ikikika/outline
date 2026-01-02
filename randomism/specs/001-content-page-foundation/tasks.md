@@ -213,3 +213,9 @@ Task: "Implement app/articles/[slug]/page.tsx"
 - No automated test tasks (constitution / spec)
 - Commit after each task or logical group
 - Validate at story checkpoints using quickstart.md
+
+---
+
+## Phase 7: Convergence
+
+- [x] T034 SUPERSEDED — Draft URL access + Draft tag is now the approved intent in `spec.md` / `contracts/routes.md` (artifacts updated 2026-08-03). No code revert required; implementation already matches amended FR-002 / FR-019 / SC-007.

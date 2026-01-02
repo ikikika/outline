@@ -32,17 +32,17 @@ Logical schema for `data/articles/{slug}.json`. Implementation uses Zod equivale
 }
 ```
 
-## Draft example (valid, not listed)
+## Draft example (valid, not listed, URL-reachable)
 
 ```json
 {
   "published": false,
   "title": "Work in progress",
-  "description": "Draft article not yet public.",
+  "description": "Draft article not yet listed on home.",
   "blocks": [
     {
       "componentType": "Paragraph",
-      "content": "This draft validates but is not routed or listed."
+      "content": "This draft validates and renders at /articles/{slug} with a Draft tag, but is not listed on home."
     }
   ]
 }

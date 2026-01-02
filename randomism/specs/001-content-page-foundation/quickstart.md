@@ -34,12 +34,13 @@ Open `http://localhost:3000`.
 3. View page source / document head.
 4. **Expect**: title, description, canonical, Open Graph tags match article metadata (canonical uses site URL + path).
 
-### 3. Unpublished is not public
+### 3. Unpublished draft is not listed but is URL-reachable
 
 1. Note a draft slug (e.g. `draft-example`).
-2. Open `/articles/draft-example`.
-3. **Expect**: 404 / not found.
-4. Confirm it does not appear on `/`.
+2. Open `/`.
+3. **Expect**: Draft title does not appear in the list.
+4. Open `/articles/draft-example`.
+5. **Expect**: Page renders with a visible Draft indicator (not 404).
 
 ### 4. Invalid JSON fails build
 

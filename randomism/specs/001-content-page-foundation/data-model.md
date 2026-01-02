@@ -74,9 +74,9 @@ Sort: `publishDate` descending, then `slug` ascending.
 
 ## Relationships
 
-- `data/articles/*.json` —1:1→ ArticleFile —0..1 public→ Article page (only if published)
+- `data/articles/*.json` —1:1→ ArticleFile —1 public route→ Article page (`/articles/{slug}`); home list includes only published
 - ArticleFile.blocks —ordered→ Block renderers via registry
-- Home ArticleList —aggregates→ all published ArticleFiles
+- Home ArticleList —aggregates→ published ArticleFiles only
 
 ## Validation rules (summary)
 
@@ -90,9 +90,10 @@ Sort: `publishDate` descending, then `slug` ascending.
 
 ## State
 
-| State | `published` | Home list | Public route | Build validates |
-|-------|-------------|-----------|--------------|-----------------|
-| Draft | false | no | no (`notFound`) | yes |
-| Published | true | yes | yes | yes |
+| State | `published` | Home list | Public route | Page UI | Build validates |
+|-------|-------------|-----------|--------------|---------|-----------------|
+| Draft | false | no | yes (`/articles/{slug}`) | Draft tag + prefer `noindex` | yes |
+| Published | true | yes | yes | normal | yes |
+| Missing slug | — | — | 404 | — | — |
 
 No other lifecycle states in foundation.

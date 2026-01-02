@@ -8,9 +8,9 @@
 
 ## Rendering & data loading
 
-- **Decision**: Next.js App Router with static generation. Discover `data/articles/*.json` at build/request time via Node `fs` in server-only modules; `generateStaticParams` for published slugs; `notFound()` for missing/unpublished slugs.
-- **Rationale**: Constitution Static First; no backend. Unpublished files validate at build but are excluded from params and list.
-- **Alternatives considered**: `output: 'export'` only (optional later; not required for foundation); MDX (conflicts with JSON block model); runtime fetch API (out of scope).
+- **Decision**: Next.js App Router with static generation. Discover `data/articles/*.json` at build/request time via Node `fs` in server-only modules; `generateStaticParams` for **all** valid slugs (published and draft); `notFound()` only for missing slugs. Drafts omit from home list and show a Draft tag (`noindex`).
+- **Rationale**: Constitution Static First; no backend. Authors can preview drafts via direct URL without listing them.
+- **Alternatives considered**: `output: 'export'` only (optional later; not required for foundation); MDX (conflicts with JSON block model); runtime fetch API (out of scope); draft → 404 (rejected — drafts must remain URL-reachable).
 
 ## Build-time validation failure
 
