@@ -26,6 +26,30 @@ export function BlockRenderer({ blocks }: BlockRendererProps) {
             const Component = registry.Image;
             return <Component key={key} block={block} />;
           }
+          case "CodeBlock": {
+            const Component = registry.CodeBlock;
+            return <Component key={key} block={block} />;
+          }
+          case "Accordion": {
+            const Component = registry.Accordion;
+            return <Component key={key} block={block} />;
+          }
+          case "Blockquote": {
+            const Component = registry.Blockquote;
+            return <Component key={key} block={block} />;
+          }
+          case "List": {
+            const Component = registry.List;
+            return <Component key={key} block={block} />;
+          }
+          case "Callout": {
+            const Component = registry.Callout;
+            return <Component key={key} block={block} />;
+          }
+          case "Divider": {
+            const Component = registry.Divider;
+            return <Component key={key} block={block} />;
+          }
           default: {
             const unknownType = (block as { componentType?: string })
               .componentType;

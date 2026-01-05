@@ -34,10 +34,69 @@ const imageBlockSchema = z
   })
   .strict();
 
+const codeBlockSchema = z
+  .object({
+    componentType: z.literal("CodeBlock"),
+    code: z.string().min(1),
+    language: z.string().min(1).optional(),
+  })
+  .strict();
+
+const accordionSectionSchema = z
+  .object({
+    title: z.string().min(1),
+    body: z.string().min(1),
+    defaultOpen: z.boolean().optional(),
+  })
+  .strict();
+
+const accordionBlockSchema = z
+  .object({
+    componentType: z.literal("Accordion"),
+    sections: z.array(accordionSectionSchema).min(1),
+  })
+  .strict();
+
+const blockquoteBlockSchema = z
+  .object({
+    componentType: z.literal("Blockquote"),
+    text: z.string().min(1),
+    cite: z.string().min(1).optional(),
+  })
+  .strict();
+
+const listBlockSchema = z
+  .object({
+    componentType: z.literal("List"),
+    ordered: z.boolean(),
+    items: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+const calloutBlockSchema = z
+  .object({
+    componentType: z.literal("Callout"),
+    variant: z.enum(["info", "tip", "warning"]),
+    body: z.string().min(1),
+  })
+  .strict();
+
+const dividerBlockSchema = z
+  .object({
+    componentType: z.literal("Divider"),
+  })
+  .strict();
+
 export const blockSchema = z.discriminatedUnion("componentType", [
   headingBlockSchema,
   paragraphBlockSchema,
   imageBlockSchema,
+  codeBlockSchema,
+  accordionBlockSchema,
+  blockquoteBlockSchema,
+  listBlockSchema,
+  calloutBlockSchema,
+  dividerBlockSchema,
 ]);
 
 export const articleDocumentSchema = z

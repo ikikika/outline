@@ -1,31 +1,12 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
-- Modified principles:
-  - III. Component Registry Discipline → expanded with single-responsibility /
-    composition craft guidance
-  - V. Simplicity (YAGNI) → expanded with dependency minimization and no
-    premature optimization
-  - I. Spec-First Delivery → documentation expectations folded into principle
-    + Development Workflow (no separate Documentation principle)
-- Added principles:
-  - VI. Static First
-  - VII. Accessibility Baseline
-  - VIII. Performance Discipline
-  - IX. SEO Completeness
-  - X. Code Quality Gates
-  - XI. AI Collaboration
-- Added sections: none (constraints/workflow updated in place)
-- Removed sections: N/A
-- Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md
-  - ✅ .specify/templates/spec-template.md
-  - ✅ .specify/templates/tasks-template.md
-  - ✅ .cursor/skills/speckit-* (reviewed; no outdated agent-specific principle refs)
-  - ⚠ README.md / docs/quickstart.md (not present yet)
+- Version change: 1.1.0 → 1.1.1
+- Modified principles / constraints:
+  - Technology & Content Constraints → Content model: allow schema-documented
+    structural blocks (componentType-only) such as Divider; clarify named
+    payload fields beyond `content`
+- Templates requiring updates: none (constraint wording only)
 - Follow-up TODOs: None
-- Explicitly deferred: Automated testing discipline; separate Documentation
-  principle (folded into Spec-First + workflow)
 -->
 
 # Randomism Constitution
@@ -155,9 +136,12 @@ with governance instead of opportunistic refactors.
   an approved feature.
 - **Content storage (v1)**: In-repo versioned JSON under a dedicated content
   directory (exact path chosen in the first implementation plan).
-- **Content model**: Blocks MUST include at least `componentType` and a content
-  payload field (commonly `content`); additional fields MUST be schema-documented
-  before use.
+- **Content model**: Blocks MUST include `componentType`. Blocks that carry author
+  data MUST also include a schema-documented content payload field (commonly
+  `content`, or another named field such as `code`, `body`, `text`, `items`, or
+  `sections`). Schema-documented **structural** blocks (e.g. a divider with no
+  prose) MAY omit a payload and consist of `componentType` only. Additional
+  fields MUST be schema-documented before use.
 - **Composition**: Pages MUST be ordered collections of blocks (or an equivalent
   schema-documented structure) rendered via the registry.
 - **Out of scope for v1 unless specified**: CMS, auth, i18n, analytics, and
@@ -193,4 +177,4 @@ All feature plans and reviews MUST verify compliance with MUST rules above.
 Complexity beyond these principles MUST be justified in Complexity Tracking.
 Runtime development guidance, when added, MUST NOT weaken these constraints.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-03 | **Last Amended**: 2026-08-03
+**Version**: 1.1.1 | **Ratified**: 2026-08-03 | **Last Amended**: 2026-08-03
