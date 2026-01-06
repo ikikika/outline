@@ -32,8 +32,8 @@ description: "Task list for MUI Component Library implementation"
 
 **Purpose**: Add MUI/Emotion dependencies and theme directory scaffolding
 
-- [ ] T001 Add `@mui/material`, `@emotion/react`, `@emotion/styled`, `@emotion/cache`, and `@mui/icons-material` to `package.json` per `specs/003-mui-component-library/plan.md`
-- [ ] T002 [P] Create `components/theme/` directory placeholders for `theme.ts`, `AppThemeProvider.tsx`, `ColorModeToggle.tsx`, and `colorModeStorage.ts` per plan structure
+- [x] T001 Add `@mui/material`, `@emotion/react`, `@emotion/styled`, `@emotion/cache`, and `@mui/icons-material` to `package.json` per `specs/003-mui-component-library/plan.md`
+- [x] T002 [P] Create `components/theme/` directory placeholders for `theme.ts`, `AppThemeProvider.tsx`, `ColorModeToggle.tsx`, and `colorModeStorage.ts` per plan structure
 
 ---
 
@@ -43,11 +43,11 @@ description: "Task list for MUI Component Library implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Implement brand-tuned light and dark `createTheme` palettes/typography in `components/theme/theme.ts` per `specs/003-mui-component-library/contracts/theme.md`
-- [ ] T004 [P] Implement `localStorage` + system `prefers-color-scheme` helpers in `components/theme/colorModeStorage.ts` (key `randomism-color-mode`)
-- [ ] T005 Implement client `AppThemeProvider` (Emotion cache + MUI `ThemeProvider` + `CssBaseline` + mode resolution) in `components/theme/AppThemeProvider.tsx`
-- [ ] T006 Wire `AppThemeProvider` around children in `app/layout.tsx` (keep layout a Server Component for metadata)
-- [ ] T007 Reduce `app/globals.css` to minimal document defaults only (remove `.block-*` / page presentation rules) per FR-011
+- [x] T003 Implement brand-tuned light and dark `createTheme` palettes/typography in `components/theme/theme.ts` per `specs/003-mui-component-library/contracts/theme.md`
+- [x] T004 [P] Implement `localStorage` + system `prefers-color-scheme` helpers in `components/theme/colorModeStorage.ts` (key `randomism-color-mode`)
+- [x] T005 Implement client `AppThemeProvider` (Emotion cache + MUI `ThemeProvider` + `CssBaseline` + mode resolution) in `components/theme/AppThemeProvider.tsx`
+- [x] T006 Wire `AppThemeProvider` around children in `app/layout.tsx` (keep layout a Server Component for metadata)
+- [x] T007 Reduce `app/globals.css` to minimal document defaults only (remove `.block-*` / page presentation rules) per FR-011
 
 **Checkpoint**: Theme provider active; light/dark tokens exist; legacy presentation CSS stripped
 
@@ -61,10 +61,10 @@ description: "Task list for MUI Component Library implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Implement accessible `ColorModeToggle` in `components/theme/ColorModeToggle.tsx` (clear accessible name; not color-only)
-- [ ] T009 [US1] Restyle `components/SiteHeader.tsx` with MUI `AppBar`/`Toolbar`/`Typography`/`Link` and mount `ColorModeToggle`
-- [ ] T010 [US1] Restyle home list UI with MUI in `components/ArticleList.tsx` and ensure `app/page.tsx` layout uses theme-aware container/spacing
-- [ ] T011 [US1] Apply MUI layout shell / content width on article page chrome in `app/articles/[slug]/page.tsx` (Draft `Chip`, title `Typography`) without changing metadata generation
+- [x] T008 [P] [US1] Implement accessible `ColorModeToggle` in `components/theme/ColorModeToggle.tsx` (clear accessible name; not color-only)
+- [x] T009 [US1] Restyle `components/SiteHeader.tsx` with MUI `AppBar`/`Toolbar`/`Typography`/`Link` and mount `ColorModeToggle`
+- [x] T010 [US1] Restyle home list UI with MUI in `components/ArticleList.tsx` and ensure `app/page.tsx` layout uses theme-aware container/spacing
+- [x] T011 [US1] Apply MUI layout shell / content width on article page chrome in `app/articles/[slug]/page.tsx` (Draft `Chip`, title `Typography`) without changing metadata generation
 
 **Checkpoint**: MVP — chrome + home + mode toggle work under MUI themes
 
@@ -78,17 +78,17 @@ description: "Task list for MUI Component Library implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T012 [P] [US2] Restyle `components/blocks/Heading.tsx` with MUI `Typography` (plain text; level → variant)
-- [ ] T013 [P] [US2] Restyle `components/blocks/Paragraph.tsx` with theme-aware wrapper around existing Markdown helper
-- [ ] T014 [P] [US2] Restyle `components/blocks/ImageBlock.tsx` with MUI `Box` + keep `next/image` / required alt
-- [ ] T015 [P] [US2] Restyle `components/blocks/CodeBlock.tsx` with MUI `Box`/`Paper` + internal horizontal scroll
-- [ ] T016 [P] [US2] Restyle `components/blocks/Blockquote.tsx` with MUI layout + Markdown `text` / plain `cite`
-- [ ] T017 [P] [US2] Restyle `components/blocks/List.tsx` with semantic list + theme (inline Markdown items unchanged)
-- [ ] T018 [P] [US2] Restyle `components/blocks/Callout.tsx` with MUI `Alert` (or equivalent) + non-color text labels
-- [ ] T019 [P] [US2] Restyle `components/blocks/Divider.tsx` with MUI `Divider`
-- [ ] T020 [US2] Replace Accordion with client MUI `Accordion` multi-expand (honor `defaultOpen`) in `components/blocks/Accordion.tsx`; keep Markdown titles/bodies
-- [ ] T021 [US2] Ensure `components/markdown/Markdown.tsx` link/code colors remain readable in light and dark themes
-- [ ] T022 [US2] Confirm `components/registry.ts` and `components/BlockRenderer.tsx` still sole dispatch path (no page-local `componentType` switches; no schema changes in `lib/schema/article.ts`)
+- [x] T012 [P] [US2] Restyle `components/blocks/Heading.tsx` with MUI `Typography` (plain text; level → variant)
+- [x] T013 [P] [US2] Restyle `components/blocks/Paragraph.tsx` with theme-aware wrapper around existing Markdown helper
+- [x] T014 [P] [US2] Restyle `components/blocks/ImageBlock.tsx` with MUI `Box` + keep `next/image` / required alt
+- [x] T015 [P] [US2] Restyle `components/blocks/CodeBlock.tsx` with MUI `Box`/`Paper` + internal horizontal scroll
+- [x] T016 [P] [US2] Restyle `components/blocks/Blockquote.tsx` with MUI layout + Markdown `text` / plain `cite`
+- [x] T017 [P] [US2] Restyle `components/blocks/List.tsx` with semantic list + theme (inline Markdown items unchanged)
+- [x] T018 [P] [US2] Restyle `components/blocks/Callout.tsx` with MUI `Alert` (or equivalent) + non-color text labels
+- [x] T019 [P] [US2] Restyle `components/blocks/Divider.tsx` with MUI `Divider`
+- [x] T020 [US2] Replace Accordion with client MUI `Accordion` multi-expand (honor `defaultOpen`) in `components/blocks/Accordion.tsx`; keep Markdown titles/bodies
+- [x] T021 [US2] Ensure `components/markdown/Markdown.tsx` link/code colors remain readable in light and dark themes
+- [x] T022 [US2] Confirm `components/registry.ts` and `components/BlockRenderer.tsx` still sole dispatch path (no page-local `componentType` switches; no schema changes in `lib/schema/article.ts`)
 
 **Checkpoint**: Article body fully on MUI; Accordion multi-expand works
 
@@ -102,8 +102,8 @@ description: "Task list for MUI Component Library implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Update root `README.md` with Material UI as public UI library, theme/color-mode note, and explicit statement that article JSON / `componentType` contracts are unchanged
-- [ ] T024 [US3] Verify `data/articles/welcome.json`, `getting-started.json`, and `draft-example.json` still validate and build without schema edits
+- [x] T023 [US3] Update root `README.md` with Material UI as public UI library, theme/color-mode note, and explicit statement that article JSON / `componentType` contracts are unchanged
+- [x] T024 [US3] Verify `data/articles/welcome.json`, `getting-started.json`, and `draft-example.json` still validate and build without schema edits
 
 **Checkpoint**: Contributors have clear UI baseline docs; content contracts untouched
 
@@ -113,11 +113,11 @@ description: "Task list for MUI Component Library implementation"
 
 **Purpose**: Responsive/a11y pass, CSS retirement check, quality gates, quickstart
 
-- [ ] T025 [P] Verify ~375px home + getting-started: no primary-page horizontal scroll; code internal scroll OK in block components / theme styles
-- [ ] T026 [P] Verify color-mode toggle + Accordion keyboard focus-visible and accessible names across light/dark
-- [ ] T027 Confirm `app/globals.css` has no residual `.block-*` presentation system (FR-011)
-- [ ] T028 Run `npm run lint` and `npm run build` with zero warnings on valid fixtures
-- [ ] T029 Execute remaining scenarios in `specs/003-mui-component-library/quickstart.md` (system preference, persistence, draft/SEO smoke)
+- [x] T025 [P] Verify ~375px home + getting-started: no primary-page horizontal scroll; code internal scroll OK in block components / theme styles
+- [x] T026 [P] Verify color-mode toggle + Accordion keyboard focus-visible and accessible names across light/dark
+- [x] T027 Confirm `app/globals.css` has no residual `.block-*` presentation system (FR-011)
+- [x] T028 Run `npm run lint` and `npm run build` with zero warnings on valid fixtures
+- [x] T029 Execute remaining scenarios in `specs/003-mui-component-library/quickstart.md` (system preference, persistence, draft/SEO smoke)
 
 ---
 

@@ -1,37 +1,19 @@
-import type { Metadata } from "next";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { ArticleList } from "@/components/ArticleList";
 import { listPublishedArticles } from "@/lib/articles/list";
-import {
-  defaultDescription,
-  defaultTitle,
-  getSiteUrl,
-} from "@/lib/site";
-
-export const metadata: Metadata = {
-  title: defaultTitle,
-  description: defaultDescription,
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: defaultTitle,
-    description: defaultDescription,
-    url: getSiteUrl(),
-    type: "website",
-  },
-};
+import { defaultDescription } from "@/lib/site";
 
 export default function HomePage() {
-  // Validate all articles (including drafts) during render/build
   const articles = listPublishedArticles();
 
   return (
-    <>
-      <h1 className="page-title">Articles</h1>
-      <p className="page-lead">
-        Published posts from local JSON in <code>data/articles/</code>.
-      </p>
+    <Stack spacing={2}>
+      <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", sm: "2rem" } }}>
+        Articles
+      </Typography>
+      <Typography color="text.secondary">{defaultDescription}</Typography>
       <ArticleList articles={articles} />
-    </>
+    </Stack>
   );
 }

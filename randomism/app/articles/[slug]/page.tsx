@@ -1,3 +1,6 @@
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BlockRenderer } from "@/components/BlockRenderer";
@@ -62,20 +65,27 @@ export default async function ArticlePage({ params }: PageProps) {
   }
 
   return (
-    <article>
-      <header className="article-header">
+    <Stack component="article" spacing={2.5}>
+      <Stack component="header" spacing={1.5}>
         {!article.published ? (
-          <p className="draft-tag" role="status">
-            Draft
-          </p>
+          <Chip label="Draft" color="warning" size="small" sx={{ alignSelf: "flex-start" }} />
         ) : null}
+        <Typography
+          component="h1"
+          variant="h1"
+          sx={{ fontSize: { xs: "1.75rem", sm: "2.25rem" }, lineHeight: 1.2 }}
+        >
+          {article.title}
+        </Typography>
         {article.publishDate ? (
-          <p className="article-list-meta">
+          <Typography variant="body2" color="text.secondary" component="p">
             <time dateTime={article.publishDate}>{article.publishDate}</time>
-          </p>
+          </Typography>
         ) : null}
-      </header>
-      <BlockRenderer blocks={article.blocks} />
-    </article>
+      </Stack>
+      <Stack spacing={2.5} component="div">
+        <BlockRenderer blocks={article.blocks} />
+      </Stack>
+    </Stack>
   );
 }

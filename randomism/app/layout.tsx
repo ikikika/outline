@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 import { SiteHeader } from "@/components/SiteHeader";
+import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 import {
   defaultDescription,
   defaultTitle,
@@ -23,12 +26,32 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <div className="site-shell">
-          <SiteHeader />
-          <main className="site-main">{children}</main>
-        </div>
+        <AppThemeProvider>
+          <Box
+            sx={{
+              minHeight: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              bgcolor: "background.default",
+            }}
+          >
+            <SiteHeader />
+            <Container
+              component="main"
+              maxWidth="md"
+              sx={{
+                flex: 1,
+                py: { xs: 3, sm: 4 },
+                px: { xs: 2, sm: 3 },
+                maxWidth: "42rem !important",
+              }}
+            >
+              {children}
+            </Container>
+          </Box>
+        </AppThemeProvider>
       </body>
     </html>
   );

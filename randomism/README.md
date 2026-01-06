@@ -2,6 +2,8 @@
 
 JSON-driven blog built with Next.js App Router and TypeScript. Article copy lives in `data/articles/*.json`; the app validates schemas and renders blocks through a component registry. Prose fields support CommonMark via `react-markdown` (raw HTML is not rendered as DOM elements).
 
+**UI baseline:** Public chrome and block presentation use [Material UI](https://mui.com/material-ui/) (`@mui/material`) with brand-tuned light/dark themes. Visitors follow system color preference until they use the header toggle; the choice is stored in `localStorage` under `randomism-color-mode`. Article JSON and `componentType` contracts are unchanged—authors still write the same block shapes as in feature 002.
+
 ## Setup
 
 ```bash
@@ -50,4 +52,4 @@ npm start      # serve production build
 
 ## Spec Kit
 
-Feature docs: `specs/001-content-page-foundation/`, `specs/002-blog-block-catalog/`. Constitution: `.specify/memory/constitution.md`.
+Feature docs: `specs/001-content-page-foundation/`, `specs/002-blog-block-catalog/`, `specs/003-mui-component-library/`. Constitution: `.specify/memory/constitution.md`.
