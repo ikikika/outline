@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 import {
@@ -51,6 +52,7 @@ export default function RootLayout({
             >
               {children}
             </Container>
+            <SiteFooter />
           </Box>
         </AppThemeProvider>
       </body>

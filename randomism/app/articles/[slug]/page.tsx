@@ -65,7 +65,7 @@ export default async function ArticlePage({ params }: PageProps) {
   }
 
   return (
-    <Stack component="article" spacing={2.5}>
+    <Stack component="article" spacing={2.5} sx={{ pb: "100px" }}>
       <Stack component="header" spacing={1.5}>
         {!article.published ? (
           <Chip label="Draft" color="warning" size="small" sx={{ alignSelf: "flex-start" }} />
