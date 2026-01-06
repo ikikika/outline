@@ -51,6 +51,10 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     return () => media.removeEventListener("change", onChange);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-color-mode", mode);
+  }, [mode]);
+
   const toggleColorMode = useCallback(() => {
     setMode((current) => {
       const next: StoredColorMode = current === "dark" ? "light" : "dark";

@@ -10,6 +10,7 @@ import {
   siteName,
 } from "@/lib/site";
 import "./globals.css";
+import "./highlight.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -26,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-color-mode="light" suppressHydrationWarning>
       <body>
         <AppThemeProvider>
           <Box

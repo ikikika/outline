@@ -13,7 +13,31 @@ type AccordionBlock = Extract<Block, { componentType: "Accordion" }>;
 const proseSx = {
   "& p": { m: 0, mb: 1, "&:last-child": { mb: 0 } },
   "& a": { color: "primary.main" },
-  "& code": {
+  "& pre": {
+    m: 0,
+    mb: 1.5,
+    p: 1.5,
+    overflowX: "hidden",
+    whiteSpace: "pre-wrap",
+    overflowWrap: "anywhere",
+    border: 1,
+    borderColor: "divider",
+    borderRadius: 1,
+    bgcolor: "background.paper",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    fontSize: "0.875rem",
+    lineHeight: 1.55,
+    "&:last-child": { mb: 0 },
+    "& code": {
+      p: 0,
+      bgcolor: "transparent",
+      borderRadius: 0,
+      fontSize: "inherit",
+      whiteSpace: "inherit",
+      overflowWrap: "inherit",
+    },
+  },
+  "& :not(pre) > code": {
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
     fontSize: "0.9em",
     px: 0.5,
