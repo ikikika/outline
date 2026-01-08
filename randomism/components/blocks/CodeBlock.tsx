@@ -30,7 +30,7 @@ export function CodeBlock({ block }: { block: CodeBlockBlock }) {
             borderBottom: 1,
             borderColor: "divider",
             color: "text.secondary",
-            fontFamily: '"Avenir Next", "Segoe UI", sans-serif',
+            fontFamily: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
           }}
         >
           {block.language}

@@ -1,22 +1,21 @@
 import { createTheme, type ThemeOptions } from "@mui/material/styles";
 
-const fontBody =
-  '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif';
-const fontUi = '"Avenir Next", "Segoe UI", sans-serif';
+const fontFamily =
+  'Helvetica, "Helvetica Neue", Arial, sans-serif';
 
 const sharedTypography: ThemeOptions["typography"] = {
-  fontFamily: fontBody,
-  h1: { fontFamily: fontBody, fontWeight: 700 },
-  h2: { fontFamily: fontBody, fontWeight: 700 },
-  h3: { fontFamily: fontBody, fontWeight: 700 },
-  h4: { fontFamily: fontBody, fontWeight: 700 },
-  h5: { fontFamily: fontBody, fontWeight: 700 },
-  h6: { fontFamily: fontBody, fontWeight: 700 },
-  button: { fontFamily: fontUi, textTransform: "none" },
-  overline: { fontFamily: fontUi },
-  caption: { fontFamily: fontUi },
-  subtitle1: { fontFamily: fontUi },
-  subtitle2: { fontFamily: fontUi },
+  fontFamily,
+  h1: { fontFamily, fontWeight: 700 },
+  h2: { fontFamily, fontWeight: 700 },
+  h3: { fontFamily, fontWeight: 700 },
+  h4: { fontFamily, fontWeight: 700 },
+  h5: { fontFamily, fontWeight: 700 },
+  h6: { fontFamily, fontWeight: 700 },
+  button: { fontFamily, textTransform: "none" },
+  overline: { fontFamily },
+  caption: { fontFamily },
+  subtitle1: { fontFamily },
+  subtitle2: { fontFamily },
 };
 
 export const lightTheme = createTheme({
