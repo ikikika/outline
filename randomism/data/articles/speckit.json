@@ -1,0 +1,393 @@
+{
+  "published": true,
+  "publishDate": "2026-08-03",
+  "title": "Spec Kit: Spec-Driven Development with AI Agents",
+  "description": "What Spec Kit solves, core terminology, sample prompts, and drawbacks — especially weak product-level memory — with practical workarounds.",
+  "blocks": [
+    {
+      "componentType": "Heading",
+      "level": 1,
+      "content": "Spec Kit: Spec-Driven Development with AI Agents"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "[Spec Kit](https://github.github.io/spec-kit/) (often called **Speckit**) is GitHub’s open-source harness for **Spec-Driven Development (SDD)**. Instead of dumping a vague prompt into an AI coding agent and hoping for the best, you walk the agent through structured phases — each producing Markdown artifacts that feed the next."
+    },
+    {
+      "componentType": "Blockquote",
+      "text": "Describe *what* to build and refine it through structured phases. Keep intent at the center; let the agent handle implementation detail.",
+      "cite": "Spec Kit documentation"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "Core loop: **Specify → Plan → Tasks → Implement**, with optional quality gates (**clarify**, **checklist**, **analyze**) and a final **converge** check. In Cursor, these usually appear as skills like `speckit-specify`; docs often show `/speckit.specify` — same steps, different invocation form."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "The problem it solves"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "AI agents are strong at generating code and weak at holding a durable product intent. Ad-hoc chats tend to:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Skip the product conversation** — jump to frameworks and file trees before outcomes are clear",
+        "**Lose decisions** — clarifications live in chat history, not in a reviewable artifact",
+        "**Drift across files** — implementation diverges from what you thought you asked for",
+        "**Skip review gates** — large features ship without a consistent checklist against the original ask"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Spec Kit fixes that by making **intent artifacts first-class**. You write (or generate) a feature spec, clarify ambiguity, lock a technical plan, break work into dependency-ordered tasks, then implement — and finally check the codebase against those artifacts. Humans stay in the loop at review gates; the agent gets structured context instead of a one-shot prompt."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Use the **short path** for small features (`specify → plan → tasks → implement → converge`). Use the **full path** when ambiguity or production risk is high — add constitution, clarify, checklist, and analyze."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Main terminologies"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Spec-Driven Development (SDD)** — build by refining intent artifacts before (and during) coding",
+        "**Constitution** — project-wide principles and constraints every later step is checked against (lives in `.specify/memory/constitution.md`)",
+        "**Feature directory** — one folder under `specs/` (e.g. `specs/001-content-page-foundation/`) holding that feature’s artifacts",
+        "**Active feature** — which feature Spec Kit commands target; tracked in `.specify/feature.json` (not solely by git branch)",
+        "**spec.md** — user-facing *what* and *why*: user stories, acceptance scenarios, out-of-scope",
+        "**plan.md** — *how*: tech stack, architecture, constitution check, project structure",
+        "**Design artifacts** — usually `research.md`, `data-model.md`, `contracts/`, `quickstart.md` produced during planning",
+        "**tasks.md** — dependency-ordered, phase-grouped work items the implement step executes",
+        "**Checklist** — “unit tests for English”: validates requirement quality, not runtime behavior",
+        "**Review gate** — human approve/reject pause between phases (e.g. before planning or tasking)",
+        "**Integration** — the coding agent adapter (Cursor, Copilot, Claude, Gemini, …) Spec Kit was initialized with",
+        "**Extension / hook** — optional plugins that run before/after commands (e.g. auto-create a git feature branch)",
+        "**Converge** — gap analysis of code vs spec/plan/tasks; appends missing tasks until the feature is complete"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "The workflow at a glance"
+    },
+    {
+      "componentType": "List",
+      "ordered": true,
+      "items": [
+        "**Constitution** — set ground rules (once per project, update when principles change)",
+        "**Specify** — describe the feature in product language",
+        "**Clarify** — resolve underspecified decisions (before planning)",
+        "**Plan** — choose stack and produce design artifacts",
+        "**Checklist** — stress-test the requirements for clarity and coverage",
+        "**Tasks** — break the plan into ordered, testable work",
+        "**Analyze** — cross-check spec, plan, and tasks for conflicts",
+        "**Implement** — execute tasks in dependency order",
+        "**Converge** — find leftover gaps; implement again until converged"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Sample prompts for each step"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Examples below use `/speckit.*` as in the official docs. In Cursor, invoke the matching skill (e.g. `speckit-specify`) and pass the same argument text. Prompts are illustrative — adapt names and constraints to your project."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "1. Constitution"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Establish principles the agent must honor on every feature."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.constitution Randomism is a JSON-driven blog. Content lives in versioned article JSON; app code only loads and renders via a single component registry. Spec-first delivery is mandatory. Prefer static generation, no CMS or auth. Keep the public UI simple and mobile-usable."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "2. Specify"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Focus on **what** and **why** — not frameworks. Name users, outcomes, and hard exclusions."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.specify Build a content page foundation: a site that loads in-repo JSON articles, validates them against a documented block schema, renders blocks through one component registry, and ships a home article list plus sample articles with title/description/Open Graph metadata. Include Heading, Paragraph, and Image blocks. No CMS, backend, auth, or tests in this phase."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "3. Clarify"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Ask the agent to surface up to a handful of high-impact ambiguities and fold answers back into `spec.md`. Optionally focus a domain."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.clarify Focus on publishing rules — draft vs published visibility, slug derivation from filenames, and what happens when article JSON fails schema validation at build time."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "4. Plan"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "This is where stack and architecture belong. Be explicit about libraries, folders, and constraints."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.plan Use Next.js App Router with TypeScript. Articles live under data/articles/*.json. Validate with Zod (or equivalent) against a documented block union. Render via a single component registry. Prefer static generation for public routes. Keep styling minimal and mobile-first."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "5. Checklist"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Generate “unit tests for English” — completeness, clarity, consistency, edge cases — not runtime test cases."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.checklist Focus on content schema clarity: are all block types, required fields, draft/publish rules, and SEO metadata requirements unambiguous and consistent?"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "6. Tasks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Usually needs little argument — it reads plan + spec and emits phased `tasks.md`."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.tasks"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Optional nudge: `/speckit.tasks Prefer small independently testable tasks per user story; mark parallel-safe work clearly.`"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "7. Analyze"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Read-only consistency pass across `spec.md`, `plan.md`, and `tasks.md`. Fix source artifacts, then re-run before implementing."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.analyze"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "8. Implement"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Execute `tasks.md` in order. For large features, scope a phase so context stays manageable."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.implement\n\n# Or scoped:\n/speckit.implement Implement only Setup and Foundational phases: project scaffolding, article loader, schema validation, and registry. Stop before user-story UI polish."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "9. Converge"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Compare the codebase to the artifacts. Missing work is appended to `tasks.md` — run implement again until the feature reports converged."
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "/speckit.converge"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Drawbacks and workarounds"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Spec Kit is strong at **shipping a feature end-to-end**. It is weaker at keeping a durable **big-picture map of the whole app**. Feature folders under `specs/` answer “what is this change?”; they rarely answer “how does the product fit together?” Treat the gaps below as design trade-offs, not bugs — and pair Spec Kit with a thin layer of system docs."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "warning",
+      "body": "**Feature memory ≠ product memory.** A polished `spec.md` / `plan.md` / `tasks.md` trio can still leave newcomers (and future agent sessions) without a shared picture of domains, routes, data ownership, or how features relate."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Weak product-level / big-picture memory"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Artifacts are scoped per feature. Cross-cutting concerns — domain map, primary user journeys, module boundaries, “source of truth” for content vs code — either live only in the constitution (too high-level) or get reinvented in each plan (too local)."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Workaround: keep a short system overview** — a living `docs/architecture.md` (or ADR folder) that lists domains, key routes, data stores, and invariants in a few pages",
+        "**Workaround: extend constitution carefully** — put *non-negotiable* product shape there (e.g. “JSON articles under `data/articles/`; one registry”); leave diagrams and catalogs out so the constitution stays short enough to load",
+        "**Workaround: maintain a feature index** — a one-page table of `specs/*` → status → owns which surfaces, updated when a feature converges",
+        "**Workaround: point agents at both** — in plan/implement prompts, require reading the overview + active feature dir, not only `spec.md`"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Knowledge stays siloed in feature directories"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "After many features, useful decisions are scattered across dozens of `research.md` / `data-model.md` files. Discoverability drops; agents and humans both re-ask settled questions."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Workaround: promote durable decisions** — when a research note becomes product-wide, copy a short summary into the architecture doc or an ADR; leave the feature file as history",
+        "**Workaround: tag ownership in the feature index** — e.g. “block schema → `002-blog-block-catalog`” so later work knows where the contract lives",
+        "**Workaround: converge with a doc task** — after implement, add an explicit task to update the overview when routes, schemas, or boundaries changed"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Constitution is principles, not a map"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The constitution is excellent for governance (“spec-first”, “content–code separation”) and poor as an encyclopedia. Stuffing the whole app model into it bloats context and still goes stale."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Workaround: two layers** — constitution = rules; architecture/ADRs = structure and history",
+        "**Workaround: keep constitution executable** — prefer short, checkable constraints over narrative product essays",
+        "**Workaround: version and prune** — when principles change, update constitution deliberately; move outdated product detail out to docs"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Process overhead and context pressure"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Full-path SDD generates a lot of Markdown. Review burden rises; long implement runs can push constitution and overview out of the agent’s active context, so rules get “forgotten” mid-flight."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Workaround: choose path by risk** — short path for small changes; full path when ambiguity or production impact is high",
+        "**Workaround: scope implement** — one phase (or one user story) per run; re-read constitution + overview at the start of each run",
+        "**Workaround: distill always-on rules** — Cursor rules / agent skills that echo the few constraints that must never drift"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Brownfield and cross-feature refactors"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Spec Kit shines on greenfield features with a crisp boundary. Large existing codebases and “change everything that touches X” refactors are harder: there is no automatic inventory of the current system, and feature specs do not replace exploration."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Workaround: document-as-you-go** — first feature (or a dedicated “baseline” spec) captures current architecture before net-new work",
+        "**Workaround: spike outside Spec Kit, then specify** — explore the codebase, write findings into the overview, then run specify/plan on the delta",
+        "**Workaround: slice by seam** — one Spec Kit feature per bounded change; use the feature index to sequence dependent slices"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "**Practical combo:** Spec Kit for *feature delivery*; a thin architecture doc + feature index for *product memory*; constitution for *non-negotiable rules*. None of the three alone is enough."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Practical tips"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Separate what from how** — keep stack talk out of specify; put it in plan",
+        "**Review the Markdown** — treat `spec.md` / `plan.md` / `tasks.md` like PRs; gates exist for a reason",
+        "**Clarify early** — ambiguity after plan usually means expensive rework",
+        "**Scope implement** — phase-sized runs beat one giant agent session for big features",
+        "**Re-converge** — “done” means converge reports no remaining gaps, not that implement finished once",
+        "**Update the big picture** — when a feature changes routes, schemas, or boundaries, refresh the architecture overview in the same PR"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "warning",
+      "body": "Skipping clarify/analyze on fuzzy product work often produces a clean-looking `tasks.md` that encodes the wrong product. Prefer a short clarification session over a long cleanup PR."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "When an agent session starts feeling like guesswork, step back to the artifact that should already answer the question — overview for product shape, spec for behavior, plan for stack, tasks for sequencing — and update that file before asking for more code."
+    }
+  ]
+}

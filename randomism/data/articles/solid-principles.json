@@ -5,11 +5,6 @@
   "description": "Each SOLID principle explained, with expandable React examples — ready for other frameworks later.",
   "blocks": [
     {
-      "componentType": "Heading",
-      "level": 1,
-      "content": "SOLID Principles"
-    },
-    {
       "componentType": "Paragraph",
       "content": "SOLID is five design guidelines that keep code easier to change and test. Each principle below has a short description, then a **React example** dropdown with a violation and a compliant rewrite. More framework examples can be added the same way."
     },
