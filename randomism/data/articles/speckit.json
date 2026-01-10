@@ -19,11 +19,23 @@
       "body": "Core loop: **Specify → Plan → Tasks → Implement**, with optional quality gates (**clarify**, **checklist**, **analyze**) and a final **converge** check. In Cursor, these usually appear as skills like `speckit-specify`; docs often show `/speckit.specify` — same steps, different invocation form."
     },
     {
+      "componentType": "TableOfContents",
+      "items": [
+        { "label": "The problem it solves", "href": "the-problem-it-solves" },
+        { "label": "Main terminologies", "href": "main-terminologies" },
+        { "label": "The workflow at a glance", "href": "the-workflow-at-a-glance" },
+        { "label": "Sample prompts for each step", "href": "sample-prompts-for-each-step" },
+        { "label": "Drawbacks and workarounds", "href": "drawbacks-and-workarounds" },
+        { "label": "Practical tips", "href": "practical-tips" }
+      ]
+    },
+    {
       "componentType": "Divider"
     },
     {
       "componentType": "Heading",
       "level": 2,
+      "id": "the-problem-it-solves",
       "content": "The problem it solves"
     },
     {
@@ -55,6 +67,7 @@
     {
       "componentType": "Heading",
       "level": 2,
+      "id": "main-terminologies",
       "content": "Main terminologies"
     },
     {
@@ -82,6 +95,7 @@
     {
       "componentType": "Heading",
       "level": 2,
+      "id": "the-workflow-at-a-glance",
       "content": "The workflow at a glance"
     },
     {
@@ -105,6 +119,7 @@
     {
       "componentType": "Heading",
       "level": 2,
+      "id": "sample-prompts-for-each-step",
       "content": "Sample prompts for each step"
     },
     {
@@ -248,6 +263,7 @@
     {
       "componentType": "Heading",
       "level": 2,
+      "id": "drawbacks-and-workarounds",
       "content": "Drawbacks and workarounds"
     },
     {
@@ -361,6 +377,7 @@
     {
       "componentType": "Heading",
       "level": 2,
+      "id": "practical-tips",
       "content": "Practical tips"
     },
     {

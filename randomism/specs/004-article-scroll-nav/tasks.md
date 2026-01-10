@@ -30,8 +30,8 @@ description: "Task list for Article Scroll Navigation implementation"
 
 **Purpose**: Confirm layout and document-level scroll motion (no new packages)
 
-- [ ] T001 Verify feature paths from `specs/004-article-scroll-nav/plan.md` exist (`components/`, `components/blocks/`, `lib/schema/`, `app/articles/[slug]/`) and confirm no new npm dependencies are required in `package.json`
-- [ ] T002 [P] Add document `scroll-behavior: smooth` with `@media (prefers-reduced-motion: reduce)` override in `app/globals.css` per `specs/004-article-scroll-nav/research.md`
+- [x] T001 Verify feature paths from `specs/004-article-scroll-nav/plan.md` exist (`components/`, `components/blocks/`, `lib/schema/`, `app/articles/[slug]/`) and confirm no new npm dependencies are required in `package.json`
+- [x] T002 [P] Add document `scroll-behavior: smooth` with `@media (prefers-reduced-motion: reduce)` override in `app/globals.css` per `specs/004-article-scroll-nav/research.md`
 
 ---
 
@@ -41,10 +41,10 @@ description: "Task list for Article Scroll Navigation implementation"
 
 **⚠️ CRITICAL**: Complete before User Stories 2–3; User Story 1 may proceed after Phase 1 if staffed separately, but prefer finishing Phase 2 first for a single coherent branch
 
-- [ ] T003 Extend Zod schemas in `lib/schema/article.ts`: optional Heading `id` (reject `#` `/` `:`); add `TableOfContents` with `items[]` of `{ label, href }` (bare id rules; strict; no target-existence check) per `specs/004-article-scroll-nav/data-model.md` and `contracts/article-schema.md`
-- [ ] T004 [P] Implement pure `assignHeadingIds` (explicit id or slugify `content` + `-2`/`-3` uniqueness) in `lib/articles/headingIds.ts` per research.md
-- [ ] T005 Update `components/blocks/Heading.tsx` to render the resolved `id` on the heading element (`Typography` / semantic `h*`)
-- [ ] T006 Update `components/BlockRenderer.tsx` to run `assignHeadingIds` on the blocks list before mapping so every Heading receives a unique resolved id
+- [x] T003 Extend Zod schemas in `lib/schema/article.ts`: optional Heading `id` (reject `#` `/` `:`); add `TableOfContents` with `items[]` of `{ label, href }` (bare id rules; strict; no target-existence check) per `specs/004-article-scroll-nav/data-model.md` and `contracts/article-schema.md`
+- [x] T004 [P] Implement pure `assignHeadingIds` (explicit id or slugify `content` + `-2`/`-3` uniqueness) in `lib/articles/headingIds.ts` per research.md
+- [x] T005 Update `components/blocks/Heading.tsx` to render the resolved `id` on the heading element (`Typography` / semantic `h*`)
+- [x] T006 Update `components/BlockRenderer.tsx` to run `assignHeadingIds` on the blocks list before mapping so every Heading receives a unique resolved id
 
 **Checkpoint**: Schema accepts TOC + Heading ids; headings expose fragment ids in the DOM
 
@@ -58,9 +58,9 @@ description: "Task list for Article Scroll Navigation implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Create Client Component `components/BackToTop.tsx` (MUI Fab/IconButton): show after ~`window.innerHeight` scroll (min ~320px); `scrollTo` top with smooth/auto from `prefers-reduced-motion`; clear hash via `history.replaceState`; accessible name “Back to top”
-- [ ] T008 [US1] Mount `BackToTop` only from `app/articles/[slug]/page.tsx` (not home); keep existing article padding so the control does not obscure content
-- [ ] T009 [US1] Verify home `/` does not render Back to top and article pages do (manual check per `contracts/article-nav.md`)
+- [x] T007 [US1] Create Client Component `components/BackToTop.tsx` (MUI Fab/IconButton): show after ~`window.innerHeight` scroll (min ~320px); `scrollTo` top with smooth/auto from `prefers-reduced-motion`; clear hash via `history.replaceState`; accessible name “Back to top”
+- [x] T008 [US1] Mount `BackToTop` only from `app/articles/[slug]/page.tsx` (not home); keep existing article padding so the control does not obscure content
+- [x] T009 [US1] Verify home `/` does not render Back to top and article pages do (manual check per `contracts/article-nav.md`)
 
 **Checkpoint**: MVP — long articles have usable back-to-top chrome
 
@@ -74,9 +74,9 @@ description: "Task list for Article Scroll Navigation implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T010 [P] [US2] Implement Server Component `components/blocks/TableOfContents.tsx` as `<nav aria-label="On this page">` + semantic list of `<a href={"#" + item.href}>{item.label}</a>` (plain labels; no scroll-spy)
-- [ ] T011 [US2] Register `TableOfContents` in `components/registry.ts` and add the case in `components/BlockRenderer.tsx`
-- [ ] T012 [US2] Confirm native hash navigation + globals smooth/reduced-motion satisfy FR-008/FR-009 without client click handlers; document any residual gap in a short comment only if needed in `components/blocks/TableOfContents.tsx`
+- [x] T010 [P] [US2] Implement Server Component `components/blocks/TableOfContents.tsx` as `<nav aria-label="On this page">` + semantic list of `<a href={"#" + item.href}>{item.label}</a>` (plain labels; no scroll-spy)
+- [x] T011 [US2] Register `TableOfContents` in `components/registry.ts` and add the case in `components/BlockRenderer.tsx`
+- [x] T012 [US2] Confirm native hash navigation + globals smooth/reduced-motion satisfy FR-008/FR-009 without client click handlers; document any residual gap in a short comment only if needed in `components/blocks/TableOfContents.tsx`
 
 **Checkpoint**: TOC links jump to sections when content includes the block
 
@@ -90,9 +90,9 @@ description: "Task list for Article Scroll Navigation implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Amend `data/articles/speckit.json`: insert `TableOfContents` near the top (≥3 items); set explicit `id` on each Heading targeted by TOC items—per `contracts/article-schema.md` and FR-015 (do **not** create `toc-navigation-demo.json`)
-- [ ] T014 [P] [US3] Confirm articles without TOC (e.g. `data/articles/getting-started.json`) still validate and show no empty TOC chrome
-- [ ] T015 [US3] Manually validate authoring rules from quickstart scenario 7 (invalid `#`/URL `href` fails build; unresolved bare id allowed) and restore fixtures afterward
+- [x] T013 [US3] Amend `data/articles/speckit.json`: insert `TableOfContents` near the top (≥3 items); set explicit `id` on each Heading targeted by TOC items—per `contracts/article-schema.md` and FR-015 (do **not** create `toc-navigation-demo.json`)
+- [x] T014 [P] [US3] Confirm articles without TOC (e.g. `data/articles/getting-started.json`) still validate and show no empty TOC chrome
+- [x] T015 [US3] Manually validate authoring rules from quickstart scenario 7 (invalid `#`/URL `href` fails build; unresolved bare id allowed) and restore fixtures afterward
 
 **Checkpoint**: Spec Kit fixture demonstrates TOC; schema enforcement matches clarify decisions
 
@@ -102,10 +102,10 @@ description: "Task list for Article Scroll Navigation implementation"
 
 **Purpose**: Quality gates and end-to-end quickstart pass
 
-- [ ] T016 [P] Accessibility pass: Back to top focus visible + name; TOC list semantics; Heading ids present — spot-check on `/articles/speckit`
-- [ ] T017 [P] Run `npm run lint` and fix any issues introduced by this feature
-- [ ] T018 Run full manual checklist in `specs/004-article-scroll-nav/quickstart.md` (scenarios 1–8)
-- [ ] T019 Ensure `npm run build` succeeds with zero warnings and all `data/articles/*.json` validate
+- [x] T016 [P] Accessibility pass: Back to top focus visible + name; TOC list semantics; Heading ids present — spot-check on `/articles/speckit`
+- [x] T017 [P] Run `npm run lint` and fix any issues introduced by this feature
+- [x] T018 Run full manual checklist in `specs/004-article-scroll-nav/quickstart.md` (scenarios 1–8)
+- [x] T019 Ensure `npm run build` succeeds with zero warnings and all `data/articles/*.json` validate
 
 ---
 

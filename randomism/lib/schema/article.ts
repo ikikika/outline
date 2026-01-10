@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+const bareFragmentIdSchema = z
+  .string()
+  .min(1)
+  .refine((value) => !/[/#:]/.test(value), {
+    message: "Fragment id must be bare (no #, /, or :)",
+  });
+
 const headingBlockSchema = z
   .object({
     componentType: z.literal("Heading"),
@@ -12,6 +19,7 @@ const headingBlockSchema = z
       z.literal(6),
     ]),
     content: z.string().min(1),
+    id: bareFragmentIdSchema.optional(),
   })
   .strict();
 
@@ -87,6 +95,20 @@ const dividerBlockSchema = z
   })
   .strict();
 
+const tocItemSchema = z
+  .object({
+    label: z.string().min(1),
+    href: bareFragmentIdSchema,
+  })
+  .strict();
+
+const tableOfContentsBlockSchema = z
+  .object({
+    componentType: z.literal("TableOfContents"),
+    items: z.array(tocItemSchema).min(1),
+  })
+  .strict();
+
 export const blockSchema = z.discriminatedUnion("componentType", [
   headingBlockSchema,
   paragraphBlockSchema,
@@ -97,6 +119,7 @@ export const blockSchema = z.discriminatedUnion("componentType", [
   listBlockSchema,
   calloutBlockSchema,
   dividerBlockSchema,
+  tableOfContentsBlockSchema,
 ]);
 
 export const articleDocumentSchema = z

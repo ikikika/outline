@@ -1,4 +1,5 @@
 import type { Block } from "@/lib/schema/article";
+import { assignHeadingIds } from "@/lib/articles/headingIds";
 import { registry } from "@/components/registry";
 
 type BlockRendererProps = {
@@ -7,10 +8,11 @@ type BlockRendererProps = {
 
 export function BlockRenderer({ blocks }: BlockRendererProps) {
   const isDev = process.env.NODE_ENV === "development";
+  const resolved = assignHeadingIds(blocks);
 
   return (
     <>
-      {blocks.map((block, index) => {
+      {resolved.map((block, index) => {
         const key = `${block.componentType}-${index}`;
 
         switch (block.componentType) {
@@ -48,6 +50,10 @@ export function BlockRenderer({ blocks }: BlockRendererProps) {
           }
           case "Divider": {
             const Component = registry.Divider;
+            return <Component key={key} block={block} />;
+          }
+          case "TableOfContents": {
+            const Component = registry.TableOfContents;
             return <Component key={key} block={block} />;
           }
           default: {

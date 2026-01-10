@@ -1,7 +1,9 @@
 import Typography from "@mui/material/Typography";
 import type { Block } from "@/lib/schema/article";
 
-type HeadingBlock = Extract<Block, { componentType: "Heading" }>;
+type HeadingBlock = Extract<Block, { componentType: "Heading" }> & {
+  id?: string;
+};
 
 const variantByLevel = {
   1: "h1",
@@ -24,9 +26,11 @@ const componentByLevel = {
 export function Heading({ block }: { block: HeadingBlock }) {
   return (
     <Typography
+      id={block.id}
       component={componentByLevel[block.level]}
       variant={variantByLevel[block.level]}
       sx={{
+        scrollMarginTop: "5rem",
         fontSize:
           block.level === 1
             ? { xs: "1.5rem", sm: "1.75rem" }

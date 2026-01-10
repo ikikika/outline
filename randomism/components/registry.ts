@@ -9,6 +9,7 @@ import { Blockquote } from "@/components/blocks/Blockquote";
 import { List } from "@/components/blocks/List";
 import { Callout } from "@/components/blocks/Callout";
 import { Divider } from "@/components/blocks/Divider";
+import { TableOfContents } from "@/components/blocks/TableOfContents";
 
 type BlockProps<T extends Block = Block> = {
   block: T;
@@ -24,6 +25,9 @@ export const registry: {
   List: ComponentType<BlockProps<Extract<Block, { componentType: "List" }>>>;
   Callout: ComponentType<BlockProps<Extract<Block, { componentType: "Callout" }>>>;
   Divider: ComponentType<BlockProps<Extract<Block, { componentType: "Divider" }>>>;
+  TableOfContents: ComponentType<
+    BlockProps<Extract<Block, { componentType: "TableOfContents" }>>
+  >;
 } = {
   Heading,
   Paragraph,
@@ -34,4 +38,5 @@ export const registry: {
   List,
   Callout,
   Divider,
+  TableOfContents,
 };

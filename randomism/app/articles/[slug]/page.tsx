@@ -3,6 +3,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BackToTop } from "@/components/BackToTop";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import { loadAllArticles, loadArticleBySlug } from "@/lib/articles/load";
 import { listAllSlugs } from "@/lib/articles/list";
@@ -86,6 +87,7 @@ export default async function ArticlePage({ params }: PageProps) {
       <Stack spacing={2.5} component="div">
         <BlockRenderer blocks={article.blocks} />
       </Stack>
+      <BackToTop />
     </Stack>
   );
 }
