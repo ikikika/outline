@@ -5,11 +5,6 @@
   "description": "What Spec Kit solves, core terminology, sample prompts, and drawbacks — especially weak product-level memory — with practical workarounds.",
   "blocks": [
     {
-      "componentType": "Heading",
-      "level": 1,
-      "content": "Spec Kit: Spec-Driven Development with AI Agents"
-    },
-    {
       "componentType": "Paragraph",
       "content": "[Spec Kit](https://github.github.io/spec-kit/) (often called **Speckit**) is GitHub’s open-source harness for **Spec-Driven Development (SDD)**. Instead of dumping a vague prompt into an AI coding agent and hoping for the best, you walk the agent through structured phases — each producing Markdown artifacts that feed the next."
     },
