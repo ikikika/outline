@@ -9,10 +9,10 @@ export default function HomePage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", sm: "2rem" } }}>
+      {/* <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", sm: "2rem" } }}>
         Articles
       </Typography>
-      <Typography color="text.secondary">{defaultDescription}</Typography>
+      <Typography color="text.secondary">{defaultDescription}</Typography> */}
       <ArticleList articles={articles} />
     </Stack>
   );
