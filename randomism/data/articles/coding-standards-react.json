@@ -1,0 +1,601 @@
+{
+  "published": true,
+  "publishDate": "2026-08-04",
+  "title": "Coding Standard (React)",
+  "description": "Conventions and habits for readable, maintainable React and TypeScript — stack defaults, validation, naming, and error handling.",
+  "blocks": [
+    {
+      "componentType": "Paragraph",
+      "content": "Coding rules and guidelines that keep software **safe**, **secure**, **reliable**, **testable**, **maintainable**, and **portable** — especially useful when multiple engineers share a React codebase."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "Treat this as practices and conventions, not a rigid lint config. Prefer the project's existing stack when it already has a clear alternative."
+    },
+    {
+      "componentType": "TableOfContents",
+      "items": [
+        {
+          "label": "What?",
+          "href": "what"
+        },
+        {
+          "label": "Why?",
+          "href": "why"
+        },
+        {
+          "label": "Stack",
+          "href": "stack"
+        },
+        {
+          "label": "1. Focus on code readability",
+          "href": "focus-on-code-readability"
+        },
+        {
+          "label": "2. Turn daily backups into an instinct",
+          "href": "turn-daily-backups-into-an-instinct"
+        },
+        {
+          "label": "3. Leave comments and prioritize documentation",
+          "href": "leave-comments-and-prioritize-documentation"
+        },
+        {
+          "label": "4. Exception Handling",
+          "href": "exception-handling"
+        },
+        {
+          "label": "5. Input Validation",
+          "href": "input-validation"
+        },
+        {
+          "label": "6. Variables",
+          "href": "variables"
+        },
+        {
+          "label": "7. Destructuring",
+          "href": "destructuring"
+        },
+        {
+          "label": "8. File Naming Conventions",
+          "href": "file-naming-conventions"
+        },
+        {
+          "label": "9. CSS ClassName Naming Conventions",
+          "href": "css-classname-naming-conventions"
+        },
+        {
+          "label": "Imports Order",
+          "href": "imports-order"
+        },
+        {
+          "label": "Readme Standards",
+          "href": "readme-standards"
+        },
+        {
+          "label": "Use with coding agents",
+          "href": "use-with-coding-agents"
+        },
+        {
+          "label": "Sources",
+          "href": "sources"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "What?",
+      "id": "what"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Coding rules and guidelines that ensure that software is:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Safe** — it can be used with minimal harm",
+        "**Secure** — it should be as un-hackable as we can make it",
+        "**Reliable** — it functions as it should, every time",
+        "**Testable** — it can be tested at the code level",
+        "**Maintainable** — it can be maintained, even as your codebase grows",
+        "**Portable** — it works the same in every environment"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Why?",
+      "id": "why"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Even the most experienced developer could unintentionally introduce a coding defect. And that one defect could lead to a minor glitch — or worse, a serious security breach."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Advantages:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Offers uniformity to the codes created by different engineers",
+        "Enables the creation of reusable codes",
+        "Makes it easier to detect errors",
+        "Makes codes simpler, more readable, and easier to maintain",
+        "Boost programming efficiency and generate faster results"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Stack",
+      "id": "stack"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "A typical modern React setup. Swap pieces when the project already has a clear alternative (e.g. Vitest instead of Jest)."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**React** — UI library: components, hooks, and rendering",
+        "**TypeScript** — static types for props, state, and APIs; catches many mistakes before runtime",
+        "**Vite or Next.js** — app shell and tooling. Vite for SPAs/client apps; Next.js when you want routing, SSR/SSG, and file-based pages",
+        "**TanStack Query (React Query)** — server/async state: fetching, caching, retries, and background refetch for APIs",
+        "**Zod** — runtime schema validation for forms, env, and API payloads (pairs well with TypeScript)",
+        "**Vitest or Jest + React Testing Library** — unit/component tests. Vitest is the common default with Vite; Jest remains fine in many codebases. RTL exercises components the way users interact with them",
+        "**ESLint** — lint rules for React/TS consistency and common bugs; often paired with Prettier for formatting"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Coding habits"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "1. Focus on code readability",
+      "id": "focus-on-code-readability"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Prefer **clear over clever**. Someone else (or future you) should understand the code without a guided tour."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Use meaningful names for variables, functions, files, and directories — spelling matters for searchability",
+        "Keep functions short and focused: one function, one job",
+        "Prefer DRY (Don't Repeat Yourself), but do not abstract so early that the code becomes harder to follow",
+        "Avoid deep nesting; early returns and small helpers flatten control flow",
+        "Prefer shorter lines and logical blank lines between related blocks so structure is obvious at a glance",
+        "Let formatting tools (Prettier/ESLint) handle indentation and spacing consistently",
+        "Avoid long lines — it is easier for humans to read blocks that are horizontally short and vertically long",
+        "Avoid spelling mistakes in variables, files, and directory names for better readability and searchability"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "2. Turn daily backups into an instinct",
+      "id": "turn-daily-backups-into-an-instinct"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Multiple events can trigger data loss: system crash, dead battery, software glitch, hardware damage, etc.",
+        "To prevent this, save code daily, and after every modification, no matter how minuscule it may be",
+        "Push your codes to github daily"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "3. Leave comments and prioritize documentation",
+      "id": "leave-comments-and-prioritize-documentation"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Do not assume that just because everyone else viewing the code is a developer, they will instinctively understand it without clarification. Devs are human, and it is a lot easier for them to read comments describing code function rather than scanning the code and making speculations."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Take an extra minute to write a comment describing the code function at various points in the script. Ensure that the comments guide any readers through the algorithm and logic implemented. Of course, this is only required when the code's purpose is not apparent."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Remove unnecessarily commented codes to keep the codebase clean."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "**Do not bother leaving comments on self-explanatory code.**"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "4. Exception Handling",
+      "id": "exception-handling"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Failures will happen (network errors, bad API payloads, unexpected nulls). Handle them so the app stays usable and the problem is diagnosable — do not let them fail silently or crash the whole tree when a local fallback will do."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Catch at the right layer.** Use `try/catch` (or `.catch`) around async work you own: `fetch`, parsers, storage. Prefer handling errors in data/hooks layers and returning a clear result to the UI, instead of scattering catch blocks in every component.",
+        "**Do not swallow errors.** An empty `catch` hides bugs. Log with context (what failed, relevant ids), then surface a user-facing message or rethrow when the caller should decide.",
+        "**Be specific.** Prefer typed/narrow failures (`if (!res.ok) throw new Error(`Load user failed: ${res.status}`)`) over a generic \"something went wrong\" with no detail for logs.",
+        "**Separate UI crash from data failure.** Render-time React errors need an **Error Boundary** (fallback UI for that subtree). Failed fetches belong in query/`useEffect` error state, not in a boundary.",
+        "**Show recovery in the UI.** Offer retry, go back, or a safe empty state. With TanStack Query, use `isError` / `error` and a Retry action rather than leaving a blank screen.",
+        "**Validate external input.** Treat API and form data as untrusted; validate with something like Zod so bad shapes become expected errors, not random runtime crashes."
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "async function loadProfile(userId: string): Promise<Profile> {\n  try {\n    const res = await fetch(`/api/users/${userId}`);\n    if (!res.ok) {\n      throw new Error(`loadProfile failed: ${res.status}`);\n    }\n    return profileSchema.parse(await res.json());\n  } catch (error) {\n    console.error(\"loadProfile\", { userId, error });\n    throw error; // let the caller show fallback / retry\n  }\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "5. Input Validation",
+      "id": "input-validation"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "All user-facing input fields should be validated, at least on the frontend, before submit or side effects. Prefer a schema library (e.g. Zod) so rules stay in one place; still show clear field-level messages in the UI."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Required fields:** if a value is not optional, reject `null`, `undefined`, and empty strings (trim whitespace before checking).",
+        "**Types and formats:** emails, phones, dates, and IDs should match the expected shape — not just \"non-empty.\"",
+        "**Numbers and currency:** parse as numbers; reject NaN; for money, limit decimal places (often 2) and disallow negative amounts unless the domain allows it.",
+        "**Ranges and length:** min/max for numbers, string length, and list size where the product cares.",
+        "**Surface errors early:** disable or block submit while invalid, and show which field failed — do not only fail after the API round-trip."
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const amountSchema = z\n  .string()\n  .trim()\n  .min(1, \"Amount is required\")\n  .refine((value) => /^\\d+(\\.\\d{1,2})?$/.test(value), {\n    message: \"Use up to 2 decimal places\",\n  })\n  .transform((value) => Number(value))\n  .refine((value) => value > 0, { message: \"Amount must be greater than 0\" });\n\nconst checkoutSchema = z.object({\n  name: z.string().trim().min(1, \"Name is required\"),\n  amount: amountSchema,\n});",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "6. Variables",
+      "id": "variables"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Variable names should be meaningful",
+        "`firstName` should be preferred over `fN`",
+        "Do not use a single identifier for multiple purposes",
+        "Ascribe a name to each variable that clearly describes its purpose",
+        "Single variables cannot be assigned multiple values or used for numerous functions",
+        "Always assign unique variable or argument names"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Avoid shadowing:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const [ year, setYear ] = useState(2023);\n...\nconst calculateYear = (year) => {\n...",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Can be written as:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const [ inputYear, setInputYear ] = useState(2023);\n...\nconst calculateYear = (currentYear) => {\n...",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Use `const` variables for repeated strings to reduce the risk of spelling mistakes."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "if (user.role === \"admin\") {\n  ...\n}\n\nconst adminUsers = users.map(user => user.role === \"admin\");\n...\n{\n  user.role === \"admin\" ? <div>{user.name}</div> : null;\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Can be written as:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const ADMIN = \"admin\";\n...\n\nif (user.role === ADMIN) {\n  ...\n}\n\nconst adminUsers = users.map(user => user.role === ADMIN);\n...\n{\n  user.role === ADMIN ? <div>{user.name}</div> : null;\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Use a variable or helper method for complicated expressions. If there are too many `&&` or `||` in a condition and/or the condition is repeated multiple times, assign it to a variable."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "if (user.active && user.role === ADMIN) {\n  ...\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Can be written as:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const activeAdmin = user.active && user.role === ADMIN;\n\nif (activeAdmin) {\n  ...\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "If it requires more calculation with context, convert it to a helper method."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "{\n  user.active &&\n  user.noOfAttempts > 3 &&\n  (Date.now() - user.lastLoginAttempt >= 60000)\n    ? <div>You can log in</div>\n    : <div>You are not allowed to login. Please try again.</div>\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Can be written as:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const canAttemptLogin = ({ active, noOfAttempts, lastLoginAttempt }) => {\n  return (\n    active &&\n    noOfAttempts > 3 &&\n    (Date.now() - lastLoginAttempt >= 60000)\n  );\n};\n...\n{\n  canAttemptLogin(user)\n    ? <div>You can log in</div>\n    : <div>You are not allowed to login. Please try again.</div>\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "7. Destructuring",
+      "id": "destructuring"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Prefer destructuring for cleaner React/TypeScript code — props, nested state, and API payloads."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Props**"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const UserInfo = (props: { firstName: string; lastName: string }) => (\n  <div>Name: {props.firstName} {props.lastName}</div>\n);",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Can be written as:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const UserInfo = ({ firstName, lastName }: { firstName: string; lastName: string }) => (\n  <div>Name: {firstName} {lastName}</div>\n);",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Nested state**"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const city = formState.address.city;\nconst country = formState.address.country;",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Can be written as:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const { city, country } = formState.address;",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**API response**"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const name = data.user.profile.name;\nconst email = data.user.profile.email;",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Can be written as:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const { name, email } = data.user.profile;",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "8. File Naming Conventions",
+      "id": "file-naming-conventions"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "File and directory names should be meaningful",
+        "Component names should be in PascalCase — `ComponentOne.tsx`, `Header.tsx`, `NewsArticle.tsx`",
+        "Non-component names should be in camelCase — `useMyCustomHook.ts`, `fetchApi.ts`, `myUtilityFile.ts`",
+        "Unit tests should use the same names as their corresponding file — `ComponentOne.tsx` / `ComponentOne.test.tsx`",
+        "Attributes/props should be camelCase — `className`, `onClick`, `someCustomAttribute`"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "9. CSS ClassName Naming Conventions",
+      "id": "css-classname-naming-conventions"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Use this pattern: `{project}-{module}-{component}-{part}`",
+        "**Wrapper** contains parts that make up one component",
+        "**Container** contains different components and wrappers"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Wrapper example:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "<div className=\"project-form-input-wrapper\">\n  <div className=\"project-form-input-label\">Label</div>\n  <div className=\"project-form-input-field\"><input /></div>\n</div>",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Container example:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "<div className=\"project-form-container\">\n  <div className=\"project-form-input-wrapper\">\n    ...\n  </div>\n  <div className=\"project-form-input-wrapper\">\n    ...\n  </div>\n  <ButtonComponent />\n</div>",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Imports Order",
+      "id": "imports-order"
+    },
+    {
+      "componentType": "List",
+      "ordered": true,
+      "items": [
+        "React import",
+        "Library imports in alphabetical order",
+        "Absolute imports from the project in alphabetical order",
+        "Relative imports in alphabetical order",
+        "`import * as`",
+        "`import ./filename.extension`"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Readme Standards",
+      "id": "readme-standards"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Intro",
+        "Getting Started",
+        "Build and test",
+        "Contribution guide"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "More info: [Create a README for your Git repo](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops)"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Use with coding agents",
+      "id": "use-with-coding-agents"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "A condensed, agent-ready version of these practices lives in [REACT_CODING_PRACTICES.md](/REACT_CODING_PRACTICES.md) — download that file and add it to any React project so coding agents follow the same conventions."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "To wire it into a project via `AGENTS.md` (a common, tool-agnostic entry point many agents read automatically):"
+    },
+    {
+      "componentType": "List",
+      "ordered": true,
+      "items": [
+        "Download [REACT_CODING_PRACTICES.md](/REACT_CODING_PRACTICES.md)",
+        "Copy it into the project root (keep the filename, or place it under something like `docs/REACT_CODING_PRACTICES.md`)",
+        "Create or open `AGENTS.md` at the project root",
+        "Add a short pointer so agents load it (example below)",
+        "Commit both files so every agent and teammate picks up the same instructions"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Example `AGENTS.md` pointer:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "md",
+      "code": "## React coding practices\n\nFollow [REACT_CODING_PRACTICES.md](./REACT_CODING_PRACTICES.md) for React/TypeScript conventions. Prefer existing project patterns when they conflict with that file."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "If your agent does not auto-read `AGENTS.md`, paste the contents of `REACT_CODING_PRACTICES.md` into that tool’s custom instructions, or @-mention / attach the file in the chat."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Sources",
+      "id": "sources"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "[Coding Standards and Best Practices to Follow](https://www.browserstack.com/guide/coding-standards-best-practices)",
+        "[Coding Best Practices](https://www.devbridge.com/articles/coding-best-practices/)",
+        "[React Coding Standards and Practices to Level Up Your Code](https://www.jondjones.com/frontend/react/react-tutorials/react-coding-standards-and-practices-to-level-up-your-code/)",
+        "[React Coding Standards and Practices](https://medium.com/@navitasinghal77/react-coding-standards-and-practices-3b133bcaea8)"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Prefer an offline copy? [Download this article as Markdown](/coding-standards-react.md)."
+    }
+  ]
+}
