@@ -1,6 +1,7 @@
 import type { Components } from "react-markdown";
 import type { PluggableList } from "unified";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { markdownHighlightAliases } from "@/lib/codeHighlight";
 
@@ -18,11 +19,13 @@ const fullComponents: Components = {
   ),
 };
 
+const remarkPlugins: PluggableList = [remarkGfm];
+
 const highlightPlugins: PluggableList = [
   [rehypeHighlight, { aliases: markdownHighlightAliases }],
 ];
 
-/** Full CommonMark → React. Raw HTML is not rendered as DOM elements (no rehype-raw). */
+/** Full CommonMark + GFM (tables, strikethrough, etc.) → React. Raw HTML is not rendered. */
 export function MarkdownFull({
   children,
   className,
@@ -32,6 +35,7 @@ export function MarkdownFull({
     <Tag className={className}>
       <ReactMarkdown
         components={fullComponents}
+        remarkPlugins={remarkPlugins}
         rehypePlugins={highlightPlugins}
       >
         {children}
