@@ -21,3 +21,18 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* Match theme.ts backgrounds before Emotion CSS vars attach (InitColorSchemeScript). */
+html[data-color-mode="light"],
+html[data-color-mode="light"] body {
+  color-scheme: light;
+  background-color: #f7f4ef;
+  color: #1c1917;
+}
+
+html[data-color-mode="dark"],
+html[data-color-mode="dark"] body {
+  color-scheme: dark;
+  background-color: #1c1917;
+  color: #fafaf9;
+}
