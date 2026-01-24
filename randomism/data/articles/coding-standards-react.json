@@ -65,6 +65,10 @@
           "href": "css-classname-naming-conventions"
         },
         {
+          "label": "Recommended Folder Architecture",
+          "href": "recommended-folder-architecture"
+        },
+        {
           "label": "Imports Order",
           "href": "imports-order"
         },
@@ -487,6 +491,60 @@
       "componentType": "CodeBlock",
       "code": "<div className=\"project-form-container\">\n  <div className=\"project-form-input-wrapper\">\n    ...\n  </div>\n  <div className=\"project-form-input-wrapper\">\n    ...\n  </div>\n  <ButtonComponent />\n</div>",
       "language": "tsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Recommended Folder Architecture",
+      "id": "recommended-folder-architecture"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "This layout is a **starting recommendation**, not a permanent law. It may change as the starter and team conventions evolve. Prefer whatever the live repo documents when they diverge from this article."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The reference shape comes from the [starter-mfe](https://github.com/ikikika/learning/tree/react/starter-mfe/react/starter-mfe) branch — a Webpack Module Federation React starter (`standalone` | `host` | `remote` | `hybrid`). Use it as the default mental model for where code belongs."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Top-level layout"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "starter-mfe/\n  src/\n    app/           # wiring: providers, routes, federated entries, remote loaders\n    features/      # domain UI + api / hooks / types per feature\n    pages/         # thin route containers that compose features\n    components/    # shared UI primitives (not domain logic)\n    core/          # shared constants, role/remotes helpers, shared hooks\n    services/      # shared HTTP client (httpClient, apiUrl)\n    layouts/       # shell chrome (e.g. MainLayout)\n    styles/        # tokens + global styles\n    types/         # shared TypeScript types\n  tests/           # contract + integration (unit tests stay co-located)\n  config/          # build / tooling config\n  docs/            # conventions, overview, UI context\n  public/          # static assets, PWA manifest\n  scripts/         # init, add-remote, env helpers\n  specs/           # Speckit feature specs (optional)",
+      "language": "text"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Layer terms",
+          "body": "* **Feature** — a vertical slice of product behavior (`src/features/<name>/`). Owns its UI, API functions, hooks, and local types. Example: `auth`, `demoHost`, `demoRemote`.\n* **Page** — a thin route container under `src/pages/`. Composes features and layouts; should not grow into heavy domain logic or raw `fetch` calls.\n* **App wiring** — `src/app/`: root `App.tsx`, role route tables (`standaloneRoutes`, `hostRoutes`, …), providers, and Module Federation mounts (`FederatedRemoteApp`, `FederatedHybridApp`, remote loaders).\n* **Component (shared)** — reusable presentational primitives in `src/components/` (Button, ThemeToggle). No feature-specific API knowledge.\n* **Core** — cross-app constants and helpers: `apiRoutes`, `routePaths`, role/remotes metadata. Path strings and env-derived values live here, not hardcoded in UI.\n* **Service** — shared HTTP plumbing in `src/services/` (`httpClient`, `apiUrl`). Feature `api/` modules call through this layer.\n* **Layout** — chrome around pages (nav, header band) in `src/layouts/`.\n* **MFE role** — how this clone runs under Module Federation: **standalone** (single app), **host** (shell that loads remotes), **remote** (leaf exposed to a host), **hybrid** (intermediate shell that both exposes itself and loads child remotes)."
+        },
+        {
+          "title": "App folder shape",
+          "body": "```text\nsrc/app/\n  App.tsx                    # own-app root (providers + role routes)\n  FederatedRemoteApp.tsx     # public MF expose for remote role\n  FederatedHybridApp.tsx     # public MF expose for hybrid role\n  providers/                 # ThemeProvider, AppProviders, PWA register\n  routes/                    # role route tables (standalone / host / remote / hybrid)\n  remotes/                   # LoadRemote, per-alias loaders (host / hybrid)\n```\n\n* `App.tsx` is for running this package as its own app — providers and PWA apply here, not via the federated expose.\n* Role route files map URLs to thin pages; path segments come from `routePaths` in `src/core/constants/`.\n* Host/hybrid remotes: `loaders.generated.ts` is produced by init / `add-remote`; mount slots with `<LoadRemote alias=\"…\" />`."
+        },
+        {
+          "title": "Feature folder shape",
+          "body": "```text\nsrc/features/<name>/\n  api/           # pure HTTP / data-access functions (e.g. getPost.ts)\n  hooks/         # React hooks: loading / success / error (+ abort)\n  types/         # feature-local request/response / view types\n  <Name>.tsx     # presentational UI (consume hooks/props only)\n  <Name>.module.scss\n  <Name>.test.tsx\n  index.ts       # public exports (especially for federated exposes)\n```\n\nPreferred create order: **types → api → hooks → presentational UI → page/route wiring**."
+        },
+        {
+          "title": "Where to put common work",
+          "body": "* **New product capability / screen flow** → `src/features/<name>/` (types, api, hooks, UI), then a thin page under `src/pages/`, then wire the path in the matching `src/app/routes/*Routes.tsx` using `routePaths` from `src/core/constants/`.\n* **Shared button, toggle, fallback UI** → `src/components/<Name>/` (no feature API imports).\n* **Shell nav / page chrome** → `src/layouts/`.\n* **API path segments / URL helpers** → `src/core/constants/apiRoutes.ts` (then `apiUrl()` from `services`).\n* **App route path segments** → `src/core/constants/routePaths.ts` — do not hardcode compose/leaf paths in components or route tables.\n* **HTTP client / base URL wiring** → `src/services/httpClient.ts`; base URL from env via `src/core/constants/app.ts`.\n* **Theme tokens / global CSS** → `src/styles/tokens.css` and `global.scss`; co-locate component styles as `*.module.scss`.\n* **Unit tests** → co-located next to the source (`*.test.tsx`). **Contract / integration** → `tests/`.\n* **Federated remote/hybrid entry** → expose from `src/app/FederatedRemoteApp.tsx` / `FederatedHybridApp.tsx`; keep domain UI in features; pass `embedded={true}` when a host mounts you.\n* **Host remote slot / loader** → `src/app/remotes/` + remotes metadata in `src/core/constants/remotes.ts` (and `npm run add-remote` for host/hybrid clones)."
+        }
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Layer rule of thumb: **pages compose, features own domain data, components stay presentational, core holds shared constants, services own HTTP.** Do not call APIs from presentational components (including via `useEffect` in the component body) — put that in `features/*/hooks` + `features/*/api`."
     },
     {
       "componentType": "Divider"
