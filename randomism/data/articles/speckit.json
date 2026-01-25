@@ -25,6 +25,7 @@
         { "label": "Main terminologies", "href": "main-terminologies" },
         { "label": "The workflow at a glance", "href": "the-workflow-at-a-glance" },
         { "label": "Sample prompts for each step", "href": "sample-prompts-for-each-step" },
+        { "label": "After implement: improve what’s left", "href": "after-implement-improve-whats-left" },
         { "label": "Drawbacks and workarounds", "href": "drawbacks-and-workarounds" },
         { "label": "Practical tips", "href": "practical-tips" }
       ]
@@ -263,9 +264,77 @@
     {
       "componentType": "Heading",
       "level": 2,
+      "id": "after-implement-improve-whats-left",
+      "content": "After implement: improve what’s left"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Finishing `/speckit.implement` once does not mean the feature is done. Agents often mark tasks complete while leaving gaps — partial acceptance criteria, skipped edge cases, plan decisions not wired through, or constitution MUST rules only half-honored."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "When you review the result and see “more that should be there,” **do not open a free-form chat to patch it.** Put the missing work back into the Spec Kit loop."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "**Implement finishes tasks. Converge finds what’s still missing.** Treat “looks incomplete” as a signal to converge, not as a reason to abandon the artifacts."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "The improve loop"
+    },
+    {
+      "componentType": "List",
+      "ordered": true,
+      "items": [
+        "**Review the ship** — run the app, skim the diff, and check user stories / acceptance scenarios against what actually landed",
+        "**Clarify related but undefined intent** — if the improvement belongs to this feature but was never written into `spec.md`, run `/speckit.clarify` (scoped to that gap) so the requirement lands in the spec before you chase code; re-run plan/tasks only if architecture or task breakdown must change",
+        "**Run converge** — when the intent is already in the artifacts, `/speckit.converge` compares the codebase to `spec.md`, `plan.md`, and `tasks.md` (plus the constitution) and appends a new Convergence phase of tasks for every remaining gap",
+        "**Implement the appended tasks** — `/speckit.implement` again, optionally scoped to the Convergence phase (or to tasks added after clarify/plan/tasks)",
+        "**Re-converge** — repeat until converge reports no remaining gaps"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "# Related improvement not yet in the spec after initial implement:\n/speckit.clarify Focus on empty and error states for the home article list — fold decisions into spec.md.\n\n# Gaps against intent already in the artifacts:\n/speckit.converge\n\n# After tasks are appended:\n/speckit.implement Implement only the latest Convergence phase.\n\n# Then check again:\n/speckit.converge"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "What converge catches (and what it doesn’t)"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Converge is gap analysis against **stated intent**, not a general code-quality review. It classifies leftovers as missing, partial, contradicts, or unrequested — then turns actionable findings into checklist items in `tasks.md`. It does **not** rewrite the spec or plan, and it does **not** invent product requirements you never wrote down."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Use converge when** — implement “finished” but acceptance scenarios fail, planned files/behaviors are thin or absent, or constitution MUST rules are violated",
+        "**Update the artifacts first when** — you want *better* behavior that was never specified (new edge case, stricter UX, extra polish). Add it to `spec.md` (and plan/tasks if needed), then implement — or let converge pick it up only after the intent exists on disk",
+        "**Stay in the loop** — review the Convergence findings table before the next implement run; drop or rephrase tasks that are noise"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "If quality gaps keep reappearing after converge reports clean, the intent was too thin — tighten `spec.md` / `plan.md`, regenerate or extend tasks, then implement. Converge cannot enforce standards that never made it into the artifacts."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
       "id": "drawbacks-and-workarounds",
       "content": "Drawbacks and workarounds"
     },
+
     {
       "componentType": "Paragraph",
       "content": "Spec Kit is strong at **shipping a feature end-to-end**. It is weaker at keeping a durable **big-picture map of the whole app**. Feature folders under `specs/` answer “what is this change?”; they rarely answer “how does the product fit together?” Treat the gaps below as design trade-offs, not bugs — and pair Spec Kit with a thin layer of system docs."
@@ -288,10 +357,8 @@
       "componentType": "List",
       "ordered": false,
       "items": [
-        "**Workaround: keep a short system overview** — a living `docs/architecture.md` (or ADR folder) that lists domains, key routes, data stores, and invariants in a few pages",
-        "**Workaround: extend constitution carefully** — put *non-negotiable* product shape there (e.g. “JSON articles under `data/articles/`; one registry”); leave diagrams and catalogs out so the constitution stays short enough to load",
-        "**Workaround: maintain a feature index** — a one-page table of `specs/*` → status → owns which surfaces, updated when a feature converges",
-        "**Workaround: point agents at both** — in plan/implement prompts, require reading the overview + active feature dir, not only `spec.md`"
+        "**Workaround: keep a short system overview** — a living `docs/project-overview.md` (or ADR folder) that lists domains, key routes, data stores, and invariants in a few pages",
+        "**Workaround: point agents at docs folder — in plan/implement prompts, require reading the overview + active feature dir, not only `spec.md`"
       ]
     },
     {
