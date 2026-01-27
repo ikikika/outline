@@ -22,10 +22,11 @@ Do not add Redux, new state libraries, or new test runners unless the task requi
 ## Readability
 
 - Prefer clear over clever; short functions with one job.
-- Meaningful names; no abbreviations like `fN` for `firstName`.
+- Meaningful names; no abbreviations like `fN` for `firstName`; avoid spelling mistakes in identifiers and paths (searchability).
 - One identifier, one purpose; avoid shadowing (e.g. state `year` vs param `year`).
+- Extract repeated string literals to `const` (e.g. role strings used in multiple places).
 - DRY without over-abstracting; extract helpers when logic repeats or conditions get dense.
-- Avoid deep nesting and long lines.
+- Avoid deep nesting and long lines; let Prettier/ESLint handle formatting consistently.
 - Extract complex `&&` / `||` conditions into named booleans or helpers.
 - Prefer destructuring for props, nested objects, and API payloads.
 
@@ -36,8 +37,8 @@ Do not add Redux, new state libraries, or new test runners unless the task requi
 
 ## Git
 
-- Rely on version control; make small, coherent commits when asked to commit.
-- Do not leave unfinished work only on a local unsaved buffer.
+- Save and push work regularly; do not rely only on unsaved local buffers.
+- Make small, coherent commits when asked to commit.
 
 ## Errors
 
@@ -46,6 +47,7 @@ Do not add Redux, new state libraries, or new test runners unless the task requi
 - Never empty-catch. Log with context, then surface a user message or rethrow.
 - Prefer specific errors (include operation + status) over generic messages.
 - Use Error Boundaries for render crashes; use query/UI error state for failed fetches.
+- With TanStack Query, surface `isError` / `error` and offer a Retry action — not a blank screen.
 - Offer recovery: retry, go back, or a safe empty state.
 
 ## Input validation
@@ -73,6 +75,46 @@ Do not add Redux, new state libraries, or new test runners unless the task requi
 - Follow the project's existing styling approach (CSS Modules, Tailwind, MUI/`sx`, plain CSS).
 - If using hand-written global/BEM-style classes: `{project}-{module}-{component}-{part}`.
 - Wrapper = parts of one component; container = multiple components/wrappers.
+
+## Folder architecture
+
+Starting recommendation only — prefer the live repo when it diverges. Reference shape: [starter-mfe](https://github.com/ikikika/learning/tree/react/starter-mfe/react/starter-mfe) (Webpack Module Federation: `standalone` | `host` | `remote` | `hybrid`).
+
+```
+src/
+  app/           # wiring: providers, routes, federated entries, remote loaders
+  features/      # domain UI + api / hooks / types per feature
+  pages/         # thin route containers that compose features
+  components/    # shared UI primitives (not domain logic)
+  core/          # shared constants, role/remotes helpers, shared hooks
+  services/      # shared HTTP client (httpClient, apiUrl)
+  layouts/       # shell chrome (e.g. MainLayout)
+  styles/        # tokens + global styles
+  types/         # shared TypeScript types
+tests/           # contract + integration (unit tests stay co-located)
+```
+
+**Layers**
+
+- **Feature** (`src/features/<name>/`) — vertical slice: UI, `api/`, `hooks/`, local `types/`. Build order: types → api → hooks → UI → page/route wiring.
+- **Page** (`src/pages/`) — thin route container; composes features and layouts; no heavy domain logic or raw `fetch`.
+- **App wiring** (`src/app/`) — `App.tsx`, providers, role route tables, Module Federation mounts and remote loaders.
+- **Component** (`src/components/`) — reusable presentational primitives; no feature-specific API imports.
+- **Core** (`src/core/`) — `apiRoutes`, `routePaths`, remotes metadata, env-derived values — not hardcoded in UI.
+- **Service** (`src/services/`) — shared HTTP plumbing; feature `api/` modules call through here.
+- **Layout** (`src/layouts/`) — nav and page chrome.
+
+**Where to put work**
+
+- New capability → `src/features/<name>/`, then thin `src/pages/` entry, then route in `src/app/routes/*Routes.tsx` using `routePaths` from `src/core/constants/`.
+- Shared UI → `src/components/<Name>/`.
+- API path segments → `src/core/constants/apiRoutes.ts`; route segments → `routePaths.ts`.
+- HTTP client / base URL → `src/services/httpClient.ts` + env via `src/core/constants/app.ts`.
+- Global styles → `src/styles/`; component styles → co-located `*.module.scss`.
+- Unit tests → co-located `*.test.tsx`; contract/integration → `tests/`.
+- Federated remote/hybrid entry → `src/app/FederatedRemoteApp.tsx` / `FederatedHybridApp.tsx`; domain UI stays in features.
+
+**Rule of thumb:** pages compose, features own domain data, components stay presentational, core holds shared constants, services own HTTP. Do not call APIs from presentational components (including `useEffect` in the component body) — use `features/*/hooks` + `features/*/api`.
 
 ## Imports
 
