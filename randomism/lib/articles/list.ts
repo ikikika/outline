@@ -7,6 +7,11 @@ export type ArticleListItem = {
   description: string;
   publishDate: string;
   href: string;
+  tags: string[];
+};
+
+export type ListPublishedArticlesOptions = {
+  tag?: string;
 };
 
 function comparePublished(a: Article, b: Article): number {
@@ -18,9 +23,19 @@ function comparePublished(a: Article, b: Article): number {
   return a.slug.localeCompare(b.slug);
 }
 
-export function listPublishedArticles(): ArticleListItem[] {
+export function listPublishedArticles(
+  options: ListPublishedArticlesOptions = {},
+): ArticleListItem[] {
+  const { tag } = options;
+
   return loadAllArticles()
-    .filter((article) => article.published)
+    .filter((article) => {
+      if (!article.published) {
+        return false;
+      }
+      const matchesTag = tag === undefined || article.tags.includes(tag);
+      return matchesTag;
+    })
     .sort(comparePublished)
     .map((article) => ({
       slug: article.slug,
@@ -28,6 +43,7 @@ export function listPublishedArticles(): ArticleListItem[] {
       description: article.description,
       publishDate: article.publishDate as string,
       href: `/articles/${article.slug}`,
+      tags: article.tags,
     }));
 }
 

@@ -30,7 +30,7 @@ description: "Task list for Article Tags implementation"
 
 **Purpose**: Confirm layout; no new packages
 
-- [ ] T001 Verify feature paths from `specs/005-article-tags/plan.md` exist (`app/page.tsx`, `app/articles/[slug]/page.tsx`, `components/ArticleList.tsx`, `lib/schema/article.ts`, `lib/articles/list.ts`, `data/articles/`) and confirm no new npm dependencies are required in `package.json`
+- [x] T001 Verify feature paths from `specs/005-article-tags/plan.md` exist (`app/page.tsx`, `app/articles/[slug]/page.tsx`, `components/ArticleList.tsx`, `lib/schema/article.ts`, `lib/articles/list.ts`, `data/articles/`) and confirm no new npm dependencies are required in `package.json`
 
 ---
 
@@ -40,9 +40,9 @@ description: "Task list for Article Tags implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Extend Zod `articleDocumentSchema` in `lib/schema/article.ts`: optional `tags` array defaulting to `[]`; each item matches `^[a-z0-9]+(?:-[a-z0-9]+)*$`; `superRefine` uniqueness; omit/`[]` valid; nested objects rejected — per `specs/005-article-tags/data-model.md` and `contracts/article-schema.md`
-- [ ] T003 [P] Add `lib/articles/tags.ts` with `formatTagLabel` (hyphen → space, capitalize each word), `parseTagQuery` (first string from `searchParams.tag`, else `undefined`), and `listPublishedTags` (unique identities from published articles only, `localeCompare` sort) per `specs/005-article-tags/research.md`
-- [ ] T004 Extend `lib/articles/list.ts`: add `tags: string[]` to `ArticleListItem`; include `tags` in `listPublishedArticles`; accept optional `{ tag?: string }` and when set return only published items whose `tags` include that identity (unknown identity → empty list, not throw)
+- [x] T002 Extend Zod `articleDocumentSchema` in `lib/schema/article.ts`: optional `tags` array defaulting to `[]`; each item matches `^[a-z0-9]+(?:-[a-z0-9]+)*$`; `superRefine` uniqueness; omit/`[]` valid; nested objects rejected — per `specs/005-article-tags/data-model.md` and `contracts/article-schema.md`
+- [x] T003 [P] Add `lib/articles/tags.ts` with `formatTagLabel` (hyphen → space, capitalize each word), `parseTagQuery` (first string from `searchParams.tag`, else `undefined`), and `listPublishedTags` (unique identities from published articles only, `localeCompare` sort) per `specs/005-article-tags/research.md`
+- [x] T004 Extend `lib/articles/list.ts`: add `tags: string[]` to `ArticleListItem`; include `tags` in `listPublishedArticles`; accept optional `{ tag?: string }` and when set return only published items whose `tags` include that identity (unknown identity → empty list, not throw)
 
 **Checkpoint**: Existing JSON without `tags` still builds; helpers ready for UI
 

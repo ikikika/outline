@@ -122,6 +122,13 @@ export const blockSchema = z.discriminatedUnion("componentType", [
   tableOfContentsBlockSchema,
 ]);
 
+const tagIdentitySchema = z
+  .string()
+  .min(1)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    message: "Tag must be lowercase hyphenated (e.g. react, coding-standards)",
+  });
+
 export const articleDocumentSchema = z
   .object({
     published: z.boolean(),
@@ -129,6 +136,7 @@ export const articleDocumentSchema = z
     title: z.string().min(1),
     description: z.string().min(1),
     ogImage: z.string().min(1).optional(),
+    tags: z.array(tagIdentitySchema).optional().default([]),
     blocks: z.array(blockSchema).min(1),
   })
   .strict()
@@ -140,6 +148,18 @@ export const articleDocumentSchema = z
         path: ["publishDate"],
       });
     }
+
+    const seen = new Set<string>();
+    data.tags.forEach((tag, index) => {
+      if (seen.has(tag)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "tags must be unique within an article",
+          path: ["tags", index],
+        });
+      }
+      seen.add(tag);
+    });
   });
 
 export type Block = z.infer<typeof blockSchema>;
