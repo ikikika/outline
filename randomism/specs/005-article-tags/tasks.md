@@ -56,9 +56,9 @@ description: "Task list for Article Tags implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Create Server Component `components/ArticleTags.tsx`: MUI `Chip` + Next `Link`, `size="small"`, accessible name = `formatTagLabel`; wrap in `<nav aria-label="Topics">` (omit the nav when `tags` is empty). Support `linkMode: "apply"` (always `href="/?tag={id}"`) for article pages per `contracts/home-tag-filter.md`
-- [ ] T006 [US1] Render `ArticleTags` in the header of `app/articles/[slug]/page.tsx` (distinct from the warning Draft `Chip`; topic chips after title/date). In `generateMetadata`, when `tags.length > 0` set `keywords` to stored identities; keep title, description, canonical, Open Graph, draft `noindex`
-- [ ] T007 [P] [US1] Add `"tags": ["randomism", "authoring"]` to `data/articles/getting-started.json` so the MVP article demonstrates chips
+- [x] T005 [US1] Create Server Component `components/ArticleTags.tsx`: MUI `Chip` + Next `Link`, `size="small"`, accessible name = `formatTagLabel`; wrap in `<nav aria-label="Topics">` (omit the nav when `tags` is empty). Support `linkMode: "apply"` (always `href="/?tag={id}"`) for article pages per `contracts/home-tag-filter.md`
+- [x] T006 [US1] Render `ArticleTags` in the header of `app/articles/[slug]/page.tsx` (distinct from the warning Draft `Chip`; topic chips after title/date). In `generateMetadata`, when `tags.length > 0` set `keywords` to stored identities; keep title, description, canonical, Open Graph, draft `noindex`
+- [x] T007 [P] [US1] Add `"tags": ["randomism", "authoring"]` to `data/articles/getting-started.json` so the MVP article demonstrates chips
 
 **Checkpoint**: MVP — at least one article shows humanized, activatable topic chips
 

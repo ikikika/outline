@@ -3,6 +3,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ArticleTags } from "@/components/ArticleTags";
 import { BackToTop } from "@/components/BackToTop";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import { loadAllArticles, loadArticleBySlug } from "@/lib/articles/load";
@@ -37,6 +38,7 @@ export async function generateMetadata({
   return {
     title,
     description: article.description,
+    ...(article.tags.length > 0 ? { keywords: article.tags } : {}),
     alternates: {
       canonical: canonicalPath,
     },
@@ -83,6 +85,7 @@ export default async function ArticlePage({ params }: PageProps) {
             <time dateTime={article.publishDate}>{article.publishDate}</time>
           </Typography>
         ) : null}
+        <ArticleTags tags={article.tags} linkMode="apply" />
       </Stack>
       <Stack spacing={2.5} component="div">
         <BlockRenderer blocks={article.blocks} />

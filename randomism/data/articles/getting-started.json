@@ -4,6 +4,7 @@
   "title": "Getting Started with Content Blocks",
   "description": "How every Randomism block type composes an article body, including Markdown prose.",
   "ogImage": "/images/getting-started.svg",
+  "tags": ["randomism", "authoring"],
   "blocks": [
     {
       "componentType": "Heading",
