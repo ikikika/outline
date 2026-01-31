@@ -3,6 +3,10 @@
   "publishDate": "2026-08-03",
   "title": "SOLID Principles",
   "description": "Each SOLID principle explained, with expandable React examples — ready for other frameworks later.",
+  "tags": [
+    "software-design",
+    "react"
+  ],
   "blocks": [
     {
       "componentType": "Paragraph",

@@ -3,6 +3,10 @@
   "publishDate": "2026-08-03",
   "title": "Spec Kit: Spec-Driven Development with AI Agents",
   "description": "What Spec Kit solves, core terminology, sample prompts, and drawbacks — especially weak product-level memory — with practical workarounds.",
+  "tags": [
+    "spec-kit",
+    "process"
+  ],
   "blocks": [
     {
       "componentType": "Paragraph",
@@ -21,13 +25,34 @@
     {
       "componentType": "TableOfContents",
       "items": [
-        { "label": "The problem it solves", "href": "the-problem-it-solves" },
-        { "label": "Main terminologies", "href": "main-terminologies" },
-        { "label": "The workflow at a glance", "href": "the-workflow-at-a-glance" },
-        { "label": "Sample prompts for each step", "href": "sample-prompts-for-each-step" },
-        { "label": "After implement: improve what’s left", "href": "after-implement-improve-whats-left" },
-        { "label": "Drawbacks and workarounds", "href": "drawbacks-and-workarounds" },
-        { "label": "Practical tips", "href": "practical-tips" }
+        {
+          "label": "The problem it solves",
+          "href": "the-problem-it-solves"
+        },
+        {
+          "label": "Main terminologies",
+          "href": "main-terminologies"
+        },
+        {
+          "label": "The workflow at a glance",
+          "href": "the-workflow-at-a-glance"
+        },
+        {
+          "label": "Sample prompts for each step",
+          "href": "sample-prompts-for-each-step"
+        },
+        {
+          "label": "After implement: improve what’s left",
+          "href": "after-implement-improve-whats-left"
+        },
+        {
+          "label": "Drawbacks and workarounds",
+          "href": "drawbacks-and-workarounds"
+        },
+        {
+          "label": "Practical tips",
+          "href": "practical-tips"
+        }
       ]
     },
     {
@@ -334,7 +359,6 @@
       "id": "drawbacks-and-workarounds",
       "content": "Drawbacks and workarounds"
     },
-
     {
       "componentType": "Paragraph",
       "content": "Spec Kit is strong at **shipping a feature end-to-end**. It is weaker at keeping a durable **big-picture map of the whole app**. Feature folders under `specs/` answer “what is this change?”; they rarely answer “how does the product fit together?” Treat the gaps below as design trade-offs, not bugs — and pair Spec Kit with a thin layer of system docs."

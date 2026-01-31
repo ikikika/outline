@@ -3,6 +3,9 @@
   "publishDate": "2026-08-04",
   "title": "Must-Know React Topics (Priority-Based Guide)",
   "description": "Priority-based React guide covering JSX, props, components, state, hooks, events, forms, data fetching, error handling, performance, routing, testing, accessibility, and React 19 patterns.",
+  "tags": [
+    "react"
+  ],
   "blocks": [
     {
       "componentType": "Paragraph",
@@ -1253,7 +1256,6 @@
         "Event-handler errors are not caught by boundaries — use try/catch there"
       ]
     },
-
     {
       "componentType": "Divider"
     },

@@ -3,6 +3,10 @@
   "publishDate": "2026-08-04",
   "title": "Coding Standard (React)",
   "description": "Conventions and habits for readable, maintainable React and TypeScript — stack defaults, validation, naming, and error handling.",
+  "tags": [
+    "react",
+    "coding-standards"
+  ],
   "blocks": [
     {
       "componentType": "Paragraph",

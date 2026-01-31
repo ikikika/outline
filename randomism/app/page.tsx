@@ -1,19 +1,41 @@
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import type { Metadata } from "next";
 import { ArticleList } from "@/components/ArticleList";
+import { TagFilter } from "@/components/TagFilter";
 import { listPublishedArticles } from "@/lib/articles/list";
-import { defaultDescription } from "@/lib/site";
+import { parseTagQuery } from "@/lib/articles/tags";
 
-export default function HomePage() {
-  const articles = listPublishedArticles();
+type HomePageProps = {
+  searchParams: Promise<{ tag?: string | string[] }>;
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    alternates: {
+      canonical: "/",
+    },
+  };
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const activeTag = parseTagQuery(params.tag);
+  const articles = listPublishedArticles(
+    activeTag === undefined ? {} : { tag: activeTag },
+  );
+  const emptyMessage =
+    activeTag !== undefined
+      ? "No matching articles."
+      : "No published articles yet.";
 
   return (
     <Stack spacing={2}>
-      {/* <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", sm: "2rem" } }}>
-        Articles
-      </Typography>
-      <Typography color="text.secondary">{defaultDescription}</Typography> */}
-      <ArticleList articles={articles} />
+      <TagFilter activeTag={activeTag} />
+      <ArticleList
+        articles={articles}
+        emptyMessage={emptyMessage}
+        activeTag={activeTag}
+      />
     </Stack>
   );
 }

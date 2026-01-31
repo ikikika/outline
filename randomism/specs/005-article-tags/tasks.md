@@ -72,8 +72,8 @@ description: "Task list for Article Tags implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T008 [P] [US2] Create Server Component `components/TagFilter.tsx`: `<nav aria-label="Filter articles by tag">` with Show all (`href="/"`, current when `activeTag` is unset) plus unique tags from `listPublishedTags()` (outlined vs filled+primary, `aria-current="page"` on the current control). Selected topic chip `href="/"`; unselected `href="/?tag={id}"`. Return `null` when there are no published tags. Wrap chips so they wrap on narrow viewports per `contracts/home-tag-filter.md`
-- [ ] T009 [US2] Update `app/page.tsx`: read `searchParams` (`Promise`); `parseTagQuery`; `listPublishedArticles({ tag })`; render `TagFilter` above `ArticleList`; `generateMetadata` always sets `alternates.canonical` to `/`. Pass a distinct empty message when a tag is set and the list is empty (“No matching articles.”) vs unfiltered empty (“No published articles yet.”) — extend `ArticleList` props in `components/ArticleList.tsx` only as needed for that empty copy (do not yet add listing chips)
+- [x] T008 [P] [US2] Create Server Component `components/TagFilter.tsx`: `<nav aria-label="Filter articles by tag">` with Show all (`href="/"`, current when `activeTag` is unset) plus unique tags from `listPublishedTags()` (outlined vs filled+primary, `aria-current="page"` on the current control). Selected topic chip `href="/"`; unselected `href="/?tag={id}"`. Return `null` when there are no published tags. Wrap chips so they wrap on narrow viewports per `contracts/home-tag-filter.md`
+- [x] T009 [US2] Update `app/page.tsx`: read `searchParams` (`Promise`); `parseTagQuery`; `listPublishedArticles({ tag })`; render `TagFilter` above `ArticleList`; `generateMetadata` always sets `alternates.canonical` to `/`. Pass a distinct empty message when a tag is set and the list is empty (“No matching articles.”) vs unfiltered empty (“No published articles yet.”) — extend `ArticleList` props in `components/ArticleList.tsx` only as needed for that empty copy (do not yet add listing chips)
 
 **Checkpoint**: Home filter works from the all-tags list even if listing rows have no chips yet
 
@@ -87,8 +87,8 @@ description: "Task list for Article Tags implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T010 [US3] Extend `components/ArticleTags.tsx` with `linkMode: "toggle"` and `activeTag?: string`: unselected → `/?tag={id}`; selected → `/`; selected chip uses the same current styles/`aria-current` as `TagFilter`
-- [ ] T011 [US3] Restructure `components/ArticleList.tsx`: stop wrapping the whole row in `ListItemButton`/`Link`. Title is the article `Link`; description and date stay text; render `ArticleTags` with `linkMode="toggle"` and `activeTag` from the home page. Omit tags chrome when `article.tags` is empty. Pass `activeTag` from `app/page.tsx` into `ArticleList`
+- [x] T010 [US3] Extend `components/ArticleTags.tsx` with `linkMode: "toggle"` and `activeTag?: string`: unselected → `/?tag={id}`; selected → `/`; selected chip uses the same current styles/`aria-current` as `TagFilter`
+- [x] T011 [US3] Restructure `components/ArticleList.tsx`: stop wrapping the whole row in `ListItemButton`/`Link`. Title is the article `Link`; description and date stay text; render `ArticleTags` with `linkMode="toggle"` and `activeTag` from the home page. Omit tags chrome when `article.tags` is empty. Pass `activeTag` from `app/page.tsx` into `ArticleList`
 
 **Checkpoint**: Listing tags filter the home list without nested links
 
@@ -102,9 +102,9 @@ description: "Task list for Article Tags implementation"
 
 ### Implementation for User Story 4
 
-- [ ] T012 [US4] Add tags to remaining published files per `specs/005-article-tags/research.md` fixture table: `data/articles/welcome.json` (`randomism`); `speckit.json` (`spec-kit`, `process`); `solid-principles.json` (`software-design`, `react`); `react-fundamentals.json` (`react`); `coding-standards-react.json` (`react`, `coding-standards`); `quiet-habits-that-sabotage-progress.json` (`habits`). Keep `data/articles/draft-example.json` with `tags` omitted
-- [ ] T013 [P] [US4] Document optional `tags` (lowercase hyphenated list, omit allowed) in the Authoring articles section of `README.md`
-- [ ] T014 [US4] Manually confirm invalid `tags` in a `data/articles/*.json` file fail `npm run build` with a clear Zod message from `lib/schema/article.ts` (uppercase, duplicate, object element) per `specs/005-article-tags/quickstart.md` scenario 8; restore fixtures afterward
+- [x] T012 [US4] Add tags to remaining published files per `specs/005-article-tags/research.md` fixture table: `data/articles/welcome.json` (`randomism`); `speckit.json` (`spec-kit`, `process`); `solid-principles.json` (`software-design`, `react`); `react-fundamentals.json` (`react`); `coding-standards-react.json` (`react`, `coding-standards`); `quiet-habits-that-sabotage-progress.json` (`habits`). Keep `data/articles/draft-example.json` with `tags` omitted
+- [x] T013 [P] [US4] Document optional `tags` (lowercase hyphenated list, omit allowed) in the Authoring articles section of `README.md`
+- [x] T014 [US4] Manually confirm invalid `tags` in a `data/articles/*.json` file fail `npm run build` with a clear Zod message from `lib/schema/article.ts` (uppercase, duplicate, object element) per `specs/005-article-tags/quickstart.md` scenario 8; restore fixtures afterward
 
 **Checkpoint**: Authoring contract matches the live content tree
 
@@ -114,10 +114,10 @@ description: "Task list for Article Tags implementation"
 
 **Purpose**: Quality gates and end-to-end quickstart pass
 
-- [ ] T015 [P] Accessibility pass: topic vs Draft chips; `aria-current` on Show all / selected tag; keyboard to filter and listing chips; no nested `<a>`; empty filter announced as text — spot-check `/` and `/articles/getting-started`
-- [ ] T016 [P] Run `npm run lint` and fix any issues introduced by this feature
-- [ ] T017 Run full manual checklist in `specs/005-article-tags/quickstart.md` (scenarios 1–10)
-- [ ] T018 Ensure `npm run build` succeeds with zero warnings and all `data/articles/*.json` validate
+- [x] T015 [P] Accessibility pass: topic vs Draft chips; `aria-current` on Show all / selected tag; keyboard to filter and listing chips; no nested `<a>`; empty filter announced as text — spot-check `/` and `/articles/getting-started`
+- [x] T016 [P] Run `npm run lint` and fix any issues introduced by this feature
+- [x] T017 Run full manual checklist in `specs/005-article-tags/quickstart.md` (scenarios 1–10)
+- [x] T018 Ensure `npm run build` succeeds with zero warnings and all `data/articles/*.json` validate
 
 ---
 

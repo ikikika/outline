@@ -3,6 +3,9 @@
   "publishDate": "2026-08-04",
   "title": "Quiet Habits That Sabotage Progress",
   "description": "Ten mental patterns that quietly stall progress — from productive procrastination to the special occasion trap — with the examples, research hooks, and rules from the video.",
+  "tags": [
+    "habits"
+  ],
   "blocks": [
     {
       "componentType": "Paragraph",
@@ -16,19 +19,58 @@
     {
       "componentType": "TableOfContents",
       "items": [
-        { "label": "10. Productive procrastination", "href": "productive-procrastination" },
-        { "label": "9. The “I’ll remember it” lie", "href": "ill-remember-it" },
-        { "label": "8. Needing an opinion on everything", "href": "needing-an-opinion" },
-        { "label": "7. Fear of looking stupid", "href": "fear-of-looking-stupid" },
-        { "label": "6. Emotional flooding", "href": "emotional-flooding" },
-        { "label": "5. Sunday scaries", "href": "sunday-scaries" },
-        { "label": "4. Identity-based excuses", "href": "identity-based-excuses" },
-        { "label": "3. Learning without review", "href": "learning-without-review" },
-        { "label": "2. Over-explaining no", "href": "over-explaining-no" },
-        { "label": "1. The special occasion trap", "href": "special-occasion-trap" },
-        { "label": "Named concepts", "href": "named-concepts" },
-        { "label": "Putting it into practice", "href": "putting-it-into-practice" },
-        { "label": "Source", "href": "source" }
+        {
+          "label": "10. Productive procrastination",
+          "href": "productive-procrastination"
+        },
+        {
+          "label": "9. The “I’ll remember it” lie",
+          "href": "ill-remember-it"
+        },
+        {
+          "label": "8. Needing an opinion on everything",
+          "href": "needing-an-opinion"
+        },
+        {
+          "label": "7. Fear of looking stupid",
+          "href": "fear-of-looking-stupid"
+        },
+        {
+          "label": "6. Emotional flooding",
+          "href": "emotional-flooding"
+        },
+        {
+          "label": "5. Sunday scaries",
+          "href": "sunday-scaries"
+        },
+        {
+          "label": "4. Identity-based excuses",
+          "href": "identity-based-excuses"
+        },
+        {
+          "label": "3. Learning without review",
+          "href": "learning-without-review"
+        },
+        {
+          "label": "2. Over-explaining no",
+          "href": "over-explaining-no"
+        },
+        {
+          "label": "1. The special occasion trap",
+          "href": "special-occasion-trap"
+        },
+        {
+          "label": "Named concepts",
+          "href": "named-concepts"
+        },
+        {
+          "label": "Putting it into practice",
+          "href": "putting-it-into-practice"
+        },
+        {
+          "label": "Source",
+          "href": "source"
+        }
       ]
     },
     {
