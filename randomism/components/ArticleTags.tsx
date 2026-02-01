@@ -1,19 +1,26 @@
 import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import Link from "next/link";
-import { formatTagLabel } from "@/lib/articles/tags";
+import {
+  buildHomeFilterHref,
+  formatTagLabel,
+  toggleTagInSelection,
+  type MatchMode,
+} from "@/lib/articles/tags";
 
 type ArticleTagsProps = {
   tags: string[];
-  /** `apply`: always `/?tag=`. `toggle`: selected tag clears to `/`. */
+  /** `apply`: always `/?tag=`. `toggle`: add/remove against current selection. */
   linkMode?: "apply" | "toggle";
-  activeTag?: string;
+  selectedTags?: string[];
+  match?: MatchMode;
 };
 
 export function ArticleTags({
   tags,
   linkMode = "apply",
-  activeTag,
+  selectedTags = [],
+  match = "and",
 }: ArticleTagsProps) {
   if (tags.length === 0) {
     return null;
@@ -31,10 +38,19 @@ export function ArticleTags({
     >
       {tags.map((identity) => {
         const label = formatTagLabel(identity);
-        const selected = linkMode === "toggle" && activeTag === identity;
-        const href = selected
-          ? "/"
-          : `/?tag=${encodeURIComponent(identity)}`;
+        const selected =
+          linkMode === "toggle" && selectedTags.includes(identity);
+
+        let href: string;
+        if (linkMode === "apply") {
+          href = `/?tag=${encodeURIComponent(identity)}`;
+        } else {
+          const nextTags = toggleTagInSelection(selectedTags, identity);
+          href =
+            nextTags.length === 0
+              ? "/"
+              : buildHomeFilterHref({ tags: nextTags, match });
+        }
 
         return (
           <Chip

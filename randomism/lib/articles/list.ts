@@ -1,5 +1,6 @@
 import type { Article } from "@/lib/schema/article";
 import { loadAllArticles } from "@/lib/articles/load";
+import type { MatchMode } from "@/lib/articles/tags";
 
 export type ArticleListItem = {
   slug: string;
@@ -11,7 +12,8 @@ export type ArticleListItem = {
 };
 
 export type ListPublishedArticlesOptions = {
-  tag?: string;
+  tags?: string[];
+  match?: MatchMode;
 };
 
 function comparePublished(a: Article, b: Article): number {
@@ -23,18 +25,32 @@ function comparePublished(a: Article, b: Article): number {
   return a.slug.localeCompare(b.slug);
 }
 
+function matchesTagFilter(
+  articleTags: string[],
+  filterTags: string[],
+  match: MatchMode,
+): boolean {
+  if (filterTags.length === 0) {
+    return true;
+  }
+  if (match === "or") {
+    return filterTags.some((tag) => articleTags.includes(tag));
+  }
+  return filterTags.every((tag) => articleTags.includes(tag));
+}
+
 export function listPublishedArticles(
   options: ListPublishedArticlesOptions = {},
 ): ArticleListItem[] {
-  const { tag } = options;
+  const filterTags = options.tags ?? [];
+  const match: MatchMode = options.match ?? "and";
 
   return loadAllArticles()
     .filter((article) => {
       if (!article.published) {
         return false;
       }
-      const matchesTag = tag === undefined || article.tags.includes(tag);
-      return matchesTag;
+      return matchesTagFilter(article.tags, filterTags, match);
     })
     .sort(comparePublished)
     .map((article) => ({

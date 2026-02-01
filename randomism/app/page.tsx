@@ -3,10 +3,17 @@ import type { Metadata } from "next";
 import { ArticleList } from "@/components/ArticleList";
 import { TagFilter } from "@/components/TagFilter";
 import { listPublishedArticles } from "@/lib/articles/list";
-import { parseTagQuery } from "@/lib/articles/tags";
+import {
+  listPublishedTags,
+  parseMatchMode,
+  parseTagSelection,
+} from "@/lib/articles/tags";
 
 type HomePageProps = {
-  searchParams: Promise<{ tag?: string | string[] }>;
+  searchParams: Promise<{
+    tag?: string | string[];
+    match?: string | string[];
+  }>;
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,22 +26,26 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
-  const activeTag = parseTagQuery(params.tag);
+  const selection = parseTagSelection(params.tag);
+  const match = parseMatchMode(params.match);
+  const publishedTags = new Set(listPublishedTags());
+  const publishedSelected = selection.filter((id) => publishedTags.has(id));
+  const filterActive = selection.length > 0;
   const articles = listPublishedArticles(
-    activeTag === undefined ? {} : { tag: activeTag },
+    filterActive ? { tags: selection, match } : {},
   );
-  const emptyMessage =
-    activeTag !== undefined
-      ? "No matching articles."
-      : "No published articles yet.";
+  const emptyMessage = filterActive
+    ? "No matching articles."
+    : "No published articles yet.";
 
   return (
     <Stack spacing={2}>
-      <TagFilter activeTag={activeTag} />
+      <TagFilter selectedTags={publishedSelected} match={match} />
       <ArticleList
         articles={articles}
         emptyMessage={emptyMessage}
-        activeTag={activeTag}
+        selectedTags={publishedSelected}
+        match={match}
       />
     </Stack>
   );

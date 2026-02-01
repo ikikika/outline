@@ -25,7 +25,7 @@ Open [http://localhost:3000](http://localhost:3000).
 1. Add `data/articles/{slug}.json` (slug = filename stem, lowercase kebab-case).
 2. Set `"published": true` and a `publishDate` to list the article on the home page.
 3. Drafts use `"published": false` — they still render at `/articles/{slug}` with a Draft tag, but do not appear in the home list (and are marked `noindex`).
-4. Optional `"tags"`: a list of unique lowercase hyphenated labels (e.g. `["react", "coding-standards"]`). Omit or `[]` is valid. Tags appear on the article and home list; visitors filter home via `/?tag=…`.
+4. Optional `"tags"`: a list of unique lowercase hyphenated labels (e.g. `["react", "coding-standards"]`). Omit or `[]` is valid. Tags appear on the article and home list. Visitors filter home with one or more `tag` query params (`/?tag=react&tag=habits`). Default match is **AND** (every selected tag); add `match=or` for **OR** (any selected tag). Clearing the selection returns to `/` (AND).
 5. Body is an ordered `blocks` array. Supported `componentType` values:
 
 | componentType | Notes |
@@ -41,7 +41,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `Divider` | `{ "componentType": "Divider" }` only |
 | `TableOfContents` | `items[]` of `{ label, href }` (bare fragment id) |
 
-See `/articles/getting-started` for a fixture that uses every type. Contracts: `specs/002-blog-block-catalog/contracts/`, `specs/004-article-scroll-nav/contracts/`, `specs/005-article-tags/contracts/`.
+See `/articles/getting-started` for a fixture that uses every type. Contracts: `specs/002-blog-block-catalog/contracts/`, `specs/004-article-scroll-nav/contracts/`, `specs/005-article-tags/contracts/`, `specs/006-multi-tag-filter/contracts/`.
 
 ## Scripts
 
@@ -54,4 +54,4 @@ npm start      # serve production build
 
 ## Spec Kit
 
-Feature docs: `specs/001-content-page-foundation/`, `specs/002-blog-block-catalog/`, `specs/003-mui-component-library/`, `specs/004-article-scroll-nav/`, `specs/005-article-tags/`. Constitution: `.specify/memory/constitution.md`.
+Feature docs: `specs/001-content-page-foundation/`, `specs/002-blog-block-catalog/`, `specs/003-mui-component-library/`, `specs/004-article-scroll-nav/`, `specs/005-article-tags/`, `specs/006-multi-tag-filter/`. Constitution: `.specify/memory/constitution.md`.

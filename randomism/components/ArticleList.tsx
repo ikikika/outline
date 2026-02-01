@@ -5,17 +5,20 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { ArticleTags } from "@/components/ArticleTags";
 import type { ArticleListItem } from "@/lib/articles/list";
+import type { MatchMode } from "@/lib/articles/tags";
 
 type ArticleListProps = {
   articles: ArticleListItem[];
   emptyMessage?: string;
-  activeTag?: string;
+  selectedTags?: string[];
+  match?: MatchMode;
 };
 
 export function ArticleList({
   articles,
   emptyMessage = "No published articles yet.",
-  activeTag,
+  selectedTags = [],
+  match = "and",
 }: ArticleListProps) {
   if (articles.length === 0) {
     return <Typography color="text.secondary">{emptyMessage}</Typography>;
@@ -59,7 +62,8 @@ export function ArticleList({
             <ArticleTags
               tags={article.tags}
               linkMode="toggle"
-              activeTag={activeTag}
+              selectedTags={selectedTags}
+              match={match}
             />
           </Stack>
         </ListItem>
