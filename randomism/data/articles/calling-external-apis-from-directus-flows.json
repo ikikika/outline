@@ -1,0 +1,500 @@
+{
+  "published": true,
+  "publishDate": "2026-08-14",
+  "title": "Better Way to Call External APIs from Directus Flows",
+  "description": "Keep high-value third-party credentials out of Directus by routing Flow calls through a narrowly scoped Next.js API backed by Key Vault or env secrets.",
+  "tags": [
+    "security",
+    "directus",
+    "secrets"
+  ],
+  "blocks": [
+    {
+      "componentType": "Paragraph",
+      "content": "When Directus Flows need to call external APIs, it is tempting to drop Google OAuth secrets, SendGrid keys, or SMTP passwords into Flow configuration. A better pattern keeps those credentials out of Directus entirely and replaces them with a narrowly scoped integration key."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "The goal is not to eliminate secrets, but to ensure Directus only stores a narrowly scoped integration credential rather than long-lived third-party credentials."
+    },
+    {
+      "componentType": "TableOfContents",
+      "items": [
+        {
+          "label": "Proposed Architecture",
+          "href": "proposed-architecture"
+        },
+        {
+          "label": "Benefits",
+          "href": "benefits"
+        },
+        {
+          "label": "Real Secrets Never Enter Directus",
+          "href": "real-secrets-never-enter-directus"
+        },
+        {
+          "label": "Reduced Blast Radius",
+          "href": "reduced-blast-radius"
+        },
+        {
+          "label": "Easier Secret Rotation",
+          "href": "easier-secret-rotation"
+        },
+        {
+          "label": "Addressing the Counter-Argument",
+          "href": "addressing-the-counter-argument"
+        },
+        {
+          "label": "Alternative: Store Secrets in Directus .env",
+          "href": "alternative-store-secrets-in-directus-env"
+        },
+        {
+          "label": "Additional Improvements",
+          "href": "additional-improvements"
+        },
+        {
+          "label": "Final Principle",
+          "href": "final-principle"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Proposed Architecture",
+      "id": "proposed-architecture"
+    },
+    {
+      "componentType": "List",
+      "ordered": true,
+      "items": [
+        "Store the actual API secrets in environment variables or, preferably, a secrets manager such as Azure Key Vault.",
+        "Define a dedicated `FLOW_API_KEY` in environment variables, used only for Directus Flow → Next.js communication.",
+        "Implement a server-side API endpoint in Next.js that validates the `FLOW_API_KEY`, performs input validation, executes only the specific operation it was designed for, reads the actual API credentials from the environment or Key Vault, and calls the external service.",
+        "Configure the Directus Flow to call the Next.js API and include the `FLOW_API_KEY` in the authorization header."
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Benefits",
+      "id": "benefits"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Real Secrets Never Enter Directus",
+      "id": "real-secrets-never-enter-directus"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The actual credentials — Google OAuth credentials, SendGrid API keys, SMTP passwords, and other third-party API keys — are never stored in:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Flow definitions",
+        "Revision history",
+        "Collection data",
+        "Database exports",
+        "Backups",
+        "Snapshots",
+        "Other application data that may be replicated across environments"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "This significantly reduces the likelihood of privileged credentials appearing in places they were never intended to."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Reduced Blast Radius",
+      "id": "reduced-blast-radius"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The exposed credential inside Directus is only:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "FLOW_API_KEY",
+      "language": "text"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "rather than a high-value third-party credential. If `FLOW_API_KEY` is compromised, an attacker can invoke only the specific functionality exposed by that endpoint. They still do not gain direct access to:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Google Analytics",
+        "SendGrid",
+        "SMTP servers",
+        "Other third-party systems"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Compromise of `FLOW_API_KEY` should only expose the narrow operations your Next.js endpoint implements — not the full power of the upstream provider credentials."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Easier Secret Rotation",
+      "id": "easier-secret-rotation"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "If the external API credentials need to be rotated:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Update Key Vault / .env",
+      "language": "text"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "No Flow changes are required. If `FLOW_API_KEY` is compromised:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Update Key Vault / .env\nUpdate Flow",
+      "language": "text"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "without affecting the actual third-party credentials."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Addressing the Counter-Argument",
+      "id": "addressing-the-counter-argument"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "An argument could be made that the Directus server can be highly secured through firewall restrictions, advanced authentication, and Directus permissions — and therefore storing secrets in Directus may present an acceptable risk. This is a reasonable argument."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "However, even in highly secured environments, secrets stored in application data often appear in unexpected places:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Revision records",
+        "Database dumps",
+        "Snapshots",
+        "Backups",
+        "Audit trails",
+        "Configuration exports"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "These copies may increase the number of locations where privileged credentials exist and the number of people who can potentially access them. The objective is not necessarily to protect against a Directus compromise, but to reduce the number of locations where sensitive credentials are stored, replicated, and exposed throughout the application's lifecycle."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Alternative: Store Secrets in Directus .env",
+      "id": "alternative-store-secrets-in-directus-env"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "If access to the Directus server is available, storing secrets in the Directus `.env` file is generally preferable to storing them directly in Flow definitions, operation configurations, or collections."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Good:**"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "GOOGLE_CLIENT_SECRET=...\nGOOGLE_REFRESH_TOKEN=...\nSENDGRID_API_KEY=...",
+      "language": "env"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Less preferred:**"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Flow configuration\nOperation configuration\nCollection records",
+      "language": "text"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Benefits",
+      "id": "directus-env-benefits"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Compared to storing secrets directly in Flows, storing them in the Directus `.env`:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Keeps secrets out of Flow definitions",
+        "Keeps secrets out of revision history",
+        "Keeps secrets out of collection data",
+        "Reduces the likelihood of secrets appearing in exports, snapshots, or database dumps",
+        "Prevents secrets from being visible through the Directus Admin UI",
+        "Allows secret rotation without modifying Flow definitions"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Typical Usage Pattern",
+      "id": "typical-usage-pattern"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Directus Flow\n      ↓\nCustom Extension / Custom Operation\n      ↓\nprocess.env.SECRET_NAME\n      ↓\nExternal API",
+      "language": "text"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "This allows Flows to trigger integrations without ever containing the actual secret."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Recommended Secret Storage Priority",
+      "id": "recommended-secret-storage-priority"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Best\n  Azure Key Vault / Secret Manager\n\nGood\n  Directus .env\n  Next.js .env\n\nLess Preferred\n  Directus Flow configuration\n  Directus Collections\n\nAvoid\n  Frontend code\n  NEXT_PUBLIC_* variables",
+      "language": "text"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "While Directus `.env` is generally preferable to storing secrets in Flows, it is still application-level secret storage. A dedicated secret manager remains the preferred option for production environments because it provides:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Secret versioning",
+        "Audit logging",
+        "Centralized rotation",
+        "Fine-grained access control"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Additional Improvements",
+      "id": "additional-improvements"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "1. Use Azure Key Vault Instead of .env",
+      "id": "use-azure-key-vault-instead-of-env"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Prefer Azure Key Vault over plain `.env` files when you can."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Centralized secret management",
+        "Secret versioning",
+        "Audit logs",
+        "Easier rotation",
+        "Reduced risk of accidental disclosure"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "2. Make Endpoints Extremely Narrow",
+      "id": "make-endpoints-extremely-narrow"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Avoid a generic proxy:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "POST /api/proxy",
+      "language": "text"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Prefer task-specific routes:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "POST /api/send-pdf\nPOST /api/sync-ga\nPOST /api/generate-report",
+      "language": "text"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Each endpoint should perform exactly one task. This significantly reduces the blast radius if `FLOW_API_KEY` is leaked."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "3. Implement Rate Limiting",
+      "id": "implement-rate-limiting"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Protect against abuse — for example `100 requests / minute`, or stricter depending on usage. Even if the key leaks, large-scale abuse becomes harder."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "4. Validate Inputs",
+      "id": "validate-inputs"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Never trust Flow payloads. Validate required fields, types, lengths, and allowed values before calling external services."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "5. Prevent Replay Attacks",
+      "id": "prevent-replay-attacks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Instead of only:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Authorization: Bearer FLOW_API_KEY",
+      "language": "http"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "consider:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Authorization: Bearer FLOW_API_KEY\nX-Timestamp: 2026-08-13T10:00:00Z",
+      "language": "http"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "and reject old requests. For higher-security environments, consider an HMAC signature:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Authorization: Bearer FLOW_API_KEY\nX-Timestamp\nX-Signature",
+      "language": "http"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "This helps prevent replay attacks and request tampering."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "6. Minimize Logging",
+      "id": "minimize-logging"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Never log authorization headers, API keys, OAuth tokens, refresh tokens, or secrets retrieved from Key Vault. Only log:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Flow executed\nRequest succeeded\nRequest failed",
+      "language": "text"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "7. Fail Closed",
+      "id": "fail-closed"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "If Key Vault is unavailable, authentication fails, or validation fails, return `400` / `401` / `403`. Do not implement fallback logic that bypasses security controls."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "8. Network Restrictions (Best Additional Layer)",
+      "id": "network-restrictions"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Even if `FLOW_API_KEY` is used, restrict access where possible."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Allow:**"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Directus server",
+        "Internal network",
+        "Approved IP ranges"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Deny:** everyone else. Possession of the key alone should not be sufficient to invoke the endpoint."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Final Principle",
+      "id": "final-principle"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The purpose of this pattern is not to eliminate secrets, but to ensure that high-value third-party credentials remain outside Directus and are replaced with a narrowly scoped integration credential whose compromise has a significantly smaller blast radius."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Where possible, prefer this order of secret storage:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "Azure Key Vault\n    ↓\nDirectus .env / Next.js .env\n    ↓\nFlow Configuration / Database",
+      "language": "text"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "The further a secret moves away from application data, revision history, exports, backups, snapshots, and administrative tooling, the lower the likelihood of accidental exposure."
+    }
+  ]
+}
