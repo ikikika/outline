@@ -153,6 +153,15 @@
       "content": "Examples below use `/speckit.*` as in the official docs. In Cursor, invoke the matching skill (e.g. `speckit-specify`) and pass the same argument text. Prompts are illustrative — adapt names and constraints to your project."
     },
     {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Tip: Generate a constitution prompt from ChatGPT",
+          "body": "Drop the following prompt into ChatGPT to generate a proper prompt for constitution.\n\n```text\nI am building a frontend application using react.\n\nHelp me create a GitHub Spec Kit /speckit.constitution prompt for this project.\n\nBefore writing it:\n- Review the latest GitHub Spec Kit documentation to understand the purpose of the /speckit.constitution command and what belongs in a project constitution.\n- Review the latest react documentation and accepted best practices for developing frontend applications with react.\n- Ask me questions to understand my project, coding standards, architecture preferences, testing strategy, UI technology, persistence layer, and team conventions.\n\nAfter you have enough information:\n- Create a complete /speckit.constitution prompt.\n- Include only long-term project rules that should apply to every feature.\n- Do not include feature-specific requirements.\n- Briefly explain why you included each rule.\n```"
+        }
+      ]
+    },
+    {
       "componentType": "Heading",
       "level": 3,
       "content": "1. Constitution"
