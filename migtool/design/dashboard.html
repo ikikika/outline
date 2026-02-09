@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Projects — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a class="active" href="dashboard.html">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 10.5 12 4l8 6.5V20H4V10.5Z" stroke="currentColor" stroke-width="1.8"/></svg>
+          Projects
+        </a>
+        <a href="settings.html">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 4v2M12 18v2M4 12h2M18 12h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Settings
+        </a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus target</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot">
+        <span class="avatar">MC</span>
+        <div>
+          Maya Chen
+          <small>Acme Studio</small>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Workspace / <strong>Projects</strong></div>
+        <a class="btn btn-primary" href="create-project.html">New project</a>
+      </header>
+
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Migration projects</h1>
+            <p>Each project is one source CMS export moving into a Directus instance. Resume mapping, or watch a run in progress.</p>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="card stat"><div class="k">Active projects</div><div class="v">6</div><div class="d">2 running now</div></div>
+          <div class="card stat"><div class="k">Records imported</div><div class="v">48.2k</div><div class="d">across 19 collections</div></div>
+          <div class="card stat"><div class="k">Open issues</div><div class="v">14</div><div class="d">3 blocking</div></div>
+          <div class="card stat"><div class="k">Connected Directus</div><div class="v">3</div><div class="d">prod · staging · lab</div></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input placeholder="Search projects, CMS, or collections" />
+          </div>
+          <button class="btn btn-ghost">All sources</button>
+          <button class="btn btn-ghost">All statuses</button>
+        </div>
+
+        <div class="grid grid-3">
+          <a class="card project" href="migration-status.html" style="--cms:#21759b">
+            <div class="project-top">
+              <span class="cms wordpress"><i></i> WordPress</span>
+              <span class="badge badge-run">Importing</span>
+            </div>
+            <div>
+              <h3>Acme Magazine rebuild</h3>
+              <div class="meta">posts, pages, authors → Directus staging</div>
+            </div>
+            <div class="progress warn"><span style="width:62%"></span></div>
+            <div class="project-foot meta">
+              <span>12,480 / 20,104 items</span>
+              <span>Updated 4m ago</span>
+            </div>
+          </a>
+
+          <a class="card project" href="mapping.html" style="--cms:#eb1c2d">
+            <div class="project-top">
+              <span class="cms sitecore"><i></i> Sitecore</span>
+              <span class="badge badge-map">Mapping</span>
+            </div>
+            <div>
+              <h3>Northwind brand sites</h3>
+              <div class="meta">templates + media library · 8 JSON dumps</div>
+            </div>
+            <div class="progress"><span style="width:40%"></span></div>
+            <div class="project-foot meta">
+              <span>18 models suggested</span>
+              <span>Maya · yesterday</span>
+            </div>
+          </a>
+
+          <a class="card project" href="preview.html" style="--cms:#0678be">
+            <div class="project-top">
+              <span class="cms drupal"><i></i> Drupal</span>
+              <span class="badge badge-ok">Ready to run</span>
+            </div>
+            <div>
+              <h3>City portal content</h3>
+              <div class="meta">nodes, taxonomy, files → Directus prod</div>
+            </div>
+            <div class="progress ok"><span style="width:100%"></span></div>
+            <div class="project-foot meta">
+              <span>Preview passed · 2 warnings</span>
+              <span>Luis · 2h ago</span>
+            </div>
+          </a>
+
+          <a class="card project" href="issues.html" style="--cms:#fe6a00">
+            <div class="project-top">
+              <span class="cms sitefinity"><i></i> Sitefinity</span>
+              <span class="badge badge-err">Needs review</span>
+            </div>
+            <div>
+              <h3>Healthcare microsites</h3>
+              <div class="meta">dynamic modules + related media</div>
+            </div>
+            <div class="progress err"><span style="width:78%"></span></div>
+            <div class="project-foot meta">
+              <span>9 failed rows</span>
+              <span>Paused</span>
+            </div>
+          </a>
+
+          <a class="card project" href="connect-directus.html" style="--cms:#21759b">
+            <div class="project-top">
+              <span class="cms wordpress"><i></i> WordPress</span>
+              <span class="badge badge-draft">Draft</span>
+            </div>
+            <div>
+              <h3>Help Center archive</h3>
+              <div class="meta">No Directus target yet</div>
+            </div>
+            <div class="progress"><span style="width:15%"></span></div>
+            <div class="project-foot meta">
+              <span>3 files uploaded</span>
+              <span>Created today</span>
+            </div>
+          </a>
+
+          <a class="card new-project" href="create-project.html">
+            <div>
+              <span class="badge badge-map">Start</span>
+              <strong>Create a project</strong>
+              <div class="meta">Name it, pick a CMS, upload JSON exports.</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

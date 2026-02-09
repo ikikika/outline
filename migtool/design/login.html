@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="auth">
+    <section class="auth-brand">
+      <div class="brand-mark">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        Migtool
+      </div>
+      <div class="auth-copy">
+        <h1>Bring any CMS into Directus.</h1>
+        <p>Sitecore, Sitefinity, WordPress, and Drupal exports become Directus collections — mapped, transformed, and imported with a visible audit trail.</p>
+        <div class="pipeline">
+          <div class="pipe-node"><i class="pipe-dot" style="background:#eb1c2d"></i> Sitecore</div>
+          <div class="pipe-node"><i class="pipe-dot" style="background:#fe6a00"></i> Sitefinity</div>
+          <div class="pipe-node"><i class="pipe-dot" style="background:#21759b"></i> WordPress</div>
+          <div class="pipe-node"><i class="pipe-dot" style="background:#0678be"></i> Drupal</div>
+          <span class="pipe-arrow">→</span>
+          <div class="pipe-node"><i class="pipe-dot" style="background:#7c63ff"></i> Directus</div>
+        </div>
+      </div>
+      <div class="auth-foot">Designed for content ops, not one-off scripts.</div>
+    </section>
+
+    <section class="auth-panel">
+      <form class="auth-card" action="dashboard.html">
+        <h2>Sign in</h2>
+        <p class="lede">Use your workspace email to open migration projects.</p>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" value="maya.chen@acme.studio" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" value="••••••••••" />
+        </div>
+        <div class="field-row">
+          <label class="check"><input type="checkbox" checked /> Stay signed in</label>
+          <a class="link" href="#">Forgot password</a>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Continue to workspace</button>
+        <div class="divider">or</div>
+        <a class="btn btn-ghost btn-block" href="dashboard.html">Sign in with SSO</a>
+        <p class="meta" style="margin-top:18px;text-align:center">No account yet? <a class="link" href="#">Request access</a></p>
+      </form>
+    </section>
+  </div>
+</body>
+</html>

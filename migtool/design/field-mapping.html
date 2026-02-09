@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Field mapping — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus target</a>
+        <a href="mapping.html">Data models</a>
+        <a class="active" href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / posts / <strong>Fields</strong></div>
+        <a class="btn btn-primary" href="preview.html">Preview transformed rows</a>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Field mapping · posts</h1>
+            <p>JSON keys on the left become Directus fields on the right. Type conversions and relations are applied during transform.</p>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-col">
+            <div class="meta">Source · wp-posts.json</div>
+            <div class="field-item"><b>ID</b><div class="t">number</div></div>
+            <div class="field-item"><b>post_title</b><div class="t">string</div></div>
+            <div class="field-item"><b>post_content</b><div class="t">html</div></div>
+            <div class="field-item"><b>post_status</b><div class="t">string · publish|draft</div></div>
+            <div class="field-item"><b>post_date_gmt</b><div class="t">datetime</div></div>
+            <div class="field-item"><b>post_author</b><div class="t">number → users.ID</div></div>
+            <div class="field-item"><b>featured_media</b><div class="t">number → media</div></div>
+          </div>
+          <div class="bridge">→</div>
+          <div class="field-col">
+            <div class="meta">Directus · posts</div>
+            <div class="field-item"><b>legacy_id</b><div class="t">integer · unique</div></div>
+            <div class="field-item"><b>title</b><div class="t">string</div></div>
+            <div class="field-item"><b>body</b><div class="t">wysiwyg</div></div>
+            <div class="field-item"><b>status</b><div class="t">dropdown · published|draft</div></div>
+            <div class="field-item"><b>published_at</b><div class="t">timestamp</div></div>
+            <div class="field-item"><b>author_id</b><div class="t">m2o authors</div></div>
+            <div class="field-item"><b>cover</b><div class="t">file image</div></div>
+          </div>
+        </div>
+
+        <div class="notice notice-info" style="margin-top:18px">Unmapped source key <span class="mono">guid</span> will be stored on <span class="mono">posts.wp_guid</span> unless you skip it. Pingbacks are ignored by default.</div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

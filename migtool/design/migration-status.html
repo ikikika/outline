@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Migration status — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus target</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a class="active" href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Run #14</strong></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost">Pause</button>
+          <a class="btn btn-danger" href="issues.html">View 3 failures</a>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Migration status</h1>
+            <p>Schema first, then transform, then collection import. Media files run in parallel after collections exist.</p>
+          </div>
+          <div class="badge badge-run">Running · 62%</div>
+        </div>
+
+        <div class="pipeline-bar">
+          <article class="card pipe-card">
+            <div class="phase">Phase 1</div>
+            <h3>Data model creation</h3>
+            <div class="progress ok"><span style="width:100%"></span></div>
+            <div class="meta" style="margin-top:8px">6 collections · 41 fields · 4 relations</div>
+          </article>
+          <article class="card pipe-card">
+            <div class="phase">Phase 2</div>
+            <h3>Transform to Directus</h3>
+            <div class="progress ok"><span style="width:100%"></span></div>
+            <div class="meta" style="margin-top:8px">20,104 records rewritten</div>
+          </article>
+          <article class="card pipe-card">
+            <div class="phase">Phase 3</div>
+            <h3>Collection import</h3>
+            <div class="progress warn"><span style="width:62%"></span></div>
+            <div class="meta" style="margin-top:8px">12,480 / 20,104 items</div>
+          </article>
+          <article class="card pipe-card">
+            <div class="phase">Phase 4</div>
+            <h3>Media & files</h3>
+            <div class="progress"><span style="width:18%"></span></div>
+            <div class="meta" style="margin-top:8px">Waiting on posts.cover</div>
+          </article>
+        </div>
+
+        <div class="grid grid-2">
+          <section class="card card-pad">
+            <h3 style="margin:0 0 8px">Collections</h3>
+            <div class="coll-row">
+              <div><b>authors</b><div class="meta">from wp-users.json</div></div>
+              <div><span class="badge badge-ok">Imported</span></div>
+              <div class="progress ok"><span style="width:100%"></span></div>
+              <div class="mono">86 / 86</div>
+            </div>
+            <div class="coll-row">
+              <div><b>categories</b><div class="meta">from wp-terms.json</div></div>
+              <div><span class="badge badge-ok">Imported</span></div>
+              <div class="progress ok"><span style="width:100%"></span></div>
+              <div class="mono">214 / 214</div>
+            </div>
+            <div class="coll-row">
+              <div><b>posts</b><div class="meta">body HTML + author m2o</div></div>
+              <div><span class="badge badge-run">Importing</span></div>
+              <div class="progress warn"><span style="width:54%"></span></div>
+              <div class="mono">1,840 / 3,402</div>
+            </div>
+            <div class="coll-row">
+              <div><b>pages</b><div class="meta">parent tree</div></div>
+              <div><span class="badge badge-draft">Queued</span></div>
+              <div class="progress"><span style="width:0%"></span></div>
+              <div class="mono">0 / 64</div>
+            </div>
+            <div class="coll-row">
+              <div><b>issues</b><div class="meta">custom post type</div></div>
+              <div><span class="badge badge-err">3 failed</span></div>
+              <div class="progress err"><span style="width:71%"></span></div>
+              <div class="mono">464 / 654</div>
+            </div>
+          </section>
+
+          <section>
+            <div class="log">
+              <div class="ok">10:41:02  schema  created collection posts (18 fields)</div>
+              <div class="ok">10:41:04  schema  relation posts.author_id → authors.id</div>
+              <div class="info">10:41:11  transform  posts: html → wysiwyg, dates → ISO-8601</div>
+              <div class="ok">10:42:18  import  authors 86/86</div>
+              <div class="warn">10:44:03  import  issues id=902 missing cover file hash</div>
+              <div class="err">10:44:03  import  issues id=918 invalid datetime on_sale_date</div>
+              <div class="info">10:46:22  import  posts batch 37 (50 items) 1.8s</div>
+              <div class="info">10:46:24  media   queued 112 assets after posts.cover</div>
+            </div>
+            <p class="meta" style="margin:10px 0 0">Target: <span class="mono">https://cms-staging.acme.studio</span> · token scoped to Admin</p>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

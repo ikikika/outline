@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Migtool screen designs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="gallery">
+    <div class="brand-mark" style="margin-bottom:18px">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      Migtool
+    </div>
+    <h1>CMS → Directus screens</h1>
+    <p class="lede" style="color:var(--muted);max-width:62ch;margin:0 0 32px">
+      Static HTML mockups for the migration tool. Core flow is login → projects → create → map models → run.
+      Extra screens cover the Directus target, field mapping, preview, and failed rows.
+    </p>
+
+    <h2 style="letter-spacing:-0.03em">Requested</h2>
+    <div class="grid grid-3" style="margin-bottom:36px">
+      <a class="card screen-card" href="login.html">
+        <div class="thumb">01</div>
+        <div class="body">
+          <div class="tag">Auth</div>
+          <h3>Login</h3>
+          <p class="meta">Workspace sign-in with source CMS → Directus story on the left.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="dashboard.html">
+        <div class="thumb">02</div>
+        <div class="body">
+          <div class="tag">Home</div>
+          <h3>Projects dashboard</h3>
+          <p class="meta">Existing migrations with CMS badges, status, and progress.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="create-project.html">
+        <div class="thumb">03</div>
+        <div class="body">
+          <div class="tag">Setup</div>
+          <h3>Create project</h3>
+          <p class="meta">Name, Sitecore / Sitefinity / WordPress / Drupal, file upload.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="mapping.html">
+        <div class="thumb">04</div>
+        <div class="body">
+          <div class="tag">Shape</div>
+          <h3>Map JSON → models</h3>
+          <p class="meta">Detected groups, sample JSON, recommended Directus collections.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="migration-status.html">
+        <div class="thumb">05</div>
+        <div class="body">
+          <div class="tag">Run</div>
+          <h3>Migration status</h3>
+          <p class="meta">Schema, transform, collection import, media — plus a live log.</p>
+        </div>
+      </a>
+    </div>
+
+    <h2 style="letter-spacing:-0.03em">Also recommended</h2>
+    <div class="grid grid-3">
+      <a class="card screen-card" href="connect-directus.html">
+        <div class="thumb">06</div>
+        <div class="body">
+          <div class="tag">Target</div>
+          <h3>Connect Directus</h3>
+          <p class="meta">URL, token, environment, and a connection check before mapping.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="field-mapping.html">
+        <div class="thumb">07</div>
+        <div class="body">
+          <div class="tag">Detail</div>
+          <h3>Field mapping</h3>
+          <p class="meta">Source keys to Directus fields, types, and relations.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="preview.html">
+        <div class="thumb">08</div>
+        <div class="body">
+          <div class="tag">QA</div>
+          <h3>Preview & validate</h3>
+          <p class="meta">Sample transformed rows before anything is written.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="issues.html">
+        <div class="thumb">09</div>
+        <div class="body">
+          <div class="tag">Repair</div>
+          <h3>Issues & conflicts</h3>
+          <p class="meta">Failed rows, missing media, unmapped keys — skip or fix.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="settings.html">
+        <div class="thumb">10</div>
+        <div class="body">
+          <div class="tag">Admin</div>
+          <h3>Project settings</h3>
+          <p class="meta">ID strategy, locale, archive / delete without touching Directus.</p>
+        </div>
+      </a>
+    </div>
+
+    <footer class="note">
+      Suggested path: Login → Dashboard → Create project → Connect Directus → Map models → Field mapping → Preview → Migrate → Issues.
+      Open any HTML file in a browser; screens link to each other through the sidebar.
+    </footer>
+  </div>
+</body>
+</html>

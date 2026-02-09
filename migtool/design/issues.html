@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Issues — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus target</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="migration-status.html">Migrate</a>
+        <a class="active" href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Issues</strong></div>
+        <button class="btn btn-ghost">Retry failed rows</button>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Issues & conflicts</h1>
+            <p>Failed imports, type mismatches, and unmapped keys. Resolve, skip, or send back to field mapping.</p>
+          </div>
+        </div>
+
+        <section class="card card-pad">
+          <article class="issue">
+            <div class="sev" style="background:var(--rose)"></div>
+            <div class="grow">
+              <b>issues · legacy_id 918</b>
+              <div class="meta">on_sale_date could not parse “Q3 2019”. Blocking collection import.</div>
+            </div>
+            <button class="btn btn-sm btn-ghost">Edit value</button>
+            <button class="btn btn-sm btn-danger">Skip row</button>
+          </article>
+          <article class="issue">
+            <div class="sev" style="background:var(--amber)"></div>
+            <div class="grow">
+              <b>posts · featured_media 441</b>
+              <div class="meta">File hash missing from wp-media-manifest.json. Cover will be empty.</div>
+            </div>
+            <button class="btn btn-sm btn-ghost">Ignore</button>
+          </article>
+          <article class="issue">
+            <div class="sev" style="background:var(--violet)"></div>
+            <div class="grow">
+              <b>Unmapped key guid</b>
+              <div class="meta">Present on 3,402 posts. Default: store as posts.wp_guid.</div>
+            </div>
+            <a class="btn btn-sm btn-primary" href="field-mapping.html">Map field</a>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

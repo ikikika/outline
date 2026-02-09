@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connect Directus — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a class="active" href="connect-directus.html">Directus target</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Directus target</strong></div>
+        <a class="btn btn-primary" href="mapping.html">Continue to mapping</a>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Connect Directus</h1>
+            <p>Schema creation and imports run against this instance. Use staging until a dry-run preview is clean.</p>
+          </div>
+        </div>
+
+        <div class="connect-hero">
+          <section class="card card-pad">
+            <div class="field">
+              <label for="url">Directus URL</label>
+              <input id="url" value="https://cms-staging.acme.studio" />
+            </div>
+            <div class="field">
+              <label for="token">Static token</label>
+              <input id="token" type="password" value="du_live_••••••••••••" />
+            </div>
+            <div class="grid grid-2">
+              <div class="field">
+                <label for="env">Environment</label>
+                <select id="env">
+                  <option>Staging</option>
+                  <option>Production</option>
+                  <option>Local</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="mode">Write mode</label>
+                <select id="mode">
+                  <option>Create missing collections</option>
+                  <option>Use existing collections only</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-teal" type="button">Test connection</button>
+              <button class="btn btn-ghost" type="button">Save target</button>
+            </div>
+          </section>
+
+          <aside class="card card-pad">
+            <div class="meta">Connection</div>
+            <h3 style="margin:6px 0 12px"><span class="status-dot"></span> Reachable · Directus 11.4</h3>
+            <div class="meta">Project: Acme Staging</div>
+            <div class="meta">Role: Administrator</div>
+            <div class="meta">Existing collections: 11</div>
+            <div class="notice notice-info" style="margin-top:16px">No naming collisions with recommended models <span class="mono">posts</span>, <span class="mono">pages</span>, <span class="mono">authors</span>.</div>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

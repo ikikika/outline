@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Map data models — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus target</a>
+        <a class="active" href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Data models</strong></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost">Accept all recommendations</button>
+          <a class="btn btn-primary" href="field-mapping.html">Map fields</a>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Map JSON into Directus collections</h1>
+            <p>Migtool grouped records by shape and suggested collections. Confirm or retarget each group before field-level mapping.</p>
+          </div>
+        </div>
+
+        <div class="split">
+          <aside class="card card-pad file-nav">
+            <div class="nav-label" style="padding-left:0">Uploaded files</div>
+            <div class="item active" data-file="wp-posts.json">
+              <b>wp-posts.json</b>
+              <span class="meta">4,120 records · 3 shapes</span>
+            </div>
+            <div class="item" data-file="wp-users.json">
+              <b>wp-users.json</b>
+              <span class="meta">86 records · 1 shape</span>
+            </div>
+            <div class="item" data-file="wp-terms.json">
+              <b>wp-terms.json</b>
+              <span class="meta">214 records · 2 shapes</span>
+            </div>
+            <div class="item" data-file="wp-media-manifest.json">
+              <b>wp-media-manifest.json</b>
+              <span class="meta">2,041 files</span>
+            </div>
+          </aside>
+
+          <section class="card card-pad">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div>
+                <div class="meta">Source file</div>
+                <strong data-file-title>wp-posts.json</strong>
+              </div>
+              <span class="badge badge-map">WordPress post_type split</span>
+            </div>
+
+            <table class="map-table">
+              <thead>
+                <tr>
+                  <th>Detected group</th>
+                  <th>Sample</th>
+                  <th>Recommended collection</th>
+                  <th>Confidence</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <b>Posts</b>
+                    <div class="meta">post_type = post · 3,402 records</div>
+                  </td>
+                  <td>
+                    <pre class="json-preview" style="max-width:260px;max-height:140px;margin:0">{
+  <span class="k">"ID"</span>: <span class="n">1842</span>,
+  <span class="k">"post_title"</span>: <span class="s">"Autumn issue"</span>,
+  <span class="k">"post_content"</span>: <span class="s">"&lt;p&gt;…"</span>,
+  <span class="k">"post_status"</span>: <span class="s">"publish"</span>
+}</pre>
+                  </td>
+                  <td>
+                    <span class="model-chip">posts</span>
+                    <div class="meta" style="margin-top:6px">string, wysiwyg, datetime, m2o authors</div>
+                  </td>
+                  <td>
+                    <div class="conf"><span style="width:97%"></span></div>
+                    <div class="meta">97%</div>
+                  </td>
+                  <td><a class="btn btn-sm btn-primary" href="field-mapping.html">Map fields</a></td>
+                </tr>
+                <tr>
+                  <td>
+                    <b>Pages</b>
+                    <div class="meta">post_type = page · 64 records</div>
+                  </td>
+                  <td class="mono meta">title, content, parent, menu_order</td>
+                  <td>
+                    <span class="model-chip">pages</span>
+                    <div class="meta" style="margin-top:6px">tree via parent_id</div>
+                  </td>
+                  <td>
+                    <div class="conf"><span style="width:94%"></span></div>
+                    <div class="meta">94%</div>
+                  </td>
+                  <td><button class="btn btn-sm btn-ghost">Change</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <b>Issues (CPT)</b>
+                    <div class="meta">post_type = issue · 654 records</div>
+                  </td>
+                  <td class="mono meta">cover, volume, on_sale_date</td>
+                  <td>
+                    <span class="model-chip">issues</span>
+                    <div class="meta" style="margin-top:6px">new collection</div>
+                  </td>
+                  <td>
+                    <div class="conf"><span style="width:88%"></span></div>
+                    <div class="meta">88%</div>
+                  </td>
+                  <td><button class="btn btn-sm btn-ghost">Skip</button></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="notice notice-ok" style="margin-top:16px">3 collections will be created in Directus staging. Authors from wp-users.json are recommended as <span class="model-chip">authors</span>, not <span class="mono">directus_users</span>.</div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

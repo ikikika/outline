@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create project — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a class="active" href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus target</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot">
+        <span class="avatar">MC</span>
+        <div>Maya Chen<small>Acme Studio</small></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Projects / <strong>New project</strong></div>
+        <div style="display:flex;gap:8px">
+          <a class="btn btn-ghost" href="dashboard.html">Cancel</a>
+          <a class="btn btn-primary" href="connect-directus.html">Save & connect Directus</a>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Create project</h1>
+            <p>Give the migration a name, choose the source CMS, and upload the JSON (or ZIP) export. Migtool will inspect structure before recommending Directus collections.</p>
+          </div>
+        </div>
+
+        <div class="steps">
+          <div class="step on"><span class="n">1</span><div><small>Source</small><b>Name & files</b></div></div>
+          <div class="step"><span class="n">2</span><div><small>Target</small><b>Directus</b></div></div>
+          <div class="step"><span class="n">3</span><div><small>Shape</small><b>Map models</b></div></div>
+          <div class="step"><span class="n">4</span><div><small>Run</small><b>Import</b></div></div>
+        </div>
+
+        <div class="grid grid-2">
+          <section class="card card-pad">
+            <div class="field">
+              <label for="name">Project name</label>
+              <input id="name" value="Acme Magazine rebuild" />
+            </div>
+            <div class="field">
+              <label for="desc">Internal note</label>
+              <textarea id="desc" rows="3">WP export from magazine.acme.com. Keep authors as a separate collection, not Directus users.</textarea>
+            </div>
+            <div class="field">
+              <label>Source CMS</label>
+              <div class="cms-pick">
+                <button type="button" class="cms-opt" data-cms>
+                  <div class="logo-box" style="background:#eb1c2d">SC</div>
+                  <b>Sitecore</b>
+                  <div class="meta">Items + templates JSON</div>
+                </button>
+                <button type="button" class="cms-opt" data-cms>
+                  <div class="logo-box" style="background:#fe6a00">SF</div>
+                  <b>Sitefinity</b>
+                  <div class="meta">Dynamic modules</div>
+                </button>
+                <button type="button" class="cms-opt selected" data-cms>
+                  <div class="logo-box" style="background:#21759b">WP</div>
+                  <b>WordPress</b>
+                  <div class="meta">REST / WXR → JSON</div>
+                </button>
+                <button type="button" class="cms-opt" data-cms>
+                  <div class="logo-box" style="background:#0678be">D</div>
+                  <b>Drupal</b>
+                  <div class="meta">JSON:API or migrate</div>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card card-pad">
+            <label style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)">Source files</label>
+            <p class="meta" style="margin:6px 0 14px">Drop JSON, NDJSON, or a ZIP of exports. Typical packs include content, users, taxonomy, and a media manifest.</p>
+            <div class="dropzone" data-dropzone>
+              <strong>Drop files here</strong>
+              <div class="meta">or click to browse · JSON, ZIP, up to 2 GB</div>
+            </div>
+            <div class="file-list">
+              <div class="file-row">
+                <div class="file-icon">JSON</div>
+                <div class="grow"><b>wp-posts.json</b><span>4,120 records · 18.4 MB</span></div>
+                <span class="badge badge-ok">Parsed</span>
+              </div>
+              <div class="file-row">
+                <div class="file-icon">JSON</div>
+                <div class="grow"><b>wp-users.json</b><span>86 records · 220 KB</span></div>
+                <span class="badge badge-ok">Parsed</span>
+              </div>
+              <div class="file-row">
+                <div class="file-icon">JSON</div>
+                <div class="grow"><b>wp-media-manifest.json</b><span>2,041 files referenced · 1.1 MB</span></div>
+                <span class="badge badge-map">Scanning</span>
+              </div>
+            </div>
+            <div class="notice notice-info" style="margin-top:14px">Detected WordPress-like keys: <span class="mono">post_type</span>, <span class="mono">guid</span>, <span class="mono">post_content</span>. Recommendations will be ready after Directus is connected.</div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Preview — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus target</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a class="active" href="preview.html">Preview</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Preview</strong></div>
+        <a class="btn btn-primary" href="migration-status.html">Start migration</a>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Validate before import</h1>
+            <p>Sample of transformed Directus rows. Fix mapping issues here so schema creation does not bake in the wrong types.</p>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="card stat"><div class="k">Rows ready</div><div class="v">20,091</div></div>
+          <div class="card stat"><div class="k">Warnings</div><div class="v">11</div></div>
+          <div class="card stat"><div class="k">Blocking</div><div class="v">2</div></div>
+          <div class="card stat"><div class="k">Collections</div><div class="v">6</div></div>
+        </div>
+
+        <div class="tabs" data-tabs>
+          <button class="tab on" data-tab="posts">posts</button>
+          <button class="tab" data-tab="pages">pages</button>
+          <button class="tab" data-tab="authors">authors</button>
+        </div>
+
+        <section class="card card-pad" data-tab-panel="posts">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>legacy_id</th>
+                <th>title</th>
+                <th>status</th>
+                <th>author_id</th>
+                <th>published_at</th>
+                <th>cover</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">1842</td>
+                <td>Autumn issue editor’s letter</td>
+                <td><span class="badge badge-ok">published</span></td>
+                <td class="mono">authors/12</td>
+                <td class="mono">2024-09-12T08:00:00Z</td>
+                <td class="mono">file:hash:9aa1</td>
+              </tr>
+              <tr>
+                <td class="mono">1843</td>
+                <td>How we print on recycled stock</td>
+                <td><span class="badge badge-ok">published</span></td>
+                <td class="mono">authors/4</td>
+                <td class="mono">2024-09-14T11:30:00Z</td>
+                <td class="meta">missing file</td>
+              </tr>
+              <tr>
+                <td class="mono">1901</td>
+                <td>(no title)</td>
+                <td><span class="badge badge-err">draft</span></td>
+                <td class="meta">unresolved WP user 0</td>
+                <td class="mono">invalid</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <section class="card card-pad" data-tab-panel="pages" hidden>
+          <p class="meta">64 pages. Parent cycles detected: none. 2 pages with empty slugs will use legacy_id.</p>
+        </section>
+        <section class="card card-pad" data-tab-panel="authors" hidden>
+          <p class="meta">86 authors. Emails unique. 3 gravatar URLs will be imported as Directus files.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>
