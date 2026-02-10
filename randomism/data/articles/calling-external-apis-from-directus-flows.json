@@ -95,7 +95,7 @@
     },
     {
       "componentType": "Paragraph",
-      "content": "The actual credentials — Google OAuth credentials, SendGrid API keys, SMTP passwords, and other third-party API keys — are never stored in:"
+      "content": "The actual API secret keys are never stored in:"
     },
     {
       "componentType": "List",
@@ -131,17 +131,7 @@
     },
     {
       "componentType": "Paragraph",
-      "content": "rather than a high-value third-party credential. If `FLOW_API_KEY` is compromised, an attacker can invoke only the specific functionality exposed by that endpoint. They still do not gain direct access to:"
-    },
-    {
-      "componentType": "List",
-      "ordered": false,
-      "items": [
-        "Google Analytics",
-        "SendGrid",
-        "SMTP servers",
-        "Other third-party systems"
-      ]
+      "content": "rather than a high-value third-party credential. If `FLOW_API_KEY` is compromised, an attacker can invoke only the specific functionality exposed by that endpoint. They still do not gain direct access to the other 3rd party systms"
     },
     {
       "componentType": "Callout",
