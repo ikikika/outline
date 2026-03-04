@@ -1,0 +1,528 @@
+{
+  "published": true,
+  "publishDate": "2026-09-12",
+  "title": "Big O Notation for Beginners",
+  "description": "What Big O means, the common complexity classes, and a practical method for reading JavaScript and naming its time and space complexity.",
+  "tags": [
+    "algorithms",
+    "javascript",
+    "dsa"
+  ],
+  "blocks": [
+    {
+      "componentType": "Paragraph",
+      "content": "Big O notation is one of the **most important concepts in Data Structures & Algorithms (DSA) tests**.\n\nIt tells you **how the amount of work an algorithm does grows as the input size `n` grows**."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Think of it as:"
+    },
+    {
+      "componentType": "Blockquote",
+      "text": "If my input becomes 10× bigger, how much more work will my algorithm have to do?"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "Big O is about **growth rate**, not exact milliseconds. Two algorithms can both be O(n) and still differ in real-world speed — but the O tells you how they scale when `n` gets large."
+    },
+    {
+      "componentType": "TableOfContents",
+      "items": [
+        {
+          "label": "The common Big O types",
+          "href": "the-common-big-o-types"
+        },
+        {
+          "label": "How do you determine Big O?",
+          "href": "how-do-you-determine-big-o"
+        },
+        {
+          "label": "Look at the loops",
+          "href": "look-at-the-loops"
+        },
+        {
+          "label": "Nested loops → O(n²)",
+          "href": "nested-loops"
+        },
+        {
+          "label": "Three nested loops → O(n³)",
+          "href": "three-nested-loops"
+        },
+        {
+          "label": "Mixed sequential and nested loops",
+          "href": "mixed-loops"
+        },
+        {
+          "label": "Constants don't matter",
+          "href": "constants-dont-matter"
+        },
+        {
+          "label": "Recognising O(log n)",
+          "href": "recognising-o-log-n"
+        },
+        {
+          "label": "A useful shortcut",
+          "href": "a-useful-shortcut"
+        },
+        {
+          "label": "Trap: fixed inner loops",
+          "href": "trap-fixed-inner-loops"
+        },
+        {
+          "label": "Trap: triangular nested loops",
+          "href": "trap-triangular-nested-loops"
+        },
+        {
+          "label": "Data structure operations",
+          "href": "data-structure-operations"
+        },
+        {
+          "label": "Time vs space Big O",
+          "href": "time-vs-space"
+        },
+        {
+          "label": "The Big O test-taking method",
+          "href": "test-taking-method"
+        },
+        {
+          "label": "The key thing to learn",
+          "href": "the-key-thing-to-learn"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "1. The common Big O types",
+      "id": "the-common-big-o-types"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "You'll encounter these constantly in coding interviews and tests:\n\n| Big O | Name | Example |\n| --- | --- | --- |\n| **O(1)** | Constant | Access an array element |\n| **O(log n)** | Logarithmic | Binary search |\n| **O(n)** | Linear | Loop through an array |\n| **O(n log n)** | Linearithmic | Merge sort |\n| **O(n²)** | Quadratic | Nested loops |\n| **O(2ⁿ)** | Exponential | Some recursive problems |\n| **O(n!)** | Factorial | Permutations |\n\nGenerally:\n\n**O(1) → O(log n) → O(n) → O(n log n) → O(n²) → O(2ⁿ) → O(n!)**\n\nThe further right you go, the worse the algorithm scales."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "2. How do you determine Big O?",
+      "id": "how-do-you-determine-big-o"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The easiest approach starts with one question."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Step 1 — Identify what `n` represents"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Usually:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "n = number of elements in the input"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "For example:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "const arr = [1, 2, 3, 4, 5];"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Here:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "n = 5"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "If the array has 1,000 elements:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "n = 1000"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "3. Look at the loops",
+      "id": "look-at-the-loops"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "This is probably the **most important skill for DSA tests**."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "One loop → O(n)"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  console.log(i);\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The loop executes approximately `n` times.\n\nTherefore: **O(n)**"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Two separate loops → O(n)"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  console.log(i);\n}\n\nfor (let i = 0; i < n; i++) {\n  console.log(i);\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "First loop: `n`\n\nSecond loop: `n`\n\nTotal: `n + n = 2n`\n\nWe drop constants: `O(2n) → O(n)`\n\nSo the answer is **O(n)**."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "4. Nested loops → O(n²)",
+      "id": "nested-loops"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  for (let j = 0; j < n; j++) {\n    console.log(i, j);\n  }\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The outer loop runs `n` times.\n\nFor every iteration of the outer loop, the inner loop runs `n` times.\n\nTherefore: `n × n = n²`\n\nSo: **O(n²)**\n\nThis is an extremely common interview question."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "5. Three nested loops → O(n³)",
+      "id": "three-nested-loops"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  for (let j = 0; j < n; j++) {\n    for (let k = 0; k < n; k++) {\n      console.log(i, j, k);\n    }\n  }\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "That's `n × n × n`.\n\nTherefore: **O(n³)**"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "6. What about this?",
+      "id": "mixed-loops"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  console.log(i);\n}\n\nfor (let i = 0; i < n; i++) {\n  for (let j = 0; j < n; j++) {\n    console.log(i, j);\n  }\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "First part: **O(n)**\n\nSecond part: **O(n²)**\n\nTogether: `O(n + n²)`\n\nWe keep only the **dominant term**: **O(n²)**"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "**Rule:** Drop everything except the fastest-growing term."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "7. Constants don't matter",
+      "id": "constants-dont-matter"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  // ...\n}\n\nfor (let i = 0; i < n; i++) {\n  // ...\n}\n\nfor (let i = 0; i < n; i++) {\n  // ...\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Technically that's `3n`, but Big O is still **O(n)**. We don't care about the `3`.\n\nSimilarly, `O(100n)` is still **O(n)**."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "8. Recognising O(log n)",
+      "id": "recognising-o-log-n"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "This is another very important pattern. Look at:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "let i = n;\n\nwhile (i > 1) {\n  i = i / 2;\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Suppose `n = 16`.\n\nIterations:\n\n```text\n16\n8\n4\n2\n1\n```\n\nOnly 4 iterations.\n\nFor `n = 1,000,000`, it's only around 20 iterations.\n\nThat's because we're **cutting the problem in half each time**.\n\nTherefore: **O(log n)**\n\nBinary search is the classic example."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "9. A very useful shortcut",
+      "id": "a-useful-shortcut"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "When looking at code, ask: **\"How does the loop variable change?\""
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "`i++`"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++)"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Usually: **O(n)**"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "`i *= 2`"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 1; i < n; i *= 2)"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Usually: **O(log n)**"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Nested `i++`"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (...) {\n  for (...) {\n  }\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Usually: **O(n²)**"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Recursive branching"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "function foo(n) {\n  if (n <= 1) return;\n\n  foo(n - 1);\n  foo(n - 1);\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Usually: **O(2ⁿ)**"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "10. An important trap: loops don't always mean O(n)",
+      "id": "trap-fixed-inner-loops"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  for (let j = 0; j < 10; j++) {\n    console.log(i, j);\n  }\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "You might think **O(n²)**.\n\nBut the inner loop always runs **10 times**, regardless of `n`.\n\nTherefore: `10 × n = O(n)`\n\nSo this is **O(n)**."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "warning",
+      "body": "Only count loops whose bound depends on `n`. A fixed `10` (or any constant) does not change the Big O class."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "11. Another important trap",
+      "id": "trap-triangular-nested-loops"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "for (let i = 0; i < n; i++) {\n  for (let j = i; j < n; j++) {\n    console.log(i, j);\n  }\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "The inner loop isn't always `n` iterations.\n\nIt runs approximately:\n\n`n + (n-1) + (n-2) + ... + 1`\n\nwhich equals approximately `n² / 2`.\n\nDrop the constant: **O(n²)**"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "12. Big O isn't just about loops",
+      "id": "data-structure-operations"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "You also need to understand the complexity of **data structure operations**."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Array"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "`arr[index]` is usually **O(1)**.\n\nBut `arr.includes(value)` may check every element: **O(n)**.\n\nAnd `arr.unshift(value)` can require shifting existing elements: **O(n)**."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Hash Map"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "`map.get(key)` — average **O(1)**\n\n`map.set(key, value)` — average **O(1)**\n\nThis is why hash maps are extremely important in DSA."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Binary Search Tree"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "A balanced BST lookup is typically **O(log n)**.\n\nBut an unbalanced tree can degrade to **O(n)**."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "13. Time vs Space Big O",
+      "id": "time-vs-space"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "You'll eventually see two different questions:\n\n> What is the **time complexity**?\n\n> What is the **space complexity**?"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "function doubleArray(arr) {\n  const result = [];\n\n  for (const value of arr) {\n    result.push(value * 2);\n  }\n\n  return result;\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Time:** O(n) — we process every element.\n\n**Space:** O(n) — `result` grows with the input.\n\nSo you'd answer:\n\n```text\nTime:  O(n)\nSpace: O(n)\n```"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "14. The Big O test-taking method",
+      "id": "test-taking-method"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "When you get a DSA question, use this mental checklist:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "1. What is n?\n       ↓\n2. How many times does the code execute?\n       ↓\n3. Are loops sequential or nested?\n       ↓\n4. Does anything divide the problem?\n       ↓\n5. Is there recursion?\n       ↓\n6. What is the dominant term?\n       ↓\n7. Drop constants\n       ↓\n8. Answer Big O"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "For example:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "javascript",
+      "code": "function findDuplicates(arr) {\n  for (let i = 0; i < arr.length; i++) {\n    for (let j = i + 1; j < arr.length; j++) {\n      if (arr[i] === arr[j]) {\n        return true;\n      }\n    }\n  }\n\n  return false;\n}"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Think:\n\n```text\nn = arr.length\n\nouter loop → n\ninner loop → roughly n\n\nn × n\n\n→ O(n²)\n```\n\nTherefore: **Time = O(n²)**\n\nAnd because it doesn't create another data structure proportional to `n`: **Space = O(1)**"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "The key thing to learn",
+      "id": "the-key-thing-to-learn"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Don't try to memorize hundreds of Big O answers.\n\nInstead, learn to **look at code and count how the work scales with `n`**.\n\nA solid progression for DSA would be:"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "text",
+      "code": "O(1)\n ↓\nO(n)\n ↓\nO(n²)\n ↓\nO(log n)\n ↓\nO(n log n)\n ↓\nRecursion\n ↓\nSpace complexity\n ↓\nData structure operation complexities"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Once you can look at a piece of JavaScript and immediately say **\"one loop = O(n), nested loops = O(n²), halving = O(log n)\"**, you're ready to tackle a large chunk of the Big O questions that appear in DSA tests."
+    }
+  ]
+}
