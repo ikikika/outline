@@ -17,8 +17,8 @@
     </div>
     <h1>CMS → Directus screens</h1>
     <p class="lede" style="color:var(--muted);max-width:62ch;margin:0 0 32px">
-      Static HTML mockups for the migration tool. Core flow is login → projects → create → map models → run.
-      Extra screens cover the Directus target, field mapping, preview, and failed rows.
+      Static HTML mockups. Flow: login → projects → source → Directus targets → map → preview → assets → collections → migrate data.
+      Setup is per named Directus instance; data runs are hard-gated until assets and collections are done on that target.
     </p>
 
     <h2 style="letter-spacing:-0.03em">Requested</h2>
@@ -59,8 +59,8 @@
         <div class="thumb">05</div>
         <div class="body">
           <div class="tag">Run</div>
-          <h3>Migration status</h3>
-          <p class="meta">Schema, transform, collection import, media — plus a live log.</p>
+          <h3>Migrate data</h3>
+          <p class="meta">Per-target checklist, hard gate, write mode, collection progress.</p>
         </div>
       </a>
     </div>
@@ -71,12 +71,28 @@
         <div class="thumb">06</div>
         <div class="body">
           <div class="tag">Target</div>
-          <h3>Connect Directus</h3>
-          <p class="meta">URL, token, environment, and a connection check before mapping.</p>
+          <h3>Directus targets</h3>
+          <p class="meta">Named instances (staging / prod) with separate status each.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="assets.html">
+        <div class="thumb">07</div>
+        <div class="body">
+          <div class="tag">Setup</div>
+          <h3>Assets</h3>
+          <p class="meta">One-time file upload per target before data can start.</p>
+        </div>
+      </a>
+      <a class="card screen-card" href="collections.html">
+        <div class="thumb">08</div>
+        <div class="body">
+          <div class="tag">Setup</div>
+          <h3>Collections</h3>
+          <p class="meta">Apply schema; wipe &amp; recreate purges data, next run upserts.</p>
         </div>
       </a>
       <a class="card screen-card" href="field-mapping.html">
-        <div class="thumb">07</div>
+        <div class="thumb">09</div>
         <div class="body">
           <div class="tag">Detail</div>
           <h3>Field mapping</h3>
@@ -84,7 +100,7 @@
         </div>
       </a>
       <a class="card screen-card" href="preview.html">
-        <div class="thumb">08</div>
+        <div class="thumb">10</div>
         <div class="body">
           <div class="tag">QA</div>
           <h3>Preview & validate</h3>
@@ -92,15 +108,15 @@
         </div>
       </a>
       <a class="card screen-card" href="issues.html">
-        <div class="thumb">09</div>
+        <div class="thumb">11</div>
         <div class="body">
           <div class="tag">Repair</div>
           <h3>Issues & conflicts</h3>
-          <p class="meta">Failed rows, missing media, unmapped keys — skip or fix.</p>
+          <p class="meta">Failed rows, missing media refs, unmapped keys — skip or fix.</p>
         </div>
       </a>
       <a class="card screen-card" href="settings.html">
-        <div class="thumb">10</div>
+        <div class="thumb">12</div>
         <div class="body">
           <div class="tag">Admin</div>
           <h3>Project settings</h3>
@@ -110,8 +126,8 @@
     </div>
 
     <footer class="note">
-      Suggested path: Login → Dashboard → Create project → Connect Directus → Map models → Field mapping → Preview → Migrate → Issues.
-      Open any HTML file in a browser; screens link to each other through the sidebar.
+      Suggested path: Login → Dashboard → Create project → Directus targets → Map models → Field mapping → Preview → Assets → Collections → Migrate → Issues.
+      Open any HTML file in a browser; screens link through the sidebar. On Migrate, switch Staging / Production to see the hard gate.
     </footer>
   </div>
 </body>

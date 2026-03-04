@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Connect Directus — Migtool</title>
+  <title>Directus targets — Migtool</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -22,10 +22,12 @@
         <a href="settings.html">Settings</a>
         <div class="nav-label">This project</div>
         <a href="create-project.html">Source files</a>
-        <a class="active" href="connect-directus.html">Directus target</a>
+        <a class="active" href="connect-directus.html">Directus targets</a>
         <a href="mapping.html">Data models</a>
         <a href="field-mapping.html">Field mapping</a>
         <a href="preview.html">Preview</a>
+        <a href="assets.html">Assets</a>
+        <a href="collections.html">Collections</a>
         <a href="migration-status.html">Migrate</a>
         <a href="issues.html">Issues</a>
       </nav>
@@ -34,19 +36,56 @@
 
     <main class="main">
       <header class="topbar">
-        <div class="crumbs">Acme Magazine rebuild / <strong>Directus target</strong></div>
-        <a class="btn btn-primary" href="mapping.html">Continue to mapping</a>
+        <div class="crumbs">Acme Magazine rebuild / <strong>Directus targets</strong></div>
+        <div class="target-switch">
+          <label for="target">Active</label>
+          <select id="target">
+            <option selected>Staging</option>
+            <option>Production</option>
+          </select>
+        </div>
       </header>
       <div class="content">
         <div class="page-head">
           <div>
-            <h1>Connect Directus</h1>
-            <p>Schema creation and imports run against this instance. Use staging until a dry-run preview is clean.</p>
+            <h1>Directus targets</h1>
+            <p>Each named instance keeps its own assets, collections, and data status. Switch the active target before setup or migrate.</p>
           </div>
+          <a class="btn btn-primary" href="assets.html">Continue to assets</a>
+        </div>
+
+        <div class="target-list">
+          <article class="target-card active">
+            <div>
+              <h3>Staging <span class="badge badge-ok">Active</span></h3>
+              <div class="meta mono">https://cms-staging.acme.studio</div>
+              <div class="meta" style="margin-top:6px">Assets complete · Collections applied · Data ready</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm btn-teal" type="button">Test</button>
+              <button class="btn btn-sm btn-ghost" type="button">Edit</button>
+            </div>
+          </article>
+          <article class="target-card">
+            <div>
+              <h3>Production <span class="badge badge-draft">Idle</span></h3>
+              <div class="meta mono">https://cms.acme.studio</div>
+              <div class="meta" style="margin-top:6px">Assets not started · Collections not applied · Data gated</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm btn-ghost" type="button">Make active</button>
+              <button class="btn btn-sm btn-ghost" type="button">Edit</button>
+            </div>
+          </article>
         </div>
 
         <div class="connect-hero">
           <section class="card card-pad">
+            <h3 style="margin:0 0 14px">Add target</h3>
+            <div class="field">
+              <label for="name">Display name</label>
+              <input id="name" placeholder="e.g. Staging, Production, Lab" />
+            </div>
             <div class="field">
               <label for="url">Directus URL</label>
               <input id="url" value="https://cms-staging.acme.studio" />
@@ -55,36 +94,19 @@
               <label for="token">Static token</label>
               <input id="token" type="password" value="du_live_••••••••••••" />
             </div>
-            <div class="grid grid-2">
-              <div class="field">
-                <label for="env">Environment</label>
-                <select id="env">
-                  <option>Staging</option>
-                  <option>Production</option>
-                  <option>Local</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="mode">Write mode</label>
-                <select id="mode">
-                  <option>Create missing collections</option>
-                  <option>Use existing collections only</option>
-                </select>
-              </div>
-            </div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-teal" type="button">Test connection</button>
-              <button class="btn btn-ghost" type="button">Save target</button>
+              <button class="btn btn-primary" type="button">Save target</button>
             </div>
           </section>
 
           <aside class="card card-pad">
-            <div class="meta">Connection</div>
+            <div class="meta">Last test · Staging</div>
             <h3 style="margin:6px 0 12px"><span class="status-dot"></span> Reachable · Directus 11.4</h3>
             <div class="meta">Project: Acme Staging</div>
             <div class="meta">Role: Administrator</div>
             <div class="meta">Existing collections: 11</div>
-            <div class="notice notice-info" style="margin-top:16px">No naming collisions with recommended models <span class="mono">posts</span>, <span class="mono">pages</span>, <span class="mono">authors</span>.</div>
+            <div class="notice notice-info" style="margin-top:16px">Status for assets, schema, and data is stored per target — not shared across instances.</div>
           </aside>
         </div>
       </div>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Assets — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus targets</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a class="active" href="assets.html">Assets</a>
+        <a href="collections.html">Collections</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Assets</strong></div>
+        <div class="target-switch">
+          <label for="target">Target</label>
+          <select id="target">
+            <option selected>Staging</option>
+            <option>Production</option>
+          </select>
+        </div>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Upload assets</h1>
+            <p>One-time file upload for the active Directus instance. Independent of collection mapping — required before data can start.</p>
+          </div>
+          <span class="badge badge-ok">Complete on Staging</span>
+        </div>
+
+        <div class="notice notice-ok" style="margin-bottom:18px">
+          Staging assets finished · 12,480 files · 18.4 GB. Production still needs its own upload.
+        </div>
+
+        <div class="kpis">
+          <div class="card stat"><div class="k">Files</div><div class="v">12,480</div><div class="d">of 12,480</div></div>
+          <div class="card stat"><div class="k">Failed</div><div class="v">0</div><div class="d">retry queue empty</div></div>
+          <div class="card stat"><div class="k">Size</div><div class="v">18.4</div><div class="d">GB uploaded</div></div>
+          <div class="card stat"><div class="k">Folder</div><div class="v">mig/</div><div class="d">Directus files root</div></div>
+        </div>
+
+        <div class="grid grid-2">
+          <section class="card card-pad">
+            <h3 style="margin:0 0 8px">Manifest</h3>
+            <div class="asset-row">
+              <div><b>wp-media-manifest.json</b><div class="meta">source inventory</div></div>
+              <div><span class="badge badge-ok">Matched</span></div>
+              <div class="progress ok"><span style="width:100%"></span></div>
+              <div class="mono">12,480</div>
+            </div>
+            <div class="asset-row">
+              <div><b>images /</b><div class="meta">jpg · png · webp</div></div>
+              <div><span class="badge badge-ok">Uploaded</span></div>
+              <div class="progress ok"><span style="width:100%"></span></div>
+              <div class="mono">11,902</div>
+            </div>
+            <div class="asset-row">
+              <div><b>documents /</b><div class="meta">pdf · docx</div></div>
+              <div><span class="badge badge-ok">Uploaded</span></div>
+              <div class="progress ok"><span style="width:100%"></span></div>
+              <div class="mono">578</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <button class="btn btn-ghost" type="button">Re-scan source</button>
+              <a class="btn btn-primary" href="collections.html">Continue to collections</a>
+            </div>
+          </section>
+
+          <section>
+            <div class="log">
+              <div class="ok">09:12:01  assets  folder mig/ created on Staging</div>
+              <div class="info">09:12:08  assets  hashing 12,480 local files</div>
+              <div class="ok">09:18:44  assets  batch 240/250 uploaded</div>
+              <div class="ok">09:41:02  assets  complete — 0 failures</div>
+              <div class="warn">09:41:03  assets  Production target has 0 files</div>
+            </div>
+            <p class="meta" style="margin:10px 0 0">If a later data run references a missing file, Migtool highlights it on Issues — it does not auto-upload.</p>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

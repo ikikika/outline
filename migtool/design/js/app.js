@@ -42,4 +42,53 @@
       });
     });
   });
+
+  document.querySelectorAll("[data-modes] [data-mode]").forEach((el) => {
+    el.addEventListener("click", () => {
+      document.querySelectorAll("[data-modes] [data-mode]").forEach((n) => n.classList.remove("selected"));
+      el.classList.add("selected");
+    });
+  });
+
+  const gateSelect = document.querySelector("[data-target-gate]");
+  if (gateSelect) {
+    const ok = document.querySelector("[data-gate-ok]");
+    const blocked = document.querySelector("[data-gate-blocked]");
+    const badge = document.querySelector("[data-run-badge]");
+    const assetsStatus = document.querySelector("[data-assets-status]");
+    const collectionsStatus = document.querySelector("[data-collections-status]");
+    const dataStatus = document.querySelector("[data-data-status]");
+    const modePanel = document.querySelector("[data-mode-panel]");
+    const runPanel = document.querySelector("[data-run-panel]");
+
+    const applyGate = () => {
+      const ready = gateSelect.value === "staging";
+      if (ok) ok.hidden = !ready;
+      if (blocked) blocked.hidden = ready;
+      if (modePanel) modePanel.hidden = !ready;
+      if (runPanel) runPanel.hidden = !ready;
+      if (badge) {
+        badge.className = ready ? "badge badge-ok" : "badge badge-draft";
+        badge.textContent = ready ? "Ready · Staging" : "Gated · Production";
+      }
+      if (assetsStatus) {
+        assetsStatus.innerHTML = ready
+          ? '<span class="badge badge-ok">Complete</span> <span class="meta">12,480 files</span>'
+          : '<span class="badge badge-draft">Not started</span> <span class="meta">0 files</span>';
+      }
+      if (collectionsStatus) {
+        collectionsStatus.innerHTML = ready
+          ? '<span class="badge badge-ok">Applied</span> <span class="meta">6 · wiped Mar 8</span>'
+          : '<span class="badge badge-draft">Not applied</span> <span class="meta">schema pending</span>';
+      }
+      if (dataStatus) {
+        dataStatus.innerHTML = ready
+          ? '<span class="badge badge-ok">Ready</span> <span class="meta">last upsert #14</span>'
+          : '<span class="badge badge-draft">Blocked</span> <span class="meta">finish setup first</span>';
+      }
+    };
+
+    gateSelect.addEventListener("change", applyGate);
+    applyGate();
+  }
 })();

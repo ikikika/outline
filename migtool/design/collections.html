@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Collections — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus targets</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="assets.html">Assets</a>
+        <a class="active" href="collections.html">Collections</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Collections</strong></div>
+        <div class="target-switch">
+          <label for="target">Target</label>
+          <select id="target">
+            <option selected>Staging</option>
+            <option>Production</option>
+          </select>
+        </div>
+      </header>
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Apply collections</h1>
+            <p>Rare schema step for the active target. Re-apply wipes collections and purges their data; the next migrate run will upsert.</p>
+          </div>
+          <span class="badge badge-ok">Applied on Staging</span>
+        </div>
+
+        <div class="notice notice-ok" style="margin-bottom:18px">
+          6 collections · 41 fields · 4 relations applied to Staging on Mar 8. Mapping changes require a wipe &amp; recreate.
+        </div>
+
+        <div class="grid grid-2">
+          <section class="card card-pad">
+            <h3 style="margin:0 0 8px">Will create on target</h3>
+            <div class="coll-row">
+              <div><b>authors</b><div class="meta">from wp-users.json</div></div>
+              <div><span class="badge badge-ok">Applied</span></div>
+              <div class="meta">8 fields</div>
+              <div class="mono">m2o ready</div>
+            </div>
+            <div class="coll-row">
+              <div><b>categories</b><div class="meta">from wp-terms.json</div></div>
+              <div><span class="badge badge-ok">Applied</span></div>
+              <div class="meta">5 fields</div>
+              <div class="mono">tree</div>
+            </div>
+            <div class="coll-row">
+              <div><b>posts</b><div class="meta">body HTML + author m2o</div></div>
+              <div><span class="badge badge-ok">Applied</span></div>
+              <div class="meta">18 fields</div>
+              <div class="mono">file cover</div>
+            </div>
+            <div class="coll-row">
+              <div><b>pages</b><div class="meta">parent tree</div></div>
+              <div><span class="badge badge-ok">Applied</span></div>
+              <div class="meta">12 fields</div>
+              <div class="mono">self m2o</div>
+            </div>
+            <div class="coll-row">
+              <div><b>issues</b><div class="meta">custom post type</div></div>
+              <div><span class="badge badge-ok">Applied</span></div>
+              <div class="meta">14 fields</div>
+              <div class="mono">dates</div>
+            </div>
+            <div class="coll-row">
+              <div><b>media_meta</b><div class="meta">optional sidecar</div></div>
+              <div><span class="badge badge-ok">Applied</span></div>
+              <div class="meta">6 fields</div>
+              <div class="mono">—</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <a class="btn btn-ghost" href="mapping.html">Edit models</a>
+              <a class="btn btn-primary" href="migration-status.html">Continue to migrate</a>
+            </div>
+          </section>
+
+          <section class="danger-panel">
+            <h3>Wipe &amp; recreate</h3>
+            <p class="meta" style="color:inherit;opacity:0.9">Deletes these collections on <strong>Staging</strong>, purges all of their items, then recreates schema from the current mapping. Assets on this target are kept.</p>
+            <ul class="meta" style="color:inherit;opacity:0.9;padding-left:18px;margin:12px 0">
+              <li>Existing Directus items in these collections are removed</li>
+              <li>Next data run is forced to <strong>upsert</strong></li>
+              <li>Migrate stays gated until apply finishes</li>
+            </ul>
+            <div class="field" style="margin-bottom:12px">
+              <label for="confirm">Type STAGING to confirm</label>
+              <input id="confirm" placeholder="STAGING" />
+            </div>
+            <button class="btn btn-danger" type="button">Wipe collections &amp; purge data</button>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
