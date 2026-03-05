@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { ArticleTags } from "@/components/ArticleTags";
 import { BackToTop } from "@/components/BackToTop";
 import { BlockRenderer } from "@/components/BlockRenderer";
+import { ReadingProgress } from "@/components/ReadingProgress";
 import { loadAllArticles, loadArticleBySlug } from "@/lib/articles/load";
 import { listAllSlugs } from "@/lib/articles/list";
 import { getSiteUrl } from "@/lib/site";
@@ -90,6 +91,7 @@ export default async function ArticlePage({ params }: PageProps) {
       <Stack spacing={2.5} component="div">
         <BlockRenderer blocks={article.blocks} />
       </Stack>
+      <ReadingProgress />
       <BackToTop />
     </Stack>
   );
