@@ -6,3 +6,6 @@
 design
 .env
 *.md
+frontend/node_modules
+frontend/dist
+backend/static
