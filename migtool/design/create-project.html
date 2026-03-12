@@ -71,31 +71,6 @@
               <label for="desc">Internal note</label>
               <textarea id="desc" rows="3">WP export from magazine.acme.com. Keep authors as a separate collection, not Directus users.</textarea>
             </div>
-            <div class="field">
-              <label>Source CMS</label>
-              <div class="cms-pick">
-                <button type="button" class="cms-opt" data-cms>
-                  <div class="logo-box" style="background:#eb1c2d">SC</div>
-                  <b>Sitecore</b>
-                  <div class="meta">Items + templates JSON</div>
-                </button>
-                <button type="button" class="cms-opt" data-cms>
-                  <div class="logo-box" style="background:#fe6a00">SF</div>
-                  <b>Sitefinity</b>
-                  <div class="meta">Dynamic modules</div>
-                </button>
-                <button type="button" class="cms-opt selected" data-cms>
-                  <div class="logo-box" style="background:#21759b">WP</div>
-                  <b>WordPress</b>
-                  <div class="meta">REST / WXR → JSON</div>
-                </button>
-                <button type="button" class="cms-opt" data-cms>
-                  <div class="logo-box" style="background:#0678be">D</div>
-                  <b>Drupal</b>
-                  <div class="meta">JSON:API or migrate</div>
-                </button>
-              </div>
-            </div>
           </section>
 
           <section class="card card-pad">
@@ -105,24 +80,6 @@
               <strong>Drop files here</strong>
               <div class="meta">or click to browse · JSON, ZIP, up to 2 GB</div>
             </div>
-            <div class="file-list">
-              <div class="file-row">
-                <div class="file-icon">JSON</div>
-                <div class="grow"><b>wp-posts.json</b><span>4,120 records · 18.4 MB</span></div>
-                <span class="badge badge-ok">Parsed</span>
-              </div>
-              <div class="file-row">
-                <div class="file-icon">JSON</div>
-                <div class="grow"><b>wp-users.json</b><span>86 records · 220 KB</span></div>
-                <span class="badge badge-ok">Parsed</span>
-              </div>
-              <div class="file-row">
-                <div class="file-icon">JSON</div>
-                <div class="grow"><b>wp-media-manifest.json</b><span>2,041 files referenced · 1.1 MB</span></div>
-                <span class="badge badge-map">Scanning</span>
-              </div>
-            </div>
-            <div class="notice notice-info" style="margin-top:14px">Detected WordPress-like keys: <span class="mono">post_type</span>, <span class="mono">guid</span>, <span class="mono">post_content</span>. Recommendations will be ready after Directus is connected.</div>
           </section>
         </div>
       </div>

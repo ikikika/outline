@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { Logo } from '../components/Logo'
+import { Sidebar } from '../components/Sidebar'
 
 export function DashboardPage() {
   const { user, logout } = useAuth()
@@ -13,59 +13,21 @@ export function DashboardPage() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <Link className="brand-mark" to="/dashboard">
-          <Logo />
-          Migtool
-        </Link>
-        <nav className="nav">
-          <div className="nav-label">Workspace</div>
-          <a className="active" href="#projects">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M4 10.5 12 4l8 6.5V20H4V10.5Z"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              />
-            </svg>
-            Projects
-          </a>
-          <a href="#settings">
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="12"
-                cy="12"
-                r="3"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              />
-              <path
-                d="M12 4v2M12 18v2M4 12h2M18 12h2"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-            Settings
-          </a>
-        </nav>
-        <div className="sidebar-foot">
-          <span className="avatar">{user?.initials ?? '??'}</span>
-          <div>
-            {user?.name ?? 'Guest'}
-            <small>{user?.email ?? ''}</small>
-          </div>
-        </div>
-      </aside>
+      <Sidebar />
 
       <main className="main">
         <header className="topbar">
           <div className="crumbs">
             Workspace / <strong>Projects</strong>
           </div>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>
-            Sign out
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>
+              Sign out
+            </button>
+            <Link className="btn btn-primary" to="/create-project">
+              New project
+            </Link>
+          </div>
         </header>
 
         <div className="content">
@@ -102,12 +64,12 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="card new-project" style={{ marginTop: 24 }}>
+          <Link className="card new-project" to="/create-project" style={{ marginTop: 24 }}>
             <div>
               <h3>No projects yet</h3>
-              <p>This is a stub workspace. Wire API projects here next.</p>
+              <p>Create a project to upload a CMS export and connect Directus.</p>
             </div>
-          </div>
+          </Link>
         </div>
       </main>
     </div>
