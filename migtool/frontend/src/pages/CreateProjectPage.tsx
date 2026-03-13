@@ -55,9 +55,9 @@ export function CreateProjectPage() {
             <Link className="btn btn-ghost" to="/dashboard">
               Cancel
             </Link>
-            <button className="btn btn-primary" type="button">
+            <Link className="btn btn-primary" to="/connect-directus">
               Save &amp; connect Directus
-            </button>
+            </Link>
           </div>
         </header>
 
@@ -81,13 +81,13 @@ export function CreateProjectPage() {
                 <b>Name &amp; files</b>
               </div>
             </div>
-            <div className="step">
+            <Link className="step" to="/connect-directus">
               <span className="n">2</span>
               <div>
                 <small>Target</small>
                 <b>Directus</b>
               </div>
-            </div>
+            </Link>
             <div className="step">
               <span className="n">3</span>
               <div>

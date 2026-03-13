@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './auth/ProtectedRoute'
+import { ConnectDirectusPage } from './pages/ConnectDirectusPage'
 import { CreateProjectPage } from './pages/CreateProjectPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
@@ -21,6 +22,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <CreateProjectPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/connect-directus"
+        element={
+          <ProtectedRoute>
+            <ConnectDirectusPage />
           </ProtectedRoute>
         }
       />

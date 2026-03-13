@@ -119,7 +119,9 @@ export function Sidebar() {
           <NavLink to="/create-project" className={navClass}>
             Source files
           </NavLink>
-          <a href="#directus">Directus targets</a>
+          <NavLink to="/connect-directus" className={navClass}>
+            Directus targets
+          </NavLink>
           <a href="#models">Data models</a>
           <a href="#fields">Field mapping</a>
           <a href="#preview">Preview</a>
