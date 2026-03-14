@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { Logo } from './Logo'
 
@@ -7,10 +7,24 @@ function navClass({ isActive }: { isActive: boolean }) {
   return isActive ? 'active' : undefined
 }
 
-export function Sidebar() {
+type SidebarProps = {
+  projectId?: number
+}
+
+export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
   const { user } = useAuth()
   const location = useLocation()
+  const params = useParams()
   const [open, setOpen] = useState(false)
+
+  const fromParams = Number(params.projectId)
+  const projectId =
+    projectIdProp ??
+    (Number.isFinite(fromParams) && fromParams > 0 ? fromParams : undefined)
+
+  const connectPath = projectId
+    ? `/projects/${projectId}/connect-directus`
+    : '/create-project'
 
   useEffect(() => {
     setOpen(false)
@@ -119,7 +133,7 @@ export function Sidebar() {
           <NavLink to="/create-project" className={navClass}>
             Source files
           </NavLink>
-          <NavLink to="/connect-directus" className={navClass}>
+          <NavLink to={connectPath} className={navClass}>
             Directus targets
           </NavLink>
           <a href="#models">Data models</a>

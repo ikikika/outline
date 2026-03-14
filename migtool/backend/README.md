@@ -42,3 +42,36 @@ docker compose exec api python -m app.scripts.seed
 | `sam` | sam.okonkwo@acme.studio | `password123` |
 
 Login with **username** + password (`POST /api/auth/login`).
+
+## Projects API
+
+Tables `projects` and `directus_targets` are created on API startup (`create_all`). Restart the API after pulling model changes:
+
+```bash
+docker compose restart api
+```
+
+| Method | Path | Notes |
+|--------|------|--------|
+| `GET` | `/api/projects` | List current user's projects |
+| `POST` | `/api/projects` | Create (`name`, optional `note`) |
+| `GET` | `/api/projects/{id}` | Detail + Directus targets |
+| `POST` | `/api/projects/{id}/targets` | Add Directus target |
+| `POST` | `/api/projects/{id}/targets/{tid}/activate` | Set active target |
+| `POST` | `/api/projects/{id}/targets/{tid}/test` | Stub connection check |
+
+All project routes require the session cookie.
+
+Directus static tokens are encrypted at rest with Fernet (`TOKEN_ENCRYPTION_KEY` in `.env`).
+Generate a key:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+If `directus_targets` already exists with a short `token` column, widen it once:
+
+```bash
+docker compose exec db mysql -umigtool -pmigtool migtool \
+  -e "ALTER TABLE directus_targets MODIFY token TEXT NOT NULL;"
+```

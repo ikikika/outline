@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     cookie_samesite: str = "lax"
 
+    # Fernet key (url-safe base64, 32 bytes). Used to encrypt Directus tokens at rest.
+    token_encryption_key: str = ""
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def split_cors_origins(cls, value: object) -> object:

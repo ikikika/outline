@@ -26,12 +26,16 @@ export default function App() {
         }
       />
       <Route
-        path="/connect-directus"
+        path="/projects/:projectId/connect-directus"
         element={
           <ProtectedRoute>
             <ConnectDirectusPage />
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/connect-directus"
+        element={<Navigate to="/create-project" replace />}
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

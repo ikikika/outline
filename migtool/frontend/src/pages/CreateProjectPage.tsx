@@ -1,15 +1,18 @@
-import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ApiError } from '../api/client'
+import { createProject } from '../api/projects'
 import { Sidebar } from '../components/Sidebar'
 
 export function CreateProjectPage() {
+  const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [name, setName] = useState('Acme Magazine rebuild')
-  const [note, setNote] = useState(
-    'WP export from magazine.acme.com. Keep authors as a separate collection, not Directus users.',
-  )
+  const [name, setName] = useState('')
+  const [note, setNote] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [dragging, setDragging] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function addFiles(list: FileList | null) {
     if (!list?.length) return
@@ -42,6 +45,23 @@ export function CreateProjectPage() {
     event.target.value = ''
   }
 
+  async function handleSubmit(event?: FormEvent) {
+    event?.preventDefault()
+    setError(null)
+    setSaving(true)
+    try {
+      const project = await createProject({
+        name: name.trim(),
+        note: note.trim() || null,
+      })
+      navigate(`/projects/${project.id}/connect-directus`, { replace: true })
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not create project')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="app">
       <Sidebar />
@@ -50,14 +70,6 @@ export function CreateProjectPage() {
         <header className="topbar">
           <div className="crumbs">
             Projects / <strong>New project</strong>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Link className="btn btn-ghost" to="/dashboard">
-              Cancel
-            </Link>
-            <Link className="btn btn-primary" to="/connect-directus">
-              Save &amp; connect Directus
-            </Link>
           </div>
         </header>
 
@@ -81,13 +93,19 @@ export function CreateProjectPage() {
                 <b>Name &amp; files</b>
               </div>
             </div>
-            <Link className="step" to="/connect-directus">
+            <button
+              className="step"
+              type="button"
+              disabled={saving || !name.trim()}
+              onClick={() => void handleSubmit()}
+              style={{ cursor: name.trim() ? 'pointer' : 'not-allowed', textAlign: 'left' }}
+            >
               <span className="n">2</span>
               <div>
                 <small>Target</small>
                 <b>Directus</b>
               </div>
-            </Link>
+            </button>
             <div className="step">
               <span className="n">3</span>
               <div>
@@ -104,6 +122,12 @@ export function CreateProjectPage() {
             </div>
           </div>
 
+          {error ? (
+            <div className="notice notice-info" style={{ marginBottom: 16, color: 'var(--rose)' }}>
+              {error}
+            </div>
+          ) : null}
+
           <div className="grid grid-2">
             <section className="card card-pad">
               <div className="field">
@@ -112,6 +136,8 @@ export function CreateProjectPage() {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Acme Magazine rebuild"
+                  required
                 />
               </div>
               <div className="field">
@@ -121,6 +147,7 @@ export function CreateProjectPage() {
                   rows={3}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
+                  placeholder="Optional context for this migration"
                 />
               </div>
             </section>
@@ -192,7 +219,25 @@ export function CreateProjectPage() {
                   ))}
                 </div>
               ) : null}
+              <p className="meta" style={{ marginTop: 12 }}>
+                File upload persistence comes next — saving the project does not
+                upload these yet.
+              </p>
             </section>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 24, justifyContent: 'flex-end' }}>
+            <Link className="btn btn-ghost" to="/dashboard">
+              Cancel
+            </Link>
+            <button
+              className="btn btn-primary"
+              type="button"
+              disabled={saving || !name.trim()}
+              onClick={() => void handleSubmit()}
+            >
+              {saving ? 'Saving…' : 'Save & connect Directus'}
+            </button>
           </div>
         </div>
       </main>

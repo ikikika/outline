@@ -29,6 +29,7 @@ services:
       - .env
     environment:
       DATABASE_URL: mysql+pymysql://${MYSQL_USER:-migtool}:${MYSQL_PASSWORD:-migtool}@db:3306/${MYSQL_DATABASE:-migtool}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:

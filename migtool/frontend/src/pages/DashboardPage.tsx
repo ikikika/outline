@@ -1,15 +1,42 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { ApiError } from '../api/client'
+import { listProjects, type Project } from '../api/projects'
 import { Sidebar } from '../components/Sidebar'
 
 export function DashboardPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const data = await listProjects()
+        if (!cancelled) setProjects(data)
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof ApiError ? err.message : 'Could not load projects')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function handleLogout() {
     await logout()
     navigate('/login', { replace: true })
   }
+
+  const connected = projects.reduce((sum, p) => sum + p.target_count, 0)
 
   return (
     <div className="app">
@@ -44,8 +71,8 @@ export function DashboardPage() {
           <div className="kpis">
             <div className="card stat">
               <div className="k">Active projects</div>
-              <div className="v">0</div>
-              <div className="d">Placeholder</div>
+              <div className="v">{loading ? '…' : projects.length}</div>
+              <div className="d">{projects.length ? 'In workspace' : 'Placeholder'}</div>
             </div>
             <div className="card stat">
               <div className="k">Records imported</div>
@@ -59,17 +86,52 @@ export function DashboardPage() {
             </div>
             <div className="card stat">
               <div className="k">Connected Directus</div>
-              <div className="v">0</div>
-              <div className="d">Not connected</div>
+              <div className="v">{loading ? '…' : connected}</div>
+              <div className="d">{connected ? 'Targets saved' : 'Not connected'}</div>
             </div>
           </div>
 
-          <Link className="card new-project" to="/create-project" style={{ marginTop: 24 }}>
-            <div>
-              <h3>No projects yet</h3>
-              <p>Create a project to upload a CMS export and connect Directus.</p>
+          {error ? (
+            <div className="notice notice-info" style={{ marginTop: 24, color: 'var(--rose)' }}>
+              {error}
             </div>
-          </Link>
+          ) : null}
+
+          {!loading && projects.length === 0 ? (
+            <Link className="card new-project" to="/create-project" style={{ marginTop: 24 }}>
+              <div>
+                <h3>No projects yet</h3>
+                <p>Create a project to upload a CMS export and connect Directus.</p>
+              </div>
+            </Link>
+          ) : null}
+
+          {!loading && projects.length > 0 ? (
+            <div className="target-list" style={{ marginTop: 24 }}>
+              {projects.map((project) => (
+                <article className="target-card" key={project.id}>
+                  <div>
+                    <h3>
+                      {project.name}{' '}
+                      <span className="badge badge-draft">{project.status}</span>
+                    </h3>
+                    <div className="meta" style={{ marginTop: 6 }}>
+                      {project.note || 'No note'} · {project.target_count} Directus
+                      target{project.target_count === 1 ? '' : 's'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <Link
+                      className="btn btn-sm btn-primary"
+                      to={`/projects/${project.id}/connect-directus`}
+                    >
+                      Directus targets
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </div>
       </main>
     </div>
