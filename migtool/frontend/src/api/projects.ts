@@ -79,6 +79,15 @@ export function activateTarget(
   )
 }
 
+export function deleteTarget(
+  projectId: number,
+  targetId: number,
+): Promise<void> {
+  return request<void>(`/projects/${projectId}/targets/${targetId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function testTarget(
   projectId: number,
   targetId: number,

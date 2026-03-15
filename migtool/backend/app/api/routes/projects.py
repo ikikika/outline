@@ -16,6 +16,7 @@ from app.schemas import (
     ProjectOut,
     ProjectUpdate,
 )
+from app.services.directus import probe_directus
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -226,6 +227,41 @@ def update_target(
     return _target_out(target)
 
 
+@router.delete(
+    "/{project_id}/targets/{target_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_target(
+    project_id: int,
+    target_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> None:
+    project = _get_owned_project(db, user, project_id, with_targets=True)
+    target = next((t for t in project.targets if t.id == target_id), None)
+    if target is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target not found",
+        )
+
+    was_active = target.is_active
+    db.delete(target)
+    db.flush()
+
+    if was_active:
+        remaining = (
+            db.query(DirectusTarget)
+            .filter(DirectusTarget.project_id == project.id)
+            .order_by(DirectusTarget.id)
+            .all()
+        )
+        if remaining:
+            remaining[0].is_active = True
+
+    db.commit()
+
+
 @router.post(
     "/{project_id}/targets/{target_id}/activate",
     response_model=DirectusTargetOut,
@@ -260,7 +296,7 @@ def test_target(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> DirectusTargetOut:
-    """Record a local connectivity stub until live Directus probing is added."""
+    """Probe Directus with the stored static token (GET /users/me)."""
     project = _get_owned_project(db, user, project_id, with_targets=True)
     target = next((t for t in project.targets if t.id == target_id), None)
     if target is None:
@@ -270,15 +306,11 @@ def test_target(
         )
 
     plaintext = decrypt_secret(target.token)
-    ok = bool(target.url.startswith("http") and plaintext)
-    target.last_test_ok = ok
+    result = probe_directus(target.url, plaintext)
+    target.last_test_ok = result.ok
     target.last_tested_at = datetime.now(timezone.utc)
-    target.last_test_detail = (
-        "Reachable · credentials present" if ok else "Missing URL or token"
-    )
-    target.summary = (
-        "Connection ok · ready for setup" if ok else "Connection check failed"
-    )
+    target.last_test_detail = result.detail
+    target.summary = result.summary
     db.commit()
     db.refresh(target)
     return _target_out(target)

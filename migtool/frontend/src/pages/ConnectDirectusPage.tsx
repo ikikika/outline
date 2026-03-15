@@ -4,6 +4,7 @@ import { ApiError } from '../api/client'
 import {
   activateTarget,
   createTarget,
+  deleteTarget,
   getProject,
   testTarget,
   type DirectusTarget,
@@ -82,6 +83,22 @@ export function ConnectDirectusPage() {
       await reload()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not test target')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleDelete(target: DirectusTarget) {
+    if (!window.confirm(`Delete target “${target.name}”? This cannot be undone.`)) {
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteTarget(projectId, target.id)
+      await reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not delete target')
     } finally {
       setBusy(false)
     }
@@ -209,6 +226,14 @@ export function ConnectDirectusPage() {
                         Make active
                       </button>
                     )}
+                    <button
+                      className="btn btn-sm btn-danger"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void handleDelete(target)}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </article>
               )
@@ -272,7 +297,15 @@ export function ConnectDirectusPage() {
                 Last test · {activeTarget?.name ?? '—'}
               </div>
               <h3 style={{ margin: '6px 0 12px' }}>
-                <span className="status-dot" />{' '}
+                <span
+                  className={`status-dot${
+                    activeTarget?.last_test_ok === true
+                      ? ' ok'
+                      : activeTarget?.last_test_ok === false
+                        ? ' err'
+                        : ''
+                  }`}
+                />{' '}
                 {activeTarget?.last_test_detail ??
                   (activeTarget
                     ? 'Not tested yet'

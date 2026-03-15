@@ -32,6 +32,9 @@ services:
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
     ports:
       - "${API_PORT:-8000}:8000"
+    extra_hosts:
+      # So localhost Directus URLs work from the API container (Linux + Mac).
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./backend:/app
     depends_on:
