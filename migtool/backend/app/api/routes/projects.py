@@ -1,12 +1,19 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user
 from app.core.secrets import decrypt_secret, encrypt_secret
 from app.db.session import get_db
-from app.models import DirectusTarget, Project, ProjectUpload, User
+from app.models import DirectusTarget, Project, ProjectSourceFile, ProjectUpload, User
 from app.schemas import (
     DirectusTargetCreate,
     DirectusTargetOut,
@@ -14,10 +21,12 @@ from app.schemas import (
     ProjectCreate,
     ProjectDetail,
     ProjectOut,
+    ProjectSourceFileOut,
     ProjectUpdate,
     ProjectUploadOut,
 )
 from app.services.directus import probe_directus
+from app.services.extract import process_or_schedule
 from app.services.uploads import save_upload
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -50,6 +59,10 @@ def _upload_out(upload: ProjectUpload) -> ProjectUploadOut:
     return ProjectUploadOut.model_validate(upload)
 
 
+def _source_file_out(row: ProjectSourceFile) -> ProjectSourceFileOut:
+    return ProjectSourceFileOut.model_validate(row)
+
+
 def _project_out(project: Project) -> ProjectOut:
     return ProjectOut(
         id=project.id,
@@ -61,6 +74,9 @@ def _project_out(project: Project) -> ProjectOut:
         updated_at=project.updated_at,
         target_count=len(project.targets) if project.targets is not None else 0,
         upload_count=len(project.uploads) if project.uploads is not None else 0,
+        source_file_count=(
+            len(project.source_files) if project.source_files is not None else 0
+        ),
     )
 
 
@@ -70,6 +86,7 @@ def _project_detail(project: Project) -> ProjectDetail:
         **base.model_dump(),
         targets=[_target_out(t) for t in (project.targets or [])],
         uploads=[_upload_out(u) for u in (project.uploads or [])],
+        source_files=[_source_file_out(s) for s in (project.source_files or [])],
     )
 
 
@@ -80,6 +97,7 @@ def _get_owned_project(
     *,
     with_targets: bool = False,
     with_uploads: bool = False,
+    with_source_files: bool = False,
 ) -> Project:
     query = db.query(Project).filter(
         Project.id == project_id,
@@ -90,6 +108,8 @@ def _get_owned_project(
         options.append(joinedload(Project.targets))
     if with_uploads:
         options.append(joinedload(Project.uploads))
+    if with_source_files:
+        options.append(joinedload(Project.source_files))
     if options:
         query = query.options(*options)
     project = query.first()
@@ -101,6 +121,18 @@ def _get_owned_project(
     return project
 
 
+def _load_project_detail(db: Session, user: User, project_id: int) -> ProjectDetail:
+    project = _get_owned_project(
+        db,
+        user,
+        project_id,
+        with_targets=True,
+        with_uploads=True,
+        with_source_files=True,
+    )
+    return _project_detail(project)
+
+
 @router.get("", response_model=list[ProjectOut])
 def list_projects(
     db: Session = Depends(get_db),
@@ -108,7 +140,11 @@ def list_projects(
 ) -> list[ProjectOut]:
     projects = (
         db.query(Project)
-        .options(joinedload(Project.targets), joinedload(Project.uploads))
+        .options(
+            joinedload(Project.targets),
+            joinedload(Project.uploads),
+            joinedload(Project.source_files),
+        )
         .filter(Project.owner_id == user.id)
         .order_by(Project.updated_at.desc())
         .all()
@@ -132,10 +168,7 @@ def create_project(
     db.add(project)
     db.commit()
     db.refresh(project)
-    project = _get_owned_project(
-        db, user, project.id, with_targets=True, with_uploads=True
-    )
-    return _project_detail(project)
+    return _load_project_detail(db, user, project.id)
 
 
 @router.get("/{project_id}", response_model=ProjectDetail)
@@ -144,10 +177,7 @@ def get_project(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ProjectDetail:
-    project = _get_owned_project(
-        db, user, project_id, with_targets=True, with_uploads=True
-    )
-    return _project_detail(project)
+    return _load_project_detail(db, user, project_id)
 
 
 @router.patch("/{project_id}", response_model=ProjectDetail)
@@ -157,17 +187,12 @@ def update_project(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ProjectDetail:
-    project = _get_owned_project(
-        db, user, project_id, with_targets=True, with_uploads=True
-    )
+    project = _get_owned_project(db, user, project_id)
     data = payload.model_dump(exclude_unset=True)
     for key, value in data.items():
         setattr(project, key, value)
     db.commit()
-    project = _get_owned_project(
-        db, user, project_id, with_targets=True, with_uploads=True
-    )
-    return _project_detail(project)
+    return _load_project_detail(db, user, project_id)
 
 
 @router.post(
@@ -206,14 +231,19 @@ async def upload_project_files(
             stored_name=stored_name,
             size_bytes=size_bytes,
             content_type=upload.content_type,
+            status="pending",
         )
         db.add(row)
         saved.append(row)
 
     db.commit()
+    results: list[ProjectUploadOut] = []
     for row in saved:
         db.refresh(row)
-    return [_upload_out(row) for row in saved]
+        process_or_schedule(db, row)
+        db.refresh(row)
+        results.append(_upload_out(row))
+    return results
 
 
 @router.get("/{project_id}/uploads", response_model=list[ProjectUploadOut])
@@ -224,6 +254,44 @@ def list_project_uploads(
 ) -> list[ProjectUploadOut]:
     project = _get_owned_project(db, user, project_id, with_uploads=True)
     return [_upload_out(u) for u in project.uploads]
+
+
+@router.get("/{project_id}/source-files", response_model=list[ProjectSourceFileOut])
+def list_source_files(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[ProjectSourceFileOut]:
+    project = _get_owned_project(db, user, project_id, with_source_files=True)
+    return [_source_file_out(s) for s in project.source_files]
+
+
+@router.post(
+    "/{project_id}/uploads/{upload_id}/extract",
+    response_model=ProjectUploadOut,
+)
+def reextract_upload(
+    project_id: int,
+    upload_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ProjectUploadOut:
+    project = _get_owned_project(db, user, project_id, with_uploads=True)
+    upload = next((u for u in project.uploads if u.id == upload_id), None)
+    if upload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Upload not found",
+        )
+    if upload.status == "extracting":
+        return _upload_out(upload)
+    upload.status = "pending"
+    upload.error_detail = None
+    db.commit()
+    db.refresh(upload)
+    process_or_schedule(db, upload)
+    db.refresh(upload)
+    return _upload_out(upload)
 
 
 @router.get("/{project_id}/targets", response_model=list[DirectusTargetOut])

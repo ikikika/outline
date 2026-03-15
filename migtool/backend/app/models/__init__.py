@@ -1,5 +1,5 @@
 from app.models.health import HealthCheck
-from app.models.project import DirectusTarget, Project, ProjectUpload
+from app.models.project import DirectusTarget, Project, ProjectSourceFile, ProjectUpload
 from app.models.user import AuthSession, User
 
 __all__ = [
@@ -7,6 +7,7 @@ __all__ = [
     "DirectusTarget",
     "HealthCheck",
     "Project",
+    "ProjectSourceFile",
     "ProjectUpload",
     "User",
 ]

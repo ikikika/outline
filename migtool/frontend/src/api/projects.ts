@@ -10,6 +10,7 @@ export type Project = {
   updated_at: string
   target_count: number
   upload_count: number
+  source_file_count: number
 }
 
 export type DirectusTarget = {
@@ -33,12 +34,27 @@ export type ProjectUpload = {
   stored_name: string
   size_bytes: number
   content_type: string | null
+  status: string
+  error_detail: string | null
+  extracted_at: string | null
+  created_at: string
+}
+
+export type ProjectSourceFile = {
+  id: number
+  project_id: number
+  upload_id: number
+  relative_path: string
+  original_name: string
+  kind: string
+  size_bytes: number
   created_at: string
 }
 
 export type ProjectDetail = Project & {
   targets: DirectusTarget[]
   uploads: ProjectUpload[]
+  source_files: ProjectSourceFile[]
 }
 
 export type ProjectCreatePayload = {
@@ -93,6 +109,16 @@ export function uploadProjectFiles(
     method: 'POST',
     body,
   })
+}
+
+export function reextractUpload(
+  projectId: number,
+  uploadId: number,
+): Promise<ProjectUpload> {
+  return request<ProjectUpload>(
+    `/projects/${projectId}/uploads/${uploadId}/extract`,
+    { method: 'POST' },
+  )
 }
 
 export function activateTarget(

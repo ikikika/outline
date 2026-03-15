@@ -88,6 +88,22 @@ class ProjectUploadOut(BaseModel):
     stored_name: str
     size_bytes: int
     content_type: str | None
+    status: str
+    error_detail: str | None = None
+    extracted_at: datetime | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ProjectSourceFileOut(BaseModel):
+    id: int
+    project_id: int
+    upload_id: int
+    relative_path: str
+    original_name: str
+    kind: str
+    size_bytes: int
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -103,6 +119,7 @@ class ProjectOut(BaseModel):
     updated_at: datetime
     target_count: int = 0
     upload_count: int = 0
+    source_file_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -110,3 +127,4 @@ class ProjectOut(BaseModel):
 class ProjectDetail(ProjectOut):
     targets: list[DirectusTargetOut] = []
     uploads: list[ProjectUploadOut] = []
+    source_files: list[ProjectSourceFileOut] = []

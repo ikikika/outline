@@ -38,6 +38,47 @@ def _ensure_token_column_width() -> None:
             )
 
 
+def _ensure_upload_extract_columns() -> None:
+    """Add extract status columns to project_uploads if missing (idempotent)."""
+    with engine.begin() as conn:
+        existing = {
+            str(r[0]).lower()
+            for r in conn.execute(
+                text(
+                    """
+                    SELECT COLUMN_NAME
+                    FROM information_schema.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'project_uploads'
+                    """
+                )
+            )
+        }
+        if not existing:
+            return
+        if "status" not in existing:
+            conn.execute(
+                text(
+                    "ALTER TABLE project_uploads "
+                    "ADD COLUMN status VARCHAR(32) NOT NULL DEFAULT 'pending'"
+                )
+            )
+        if "error_detail" not in existing:
+            conn.execute(
+                text(
+                    "ALTER TABLE project_uploads "
+                    "ADD COLUMN error_detail VARCHAR(512) NULL"
+                )
+            )
+        if "extracted_at" not in existing:
+            conn.execute(
+                text(
+                    "ALTER TABLE project_uploads "
+                    "ADD COLUMN extracted_at DATETIME(6) NULL"
+                )
+            )
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     if not settings.token_encryption_key.strip():
@@ -48,6 +89,7 @@ async def lifespan(_: FastAPI):
         )
     Base.metadata.create_all(bind=engine)
     _ensure_token_column_width()
+    _ensure_upload_extract_columns()
     yield
 
 

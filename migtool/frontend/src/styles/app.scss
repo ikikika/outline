@@ -829,6 +829,110 @@ img {
   font-size: 12px;
 }
 
+.folder-tree {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.folder-tree-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-2, #f6f5f2);
+}
+
+.folder-tree-pane {
+  max-height: 480px;
+  overflow: auto;
+  padding: 6px 0 10px;
+}
+
+.tree-pack + .tree-pack {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.tree-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 12px 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+}
+
+button.tree-row {
+  cursor: pointer;
+}
+
+button.tree-row:hover,
+.tree-file:hover {
+  background: var(--paper-2, #f6f5f2);
+}
+
+.tree-pack-root {
+  font-weight: 600;
+}
+
+.tree-chevron {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 0.12s ease;
+}
+
+.tree-chevron.open {
+  transform: rotate(90deg);
+}
+
+.tree-glyph {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: #c9a227;
+}
+
+.tree-glyph-file {
+  color: var(--ink-soft, #6b7280);
+}
+
+.tree-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.tree-meta {
+  color: var(--muted);
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.tree-file .badge {
+  flex: 0 0 auto;
+}
+
 .mono {
   font-family: var(--mono);
   font-size: 12px;

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -38,6 +38,11 @@ class Project(Base):
         cascade="all, delete-orphan",
         order_by="ProjectUpload.id",
     )
+    source_files: Mapped[list["ProjectSourceFile"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectSourceFile.id",
+    )
 
 
 class ProjectUpload(Base):
@@ -50,14 +55,52 @@ class ProjectUpload(Base):
     )
     original_name: Mapped[str] = mapped_column(String(255))
     stored_name: Mapped[str] = mapped_column(String(255))
-    size_bytes: Mapped[int] = mapped_column()
+    size_bytes: Mapped[int] = mapped_column(Integer)
     content_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # pending | extracting | ready | failed
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    error_detail: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    extracted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
     )
 
     project: Mapped[Project] = relationship(back_populates="uploads")
+    source_files: Mapped[list["ProjectSourceFile"]] = relationship(
+        back_populates="upload",
+        cascade="all, delete-orphan",
+        order_by="ProjectSourceFile.id",
+    )
+
+
+class ProjectSourceFile(Base):
+    __tablename__ = "project_source_files"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        index=True,
+    )
+    upload_id: Mapped[int] = mapped_column(
+        ForeignKey("project_uploads.id", ondelete="CASCADE"),
+        index=True,
+    )
+    relative_path: Mapped[str] = mapped_column(String(1024))
+    original_name: Mapped[str] = mapped_column(String(255))
+    # json | ndjson | media | other
+    kind: Mapped[str] = mapped_column(String(32), default="other")
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    project: Mapped[Project] = relationship(back_populates="source_files")
+    upload: Mapped[ProjectUpload] = relationship(back_populates="source_files")
 
 
 class DirectusTarget(Base):

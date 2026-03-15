@@ -6,6 +6,7 @@ from app.schemas.project import (
     ProjectCreate,
     ProjectDetail,
     ProjectOut,
+    ProjectSourceFileOut,
     ProjectUpdate,
     ProjectUploadOut,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "ProjectCreate",
     "ProjectDetail",
     "ProjectOut",
+    "ProjectSourceFileOut",
     "ProjectUpdate",
     "ProjectUploadOut",
     "UserCreate",
