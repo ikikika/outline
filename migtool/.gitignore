@@ -10,3 +10,5 @@ venv/
 node_modules/
 dist/
 backend/static/
+backend/uploads/*
+!backend/uploads/.gitkeep

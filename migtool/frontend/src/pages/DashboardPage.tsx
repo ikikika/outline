@@ -116,11 +116,19 @@ export function DashboardPage() {
                       <span className="badge badge-draft">{project.status}</span>
                     </h3>
                     <div className="meta" style={{ marginTop: 6 }}>
-                      {project.note || 'No note'} · {project.target_count} Directus
-                      target{project.target_count === 1 ? '' : 's'}
+                      {project.note || 'No note'} · {project.upload_count}{' '}
+                      file{project.upload_count === 1 ? '' : 's'} ·{' '}
+                      {project.target_count} Directus target
+                      {project.target_count === 1 ? '' : 's'}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <Link
+                      className="btn btn-sm btn-ghost"
+                      to={`/projects/${project.id}/source-files`}
+                    >
+                      Source files
+                    </Link>
                     <Link
                       className="btn btn-sm btn-primary"
                       to={`/projects/${project.id}/connect-directus`}

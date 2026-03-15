@@ -1,8 +1,24 @@
 import { useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
-import { createProject } from '../api/projects'
+import { createProject, uploadProjectFiles } from '../api/projects'
 import { Sidebar } from '../components/Sidebar'
+
+const ALLOWED_EXT = /\.(zip|json|ndjson)$/i
+
+function fileLabel(name: string): string {
+  const ext = name.split('.').pop()?.toUpperCase()
+  return ext || 'FILE'
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
 
 export function CreateProjectPage() {
   const navigate = useNavigate()
@@ -16,7 +32,13 @@ export function CreateProjectPage() {
 
   function addFiles(list: FileList | null) {
     if (!list?.length) return
-    setFiles((prev) => [...prev, ...Array.from(list)])
+    const next = Array.from(list).filter((file) => ALLOWED_EXT.test(file.name))
+    if (next.length === 0) {
+      setError('Only .zip, .json, and .ndjson files are allowed')
+      return
+    }
+    setError(null)
+    setFiles((prev) => [...prev, ...next])
   }
 
   function handleDragEnter(event: DragEvent<HTMLDivElement>) {
@@ -54,6 +76,9 @@ export function CreateProjectPage() {
         name: name.trim(),
         note: note.trim() || null,
       })
+      if (files.length > 0) {
+        await uploadProjectFiles(project.id, files)
+      }
       navigate(`/projects/${project.id}/connect-directus`, { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create project')
@@ -199,7 +224,7 @@ export function CreateProjectPage() {
                 <div className="file-list">
                   {files.map((file) => (
                     <div className="file-row" key={`${file.name}-${file.size}`}>
-                      <div className="file-icon">JSON</div>
+                      <div className="file-icon">{fileLabel(file.name)}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <strong
                           style={{
@@ -211,17 +236,14 @@ export function CreateProjectPage() {
                         >
                           {file.name}
                         </strong>
-                        <span className="meta">
-                          {(file.size / 1024).toFixed(1)} KB
-                        </span>
+                        <span className="meta">{formatSize(file.size)}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : null}
               <p className="meta" style={{ marginTop: 12 }}>
-                File upload persistence comes next — saving the project does not
-                upload these yet.
+                Files are stored on the server when you save the project.
               </p>
             </section>
           </div>

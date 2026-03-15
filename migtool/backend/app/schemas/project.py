@@ -81,6 +81,18 @@ class DirectusTargetOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ProjectUploadOut(BaseModel):
+    id: int
+    project_id: int
+    original_name: str
+    stored_name: str
+    size_bytes: int
+    content_type: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class ProjectOut(BaseModel):
     id: int
     name: str
@@ -90,9 +102,11 @@ class ProjectOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     target_count: int = 0
+    upload_count: int = 0
 
     model_config = {"from_attributes": True}
 
 
 class ProjectDetail(ProjectOut):
     targets: list[DirectusTargetOut] = []
+    uploads: list[ProjectUploadOut] = []

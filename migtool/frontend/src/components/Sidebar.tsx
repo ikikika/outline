@@ -25,6 +25,9 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
   const connectPath = projectId
     ? `/projects/${projectId}/connect-directus`
     : '/create-project'
+  const sourceFilesPath = projectId
+    ? `/projects/${projectId}/source-files`
+    : '/create-project'
 
   useEffect(() => {
     setOpen(false)
@@ -130,7 +133,7 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
             Settings
           </a>
           <div className="nav-label">This project</div>
-          <NavLink to="/create-project" className={navClass}>
+          <NavLink to={sourceFilesPath} className={navClass}>
             Source files
           </NavLink>
           <NavLink to={connectPath} className={navClass}>

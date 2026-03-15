@@ -9,6 +9,7 @@ export type Project = {
   created_at: string
   updated_at: string
   target_count: number
+  upload_count: number
 }
 
 export type DirectusTarget = {
@@ -25,8 +26,19 @@ export type DirectusTarget = {
   created_at: string
 }
 
+export type ProjectUpload = {
+  id: number
+  project_id: number
+  original_name: string
+  stored_name: string
+  size_bytes: number
+  content_type: string | null
+  created_at: string
+}
+
 export type ProjectDetail = Project & {
   targets: DirectusTarget[]
+  uploads: ProjectUpload[]
 }
 
 export type ProjectCreatePayload = {
@@ -66,6 +78,20 @@ export function createTarget(
   return request<DirectusTarget>(`/projects/${projectId}/targets`, {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+}
+
+export function uploadProjectFiles(
+  projectId: number,
+  files: File[],
+): Promise<ProjectUpload[]> {
+  const body = new FormData()
+  for (const file of files) {
+    body.append('files', file)
+  }
+  return request<ProjectUpload[]>(`/projects/${projectId}/uploads`, {
+    method: 'POST',
+    body,
   })
 }
 

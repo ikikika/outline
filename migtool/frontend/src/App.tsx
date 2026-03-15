@@ -4,6 +4,7 @@ import { ConnectDirectusPage } from './pages/ConnectDirectusPage'
 import { CreateProjectPage } from './pages/CreateProjectPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { SourceFilesPage } from './pages/SourceFilesPage'
 
 export default function App() {
   return (
@@ -22,6 +23,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <CreateProjectPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:projectId/source-files"
+        element={
+          <ProtectedRoute>
+            <SourceFilesPage />
           </ProtectedRoute>
         }
       />

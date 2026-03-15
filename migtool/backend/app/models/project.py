@@ -33,6 +33,31 @@ class Project(Base):
         cascade="all, delete-orphan",
         order_by="DirectusTarget.id",
     )
+    uploads: Mapped[list["ProjectUpload"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectUpload.id",
+    )
+
+
+class ProjectUpload(Base):
+    __tablename__ = "project_uploads"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        index=True,
+    )
+    original_name: Mapped[str] = mapped_column(String(255))
+    stored_name: Mapped[str] = mapped_column(String(255))
+    size_bytes: Mapped[int] = mapped_column()
+    content_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    project: Mapped[Project] = relationship(back_populates="uploads")
 
 
 class DirectusTarget(Base):
