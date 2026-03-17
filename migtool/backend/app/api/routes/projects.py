@@ -26,7 +26,7 @@ from app.schemas import (
     ProjectUploadOut,
 )
 from app.services.directus import probe_directus
-from app.services.extract import process_or_schedule
+from app.services.extract import delete_upload_artifacts, process_or_schedule
 from app.services.uploads import save_upload
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -292,6 +292,34 @@ def reextract_upload(
     process_or_schedule(db, upload)
     db.refresh(upload)
     return _upload_out(upload)
+
+
+@router.delete(
+    "/{project_id}/uploads/{upload_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_upload(
+    project_id: int,
+    upload_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> None:
+    project = _get_owned_project(db, user, project_id, with_uploads=True)
+    upload = next((u for u in project.uploads if u.id == upload_id), None)
+    if upload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Upload not found",
+        )
+    if upload.status == "extracting":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Upload is still extracting — try again in a moment",
+        )
+
+    delete_upload_artifacts(upload)
+    db.delete(upload)
+    db.commit()
 
 
 @router.get("/{project_id}/targets", response_model=list[DirectusTargetOut])

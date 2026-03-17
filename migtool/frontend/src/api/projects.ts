@@ -121,6 +121,15 @@ export function reextractUpload(
   )
 }
 
+export function deleteUpload(
+  projectId: number,
+  uploadId: number,
+): Promise<void> {
+  return request<void>(`/projects/${projectId}/uploads/${uploadId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function activateTarget(
   projectId: number,
   targetId: number,

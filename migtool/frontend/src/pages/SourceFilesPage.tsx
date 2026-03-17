@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'r
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
+  deleteUpload,
   getProject,
   reextractUpload,
   uploadProjectFiles,
@@ -151,6 +152,26 @@ export function SourceFilesPage() {
     }
   }
 
+  async function handleDeleteUpload(upload: ProjectUpload) {
+    if (
+      !window.confirm(
+        `Delete “${upload.original_name}” and its extracted files? This cannot be undone.`,
+      )
+    ) {
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteUpload(projectId, upload.id)
+      await reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not delete upload')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const uploads: ProjectUpload[] = project?.uploads ?? []
   const sourceFiles: ProjectSourceFile[] = project?.source_files ?? []
 
@@ -243,16 +264,26 @@ export function SourceFilesPage() {
                                   : ''}
                               </span>
                             </div>
-                            {file.status === 'failed' ? (
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {file.status === 'failed' ? (
+                                <button
+                                  className="btn btn-sm btn-ghost"
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => void handleReextract(file)}
+                                >
+                                  Retry
+                                </button>
+                              ) : null}
                               <button
-                                className="btn btn-sm btn-ghost"
+                                className="btn btn-sm btn-danger"
                                 type="button"
-                                disabled={busy}
-                                onClick={() => void handleReextract(file)}
+                                disabled={busy || file.status === 'extracting'}
+                                onClick={() => void handleDeleteUpload(file)}
                               >
-                                Retry
+                                Delete
                               </button>
-                            ) : null}
+                            </div>
                           </div>
                         )
                       })}

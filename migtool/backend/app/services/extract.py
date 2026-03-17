@@ -246,3 +246,16 @@ def process_or_schedule(db: Session, upload: ProjectUpload) -> ProjectUpload:
         return upload
     schedule_extract(upload.id)
     return upload
+
+
+def delete_upload_artifacts(upload: ProjectUpload) -> None:
+    """Remove the stored original and its extracted/ folder from disk."""
+    original = stored_path(upload)
+    if original.is_file():
+        original.unlink(missing_ok=True)
+
+    extracted = (
+        project_upload_dir(upload.project_id) / "extracted" / f"upload_{upload.id}"
+    )
+    if extracted.exists():
+        shutil.rmtree(extracted, ignore_errors=True)
