@@ -45,7 +45,7 @@ Login with **username** + password (`POST /api/auth/login`).
 
 ## Projects API
 
-Tables `projects` and `directus_targets` are created on API startup (`create_all`). Restart the API after pulling model changes:
+Tables (`projects`, `directus_targets`, `migration_runs`, …) are created on API startup (`create_all`). Restart the API after pulling model changes:
 
 ```bash
 docker compose restart api
@@ -58,7 +58,20 @@ docker compose restart api
 | `GET` | `/api/projects/{id}` | Detail + Directus targets |
 | `POST` | `/api/projects/{id}/targets` | Add Directus target |
 | `POST` | `/api/projects/{id}/targets/{tid}/activate` | Set active target |
-| `POST` | `/api/projects/{id}/targets/{tid}/test` | Stub connection check |
+| `POST` | `/api/projects/{id}/targets/{tid}/test` | Probe Directus (`GET /users/me`) |
+| `POST` | `/api/projects/{id}/targets/{tid}/migrate` | Start import from `prepared/target_{tid}/` (optional body: `schema`/`data`/`files`/`flows` booleans) |
+| `GET` | `/api/projects/{id}/targets/{tid}/migrate` | Latest migration run status |
+| `GET` | `/api/projects/{id}/targets/{tid}/migrate/{run_id}` | One migration run |
+
+Prepared layout (same as `directus-scripts` export):
+
+```text
+uploads/project_{id}/prepared/target_{tid}/
+  schema/  data/  files/  flows/
+  files_metadata.json  folders.json
+```
+
+Import logic is vendored from `directus-scripts/import_directus.py` as `app.services.directus_import`.
 
 All project routes require the session cookie.
 

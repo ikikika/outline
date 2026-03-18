@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 
 from fastapi import (
     APIRouter,
@@ -13,11 +14,20 @@ from sqlalchemy.orm import Session, joinedload
 from app.api.deps import get_current_user
 from app.core.secrets import decrypt_secret, encrypt_secret
 from app.db.session import get_db
-from app.models import DirectusTarget, Project, ProjectSourceFile, ProjectUpload, User
+from app.models import (
+    DirectusTarget,
+    MigrationRun,
+    Project,
+    ProjectSourceFile,
+    ProjectUpload,
+    User,
+)
 from app.schemas import (
     DirectusTargetCreate,
     DirectusTargetOut,
     DirectusTargetUpdate,
+    MigrationRunOut,
+    MigrationStart,
     ProjectCreate,
     ProjectDetail,
     ProjectOut,
@@ -27,6 +37,12 @@ from app.schemas import (
 )
 from app.services.directus import probe_directus
 from app.services.extract import delete_upload_artifacts, process_or_schedule
+from app.services.migrate import (
+    encode_phases,
+    prepared_dir,
+    schedule_migrate,
+    validate_prepared,
+)
 from app.services.uploads import save_upload
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -61,6 +77,27 @@ def _upload_out(upload: ProjectUpload) -> ProjectUploadOut:
 
 def _source_file_out(row: ProjectSourceFile) -> ProjectSourceFileOut:
     return ProjectSourceFileOut.model_validate(row)
+
+
+def _migration_out(run: MigrationRun) -> MigrationRunOut:
+    summary = None
+    if run.summary_json:
+        try:
+            summary = json.loads(run.summary_json)
+        except json.JSONDecodeError:
+            summary = None
+    return MigrationRunOut(
+        id=run.id,
+        project_id=run.project_id,
+        target_id=run.target_id,
+        status=run.status,
+        phases=run.phases,
+        error_detail=run.error_detail,
+        summary=summary,
+        started_at=run.started_at,
+        finished_at=run.finished_at,
+        created_at=run.created_at,
+    )
 
 
 def _project_out(project: Project) -> ProjectOut:
@@ -488,3 +525,138 @@ def test_target(
     db.commit()
     db.refresh(target)
     return _target_out(target)
+
+
+def _get_owned_target(
+    db: Session,
+    user: User,
+    project_id: int,
+    target_id: int,
+) -> tuple[Project, DirectusTarget]:
+    project = _get_owned_project(db, user, project_id, with_targets=True)
+    target = next((t for t in project.targets if t.id == target_id), None)
+    if target is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target not found",
+        )
+    return project, target
+
+
+@router.post(
+    "/{project_id}/targets/{target_id}/migrate",
+    response_model=MigrationRunOut,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def start_migrate(
+    project_id: int,
+    target_id: int,
+    payload: MigrationStart | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> MigrationRunOut:
+    """
+    Import prepared export into the target Directus instance.
+
+    Reads uploads/project_{id}/prepared/target_{id}/ (schema, data, files, flows).
+    """
+    project, target = _get_owned_target(db, user, project_id, target_id)
+
+    active = (
+        db.query(MigrationRun)
+        .filter(
+            MigrationRun.target_id == target.id,
+            MigrationRun.status.in_(("pending", "running")),
+        )
+        .first()
+    )
+    if active is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A migration is already in progress for this target",
+        )
+
+    source = prepared_dir(project.id, target.id)
+    try:
+        validate_prepared(source)
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    opts = (payload or MigrationStart()).model_dump()
+    phases = encode_phases(
+        schema=opts["schema"],
+        data=opts["data"],
+        files=opts["files"],
+        flows=opts["flows"],
+    )
+    if not phases:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Select at least one import phase",
+        )
+
+    run = MigrationRun(
+        project_id=project.id,
+        target_id=target.id,
+        status="pending",
+        phases=phases,
+    )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+    schedule_migrate(run.id)
+    return _migration_out(run)
+
+
+@router.get(
+    "/{project_id}/targets/{target_id}/migrate",
+    response_model=MigrationRunOut | None,
+)
+def latest_migrate(
+    project_id: int,
+    target_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> MigrationRunOut | None:
+    """Return the latest migration run for this target, if any."""
+    _, target = _get_owned_target(db, user, project_id, target_id)
+    run = (
+        db.query(MigrationRun)
+        .filter(MigrationRun.target_id == target.id)
+        .order_by(MigrationRun.id.desc())
+        .first()
+    )
+    if run is None:
+        return None
+    return _migration_out(run)
+
+
+@router.get(
+    "/{project_id}/targets/{target_id}/migrate/{run_id}",
+    response_model=MigrationRunOut,
+)
+def get_migrate(
+    project_id: int,
+    target_id: int,
+    run_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> MigrationRunOut:
+    _, target = _get_owned_target(db, user, project_id, target_id)
+    run = (
+        db.query(MigrationRun)
+        .filter(
+            MigrationRun.id == run_id,
+            MigrationRun.target_id == target.id,
+        )
+        .first()
+    )
+    if run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Migration run not found",
+        )
+    return _migration_out(run)

@@ -32,7 +32,7 @@ def _normalize_base_url(url: str) -> str:
     return base
 
 
-def _probe_url(url: str) -> str:
+def _rewrite_loopback_for_docker(url: str) -> str:
     """
     When the API runs in Docker, localhost points at the container itself.
     Rewrite loopback hosts to the Docker Desktop / compose host gateway.
@@ -52,6 +52,11 @@ def _probe_url(url: str) -> str:
     return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
 
 
+def resolve_directus_base_url(url: str) -> str:
+    """Normalize a Directus base URL and rewrite loopback for Docker."""
+    return _rewrite_loopback_for_docker(_normalize_base_url(url))
+
+
 def probe_directus(url: str, token: str, *, timeout: float = 10.0) -> DirectusProbeResult:
     """Validate URL + static token by calling GET /users/me."""
     base = _normalize_base_url(url)
@@ -68,7 +73,7 @@ def probe_directus(url: str, token: str, *, timeout: float = 10.0) -> DirectusPr
             summary="Connection check failed",
         )
 
-    request_base = _probe_url(base)
+    request_base = resolve_directus_base_url(base)
     endpoint = f"{request_base}/users/me"
     headers = {
         "Authorization": f"Bearer {token.strip()}",

@@ -53,7 +53,7 @@
         <div class="page-head">
           <div>
             <h1>Migrate data</h1>
-            <p>Recurring upload into the active Directus instance. Assets and collections must be complete for this target before a run can start.</p>
+            <p>Recurring import into the active Directus instance. Choose which phases to send on each run — assets and collections must already be complete when you include <span class="mono">data</span>.</p>
           </div>
           <div class="badge badge-ok" data-run-badge>Ready · Staging</div>
         </div>
@@ -62,7 +62,7 @@
           <article class="check-item" data-check="assets">
             <div class="phase">Setup</div>
             <h3>Assets</h3>
-            <div data-assets-status><span class="badge badge-ok">Complete</span> <span class="meta">12,480 files</span></div>
+            <div data-assets-status><span class="badge badge-ok">Complete</span> <span class="meta">38 files</span></div>
             <div class="actions"><a class="btn btn-sm btn-ghost" href="assets.html">View</a></div>
           </article>
           <article class="check-item" data-check="collections">
@@ -82,9 +82,9 @@
         <div class="gate-banner notice notice-ok" data-gate-ok>
           <div>
             <b>Hard gate open on Staging.</b>
-            <div class="meta" style="color:inherit;opacity:0.85;margin-top:4px">Assets and collections are done. Choose a write mode, then start the data run.</div>
+            <div class="meta" style="color:inherit;opacity:0.85;margin-top:4px">Assets and collections are done. Pick phases (and write mode), then start the import.</div>
           </div>
-          <button class="btn btn-primary" type="button" data-start-btn>Start data upload</button>
+          <button class="btn btn-primary" type="button" data-start-btn>Start import</button>
         </div>
 
         <div class="gate-banner notice notice-warn" data-gate-blocked hidden>
@@ -92,12 +92,52 @@
             <b>Hard gate closed on Production.</b>
             <div class="meta" style="color:inherit;opacity:0.9;margin-top:4px">Finish assets and apply collections on this target before data can start. Staging progress does not carry over.</div>
           </div>
-          <button class="btn btn-primary btn-disabled" type="button" disabled data-start-btn-blocked>Start data upload</button>
+          <button class="btn btn-primary btn-disabled" type="button" disabled data-start-btn-blocked>Start import</button>
         </div>
+
+        <section class="card card-pad" style="margin-bottom:18px" data-phase-panel>
+          <h3 style="margin:0 0 6px">Import phases</h3>
+          <p class="meta" style="margin:0 0 14px">
+            Maps to <span class="mono">POST /api/projects/{id}/targets/{tid}/migrate</span>.
+            Setup screens lock a single phase; this page lets you combine them for a full or partial re-run.
+          </p>
+          <div class="phase-picks" data-phases>
+            <label class="phase-opt">
+              <input type="checkbox" name="phase" value="files" data-phase />
+              <span>
+                <b>files</b>
+                <span class="meta">Prepared media → Directus files (IDs preserved)</span>
+              </span>
+            </label>
+            <label class="phase-opt">
+              <input type="checkbox" name="phase" value="schema" data-phase />
+              <span>
+                <b>schema</b>
+                <span class="meta">Collections, fields, and relations</span>
+              </span>
+            </label>
+            <label class="phase-opt">
+              <input type="checkbox" name="phase" value="data" data-phase checked />
+              <span>
+                <b>data</b>
+                <span class="meta">Collection items from prepared JSON</span>
+              </span>
+            </label>
+            <label class="phase-opt">
+              <input type="checkbox" name="phase" value="flows" data-phase />
+              <span>
+                <b>flows</b>
+                <span class="meta">Flows and operations</span>
+              </span>
+            </label>
+          </div>
+          <div class="meta" style="margin:0 0 8px">Request body</div>
+          <pre class="payload-preview" data-phase-payload></pre>
+        </section>
 
         <section class="card card-pad" style="margin-bottom:18px" data-mode-panel>
           <h3 style="margin:0 0 6px">Write mode</h3>
-          <p class="meta" style="margin:0 0 14px">You choose on each common run. After a collections wipe, Migtool forces <strong>upsert</strong> for the next run.</p>
+          <p class="meta" style="margin:0 0 14px">Applies when <span class="mono">data</span> is included. After a collections wipe, Migtool forces <strong>upsert</strong> for the next run.</p>
           <div class="mode-picks" data-modes>
             <button class="mode-opt selected" type="button" data-mode>
               <b>Upsert by legacy_id</b>

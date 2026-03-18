@@ -99,7 +99,27 @@
             </div>
             <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
               <a class="btn btn-ghost" href="mapping.html">Edit models</a>
-              <a class="btn btn-primary" href="migration-status.html">Continue to migrate</a>
+              <button class="btn btn-primary" type="button">Apply collections</button>
+              <a class="btn btn-ghost" href="migration-status.html">Continue to migrate</a>
+            </div>
+            <div style="margin-top:16px">
+              <div class="meta" style="margin:0 0 8px">This screen posts a locked phase set</div>
+              <div class="phase-picks" style="margin-bottom:10px">
+                <label class="phase-opt is-locked">
+                  <input type="checkbox" checked disabled />
+                  <span><b>schema</b><span class="meta">On</span></span>
+                </label>
+                <label class="phase-opt is-locked">
+                  <input type="checkbox" disabled />
+                  <span><b>files · data · flows</b><span class="meta">Off — use Assets / Migrate</span></span>
+                </label>
+              </div>
+              <pre class="payload-preview">{
+  "schema": true,
+  "data": false,
+  "files": false,
+  "flows": false
+}</pre>
             </div>
           </section>
 

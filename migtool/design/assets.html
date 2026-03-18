@@ -37,71 +37,275 @@
     <main class="main">
       <header class="topbar">
         <div class="crumbs">Acme Magazine rebuild / <strong>Assets</strong></div>
-        <div class="target-switch">
-          <label for="target">Target</label>
-          <select id="target">
-            <option selected>Staging</option>
-            <option>Production</option>
-          </select>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="target-switch">
+            <label for="target">Target</label>
+            <select id="target" data-assets-target>
+              <option value="staging" selected>Staging</option>
+              <option value="production">Production</option>
+            </select>
+          </div>
+          <div class="state-switch" data-assets-demo title="Design preview only">
+            <button type="button" class="on" data-assets-state="ready">Ready</button>
+            <button type="button" data-assets-state="running">Uploading</button>
+            <button type="button" data-assets-state="done">Done</button>
+          </div>
         </div>
       </header>
+
       <div class="content">
         <div class="page-head">
           <div>
-            <h1>Upload assets</h1>
-            <p>One-time file upload for the active Directus instance. Independent of collection mapping — required before data can start.</p>
+            <h1>Upload assets to Directus</h1>
+            <p>
+              One-time file upload for <strong data-assets-target-label>Staging</strong>.
+              Migtool reads the prepared set, checks every file is on disk, then uploads with original IDs so content relations still resolve.
+            </p>
           </div>
-          <span class="badge badge-ok">Complete on Staging</span>
+          <span class="badge badge-run" data-assets-badge>Ready to upload</span>
         </div>
 
-        <div class="notice notice-ok" style="margin-bottom:18px">
-          Staging assets finished · 12,480 files · 18.4 GB. Production still needs its own upload.
-        </div>
+        <!-- Step rail -->
+        <ol class="flow-rail" data-assets-rail>
+          <li class="flow-step done" data-rail="1">
+            <span class="flow-n">1</span>
+            <div>
+              <small>Prepare</small>
+              <b>Review inventory</b>
+            </div>
+          </li>
+          <li class="flow-step done" data-rail="2">
+            <span class="flow-n">2</span>
+            <div>
+              <small>Check</small>
+              <b>Validate files</b>
+            </div>
+          </li>
+          <li class="flow-step on" data-rail="3">
+            <span class="flow-n">3</span>
+            <div>
+              <small>Upload</small>
+              <b>Send to Directus</b>
+            </div>
+          </li>
+          <li class="flow-step" data-rail="4">
+            <span class="flow-n">4</span>
+            <div>
+              <small>Finish</small>
+              <b>Confirm &amp; continue</b>
+            </div>
+          </li>
+        </ol>
 
-        <div class="kpis">
-          <div class="card stat"><div class="k">Files</div><div class="v">12,480</div><div class="d">of 12,480</div></div>
-          <div class="card stat"><div class="k">Failed</div><div class="v">0</div><div class="d">retry queue empty</div></div>
-          <div class="card stat"><div class="k">Size</div><div class="v">18.4</div><div class="d">GB uploaded</div></div>
-          <div class="card stat"><div class="k">Folder</div><div class="v">mig/</div><div class="d">Directus files root</div></div>
-        </div>
+        <div class="flow-layout">
+          <div class="flow-main">
+            <!-- Step 1 -->
+            <section class="flow-card" data-assets-panel="1" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 1 · Prepare</div>
+                  <h2>Review prepared inventory</h2>
+                  <p class="meta">From <span class="mono">prepared/target_3/</span> — metadata records must match files on disk before upload.</p>
+                </div>
+              </div>
+              <div class="flow-stats">
+                <div><span class="k">Records</span><strong>38</strong><span class="d">files_metadata.json</span></div>
+                <div><span class="k">On disk</span><strong>38</strong><span class="d">files/</span></div>
+                <div><span class="k">Size</span><strong>44.7 MB</strong><span class="d">total</span></div>
+                <div><span class="k">Folders</span><strong>3</strong><span class="d">folders.json</span></div>
+              </div>
+              <div class="flow-split">
+                <div class="flow-list">
+                  <div class="flow-list-row">
+                    <div><b>Images</b><div class="meta">jpeg · png</div></div>
+                    <span class="mono">36</span>
+                  </div>
+                  <div class="flow-list-row">
+                    <div><b>Documents &amp; other</b><div class="meta">pdf · text</div></div>
+                    <span class="mono">2</span>
+                  </div>
+                  <div class="flow-list-row">
+                    <div><b>Folder map</b><div class="meta">Logos · Images · Test</div></div>
+                    <span class="mono">3</span>
+                  </div>
+                </div>
+                <aside class="flow-callout">
+                  <b>IDs stay the same</b>
+                  <p class="meta">Each file keeps its Directus UUID (<span class="mono">filename_disk</span>). Later data import can point at the same IDs.</p>
+                </aside>
+              </div>
+              <div class="flow-actions">
+                <button class="btn btn-primary" type="button" data-assets-goto="2">Continue to validate</button>
+              </div>
+            </section>
 
-        <div class="grid grid-2">
-          <section class="card card-pad">
-            <h3 style="margin:0 0 8px">Manifest</h3>
-            <div class="asset-row">
-              <div><b>wp-media-manifest.json</b><div class="meta">source inventory</div></div>
-              <div><span class="badge badge-ok">Matched</span></div>
-              <div class="progress ok"><span style="width:100%"></span></div>
-              <div class="mono">12,480</div>
-            </div>
-            <div class="asset-row">
-              <div><b>images /</b><div class="meta">jpg · png · webp</div></div>
-              <div><span class="badge badge-ok">Uploaded</span></div>
-              <div class="progress ok"><span style="width:100%"></span></div>
-              <div class="mono">11,902</div>
-            </div>
-            <div class="asset-row">
-              <div><b>documents /</b><div class="meta">pdf · docx</div></div>
-              <div><span class="badge badge-ok">Uploaded</span></div>
-              <div class="progress ok"><span style="width:100%"></span></div>
-              <div class="mono">578</div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-              <button class="btn btn-ghost" type="button">Re-scan source</button>
-              <a class="btn btn-primary" href="collections.html">Continue to collections</a>
-            </div>
-          </section>
+            <!-- Step 2 -->
+            <section class="flow-card" data-assets-panel="2" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 2 · Check</div>
+                  <h2>Validate prepared files</h2>
+                  <p class="meta">Confirm every metadata row has a matching file under <span class="mono">files/</span> before contacting Directus.</p>
+                </div>
+                <span class="badge badge-ok" data-validate-badge>Matched 38 / 38</span>
+              </div>
+              <div class="flow-check-grid">
+                <div class="flow-check ok">
+                  <span class="flow-check-mark">✓</span>
+                  <div>
+                    <b>Metadata readable</b>
+                    <div class="meta">files_metadata.json parsed</div>
+                  </div>
+                </div>
+                <div class="flow-check ok">
+                  <span class="flow-check-mark">✓</span>
+                  <div>
+                    <b>Disk match</b>
+                    <div class="meta">38 paths found · 0 missing</div>
+                  </div>
+                </div>
+                <div class="flow-check ok">
+                  <span class="flow-check-mark">✓</span>
+                  <div>
+                    <b>Folders ready</b>
+                    <div class="meta">3 folders · parent tree ok</div>
+                  </div>
+                </div>
+                <div class="flow-check ok">
+                  <span class="flow-check-mark">✓</span>
+                  <div>
+                    <b>Target reachable</b>
+                    <div class="meta">Staging · token ok</div>
+                  </div>
+                </div>
+              </div>
+              <div class="flow-actions">
+                <button class="btn btn-ghost" type="button" data-assets-goto="1">Back</button>
+                <button class="btn btn-ghost" type="button">Re-validate</button>
+                <button class="btn btn-primary" type="button" data-assets-goto="3">Continue to upload</button>
+              </div>
+            </section>
 
-          <section>
-            <div class="log">
-              <div class="ok">09:12:01  assets  folder mig/ created on Staging</div>
-              <div class="info">09:12:08  assets  hashing 12,480 local files</div>
-              <div class="ok">09:18:44  assets  batch 240/250 uploaded</div>
-              <div class="ok">09:41:02  assets  complete — 0 failures</div>
-              <div class="warn">09:41:03  assets  Production target has 0 files</div>
+            <!-- Step 3 -->
+            <section class="flow-card" data-assets-panel="3">
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 3 · Upload</div>
+                  <h2>Send assets to Directus</h2>
+                  <p class="meta">
+                    Posts <span class="mono">files: true</span> only — schema, data, and flows stay off.
+                    Creates folders first, then uploads files in batches.
+                  </p>
+                </div>
+              </div>
+
+              <div class="flow-upload" data-upload-idle>
+                <div class="flow-upload-hero">
+                  <div>
+                    <div class="meta" style="margin:0 0 6px">Ready for Staging</div>
+                    <strong class="flow-upload-count">38 files · 44.7 MB</strong>
+                    <p class="meta" style="margin:8px 0 0">Estimated a few minutes depending on connection. You can leave this page — progress is kept per target.</p>
+                  </div>
+                  <button class="btn btn-primary btn-lg" type="button" data-assets-start>Upload 38 assets</button>
+                </div>
+                <pre class="payload-preview" style="margin-top:16px">{
+  "schema": false,
+  "data": false,
+  "files": true,
+  "flows": false
+}</pre>
+              </div>
+
+              <div class="flow-upload" data-upload-running hidden>
+                <div class="flow-progress-block">
+                  <div class="flow-progress-top">
+                    <b>Uploading batch 4 of 8</b>
+                    <span class="mono">18 / 38</span>
+                  </div>
+                  <div class="progress ok" style="height:10px"><span style="width:47%"></span></div>
+                  <div class="meta" style="margin-top:8px">Current · <span class="mono">990e7ba6…_p1.jpg</span> · folders already applied</div>
+                </div>
+                <div class="flow-stats" style="margin-top:16px">
+                  <div><span class="k">Uploaded</span><strong>18</strong><span class="d">of 38</span></div>
+                  <div><span class="k">Failed</span><strong>0</strong><span class="d">retry later</span></div>
+                  <div><span class="k">Folders</span><strong>3</strong><span class="d">created</span></div>
+                  <div><span class="k">Elapsed</span><strong>1:42</strong><span class="d">mm:ss</span></div>
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost btn-disabled" type="button" disabled>Cancel (coming soon)</button>
+                </div>
+              </div>
+
+              <div class="flow-upload" data-upload-done hidden>
+                <div class="notice notice-ok" style="margin:0 0 16px">
+                  Staging assets finished · 38 files · 44.7 MB · 0 failures.
+                </div>
+                <div class="flow-stats">
+                  <div><span class="k">Uploaded</span><strong>38</strong><span class="d">of 38</span></div>
+                  <div><span class="k">Failed</span><strong>0</strong><span class="d">retry queue empty</span></div>
+                  <div><span class="k">Folders</span><strong>3</strong><span class="d">Logos · Images · Test</span></div>
+                  <div><span class="k">Duration</span><strong>3:12</strong><span class="d">mm:ss</span></div>
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button">Retry failed</button>
+                  <button class="btn btn-primary" type="button" data-assets-goto="4">Continue</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- Step 4 -->
+            <section class="flow-card" data-assets-panel="4" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 4 · Finish</div>
+                  <h2>Assets complete on Staging</h2>
+                  <p class="meta">This target can move on to collections. Production still needs its own asset upload — status does not carry over.</p>
+                </div>
+                <span class="badge badge-ok">Complete</span>
+              </div>
+              <div class="flow-next">
+                <article>
+                  <small>Next setup</small>
+                  <b>Apply collections</b>
+                  <p class="meta">Create schema on Staging from the mapping. Required before data migrate.</p>
+                  <a class="btn btn-primary" href="collections.html">Go to collections</a>
+                </article>
+                <article>
+                  <small>Optional</small>
+                  <b>Re-run assets</b>
+                  <p class="meta">Safe to re-upload; existing IDs are matched. Use after topping up prepared files.</p>
+                  <button class="btn btn-ghost" type="button" data-assets-state-set="ready">Start over</button>
+                </article>
+              </div>
+              <p class="meta" style="margin:16px 0 0">
+                If a later data run references a missing file, Migtool highlights it on
+                <a href="issues.html"><u>Issues</u></a> — it does not auto-upload.
+              </p>
+            </section>
+          </div>
+
+          <aside class="flow-side">
+            <div class="flow-side-card">
+              <h3 style="margin:0 0 8px">What this run does</h3>
+              <ol class="flow-side-list">
+                <li>Read <span class="mono">files_metadata.json</span></li>
+                <li>Ensure folders from <span class="mono">folders.json</span></li>
+                <li>Upload each file with original UUID</li>
+                <li>Leave schema / data / flows untouched</li>
+              </ol>
             </div>
-            <p class="meta" style="margin:10px 0 0">If a later data run references a missing file, Migtool highlights it on Issues — it does not auto-upload.</p>
-          </section>
+            <div class="flow-side-card">
+              <h3 style="margin:0 0 8px">Activity</h3>
+              <div class="log" data-assets-log>
+                <div class="info">09:11:58  assets  inventory loaded — 38 records</div>
+                <div class="ok">09:12:01  assets  validate ok — 0 missing</div>
+                <div class="info">09:12:04  assets  waiting for upload</div>
+              </div>
+            </div>
+            <p class="meta" style="margin:0">
+              Active · <span class="mono" data-assets-url>https://cms-staging.acme.studio</span>
+            </p>
+          </aside>
         </div>
       </div>
     </main>

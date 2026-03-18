@@ -109,6 +109,30 @@ class ProjectSourceFileOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class MigrationStart(BaseModel):
+    """Select which import phases to run (defaults: all)."""
+
+    schema: bool = True
+    data: bool = True
+    files: bool = True
+    flows: bool = True
+
+
+class MigrationRunOut(BaseModel):
+    id: int
+    project_id: int
+    target_id: int
+    status: str
+    phases: str
+    error_detail: str | None = None
+    summary: dict | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class ProjectOut(BaseModel):
     id: int
     name: str

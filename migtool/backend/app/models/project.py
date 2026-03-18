@@ -43,6 +43,11 @@ class Project(Base):
         cascade="all, delete-orphan",
         order_by="ProjectSourceFile.id",
     )
+    migration_runs: Mapped[list["MigrationRun"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="MigrationRun.id",
+    )
 
 
 class ProjectUpload(Base):
@@ -128,3 +133,45 @@ class DirectusTarget(Base):
     )
 
     project: Mapped[Project] = relationship(back_populates="targets")
+    migration_runs: Mapped[list["MigrationRun"]] = relationship(
+        back_populates="target",
+        cascade="all, delete-orphan",
+        order_by="MigrationRun.id",
+    )
+
+
+class MigrationRun(Base):
+    """One Directus import job against a prepared target directory."""
+
+    __tablename__ = "migration_runs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        index=True,
+    )
+    target_id: Mapped[int] = mapped_column(
+        ForeignKey("directus_targets.id", ondelete="CASCADE"),
+        index=True,
+    )
+    # pending | running | completed | failed
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    # Comma-separated phases requested: schema,data,files,flows
+    phases: Mapped[str] = mapped_column(String(64), default="schema,data,files,flows")
+    error_detail: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    summary_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    project: Mapped[Project] = relationship(back_populates="migration_runs")
+    target: Mapped[DirectusTarget] = relationship(back_populates="migration_runs")
