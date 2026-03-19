@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prepare assets — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus targets</a>
+        <a href="mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a class="active" href="prepare-assets.html">Prepare assets</a>
+        <a href="assets.html">Upload assets</a>
+        <a href="collections.html">Collections</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Prepare assets</strong></div>
+      </header>
+
+      <div class="content">
+        <div class="page-head">
+          <div>
+            <h1>Prepare assets for Directus</h1>
+            <p>
+              Move a media folder from <span class="mono">extracted/</span> into
+              <span class="mono">prepared/target_{id}/</span>, build
+              <span class="mono">files_metadata.json</span>, and optionally fill gaps with placeholders — before upload.
+            </p>
+          </div>
+          <span class="badge badge-map" data-prepare-badge>Step 1 · Locate</span>
+        </div>
+
+        <ol class="flow-rail" data-prepare-rail>
+          <li class="flow-step on" data-prepare-rail-step="1">
+            <span class="flow-n">1</span>
+            <div><small>Source</small><b>Locate folder</b></div>
+          </li>
+          <li class="flow-step" data-prepare-rail-step="2">
+            <span class="flow-n">2</span>
+            <div><small>Metadata</small><b>Map or generate</b></div>
+          </li>
+          <li class="flow-step" data-prepare-rail-step="3">
+            <span class="flow-n">3</span>
+            <div><small>Gaps</small><b>Placeholders</b></div>
+          </li>
+          <li class="flow-step" data-prepare-rail-step="4">
+            <span class="flow-n">4</span>
+            <div><small>Write</small><b>Build prepared</b></div>
+          </li>
+          <li class="flow-step" data-prepare-rail-step="5">
+            <span class="flow-n">5</span>
+            <div><small>Upload</small><b>Send to Directus</b></div>
+          </li>
+        </ol>
+
+        <div class="flow-layout">
+          <div class="flow-main">
+
+            <!-- Step 1: Locate -->
+            <section class="flow-card" data-prepare-panel="1">
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 1 · Source</div>
+                  <h2>Locate the assets folder</h2>
+                  <p class="meta">Pick the directory under extracted that holds media binaries. Optionally point at a JSON inventory if one exists.</p>
+                </div>
+              </div>
+
+              <div class="prep-pick-grid">
+                <div>
+                  <div class="meta" style="margin:0 0 8px">Extracted tree</div>
+                  <div class="win-explorer" data-folder-tree>
+                    <div class="win-explorer-bar">
+                      <span class="win-explorer-label">This PC</span>
+                      <span class="mono win-explorer-path">extracted\upload_3\export1\files</span>
+                    </div>
+                    <ul class="win-tree">
+                      <li class="win-node open">
+                        <div class="win-row" data-tree-toggle>
+                          <button type="button" class="win-twist" aria-label="Collapse"></button>
+                          <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                          <button type="button" class="win-label"><b>upload_3</b></button>
+                        </div>
+                        <ul class="win-children">
+                          <li class="win-node open">
+                            <div class="win-row" data-tree-toggle>
+                              <button type="button" class="win-twist" aria-label="Collapse"></button>
+                              <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                              <button type="button" class="win-label"><b>export1</b></button>
+                            </div>
+                            <ul class="win-children">
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>data</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row selected" data-folder-pick>
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>files</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>files_metadata.json</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>flows</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node last">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>schema</b></button>
+                                </div>
+                              </li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div>
+                  <div class="field" style="margin-bottom:12px">
+                    <label for="files-path">Files folder</label>
+                    <input id="files-path" class="mono" value="extracted/upload_3/export1/files" readonly />
+                  </div>
+                  <div class="field" style="margin-bottom:12px">
+                    <label for="meta-path">Metadata JSON <span class="meta" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+                    <select id="meta-path" data-meta-select>
+                      <option value="directus" selected>export1/files_metadata.json · Directus shape</option>
+                      <option value="map">export1/wp-media.json · needs mapping</option>
+                      <option value="none">None — generate from folder</option>
+                    </select>
+                  </div>
+                  <div class="notice notice-info" data-detect-note style="margin:0">
+                    Detected Directus-shaped metadata. Step 2 will copy fields with light normalization.
+                  </div>
+                </div>
+              </div>
+
+              <div class="flow-actions">
+                <button class="btn btn-primary" type="button" data-prepare-goto="2">Continue to metadata</button>
+              </div>
+            </section>
+
+            <!-- Step 2: Map or generate -->
+            <section class="flow-card" data-prepare-panel="2" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 2 · Metadata</div>
+                  <h2 data-meta-title>Map source JSON → files_metadata.json</h2>
+                  <p class="meta" data-meta-sub>Match source keys to Directus file fields. Unmapped keys are dropped unless you pin them into metadata.</p>
+                </div>
+              </div>
+
+              <!-- Mode: already Directus-shaped -->
+              <div data-meta-panel="directus">
+                <div class="notice notice-ok" style="margin:0 0 16px">
+                  Source already matches Directus <span class="mono">directus_files</span> shape. No field mapping needed — we’ll normalize paths and sizes on write.
+                </div>
+                <div class="flow-stats">
+                  <div><span class="k">Records</span><strong>38</strong><span class="d">in JSON</span></div>
+                  <div><span class="k">On disk</span><strong>38</strong><span class="d">matched by id</span></div>
+                  <div><span class="k">Missing file</span><strong>2</strong><span class="d">see next step</span></div>
+                  <div><span class="k">Extra on disk</span><strong>0</strong><span class="d">orphans</span></div>
+                </div>
+                <div class="prep-sample">
+                  <div class="meta">Sample record (passthrough)</div>
+                  <pre class="payload-preview">{
+  "id": "0d8a808b-311e-48e6-9b82-ca96a78f56b0",
+  "filename_disk": "0d8a808b-….jpg",
+  "filename_download": "train.jpg",
+  "title": "Train",
+  "type": "image/jpeg",
+  "filesize": 1727550
+}</pre>
+                </div>
+              </div>
+
+              <!-- Mode: map foreign JSON -->
+              <div data-meta-panel="map" hidden>
+                <div class="notice notice-info" style="margin:0 0 16px">
+                  Source <span class="mono">wp-media.json</span> is not Directus-shaped. Map keys below, or switch detection to generate-from-folder.
+                </div>
+                <div class="prep-map-table">
+                  <div class="prep-map-head">
+                    <span>Source key</span>
+                    <span></span>
+                    <span>files_metadata field</span>
+                  </div>
+                  <div class="prep-map-row">
+                    <div class="field-item"><b>id</b><div class="t">string · uuid-ish</div></div>
+                    <div class="bridge">→</div>
+                    <select><option selected>id</option><option>filename_disk</option><option>— skip —</option></select>
+                  </div>
+                  <div class="prep-map-row">
+                    <div class="field-item"><b>source_url</b><div class="t">string</div></div>
+                    <div class="bridge">→</div>
+                    <select><option>filename_download</option><option selected>— derive filename —</option><option>— skip —</option></select>
+                  </div>
+                  <div class="prep-map-row">
+                    <div class="field-item"><b>title.rendered</b><div class="t">string</div></div>
+                    <div class="bridge">→</div>
+                    <select><option selected>title</option><option>— skip —</option></select>
+                  </div>
+                  <div class="prep-map-row">
+                    <div class="field-item"><b>mime_type</b><div class="t">string</div></div>
+                    <div class="bridge">→</div>
+                    <select><option selected>type</option><option>— skip —</option></select>
+                  </div>
+                  <div class="prep-map-row">
+                    <div class="field-item"><b>media_details.filesize</b><div class="t">number</div></div>
+                    <div class="bridge">→</div>
+                    <select><option selected>filesize</option><option>— from disk —</option></select>
+                  </div>
+                  <div class="prep-map-row">
+                    <div class="field-item"><b>media_details.width</b><div class="t">number</div></div>
+                    <div class="bridge">→</div>
+                    <select><option selected>width</option><option>— skip —</option></select>
+                  </div>
+                  <div class="prep-map-row">
+                    <div class="field-item"><b>media_details.height</b><div class="t">number</div></div>
+                    <div class="bridge">→</div>
+                    <select><option selected>height</option><option>— skip —</option></select>
+                  </div>
+                </div>
+                <div class="meta" style="margin-top:12px">
+                  Required targets: <span class="mono">id</span>, <span class="mono">filename_disk</span>, <span class="mono">filename_download</span>, <span class="mono">type</span>.
+                  Missing required fields can be generated (new UUID, mime from extension).
+                </div>
+              </div>
+
+              <!-- Mode: generate -->
+              <div data-meta-panel="generate" hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  No metadata JSON selected. Migtool will invent <span class="mono">files_metadata.json</span> from files on disk.
+                </div>
+                <div class="prep-gen-rules">
+                  <div class="prep-gen-rule">
+                    <b>id</b>
+                    <span class="meta">New UUID per file (or parse leading UUID from filename if present)</span>
+                  </div>
+                  <div class="prep-gen-rule">
+                    <b>filename_disk</b>
+                    <span class="meta"><span class="mono">{id}{ext}</span> — Directus storage name</span>
+                  </div>
+                  <div class="prep-gen-rule">
+                    <b>filename_download / title</b>
+                    <span class="meta">Original basename · title from stem</span>
+                  </div>
+                  <div class="prep-gen-rule">
+                    <b>type / filesize / width / height</b>
+                    <span class="meta">MIME from extension · size from disk · image dims when readable</span>
+                  </div>
+                </div>
+                <div class="flow-stats" style="margin-top:16px">
+                  <div><span class="k">Will create</span><strong>38</strong><span class="d">file records</span></div>
+                  <div><span class="k">Images</span><strong>36</strong><span class="d">dims scanned</span></div>
+                  <div><span class="k">Other</span><strong>2</strong><span class="d">pdf · txt</span></div>
+                  <div><span class="k">Folders</span><strong>0</strong><span class="d">flat root</span></div>
+                </div>
+              </div>
+
+              <div class="flow-actions">
+                <button class="btn btn-ghost" type="button" data-prepare-goto="1">Back</button>
+                <button class="btn btn-primary" type="button" data-prepare-goto="3">Continue to gaps</button>
+              </div>
+            </section>
+
+            <!-- Step 3: Placeholders -->
+            <section class="flow-card" data-prepare-panel="3" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 3 · Gaps</div>
+                  <h2>Missing files &amp; placeholders</h2>
+                  <p class="meta">Metadata rows without a matching binary can get a tiny valid placeholder so Directus upload still succeeds.</p>
+                </div>
+              </div>
+
+              <label class="prep-toggle">
+                <input type="checkbox" data-placeholder-toggle checked />
+                <span>
+                  <b>Create placeholder files for missing assets</b>
+                  <span class="meta">Writes small PNG / PDF / text stubs named for the missing id. Same behavior as <span class="mono">--placeholder-files</span> on import.</span>
+                </span>
+              </label>
+
+              <div class="prep-gap-table">
+                <div class="prep-gap-row head">
+                  <span>Record</span>
+                  <span>Expected path</span>
+                  <span>Status</span>
+                  <span>Action</span>
+                </div>
+                <div class="prep-gap-row">
+                  <div><b>train.jpg</b><div class="meta mono">0d8a808b-…</div></div>
+                  <div class="mono meta">files/0d8a808b-…_train.jpg</div>
+                  <div><span class="badge badge-ok">On disk</span></div>
+                  <div class="meta">—</div>
+                </div>
+                <div class="prep-gap-row">
+                  <div><b>hero-banner.png</b><div class="meta mono">a1b2c3d4-…</div></div>
+                  <div class="mono meta">files/a1b2c3d4-…_hero-banner.png</div>
+                  <div><span class="badge badge-err">Missing</span></div>
+                  <div><span class="badge badge-run" data-ph-badge>Placeholder</span></div>
+                </div>
+                <div class="prep-gap-row">
+                  <div><b>press-kit.pdf</b><div class="meta mono">e5f6a7b8-…</div></div>
+                  <div class="mono meta">files/e5f6a7b8-…_press-kit.pdf</div>
+                  <div><span class="badge badge-err">Missing</span></div>
+                  <div><span class="badge badge-run" data-ph-badge>Placeholder</span></div>
+                </div>
+                <div class="prep-gap-row">
+                  <div><b>cablecar.png</b><div class="meta mono">2c5ee712-…</div></div>
+                  <div class="mono meta">files/2c5ee712-…_cablecar.png</div>
+                  <div><span class="badge badge-ok">On disk</span></div>
+                  <div class="meta">—</div>
+                </div>
+              </div>
+
+              <div class="notice notice-warn" style="margin-top:16px" data-ph-note>
+                2 placeholders will be written into prepared <span class="mono">files/</span>. Content that references these IDs will resolve, but the bytes are stubs — replace later if needed.
+              </div>
+              <div class="notice notice-danger" style="margin-top:16px" data-ph-note-off hidden>
+                Placeholders off — 2 metadata rows will be skipped on prepare (or fail on upload). Prefer fixing the source pack when possible.
+              </div>
+
+              <div class="flow-actions">
+                <button class="btn btn-ghost" type="button" data-prepare-goto="2">Back</button>
+                <button class="btn btn-primary" type="button" data-prepare-goto="4">Continue to write</button>
+              </div>
+            </section>
+
+            <!-- Step 4: Write prepared -->
+            <section class="flow-card" data-prepare-panel="4" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 4 · Write</div>
+                  <h2>Build prepared target folder</h2>
+                  <p class="meta">Copies / renames binaries and writes metadata into the Staging prepared path. Does not contact Directus yet.</p>
+                </div>
+              </div>
+
+              <div class="prep-output">
+                <div class="prep-output-path">
+                  <span class="meta">Output</span>
+                  <code class="mono">uploads/project_1/prepared/target_3/</code>
+                </div>
+                <div class="prep-output-tree">
+                  <div><span class="mono">files/</span> <span class="meta">38 binaries · 2 placeholders</span></div>
+                  <div><span class="mono">files_metadata.json</span> <span class="meta">38 records</span></div>
+                  <div><span class="mono">folders.json</span> <span class="meta">copied if present · else []</span></div>
+                </div>
+              </div>
+
+              <div class="flow-stats">
+                <div><span class="k">Copy</span><strong>36</strong><span class="d">real files</span></div>
+                <div><span class="k">Placeholders</span><strong>2</strong><span class="d" data-ph-stat>enabled</span></div>
+                <div><span class="k">Metadata</span><strong>38</strong><span class="d" data-meta-stat>mapped</span></div>
+                <div><span class="k">Target</span><strong>Staging</strong><span class="d">target_3</span></div>
+              </div>
+
+              <div class="flow-actions">
+                <button class="btn btn-ghost" type="button" data-prepare-goto="3">Back</button>
+                <button class="btn btn-primary" type="button" data-prepare-write>Write prepared assets</button>
+                <button class="btn btn-ghost" type="button" data-prepare-goto="5" data-prepare-next hidden>Continue to upload</button>
+              </div>
+
+              <div class="notice notice-ok" style="margin-top:16px" data-prepare-done hidden>
+                Prepared folder ready. Next: upload assets to Staging Directus.
+              </div>
+            </section>
+
+            <!-- Step 5: Upload -->
+            <section class="flow-card" data-prepare-panel="5" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 5 · Upload</div>
+                  <h2>Send assets to Directus</h2>
+                  <p class="meta">
+                    Posts <span class="mono">files: true</span> only — schema, data, and flows stay off.
+                    Creates folders first, then uploads files in batches.
+                  </p>
+                </div>
+                <div class="state-switch" data-prepare-upload-demo title="Design preview: upload state">
+                  <button type="button" data-prepare-upload-state="ready">Ready</button>
+                  <button type="button" class="on" data-prepare-upload-state="running">Uploading</button>
+                  <button type="button" data-prepare-upload-state="done">Done</button>
+                </div>
+              </div>
+
+              <div class="flow-upload" data-prepare-upload-idle hidden>
+                <div class="flow-upload-hero">
+                  <div>
+                    <div class="meta" style="margin:0 0 6px">Ready for Staging</div>
+                    <strong class="flow-upload-count">38 files · 44.7 MB</strong>
+                    <p class="meta" style="margin:8px 0 0">From <span class="mono">prepared/target_3/</span>. Estimated a few minutes depending on connection.</p>
+                  </div>
+                  <button class="btn btn-primary btn-lg" type="button" data-prepare-upload-start>Upload 38 assets</button>
+                </div>
+                <pre class="payload-preview" style="margin-top:16px">{
+  "schema": false,
+  "data": false,
+  "files": true,
+  "flows": false
+}</pre>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-prepare-goto="4">Back</button>
+                </div>
+              </div>
+
+              <div class="flow-upload" data-prepare-upload-running>
+                <div class="flow-progress-block">
+                  <div class="flow-progress-top">
+                    <b>Uploading batch 4 of 8</b>
+                    <span class="mono">18 / 38</span>
+                  </div>
+                  <div class="progress ok" style="height:10px"><span style="width:47%"></span></div>
+                  <div class="meta" style="margin-top:8px">Current · <span class="mono">990e7ba6…_p1.jpg</span> · folders already applied</div>
+                </div>
+                <div class="flow-stats" style="margin-top:16px">
+                  <div><span class="k">Uploaded</span><strong>18</strong><span class="d">of 38</span></div>
+                  <div><span class="k">Failed</span><strong>0</strong><span class="d">retry later</span></div>
+                  <div><span class="k">Folders</span><strong>3</strong><span class="d">created</span></div>
+                  <div><span class="k">Elapsed</span><strong>1:42</strong><span class="d">mm:ss</span></div>
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-prepare-goto="4">Back</button>
+                  <button class="btn btn-ghost btn-disabled" type="button" disabled>Cancel (coming soon)</button>
+                </div>
+              </div>
+
+              <div class="flow-upload" data-prepare-upload-done hidden>
+                <div class="notice notice-ok" style="margin:0 0 16px">
+                  Staging assets finished · 38 files · 44.7 MB · 0 failures.
+                </div>
+                <div class="flow-stats">
+                  <div><span class="k">Uploaded</span><strong>38</strong><span class="d">of 38</span></div>
+                  <div><span class="k">Failed</span><strong>0</strong><span class="d">retry queue empty</span></div>
+                  <div><span class="k">Folders</span><strong>3</strong><span class="d">Logos · Images · Test</span></div>
+                  <div><span class="k">Duration</span><strong>3:12</strong><span class="d">mm:ss</span></div>
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-prepare-goto="4">Back</button>
+                  <button class="btn btn-ghost" type="button">Retry failed</button>
+                  <a class="btn btn-primary" href="collections.html">Continue to collections</a>
+                </div>
+              </div>
+
+              <div style="margin-top:16px">
+                <div class="meta" style="margin:0 0 8px">Activity</div>
+                <div class="log" data-prepare-upload-log>
+                  <div class="ok">09:12:04  assets  folders.json applied — 3</div>
+                  <div class="info">09:12:08  assets  batch 1/8 uploaded</div>
+                  <div class="info">09:13:22  assets  batch 4/8 · 18/38</div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

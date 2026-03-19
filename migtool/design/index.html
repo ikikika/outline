@@ -17,9 +17,9 @@
     </div>
     <h1>CMS → Directus screens</h1>
     <p class="lede" style="color:var(--muted);max-width:62ch;margin:0 0 32px">
-      Static HTML mockups. Flow: login → projects → source → Directus targets → map → preview → assets → collections → migrate data.
-      Setup screens lock a single import phase (<span class="mono">files</span> / <span class="mono">schema</span>); Migrate lets you toggle any combination for
-      <span class="mono">POST …/migrate</span>.
+      Static HTML mockups. Flow: login → projects → source → Directus targets → map → preview →
+      <strong>prepare assets</strong> → upload assets → collections → migrate data.
+      Prepare normalizes extracted media into <span class="mono">prepared/target_{id}/</span>; upload posts <span class="mono">files: true</span>.
     </p>
 
     <h2 style="letter-spacing:-0.03em">Requested</h2>
@@ -76,11 +76,19 @@
           <p class="meta">Named instances (staging / prod) with separate status each.</p>
         </div>
       </a>
+      <a class="card screen-card" href="prepare-assets.html">
+        <div class="thumb">07a</div>
+        <div class="body">
+          <div class="tag">Setup</div>
+          <h3>Prepare assets</h3>
+          <p class="meta">Extracted → prepared: locate folder, map/generate metadata, placeholders.</p>
+        </div>
+      </a>
       <a class="card screen-card" href="assets.html">
         <div class="thumb">07</div>
         <div class="body">
           <div class="tag">Setup</div>
-          <h3>Assets</h3>
+          <h3>Upload assets</h3>
           <p class="meta">4-step flow: review → validate → upload → confirm.</p>
         </div>
       </a>
@@ -127,8 +135,9 @@
     </div>
 
     <footer class="note">
-      Suggested path: Login → Dashboard → Create project → Directus targets → Map models → Field mapping → Preview → Assets → Collections → Migrate → Issues.
-      Open any HTML file in a browser; screens link through the sidebar. On Migrate, toggle import phases and switch Staging / Production to see the hard gate.
+      Suggested path: Login → Dashboard → Create project → Directus targets → Map models → Field mapping → Preview →
+      Prepare assets → Upload assets → Collections → Migrate → Issues.
+      Open any HTML file in a browser; screens link through the sidebar. On Prepare assets, switch Has metadata / Map JSON / No metadata to preview paths.
     </footer>
   </div>
 </body>
