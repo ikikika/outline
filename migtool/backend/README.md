@@ -10,6 +10,18 @@ From the repo root:
 docker compose up --build -d
 ```
 
+Rebuild and restart only the API (e.g. after `requirements.txt` changes):
+
+```bash
+docker compose up --build -d api
+```
+
+Restart without rebuilding:
+
+```bash
+docker compose restart api
+```
+
 App (SPA): http://localhost:8000  
 API: http://localhost:8000/api  
 Docs: http://localhost:8000/docs  

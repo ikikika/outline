@@ -4,6 +4,7 @@ import { ConnectDirectusPage } from './pages/ConnectDirectusPage'
 import { CreateProjectPage } from './pages/CreateProjectPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { PrepareAssetsPage } from './pages/PrepareAssetsPage'
 import { SourceFilesPage } from './pages/SourceFilesPage'
 
 export default function App() {
@@ -39,6 +40,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ConnectDirectusPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:projectId/prepare-assets"
+        element={
+          <ProtectedRoute>
+            <PrepareAssetsPage />
           </ProtectedRoute>
         }
       />
