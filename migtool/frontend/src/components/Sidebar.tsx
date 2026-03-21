@@ -148,7 +148,6 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
           <NavLink to={prepareAssetsPath} className={navClass}>
             Prepare assets
           </NavLink>
-          <a href="#assets">Upload assets</a>
           <a href="#collections">Collections</a>
           <a href="#migrate">Migrate</a>
           <a href="#issues">Issues</a>

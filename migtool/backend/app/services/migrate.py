@@ -7,6 +7,7 @@ import logging
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -68,6 +69,24 @@ def validate_prepared(path: Path) -> None:
         )
 
 
+def _write_progress(run_id: int, progress: dict[str, Any]) -> None:
+    """Persist a progress checkpoint with a short-lived DB session."""
+    from app.db.session import SessionLocal
+
+    db = SessionLocal()
+    try:
+        run = db.get(MigrationRun, run_id)
+        if run is None:
+            return
+        run.progress_json = json.dumps(progress, default=str)[:50_000]
+        db.commit()
+    except Exception:  # noqa: BLE001 — never fail the import on progress I/O
+        logger.exception("Failed to persist progress for run %s", run_id)
+        db.rollback()
+    finally:
+        db.close()
+
+
 def process_migrate(db: Session, run_id: int) -> None:
     run = db.get(MigrationRun, run_id)
     if run is None:
@@ -84,6 +103,22 @@ def process_migrate(db: Session, run_id: int) -> None:
     run.status = "running"
     run.error_detail = None
     run.started_at = datetime.now(timezone.utc)
+    run.progress_json = json.dumps(
+        {
+            "phase": "starting",
+            "total": 0,
+            "processed": 0,
+            "uploaded": 0,
+            "failed": 0,
+            "skipped": 0,
+            "placeholders": 0,
+            "folders_created": 0,
+            "folders_failed": 0,
+            "current_file": None,
+            "current_file_id": None,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
     db.commit()
 
     source = prepared_dir(run.project_id, run.target_id)
@@ -96,6 +131,9 @@ def process_migrate(db: Session, run_id: int) -> None:
         plaintext = decrypt_secret(target.token)
         url = resolve_directus_base_url(target.url)
 
+        def on_progress(progress: dict[str, Any]) -> None:
+            _write_progress(run_id, progress)
+
         # Serialize imports: module-level auth is shared with ThreadPoolExecutor workers.
         with import_lock:
             summary = run_import(
@@ -105,12 +143,42 @@ def process_migrate(db: Session, run_id: int) -> None:
                 import_files_flag=flags["files"],
                 import_flows_flag=flags["flows"],
                 quiet=True,
+                skip_existing_files=True,
+                progress_callback=on_progress if flags["files"] else None,
                 url=url,
                 token=plaintext,
             )
 
+        run = db.get(MigrationRun, run_id)
+        if run is None:
+            return
         run.status = "completed"
         run.summary_json = json.dumps(summary, default=str)[:100_000]
+        # Final progress snapshot from files summary when present.
+        files_block = summary.get("files") if isinstance(summary, dict) else None
+        if isinstance(files_block, dict):
+            file_stats = files_block.get("files") or {}
+            folder_stats = files_block.get("folders") or {}
+            uploaded = int(file_stats.get("uploaded") or 0)
+            failed = int(file_stats.get("failed") or 0)
+            skipped = int(file_stats.get("skipped") or 0)
+            run.progress_json = json.dumps(
+                {
+                    "phase": "done",
+                    "total": uploaded + failed + skipped,
+                    "processed": uploaded + failed + skipped,
+                    "uploaded": uploaded,
+                    "failed": failed,
+                    "skipped": skipped,
+                    "placeholders": int(file_stats.get("placeholder") or 0),
+                    "folders_created": int(folder_stats.get("created") or 0),
+                    "folders_failed": int(folder_stats.get("failed") or 0),
+                    "current_file": None,
+                    "current_file_id": None,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+                default=str,
+            )[:50_000]
         run.error_detail = None
         run.finished_at = datetime.now(timezone.utc)
         db.commit()

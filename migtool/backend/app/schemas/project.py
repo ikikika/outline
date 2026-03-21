@@ -156,6 +156,7 @@ class MigrationRunOut(BaseModel):
     phases: str
     error_detail: str | None = None
     summary: dict | None = None
+    progress: dict | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
     created_at: datetime

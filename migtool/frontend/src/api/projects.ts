@@ -91,6 +91,42 @@ export type PrepareAssetsResult = {
   folders: number
 }
 
+export type MigrationStartPayload = {
+  schema?: boolean
+  data?: boolean
+  files?: boolean
+  flows?: boolean
+}
+
+export type MigrationProgress = {
+  phase?: string
+  total?: number
+  processed?: number
+  uploaded?: number
+  failed?: number
+  skipped?: number
+  placeholders?: number
+  folders_created?: number
+  folders_failed?: number
+  current_file?: string | null
+  current_file_id?: string | null
+  updated_at?: string
+}
+
+export type MigrationRun = {
+  id: number
+  project_id: number
+  target_id: number
+  status: string
+  phases: string
+  error_detail: string | null
+  summary: Record<string, unknown> | null
+  progress: MigrationProgress | null
+  started_at: string | null
+  finished_at: string | null
+  created_at: string
+}
+
 export function listProjects(): Promise<Project[]> {
   return request<Project[]>('/projects')
 }
@@ -191,5 +227,40 @@ export function prepareTargetAssets(
       method: 'POST',
       body: JSON.stringify(payload),
     },
+  )
+}
+
+export function startMigrate(
+  projectId: number,
+  targetId: number,
+  payload?: MigrationStartPayload,
+): Promise<MigrationRun> {
+  return request<MigrationRun>(
+    `/projects/${projectId}/targets/${targetId}/migrate`,
+    {
+      method: 'POST',
+      body: JSON.stringify(
+        payload ?? { schema: true, data: true, files: true, flows: true },
+      ),
+    },
+  )
+}
+
+export function getLatestMigrate(
+  projectId: number,
+  targetId: number,
+): Promise<MigrationRun | null> {
+  return request<MigrationRun | null>(
+    `/projects/${projectId}/targets/${targetId}/migrate`,
+  )
+}
+
+export function getMigrateRun(
+  projectId: number,
+  targetId: number,
+  runId: number,
+): Promise<MigrationRun> {
+  return request<MigrationRun>(
+    `/projects/${projectId}/targets/${targetId}/migrate/${runId}`,
   )
 }

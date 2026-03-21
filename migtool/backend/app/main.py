@@ -79,6 +79,30 @@ def _ensure_upload_extract_columns() -> None:
             )
 
 
+def _ensure_migration_progress_column() -> None:
+    """Add migration_runs.progress_json if missing (idempotent)."""
+    with engine.begin() as conn:
+        existing = {
+            str(r[0]).lower()
+            for r in conn.execute(
+                text(
+                    """
+                    SELECT COLUMN_NAME
+                    FROM information_schema.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'migration_runs'
+                    """
+                )
+            )
+        }
+        if not existing:
+            return
+        if "progress_json" not in existing:
+            conn.execute(
+                text("ALTER TABLE migration_runs ADD COLUMN progress_json TEXT NULL")
+            )
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     if not settings.token_encryption_key.strip():
@@ -90,6 +114,7 @@ async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
     _ensure_token_column_width()
     _ensure_upload_extract_columns()
+    _ensure_migration_progress_column()
     yield
 
 

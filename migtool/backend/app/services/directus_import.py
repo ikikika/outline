@@ -17,9 +17,9 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 
@@ -1099,35 +1099,49 @@ def create_folder(folder_data: Dict, folder_mapping: Dict[str, str]) -> Tuple[bo
     return False, None
 
 
+def file_exists(file_id: str) -> bool:
+    """Return True if Directus already has this file id."""
+    if not file_id:
+        return False
+    success, _ = api_request("GET", f"{get_directus_url()}/files/{file_id}")
+    return bool(success)
+
+
 def upload_file(file_info: Dict, files_path: str, folder_mapping: Dict[str, str],
-                placeholder_files: bool = False) -> Tuple[bool, bool]:
+                placeholder_files: bool = False,
+                skip_existing: bool = True) -> Tuple[str, bool]:
     """
     Upload a file to Directus, preserving original ID and filename.
-    
+
     Args:
         file_info: File metadata
         files_path: Path to files directory
         folder_mapping: Mapping of old folder IDs to new folder IDs
         placeholder_files: If True, upload a zero-byte placeholder when source file is missing
-    
+        skip_existing: If True, treat an existing Directus file id as success (resume-safe)
+
     Returns:
-        Tuple of (success, used_placeholder)
+        Tuple of (result, used_placeholder) where result is
+        "uploaded" | "skipped" | "failed"
     """
     file_id = file_info.get("id")
     filename_download = file_info.get("filename_download", f"{file_id}")
     filename_disk = file_info.get("filename_disk", filename_download)
     mime_type = file_info.get("type", "application/octet-stream")
     used_placeholder = False
-    
+
+    if skip_existing and file_id and file_exists(str(file_id)):
+        return "skipped", False
+
     # Find the file
     folder_id = file_info.get("folder")
     if folder_id:
         file_dir = os.path.join(files_path, str(folder_id))
     else:
         file_dir = files_path
-    
+
     filepath = os.path.join(file_dir, f"{file_id}_{filename_download}")
-    
+
     if not os.path.exists(filepath):
         # Try without the ID prefix
         filepath = os.path.join(file_dir, filename_download)
@@ -1135,9 +1149,9 @@ def upload_file(file_info: Dict, files_path: str, folder_mapping: Dict[str, str]
             if not placeholder_files:
                 logging.error("File not found: %s", filename_download)
                 print(f"    ⚠️ File not found: {filename_download}")
-                return False, False
+                return "failed", False
             used_placeholder = True
-    
+
     # Prepare metadata - include original ID and filename_disk
     metadata = {
         "id": file_id,  # Preserve original UUID
@@ -1146,16 +1160,16 @@ def upload_file(file_info: Dict, files_path: str, folder_mapping: Dict[str, str]
         "title": file_info.get("title", ""),
         "description": file_info.get("description", ""),
     }
-    
+
     # Map folder
     if folder_id and folder_id in folder_mapping:
         metadata["folder"] = folder_mapping[folder_id]
     elif folder_id:
         metadata["folder"] = folder_id
-    
+
     # Upload file
     url = f"{get_directus_url()}/files"
-    
+
     try:
         if used_placeholder:
             file_handle, upload_filename, upload_mime_type = build_placeholder_upload(
@@ -1174,57 +1188,73 @@ def upload_file(file_info: Dict, files_path: str, folder_mapping: Dict[str, str]
             # Use filename_disk as the upload filename to preserve it
             files = {'file': (upload_filename, f, upload_mime_type)}
             data = {k: v for k, v in metadata.items() if v}
-            
+
             # Remove Content-Type header for multipart upload
             upload_headers = {"Authorization": get_headers()["Authorization"]}
-            
+
             response = requests.post(url, headers=upload_headers, files=files, data=data)
-            
+
             if response.status_code in [200, 201]:
-                return True, used_placeholder
-            else:
-                logging.error("Failed to upload %s: %s - %s", filename_download, response.status_code, response.text[:2000])
-                print(f"    ⚠️ Failed to upload {filename_download}: {response.status_code} - {response.text[:200]}")
-                return False, used_placeholder
+                return "uploaded", used_placeholder
+            # Idempotent resume: file id collision means it's already there.
+            if response.status_code in (400, 409):
+                body = (response.text or "").lower()
+                if "unique" in body or "already" in body or "duplicate" in body:
+                    return "skipped", used_placeholder
+            logging.error("Failed to upload %s: %s - %s", filename_download, response.status_code, response.text[:2000])
+            print(f"    ⚠️ Failed to upload {filename_download}: {response.status_code} - {response.text[:200]}")
+            return "failed", used_placeholder
     except Exception as e:
         logging.exception("Error uploading %s", filename_download)
         print(f"    ⚠️ Error uploading {filename_download}: {str(e)}")
-        return False, used_placeholder
+        return "failed", used_placeholder
 
 
 def import_files(export_path: str, max_workers: int = 3,
-                 placeholder_files: bool = False) -> Dict:
+                 placeholder_files: bool = False,
+                 skip_existing: bool = True,
+                 progress_callback: Optional[Callable[[Dict], None]] = None) -> Dict:
     """
     Import folders and files from export.
-    
+
     Args:
         export_path: Base export path
-        max_workers: Number of parallel upload threads
+        max_workers: Number of parallel upload threads (unused; sequential for checkpoints)
         placeholder_files: If True, create placeholder assets for missing source files
-    
+        skip_existing: Skip files that already exist in Directus (resume-safe)
+        progress_callback: Optional callable invoked after each file with a progress dict
+
     Returns:
         Summary dict
     """
     print("\n📁 Importing files...")
-    
+
     summary = {
         "folders": {"created": 0, "failed": 0},
-        "files": {"uploaded": 0, "failed": 0, "placeholder": 0}
+        "files": {"uploaded": 0, "failed": 0, "placeholder": 0, "skipped": 0}
     }
-    
+
+    def emit(progress: Dict) -> None:
+        if progress_callback is None:
+            return
+        try:
+            progress_callback(progress)
+        except Exception:  # noqa: BLE001 — never fail import on progress I/O
+            logging.exception("progress_callback failed")
+
     # 1. Import folders first
     folders_file = os.path.join(export_path, "folders.json")
     folder_mapping = {}
-    
+
     if os.path.exists(folders_file):
         folders = load_json(folders_file)
         print(f"  📂 Creating {len(folders)} folders...")
-        
+
         # Topological sort: create parent folders before children at any depth
         folder_by_id = {f.get("id"): f for f in folders}
         sorted_folders = []
         visited = set()
-        
+
         def visit_folder(fid):
             if fid in visited or fid not in folder_by_id:
                 return
@@ -1233,10 +1263,10 @@ def import_files(export_path: str, max_workers: int = 3,
                 visit_folder(parent)
             visited.add(fid)
             sorted_folders.append(folder_by_id[fid])
-        
+
         for f in folders:
             visit_folder(f.get("id"))
-        
+
         for folder in sorted_folders:
             success, new_id = create_folder(folder, folder_mapping)
             if success:
@@ -1244,41 +1274,94 @@ def import_files(export_path: str, max_workers: int = 3,
                 summary["folders"]["created"] += 1
             else:
                 summary["folders"]["failed"] += 1
-    
+
+        emit({
+            "phase": "folders",
+            "total": 0,
+            "processed": 0,
+            "uploaded": 0,
+            "failed": 0,
+            "skipped": 0,
+            "placeholders": 0,
+            "folders_created": summary["folders"]["created"],
+            "folders_failed": summary["folders"]["failed"],
+            "current_file": None,
+            "current_file_id": None,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        })
+
     # 2. Import files
     files_metadata_path = os.path.join(export_path, "files_metadata.json")
     files_path = os.path.join(export_path, "files")
-    
+
     if os.path.exists(files_metadata_path) and (os.path.exists(files_path) or placeholder_files):
         files_metadata = load_json(files_metadata_path)
-        print(f"  📄 Uploading {len(files_metadata)} files...")
-        
+        total_files = len(files_metadata)
+        print(f"  📄 Uploading {total_files} files...")
+
         uploaded = 0
         failed = 0
         placeholders = 0
-        
+        skipped = 0
+
+        emit({
+            "phase": "files",
+            "total": total_files,
+            "processed": 0,
+            "uploaded": 0,
+            "failed": 0,
+            "skipped": 0,
+            "placeholders": 0,
+            "folders_created": summary["folders"]["created"],
+            "folders_failed": summary["folders"]["failed"],
+            "current_file": None,
+            "current_file_id": None,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        })
+
         for file_info in files_metadata:
-            success, used_placeholder = upload_file(
+            name = file_info.get("filename_download") or file_info.get("id") or "?"
+            file_id = file_info.get("id")
+            result, used_placeholder = upload_file(
                 file_info,
                 files_path,
                 folder_mapping,
-                placeholder_files=placeholder_files
+                placeholder_files=placeholder_files,
+                skip_existing=skip_existing,
             )
-            if success:
+            if result == "uploaded":
                 uploaded += 1
                 if used_placeholder:
                     placeholders += 1
+            elif result == "skipped":
+                skipped += 1
             else:
                 failed += 1
-            
-            total = uploaded + failed
-            if total % 10 == 0:
-                print(f"    📤 Progress: {total}/{len(files_metadata)} files...")
-        
+
+            processed = uploaded + failed + skipped
+            emit({
+                "phase": "files",
+                "total": total_files,
+                "processed": processed,
+                "uploaded": uploaded,
+                "failed": failed,
+                "skipped": skipped,
+                "placeholders": placeholders,
+                "folders_created": summary["folders"]["created"],
+                "folders_failed": summary["folders"]["failed"],
+                "current_file": name,
+                "current_file_id": str(file_id) if file_id else None,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+            if processed % 10 == 0:
+                print(f"    📤 Progress: {processed}/{total_files} files...")
+
         summary["files"]["uploaded"] = uploaded
         summary["files"]["failed"] = failed
         summary["files"]["placeholder"] = placeholders
-    
+        summary["files"]["skipped"] = skipped
+
     return summary
 
 
@@ -1464,6 +1547,8 @@ def run_import(
     skip_validation: bool = False,
     quiet: bool = False,
     placeholder_files: bool = False,
+    skip_existing_files: bool = True,
+    progress_callback: Optional[Callable[[Dict], None]] = None,
     *,
     url: Optional[str] = None,
     token: Optional[str] = None,
@@ -1554,7 +1639,10 @@ def run_import(
 
     if import_files_flag:
         files_summary = import_files(
-            export_path, placeholder_files=placeholder_files
+            export_path,
+            placeholder_files=placeholder_files,
+            skip_existing=skip_existing_files,
+            progress_callback=progress_callback,
         )
         summary["files"] = files_summary
 
@@ -1607,9 +1695,12 @@ def run_import(
         placeholder_info = ""
         if f["files"].get("placeholder"):
             placeholder_info = f", {f['files']['placeholder']} placeholders"
+        skipped_info = ""
+        if f["files"].get("skipped"):
+            skipped_info = f", {f['files']['skipped']} skipped"
         print(
             f"\n📁 Files: {f['files']['uploaded']} uploaded, "
-            f"{f['files']['failed']} failed{placeholder_info}"
+            f"{f['files']['failed']} failed{placeholder_info}{skipped_info}"
         )
         print(f"   Folders: {f['folders']['created']} created")
 

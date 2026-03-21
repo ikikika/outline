@@ -160,6 +160,8 @@ class MigrationRun(Base):
     phases: Mapped[str] = mapped_column(String(64), default="schema,data,files,flows")
     error_detail: Mapped[str | None] = mapped_column(String(512), nullable=True)
     summary_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Live checkpoint while running (processed/total, current file, …).
+    progress_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

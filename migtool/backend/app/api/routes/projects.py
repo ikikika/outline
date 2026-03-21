@@ -93,6 +93,12 @@ def _migration_out(run: MigrationRun) -> MigrationRunOut:
             summary = json.loads(run.summary_json)
         except json.JSONDecodeError:
             summary = None
+    progress = None
+    if run.progress_json:
+        try:
+            progress = json.loads(run.progress_json)
+        except json.JSONDecodeError:
+            progress = None
     return MigrationRunOut(
         id=run.id,
         project_id=run.project_id,
@@ -101,6 +107,7 @@ def _migration_out(run: MigrationRun) -> MigrationRunOut:
         phases=run.phases,
         error_detail=run.error_detail,
         summary=summary,
+        progress=progress,
         started_at=run.started_at,
         finished_at=run.finished_at,
         created_at=run.created_at,

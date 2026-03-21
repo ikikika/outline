@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
+  getLatestMigrate,
+  getMigrateRun,
   getProject,
   prepareTargetAssets,
+  startMigrate,
+  type MigrationProgress,
+  type MigrationRun,
   type PrepareAssetsResult,
   type ProjectDetail,
   type ProjectSourceFile,
@@ -19,7 +24,7 @@ import {
 } from '../components/WinExplorerTree'
 
 type MetaMode = 'directus' | 'map' | 'generate'
-type UploadState = 'ready' | 'running' | 'done'
+type UploadState = 'ready' | 'running' | 'done' | 'failed'
 
 const STEP_LABELS: Record<number, string> = {
   1: 'Step 1 · Locate',
@@ -122,6 +127,87 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
+function formatDuration(startedAt?: string | null, finishedAt?: string | null): string {
+  if (!startedAt) return '—'
+  const start = new Date(startedAt).getTime()
+  if (Number.isNaN(start)) return '—'
+  const end = finishedAt ? new Date(finishedAt).getTime() : Date.now()
+  if (Number.isNaN(end)) return '—'
+  const sec = Math.max(0, Math.floor((end - start) / 1000))
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+type FilesImportStats = {
+  uploaded: number
+  failed: number
+  skipped: number
+  placeholders: number
+  foldersCreated: number
+  foldersFailed: number
+  processed: number
+  total: number
+  currentFile: string | null
+  phase: string | null
+}
+
+function filesImportStats(run: MigrationRun | null): FilesImportStats | null {
+  if (!run) return null
+  const progress = (run.progress ?? null) as MigrationProgress | null
+  const files = run.summary?.files
+  const block =
+    files && typeof files === 'object'
+      ? (files as {
+          folders?: { created?: number; failed?: number }
+          files?: {
+            uploaded?: number
+            failed?: number
+            placeholder?: number
+            skipped?: number
+          }
+        })
+      : null
+
+  const uploaded = Number(
+    progress?.uploaded ?? block?.files?.uploaded ?? 0,
+  )
+  const failed = Number(progress?.failed ?? block?.files?.failed ?? 0)
+  const skipped = Number(progress?.skipped ?? block?.files?.skipped ?? 0)
+  const placeholders = Number(
+    progress?.placeholders ?? block?.files?.placeholder ?? 0,
+  )
+  const foldersCreated = Number(
+    progress?.folders_created ?? block?.folders?.created ?? 0,
+  )
+  const foldersFailed = Number(
+    progress?.folders_failed ?? block?.folders?.failed ?? 0,
+  )
+  const processed = Number(
+    progress?.processed ?? uploaded + failed + skipped,
+  )
+  const total = Number(progress?.total ?? processed)
+  const hasAny =
+    Boolean(progress) ||
+    Boolean(block) ||
+    run.status === 'running' ||
+    run.status === 'pending'
+  if (!hasAny) return null
+
+  return {
+    uploaded,
+    failed,
+    skipped,
+    placeholders,
+    foldersCreated,
+    foldersFailed,
+    processed,
+    total,
+    currentFile: progress?.current_file ?? null,
+    phase: progress?.phase ?? null,
+  }
+}
+
 function isMediaFile(file: ProjectSourceFile): boolean {
   if (file.kind === 'media') return true
   return !/\.(json|ndjson|xml|sql|txt|md|csv)$/i.test(file.original_name)
@@ -140,6 +226,7 @@ function badgeForStep(
 ): { className: string; label: string } {
   if (step === 5) {
     if (uploadState === 'done') return { className: 'badge badge-ok', label: 'Upload complete' }
+    if (uploadState === 'failed') return { className: 'badge badge-err', label: 'Upload failed' }
     if (uploadState === 'running') return { className: 'badge badge-run', label: 'Uploading…' }
     return { className: 'badge badge-run', label: 'Ready to upload' }
   }
@@ -167,8 +254,35 @@ export function PrepareAssetsPage() {
   const [writing, setWriting] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('ready')
+  const [migrateRun, setMigrateRun] = useState<MigrationRun | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [elapsedTick, setElapsedTick] = useState(0)
+  const [activityLog, setActivityLog] = useState<
+    { id: string; level: 'ok' | 'info' | 'warn' | 'err'; text: string }[]
+  >([])
+  const pollRef = useRef<number | null>(null)
+  const logRef = useRef<HTMLDivElement | null>(null)
+  const loggedMilestonesRef = useRef<Set<number>>(new Set())
+  const loggedUploadStartRef = useRef(false)
+  const loggedFoldersRef = useRef(false)
+  const loggedTerminalRef = useRef(false)
 
   const invalidId = !Number.isFinite(projectId) || projectId <= 0
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current != null) {
+        window.clearInterval(pollRef.current)
+        pollRef.current = null
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (uploadState !== 'running') return
+    const id = window.setInterval(() => setElapsedTick((n) => n + 1), 1000)
+    return () => window.clearInterval(id)
+  }, [uploadState])
 
   useEffect(() => {
     if (invalidId) {
@@ -233,6 +347,23 @@ export function PrepareAssetsPage() {
   const realCopyCount = Math.max(0, (mediaCount || gapRows.length) - missingCount)
   const placeholderCount = placeholders ? missingCount : 0
   const recordCount = mediaCount || gapRows.length
+
+  const preparedCount = writeResult?.records ?? mediaCount
+  const preparedBytes = mediaBytes
+  const importStats = filesImportStats(migrateRun)
+  // elapsedTick keeps the duration label refreshing while running
+  void elapsedTick
+  const uploadDuration = formatDuration(
+    migrateRun?.started_at ?? migrateRun?.created_at,
+    migrateRun?.finished_at,
+  )
+
+  // Keep activity log scrolled to the latest line.
+  useEffect(() => {
+    const el = logRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }, [activityLog, importStats?.currentFile, importStats?.processed, uploadState])
 
   const filesPathLabel = filesFolderPath
     ? folderDisplayPath(filesFolderPath, uploads)
@@ -301,6 +432,8 @@ export function PrepareAssetsPage() {
       setWriteResult(null)
       setWriteError(null)
       setUploadState('ready')
+      setMigrateRun(null)
+      setUploadError(null)
       return
     }
     if (sel.file && (sel.file.kind === 'json' || /\.json$/i.test(sel.name))) {
@@ -362,10 +495,234 @@ export function PrepareAssetsPage() {
     }
   }
 
-  function handleUploadStart() {
-    setUploadState('running')
-    window.setTimeout(() => setUploadState('done'), 1800)
+  function stopPolling() {
+    if (pollRef.current != null) {
+      window.clearInterval(pollRef.current)
+      pollRef.current = null
+    }
   }
+
+  function resetActivityLog() {
+    setActivityLog([])
+    loggedMilestonesRef.current = new Set()
+    loggedUploadStartRef.current = false
+    loggedFoldersRef.current = false
+    loggedTerminalRef.current = false
+  }
+
+  function appendActivity(
+    level: 'ok' | 'info' | 'warn' | 'err',
+    text: string,
+  ) {
+    setActivityLog((prev) => [
+      ...prev,
+      { id: `${Date.now()}-${prev.length}-${Math.random()}`, level, text },
+    ])
+  }
+
+  function appendActivityMany(
+    lines: { level: 'ok' | 'info' | 'warn' | 'err'; text: string }[],
+  ) {
+    if (!lines.length) return
+    setActivityLog((prev) => [
+      ...prev,
+      ...lines.map((line, i) => ({
+        id: `${Date.now()}-${prev.length + i}-${Math.random()}`,
+        level: line.level,
+        text: line.text,
+      })),
+    ])
+  }
+
+  function syncActivityFromProgress(run: MigrationRun) {
+    const p = run.progress
+    if (!p) return
+
+    const lines: { level: 'ok' | 'info' | 'warn' | 'err'; text: string }[] = []
+    const foldersCreated = Number(p.folders_created ?? 0)
+
+    if (!loggedFoldersRef.current && p.phase === 'folders') {
+      loggedFoldersRef.current = true
+      lines.push({ level: 'info', text: 'assets  creating folders…' })
+    } else if (
+      !loggedFoldersRef.current &&
+      (p.phase === 'files' || p.phase === 'done')
+    ) {
+      loggedFoldersRef.current = true
+      lines.push({
+        level: 'ok',
+        text: `assets  folders applied — ${foldersCreated}`,
+      })
+    }
+
+    const total = Number(p.total ?? 0)
+    const processed = Number(p.processed ?? 0)
+
+    if (total > 0 && !loggedUploadStartRef.current) {
+      loggedUploadStartRef.current = true
+      lines.push({
+        level: 'info',
+        text: `assets  uploading ${total} files…`,
+      })
+    }
+
+    // Same cadence as server console: 10, 20, 30, …
+    if (total > 0) {
+      for (let m = 10; m <= processed; m += 10) {
+        if (!loggedMilestonesRef.current.has(m)) {
+          loggedMilestonesRef.current.add(m)
+          lines.push({
+            level: 'info',
+            text: `assets  progress ${m}/${total} files…`,
+          })
+        }
+      }
+    }
+
+    if (run.status === 'completed' && !loggedTerminalRef.current) {
+      loggedTerminalRef.current = true
+      const uploaded = Number(p.uploaded ?? 0)
+      const skipped = Number(p.skipped ?? 0)
+      const failed = Number(p.failed ?? 0)
+      lines.push({
+        level: failed > 0 ? 'warn' : 'ok',
+        text:
+          `assets  complete — ${uploaded} uploaded` +
+          (skipped > 0 ? `, ${skipped} skipped` : '') +
+          (failed > 0 ? `, ${failed} failed` : ', 0 failures'),
+      })
+    }
+
+    if (run.status === 'failed' && !loggedTerminalRef.current) {
+      loggedTerminalRef.current = true
+      lines.push({
+        level: 'err',
+        text: `assets  failed — ${run.error_detail || 'upload error'}`,
+      })
+      if (total > 0) {
+        lines.push({
+          level: 'info',
+          text:
+            `assets  stopped at ${processed}/${total}` +
+            (Number(p.uploaded ?? 0) > 0
+              ? ` · ${p.uploaded} uploaded`
+              : '') +
+            (Number(p.skipped ?? 0) > 0 ? ` · ${p.skipped} skipped` : ''),
+        })
+      }
+    }
+
+    appendActivityMany(lines)
+  }
+
+  function applyRunStatus(run: MigrationRun) {
+    setMigrateRun(run)
+    syncActivityFromProgress(run)
+    if (run.status === 'completed') {
+      stopPolling()
+      setUploadState('done')
+      setUploadError(null)
+      return
+    }
+    if (run.status === 'failed') {
+      stopPolling()
+      setUploadState('failed')
+      setUploadError(run.error_detail || 'Upload to Directus failed')
+      return
+    }
+    setUploadState('running')
+  }
+
+  function startPolling(runId: number, targetId: number) {
+    stopPolling()
+    pollRef.current = window.setInterval(() => {
+      void (async () => {
+        try {
+          const run = await getMigrateRun(projectId, targetId, runId)
+          applyRunStatus(run)
+        } catch (err) {
+          stopPolling()
+          setUploadState('failed')
+          setUploadError(
+            err instanceof ApiError
+              ? err.message
+              : 'Could not poll upload status',
+          )
+        }
+      })()
+    }, 1000)
+  }
+
+  async function handleUploadStart() {
+    if (!activeTarget || uploadState === 'running') return
+    // Allow retry/resume even if this session didn't just write (prepared dir on disk).
+    if (!written && !migrateRun) return
+    stopPolling()
+    resetActivityLog()
+    appendActivity('info', `assets  migrate starting → ${activeTarget.name}`)
+    setUploadError(null)
+    setMigrateRun(null)
+    setUploadState('running')
+    try {
+      const run = await startMigrate(projectId, activeTarget.id, {
+        schema: false,
+        data: false,
+        files: true,
+        flows: false,
+      })
+      setWritten(true)
+      appendActivity('ok', `assets  migrate run #${run.id} started`)
+      applyRunStatus(run)
+      if (run.status === 'pending' || run.status === 'running') {
+        startPolling(run.id, activeTarget.id)
+      }
+    } catch (err) {
+      stopPolling()
+      setUploadState('failed')
+      const message =
+        err instanceof ApiError ? err.message : 'Could not start upload'
+      setUploadError(message)
+      appendActivity('err', `assets  ${message}`)
+    }
+  }
+
+  // Reattach to an in-flight migrate after refresh / reconnect.
+  useEffect(() => {
+    if (invalidId || !activeTarget) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const latest = await getLatestMigrate(projectId, activeTarget.id)
+        if (cancelled || !latest) return
+        const filesPhase =
+          latest.phases === 'files' ||
+          latest.phases.split(',').map((p) => p.trim()).includes('files')
+        if (!filesPhase) return
+        if (latest.status === 'pending' || latest.status === 'running') {
+          setWritten(true)
+          setStep(5)
+          resetActivityLog()
+          appendActivity('info', `assets  reconnected to run #${latest.id}`)
+          applyRunStatus(latest)
+          startPolling(latest.id, activeTarget.id)
+        } else if (
+          (latest.status === 'failed' || latest.status === 'completed') &&
+          uploadState === 'ready' &&
+          !migrateRun
+        ) {
+          setMigrateRun(latest)
+          if (latest.status === 'completed') setWritten(true)
+        }
+      } catch {
+        // Ignore — page still works without resume.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // Intentionally only when target identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, activeTarget?.id, invalidId])
 
   return (
     <div className="app">
@@ -1010,22 +1367,23 @@ export function PrepareAssetsPage() {
                                 Ready for {activeTarget?.name ?? 'target'}
                               </div>
                               <strong className="flow-upload-count">
-                                {mediaCount || 0} files
-                                {mediaBytes ? ` · ${formatSize(mediaBytes)}` : ''}
+                                {preparedCount || 0} files
+                                {preparedBytes ? ` · ${formatSize(preparedBytes)}` : ''}
                               </strong>
                               <p className="meta" style={{ margin: '8px 0 0' }}>
                                 From <span className="mono">prepared/target_
-                                {activeTarget?.id ?? '{id}'}/</span>. Estimated a few
-                                minutes depending on connection.
+                                {activeTarget?.id ?? '{id}'}/</span>. Progress is
+                                checkpointed per file — safe to refresh; retries skip
+                                files already in Directus.
                               </p>
                             </div>
                             <button
                               className="btn btn-primary btn-lg"
                               type="button"
-                              disabled={!written || !activeTarget}
-                              onClick={handleUploadStart}
+                              disabled={(!written && !migrateRun) || !activeTarget}
+                              onClick={() => void handleUploadStart()}
                             >
-                              Upload {mediaCount || 0} assets
+                              Upload {preparedCount || 0} assets
                             </button>
                           </div>
                           <pre className="payload-preview" style={{ marginTop: 16 }}>{`{
@@ -1034,6 +1392,25 @@ export function PrepareAssetsPage() {
   "files": true,
   "flows": false
 }`}</pre>
+                          {migrateRun?.status === 'failed' && importStats ? (
+                            <div className="notice notice-warn" style={{ marginTop: 16 }}>
+                              Last run #{migrateRun.id} stopped at{' '}
+                              {importStats.processed}/{importStats.total || '?'} (
+                              {importStats.uploaded} uploaded
+                              {importStats.skipped
+                                ? `, ${importStats.skipped} skipped`
+                                : ''}
+                              {importStats.failed
+                                ? `, ${importStats.failed} failed`
+                                : ''}
+                              ). Retry continues and skips files already in Directus.
+                            </div>
+                          ) : null}
+                          {!written && !migrateRun ? (
+                            <div className="notice notice-warn" style={{ marginTop: 16 }}>
+                              Write prepared assets in step 4 before uploading.
+                            </div>
+                          ) : null}
                           <div className="flow-actions">
                             <button
                               className="btn btn-ghost"
@@ -1050,37 +1427,59 @@ export function PrepareAssetsPage() {
                         <div className="flow-upload">
                           <div className="flow-progress-block">
                             <div className="flow-progress-top">
-                              <b>Uploading batch…</b>
+                              <b>Uploading to {activeTarget?.name ?? 'Directus'}…</b>
                               <span className="mono">
-                                {Math.ceil((mediaCount || 1) / 2)} / {mediaCount || 1}
+                                {importStats
+                                  ? `${importStats.processed} / ${importStats.total || '?'}`
+                                  : `run #${migrateRun?.id ?? '…'}`}
                               </span>
                             </div>
                             <div className="progress ok" style={{ height: 10 }}>
-                              <span style={{ width: '47%' }} />
+                              <span
+                                style={{
+                                  width: `${
+                                    importStats && importStats.total > 0
+                                      ? Math.min(
+                                          100,
+                                          Math.round(
+                                            (importStats.processed / importStats.total) *
+                                              100,
+                                          ),
+                                        )
+                                      : 8
+                                  }%`,
+                                }}
+                              />
                             </div>
                             <div className="meta" style={{ marginTop: 8 }}>
-                              Current · folders already applied
+                              {importStats?.currentFile
+                                ? `Current · ${importStats.currentFile}`
+                                : importStats?.phase === 'folders'
+                                  ? 'Creating folders…'
+                                  : 'Importing folders + files from prepared inventory'}
                             </div>
                           </div>
                           <div className="flow-stats" style={{ marginTop: 16 }}>
                             <div>
                               <span className="k">Uploaded</span>
-                              <strong>{Math.ceil((mediaCount || 1) / 2)}</strong>
-                              <span className="d">of {mediaCount || 1}</span>
+                              <strong>{importStats?.uploaded ?? 0}</strong>
+                              <span className="d">
+                                of {importStats?.total || preparedCount || '—'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="k">Skipped</span>
+                              <strong>{importStats?.skipped ?? 0}</strong>
+                              <span className="d">already in Directus</span>
                             </div>
                             <div>
                               <span className="k">Failed</span>
-                              <strong>0</strong>
+                              <strong>{importStats?.failed ?? 0}</strong>
                               <span className="d">retry later</span>
                             </div>
                             <div>
-                              <span className="k">Folders</span>
-                              <strong>—</strong>
-                              <span className="d">creating</span>
-                            </div>
-                            <div>
                               <span className="k">Elapsed</span>
-                              <strong>…</strong>
+                              <strong>{uploadDuration}</strong>
                               <span className="d">mm:ss</span>
                             </div>
                           </div>
@@ -1107,29 +1506,43 @@ export function PrepareAssetsPage() {
                         <div className="flow-upload">
                           <div className="notice notice-ok" style={{ margin: '0 0 16px' }}>
                             {activeTarget?.name ?? 'Target'} assets finished ·{' '}
-                            {mediaCount || 0} files
-                            {mediaBytes ? ` · ${formatSize(mediaBytes)}` : ''} · 0
-                            failures.
+                            {importStats?.uploaded ?? preparedCount} uploaded
+                            {importStats && importStats.skipped > 0
+                              ? ` · ${importStats.skipped} skipped`
+                              : ''}
+                            {importStats && importStats.placeholders > 0
+                              ? ` · ${importStats.placeholders} placeholders`
+                              : ''}
+                            {importStats
+                              ? ` · ${importStats.failed} failures`
+                              : ''}
+                            .
                           </div>
                           <div className="flow-stats">
                             <div>
                               <span className="k">Uploaded</span>
-                              <strong>{mediaCount || 0}</strong>
-                              <span className="d">of {mediaCount || 0}</span>
+                              <strong>{importStats?.uploaded ?? preparedCount}</strong>
+                              <span className="d">
+                                of {importStats?.total || preparedCount || '—'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="k">Skipped</span>
+                              <strong>{importStats?.skipped ?? 0}</strong>
+                              <span className="d">already present</span>
                             </div>
                             <div>
                               <span className="k">Failed</span>
-                              <strong>0</strong>
-                              <span className="d">retry queue empty</span>
-                            </div>
-                            <div>
-                              <span className="k">Folders</span>
-                              <strong>—</strong>
-                              <span className="d">applied</span>
+                              <strong>{importStats?.failed ?? 0}</strong>
+                              <span className="d">
+                                {(importStats?.failed ?? 0) === 0
+                                  ? 'retry queue empty'
+                                  : 'see activity'}
+                              </span>
                             </div>
                             <div>
                               <span className="k">Duration</span>
-                              <strong>—</strong>
+                              <strong>{uploadDuration}</strong>
                               <span className="d">mm:ss</span>
                             </div>
                           </div>
@@ -1144,13 +1557,65 @@ export function PrepareAssetsPage() {
                             <button
                               className="btn btn-ghost"
                               type="button"
-                              onClick={() => setUploadState('ready')}
+                              onClick={() => {
+                                setUploadState('ready')
+                                setMigrateRun(null)
+                                setUploadError(null)
+                              }}
                             >
-                              Retry failed
+                              Upload again
                             </button>
-                            <a className="btn btn-primary" href="#collections">
-                              Continue to collections
-                            </a>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {uploadState === 'failed' ? (
+                        <div className="flow-upload">
+                          <div
+                            className="notice notice-danger"
+                            style={{ margin: '0 0 16px', color: 'var(--rose)' }}
+                          >
+                            {uploadError ||
+                              migrateRun?.error_detail ||
+                              'Upload to Directus failed'}
+                          </div>
+                          <div className="flow-stats">
+                            <div>
+                              <span className="k">Uploaded</span>
+                              <strong>{importStats?.uploaded ?? 0}</strong>
+                              <span className="d">before failure</span>
+                            </div>
+                            <div>
+                              <span className="k">Failed</span>
+                              <strong>{importStats?.failed ?? '—'}</strong>
+                              <span className="d">files</span>
+                            </div>
+                            <div>
+                              <span className="k">Run</span>
+                              <strong>#{migrateRun?.id ?? '—'}</strong>
+                              <span className="d">id</span>
+                            </div>
+                            <div>
+                              <span className="k">Duration</span>
+                              <strong>{uploadDuration}</strong>
+                              <span className="d">mm:ss</span>
+                            </div>
+                          </div>
+                          <div className="flow-actions">
+                            <button
+                              className="btn btn-ghost"
+                              type="button"
+                              onClick={() => setStep(4)}
+                            >
+                              Back
+                            </button>
+                            <button
+                              className="btn btn-primary"
+                              type="button"
+                              onClick={() => void handleUploadStart()}
+                            >
+                              Retry upload
+                            </button>
                           </div>
                         </div>
                       ) : null}
@@ -1159,29 +1624,42 @@ export function PrepareAssetsPage() {
                         <div className="meta" style={{ margin: '0 0 8px' }}>
                           Activity
                         </div>
-                        <div className="log">
-                          {uploadState === 'ready' ? (
+                        <div className="log" ref={logRef}>
+                          {uploadState === 'ready' && activityLog.length === 0 ? (
                             <>
                               <div className="info">
-                                assets  inventory loaded — {recordCount || mediaCount}{' '}
-                                records
+                                assets  inventory loaded —{' '}
+                                {preparedCount || recordCount} records
                               </div>
-                              <div className="ok">assets  validate ok</div>
+                              <div className="ok">assets  prepared validate ok</div>
                               <div className="info">assets  waiting for upload</div>
                             </>
                           ) : null}
+                          {activityLog.map((line) => (
+                            <div key={line.id} className={line.level}>
+                              {line.text}
+                            </div>
+                          ))}
                           {uploadState === 'running' ? (
                             <>
-                              <div className="ok">assets  folders.json applied</div>
-                              <div className="info">assets  batch uploading…</div>
-                            </>
-                          ) : null}
-                          {uploadState === 'done' ? (
-                            <>
-                              <div className="ok">assets  folders applied</div>
-                              <div className="ok">
-                                assets  complete — 0 failures
+                              <div className="info">
+                                assets  {importStats?.processed ?? 0}/
+                                {importStats?.total ?? '?'} processed
+                                {importStats && importStats.uploaded > 0
+                                  ? ` · ${importStats.uploaded} uploaded`
+                                  : ''}
+                                {importStats && importStats.skipped > 0
+                                  ? ` · ${importStats.skipped} skipped`
+                                  : ''}
+                                {importStats && importStats.failed > 0
+                                  ? ` · ${importStats.failed} failed`
+                                  : ''}
                               </div>
+                              {importStats?.currentFile ? (
+                                <div className="info">
+                                  assets  current · {importStats.currentFile}
+                                </div>
+                              ) : null}
                             </>
                           ) : null}
                         </div>
