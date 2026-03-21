@@ -28,6 +28,8 @@ from app.schemas import (
     DirectusTargetUpdate,
     MigrationRunOut,
     MigrationStart,
+    PrepareAssetsOut,
+    PrepareAssetsRequest,
     ProjectCreate,
     ProjectDetail,
     ProjectOut,
@@ -36,13 +38,18 @@ from app.schemas import (
     ProjectUploadOut,
 )
 from app.services.directus import probe_directus
-from app.services.extract import delete_upload_artifacts, process_or_schedule
+from app.services.extract import (
+    delete_upload_artifacts,
+    extract_dir_for_upload,
+    process_or_schedule,
+)
 from app.services.migrate import (
     encode_phases,
     prepared_dir,
     schedule_migrate,
     validate_prepared,
 )
+from app.services.prepare import PrepareError, build_prepared
 from app.services.uploads import save_upload
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -541,6 +548,93 @@ def _get_owned_target(
             detail="Target not found",
         )
     return project, target
+
+
+@router.post(
+    "/{project_id}/targets/{target_id}/prepare",
+    response_model=PrepareAssetsOut,
+)
+def prepare_target_assets(
+    project_id: int,
+    target_id: int,
+    payload: PrepareAssetsRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PrepareAssetsOut:
+    """
+    Copy / rename binaries and write files_metadata.json into prepared/target_{id}/.
+
+    Does not contact Directus.
+    """
+    project, target = _get_owned_target(db, user, project_id, target_id)
+
+    upload = (
+        db.query(ProjectUpload)
+        .filter(
+            ProjectUpload.id == payload.upload_id,
+            ProjectUpload.project_id == project.id,
+        )
+        .first()
+    )
+    if upload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Upload not found",
+        )
+    if upload.status != "ready":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Upload is not ready (status={upload.status})",
+        )
+
+    meta_path = None
+    if payload.metadata_file_id is not None:
+        meta_row = (
+            db.query(ProjectSourceFile)
+            .filter(
+                ProjectSourceFile.id == payload.metadata_file_id,
+                ProjectSourceFile.project_id == project.id,
+                ProjectSourceFile.upload_id == upload.id,
+            )
+            .first()
+        )
+        if meta_row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Metadata source file not found",
+            )
+        meta_path = (
+            extract_dir_for_upload(project.id, upload.id) / meta_row.relative_path
+        )
+        if not meta_path.is_file():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Metadata file missing on disk",
+            )
+
+    if payload.mode in ("directus", "map") and meta_path is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="metadata_file_id is required for directus/map mode",
+        )
+
+    try:
+        summary = build_prepared(
+            project_id=project.id,
+            target_id=target.id,
+            upload_id=upload.id,
+            folder_path=payload.folder_path,
+            mode=payload.mode,  # type: ignore[arg-type]
+            placeholders=payload.placeholders,
+            metadata_abs_path=meta_path,
+        )
+    except PrepareError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return PrepareAssetsOut(**summary)
 
 
 @router.post(

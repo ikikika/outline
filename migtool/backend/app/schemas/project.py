@@ -109,6 +109,36 @@ class ProjectSourceFileOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PrepareAssetsRequest(BaseModel):
+    """Build prepared/target_{id}/ from an extracted media folder."""
+
+    upload_id: int
+    folder_path: str = Field(
+        default="",
+        max_length=1024,
+        description="Relative path under extracted/upload_{id}/ (e.g. export1/files)",
+    )
+    mode: str = Field(default="generate", pattern="^(directus|map|generate)$")
+    placeholders: bool = True
+    metadata_file_id: int | None = None
+
+    @field_validator("folder_path")
+    @classmethod
+    def normalize_folder_path(cls, value: str) -> str:
+        return value.replace("\\", "/").strip().strip("/")
+
+
+class PrepareAssetsOut(BaseModel):
+    output_path: str
+    mode: str
+    records: int
+    copied: int
+    placeholders: int
+    skipped: int
+    missing: int
+    folders: int
+
+
 class MigrationStart(BaseModel):
     """Select which import phases to run (defaults: all)."""
 

@@ -71,6 +71,7 @@ docker compose restart api
 | `POST` | `/api/projects/{id}/targets` | Add Directus target |
 | `POST` | `/api/projects/{id}/targets/{tid}/activate` | Set active target |
 | `POST` | `/api/projects/{id}/targets/{tid}/test` | Probe Directus (`GET /users/me`) |
+| `POST` | `/api/projects/{id}/targets/{tid}/prepare` | Build `prepared/target_{tid}/` from extracted folder (body: `upload_id`, `folder_path`, `mode`, optional `metadata_file_id` / `placeholders`) |
 | `POST` | `/api/projects/{id}/targets/{tid}/migrate` | Start import from `prepared/target_{tid}/` (optional body: `schema`/`data`/`files`/`flows` booleans) |
 | `GET` | `/api/projects/{id}/targets/{tid}/migrate` | Latest migration run status |
 | `GET` | `/api/projects/{id}/targets/{tid}/migrate/{run_id}` | One migration run |

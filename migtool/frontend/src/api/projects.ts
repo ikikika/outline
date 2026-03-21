@@ -70,6 +70,27 @@ export type DirectusTargetCreatePayload = {
   make_active?: boolean
 }
 
+export type PrepareMode = 'directus' | 'map' | 'generate'
+
+export type PrepareAssetsPayload = {
+  upload_id: number
+  folder_path: string
+  mode: PrepareMode
+  placeholders?: boolean
+  metadata_file_id?: number | null
+}
+
+export type PrepareAssetsResult = {
+  output_path: string
+  mode: string
+  records: number
+  copied: number
+  placeholders: number
+  skipped: number
+  missing: number
+  folders: number
+}
+
 export function listProjects(): Promise<Project[]> {
   return request<Project[]>('/projects')
 }
@@ -156,5 +177,19 @@ export function testTarget(
   return request<DirectusTarget>(
     `/projects/${projectId}/targets/${targetId}/test`,
     { method: 'POST' },
+  )
+}
+
+export function prepareTargetAssets(
+  projectId: number,
+  targetId: number,
+  payload: PrepareAssetsPayload,
+): Promise<PrepareAssetsResult> {
+  return request<PrepareAssetsResult>(
+    `/projects/${projectId}/targets/${targetId}/prepare`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
   )
 }

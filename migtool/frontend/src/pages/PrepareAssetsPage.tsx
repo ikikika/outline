@@ -3,6 +3,8 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
   getProject,
+  prepareTargetAssets,
+  type PrepareAssetsResult,
   type ProjectDetail,
   type ProjectSourceFile,
 } from '../api/projects'
@@ -161,6 +163,9 @@ export function PrepareAssetsPage() {
   const [mode, setMode] = useState<MetaMode>('generate')
   const [placeholders, setPlaceholders] = useState(true)
   const [written, setWritten] = useState(false)
+  const [writeResult, setWriteResult] = useState<PrepareAssetsResult | null>(null)
+  const [writing, setWriting] = useState(false)
+  const [writeError, setWriteError] = useState<string | null>(null)
   const [uploadState, setUploadState] = useState<UploadState>('ready')
 
   const invalidId = !Number.isFinite(projectId) || projectId <= 0
@@ -293,6 +298,8 @@ export function PrepareAssetsPage() {
     if (sel.kind === 'folder') {
       setFilesFolderPath(sel.path)
       setWritten(false)
+      setWriteResult(null)
+      setWriteError(null)
       setUploadState('ready')
       return
     }
@@ -304,6 +311,9 @@ export function PrepareAssetsPage() {
 
   function applyMetaSelect(value: string) {
     setMetaKey(value)
+    setWritten(false)
+    setWriteResult(null)
+    setWriteError(null)
     if (value === 'none') {
       setMode('generate')
       return
@@ -312,8 +322,44 @@ export function PrepareAssetsPage() {
     setMode(file ? guessMetaMode(file.original_name) : 'map')
   }
 
-  function handleWrite() {
-    setWritten(true)
+  function parseFolderPath(path: string): { uploadId: number; folderPath: string } | null {
+    const match = path.match(/^upload:(\d+)(?:\/(.*))?$/)
+    if (!match) return null
+    return {
+      uploadId: Number(match[1]),
+      folderPath: match[2] ?? '',
+    }
+  }
+
+  async function handleWrite() {
+    if (!activeTarget || !filesFolderPath || writing) return
+    const parsed = parseFolderPath(filesFolderPath)
+    if (!parsed) {
+      setWriteError('Select a files folder under an extracted upload')
+      return
+    }
+    setWriting(true)
+    setWriteError(null)
+    try {
+      const result = await prepareTargetAssets(projectId, activeTarget.id, {
+        upload_id: parsed.uploadId,
+        folder_path: parsed.folderPath,
+        mode,
+        placeholders,
+        metadata_file_id:
+          metaKey !== 'none' && mode !== 'generate' ? Number(metaKey) : null,
+      })
+      setWriteResult(result)
+      setWritten(true)
+    } catch (err) {
+      setWriteError(
+        err instanceof ApiError ? err.message : 'Could not write prepared assets',
+      )
+      setWritten(false)
+      setWriteResult(null)
+    } finally {
+      setWriting(false)
+    }
   }
 
   function handleUploadStart() {
@@ -694,7 +740,12 @@ export function PrepareAssetsPage() {
                         <input
                           type="checkbox"
                           checked={placeholders}
-                          onChange={(e) => setPlaceholders(e.target.checked)}
+                          onChange={(e) => {
+                            setPlaceholders(e.target.checked)
+                            setWritten(false)
+                            setWriteResult(null)
+                            setWriteError(null)
+                          }}
                         />
                         <span>
                           <b>Create placeholder files for missing assets</b>
@@ -798,27 +849,41 @@ export function PrepareAssetsPage() {
                       <div className="prep-output">
                         <div className="prep-output-path">
                           <span className="meta">Output</span>
-                          <code className="mono">{outputPath}</code>
+                          <code className="mono">
+                            {writeResult?.output_path ?? outputPath}
+                          </code>
                         </div>
                         <div className="prep-output-tree">
                           <div>
                             <span className="mono">files/</span>{' '}
                             <span className="meta">
-                              {realCopyCount || mediaCount} binaries
-                              {placeholderCount
-                                ? ` · ${placeholderCount} placeholders`
-                                : ''}
+                              {writeResult
+                                ? `${writeResult.copied} binaries${
+                                    writeResult.placeholders
+                                      ? ` · ${writeResult.placeholders} placeholders`
+                                      : ''
+                                  }`
+                                : `${realCopyCount || mediaCount} binaries${
+                                    placeholderCount
+                                      ? ` · ${placeholderCount} placeholders`
+                                      : ''
+                                  }`}
                             </span>
                           </div>
                           <div>
                             <span className="mono">files_metadata.json</span>{' '}
                             <span className="meta">
-                              {recordCount || mediaCount} records
+                              {(writeResult?.records ?? recordCount) || mediaCount}{' '}
+                              records
                             </span>
                           </div>
                           <div>
                             <span className="mono">folders.json</span>{' '}
-                            <span className="meta">copied if present · else []</span>
+                            <span className="meta">
+                              {writeResult
+                                ? `${writeResult.folders} folders`
+                                : 'copied if present · else []'}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -826,19 +891,26 @@ export function PrepareAssetsPage() {
                       <div className="flow-stats">
                         <div>
                           <span className="k">Copy</span>
-                          <strong>{Math.max(0, mediaCount - missingCount)}</strong>
+                          <strong>
+                            {writeResult?.copied ??
+                              Math.max(0, mediaCount - missingCount)}
+                          </strong>
                           <span className="d">real files</span>
                         </div>
                         <div>
                           <span className="k">Placeholders</span>
-                          <strong>{placeholderCount}</strong>
+                          <strong>
+                            {writeResult?.placeholders ?? placeholderCount}
+                          </strong>
                           <span className="d">
                             {placeholders ? 'enabled' : 'off'}
                           </span>
                         </div>
                         <div>
                           <span className="k">Metadata</span>
-                          <strong>{recordCount || mediaCount || '—'}</strong>
+                          <strong>
+                            {(writeResult?.records ?? recordCount) || mediaCount || '—'}
+                          </strong>
                           <span className="d">{metaCopy.stat}</span>
                         </div>
                         <div>
@@ -855,16 +927,21 @@ export function PrepareAssetsPage() {
                           className="btn btn-ghost"
                           type="button"
                           onClick={() => setStep(3)}
+                          disabled={writing}
                         >
                           Back
                         </button>
                         <button
                           className={`btn btn-primary${written ? ' btn-disabled' : ''}`}
                           type="button"
-                          disabled={written || !activeTarget}
-                          onClick={handleWrite}
+                          disabled={written || !activeTarget || writing || !filesFolderPath}
+                          onClick={() => void handleWrite()}
                         >
-                          {written ? 'Written' : 'Write prepared assets'}
+                          {writing
+                            ? 'Writing…'
+                            : written
+                              ? 'Written'
+                              : 'Write prepared assets'}
                         </button>
                         {written ? (
                           <button
@@ -886,9 +963,25 @@ export function PrepareAssetsPage() {
                         </div>
                       ) : null}
 
-                      {written ? (
+                      {writeError ? (
+                        <div
+                          className="notice notice-danger"
+                          style={{ marginTop: 16, color: 'var(--rose)' }}
+                        >
+                          {writeError}
+                        </div>
+                      ) : null}
+
+                      {written && writeResult ? (
                         <div className="notice notice-ok" style={{ marginTop: 16 }}>
-                          Prepared folder ready. Next: upload assets to{' '}
+                          Prepared folder ready — {writeResult.copied} copied
+                          {writeResult.placeholders
+                            ? `, ${writeResult.placeholders} placeholders`
+                            : ''}
+                          {writeResult.skipped
+                            ? `, ${writeResult.skipped} skipped`
+                            : ''}
+                          . Next: upload assets to{' '}
                           {activeTarget?.name ?? 'Directus'}.
                         </div>
                       ) : null}
