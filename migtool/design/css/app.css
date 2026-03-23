@@ -1599,6 +1599,17 @@ img {
   margin-bottom: 8px;
 }
 
+.prep-sample {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.prep-sample .payload-preview {
+  margin: 8px 0 0;
+}
+
 /* Windows-style folder tree */
 .win-explorer {
   border: 1px solid #a0a0a0;

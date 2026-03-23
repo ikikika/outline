@@ -511,4 +511,371 @@
     applyUploadState("running");
     showStep(1);
   }
+
+  // Data models wizard (design/mapping.html)
+  const modelsRail = document.querySelector("[data-models-rail]");
+  if (modelsRail) {
+    const panels = document.querySelectorAll("[data-models-panel]");
+    const railSteps = document.querySelectorAll("[data-models-rail-step]");
+    const badge = document.querySelector("[data-models-badge]");
+    const packBtns = document.querySelectorAll("[data-models-pack]");
+    const continueLabel = document.querySelector("[data-models-continue-label]");
+    const writeTitle = document.querySelector("[data-models-write-title]");
+    const writeSub = document.querySelector("[data-models-write-sub]");
+    const writeBtn = document.querySelector("[data-models-write]");
+    const doneNote = document.querySelector("[data-models-done]");
+    const nextLinks = document.querySelector("[data-models-next]");
+    const targetSelect = document.querySelector("[data-models-target]");
+    const targetLabels = document.querySelectorAll("[data-models-target-label]");
+    const outPath = document.querySelector("[data-models-out-path]");
+    const applyStateBtns = document.querySelectorAll("[data-models-apply-state]");
+    const applyStart = document.querySelector("[data-models-apply-start]");
+    const applyNext = document.querySelector("[data-models-apply-next]");
+    const applyLog = document.querySelector("[data-models-apply-log]");
+    const applyErrors = document.querySelector("[data-models-apply-errors]");
+    const collCount = document.querySelector("[data-models-coll-count]");
+    const fieldCount = document.querySelector("[data-models-field-count]");
+    const relCount = document.querySelector("[data-models-rel-count]");
+    const errCount = document.querySelector("[data-models-err-count]");
+    const errLabel = document.querySelector("[data-models-err-label]");
+    const collLabel = document.querySelector("[data-models-coll-label]");
+    const applyStatus = document.querySelector("[data-models-apply-status]");
+    const applyPct = document.querySelector("[data-models-apply-pct]");
+    const applyBar = document.querySelector("[data-models-apply-bar] span");
+    const applyCurrent = document.querySelector("[data-models-apply-current]");
+    const applyBarWrap = document.querySelector("[data-models-apply-bar]");
+
+    let step = 1;
+    let pack = "directus";
+    let applyState = "ready";
+    let applyTimer = null;
+
+    const TOTAL = { collections: 88, fields: 594, relations: 106 };
+    const COLL_NAMES = [
+      "authors",
+      "categories",
+      "posts",
+      "pages",
+      "issues",
+      "media_meta",
+      "tags",
+      "redirects",
+    ];
+
+    const stepLabels = {
+      1: "Step 1 · Scan",
+      2: "Step 2 · Detect",
+      3: "Step 3 · Schema",
+      4: "Step 4 · Confirm",
+      5: "Step 5 · Apply",
+    };
+
+    const setHidden = (els, hidden) => {
+      els.forEach((el) => {
+        if (el) el.hidden = hidden;
+      });
+    };
+
+    const stopApplyTimer = () => {
+      if (applyTimer) {
+        clearInterval(applyTimer);
+        applyTimer = null;
+      }
+    };
+
+    const renderCounts = (created, fields, rels, errors) => {
+      if (collCount) collCount.textContent = `${created} / ${TOTAL.collections}`;
+      if (fieldCount) fieldCount.textContent = `${fields} / ${TOTAL.fields}`;
+      if (relCount) relCount.textContent = `${rels} / ${TOTAL.relations}`;
+      if (errCount) errCount.textContent = String(errors);
+      if (errLabel) errLabel.textContent = errors ? "failed" : "none";
+      const pct = Math.round((created / TOTAL.collections) * 100);
+      if (applyPct) applyPct.textContent = `${pct}%`;
+      if (applyBar) applyBar.style.width = `${pct}%`;
+    };
+
+    const applyLogs = {
+      ready: [
+        '<div class="info">14:02:01  schema  waiting — POST migrate when ready</div>',
+        '<div class="info">14:02:01  schema  prepared/target_3/schema/ · 88 collections</div>',
+      ],
+      running: [
+        '<div class="ok">14:02:18  schema  Importing schema…</div>',
+        '<div class="info">14:02:18  schema  Creating folder collections…</div>',
+        '<div class="ok">14:02:19  schema  ✅ Collection created: content</div>',
+        '<div class="info">14:02:19  schema  Creating collections…</div>',
+        '<div class="ok">14:02:21  schema  ✅ Collection created: authors</div>',
+        '<div class="ok">14:02:22  schema  ✅ Collection created: categories</div>',
+        '<div class="ok">14:02:24  schema  ✅ Collection created: posts</div>',
+        '<div class="info">14:02:25  schema  Creating fields… (phase 1)</div>',
+        '<div class="ok">14:02:26  schema  ✅ Field created: posts.title</div>',
+      ],
+      done: [
+        '<div class="ok">14:02:18  schema  Importing schema…</div>',
+        '<div class="ok">14:04:02  schema  ✅ Collection created: redirects (88/88)</div>',
+        '<div class="ok">14:04:11  schema  fields 594/594 · relations 106/106</div>',
+        '<div class="ok">14:04:12  schema  complete — 0 failures</div>',
+      ],
+      failed: [
+        '<div class="ok">14:02:18  schema  Importing schema…</div>',
+        '<div class="ok">14:02:24  schema  ✅ Collection created: posts (41/88)</div>',
+        '<div class="err">14:03:01  schema  ❌ Failed to create collection \'issues\': column "legacy_id" already exists</div>',
+        '<div class="err">14:03:08  schema  ❌ Failed to create relation pages.parent_id: related collection missing</div>',
+        '<div class="warn">14:03:09  schema  stopped — 41 created · 2 failed · 45 remaining</div>',
+      ],
+    };
+
+    const applyApplyState = (next) => {
+      applyState = next;
+      stopApplyTimer();
+
+      applyStateBtns.forEach((btn) => {
+        btn.classList.toggle("on", btn.dataset.modelsApplyState === applyState);
+      });
+
+      if (applyLog) applyLog.innerHTML = applyLogs[applyState].join("");
+      if (applyErrors) applyErrors.hidden = applyState !== "failed";
+      if (applyNext) applyNext.hidden = applyState !== "done";
+      if (applyBarWrap) {
+        applyBarWrap.classList.remove("ok", "warn", "err");
+        if (applyState === "failed") applyBarWrap.classList.add("err");
+        else if (applyState === "running") applyBarWrap.classList.add("ok");
+        else if (applyState === "done") applyBarWrap.classList.add("ok");
+      }
+
+      if (applyStart) {
+        if (applyState === "ready") {
+          applyStart.textContent = "Apply schema";
+          applyStart.disabled = false;
+          applyStart.classList.remove("btn-disabled");
+        } else if (applyState === "running") {
+          applyStart.textContent = "Applying…";
+          applyStart.disabled = true;
+          applyStart.classList.add("btn-disabled");
+        } else if (applyState === "done") {
+          applyStart.textContent = "Applied";
+          applyStart.disabled = true;
+          applyStart.classList.add("btn-disabled");
+        } else {
+          applyStart.textContent = "Retry apply";
+          applyStart.disabled = false;
+          applyStart.classList.remove("btn-disabled");
+        }
+      }
+
+      if (applyState === "ready") {
+        renderCounts(0, 0, 0, 0);
+        if (collLabel) collLabel.textContent = "waiting";
+        if (applyStatus) applyStatus.textContent = "Ready to apply";
+        if (applyCurrent) applyCurrent.textContent = "—";
+      } else if (applyState === "running") {
+        let created = 12;
+        let fields = 48;
+        let rels = 4;
+        renderCounts(created, fields, rels, 0);
+        if (collLabel) collLabel.textContent = "creating";
+        if (applyStatus) applyStatus.textContent = "Applying collections…";
+        if (applyCurrent) applyCurrent.textContent = "posts";
+        if (badge && step === 5) {
+          badge.className = "badge badge-run";
+          badge.textContent = "Applying…";
+        }
+        let tick = 0;
+        applyTimer = setInterval(() => {
+          tick += 1;
+          created = Math.min(TOTAL.collections, created + 3);
+          fields = Math.min(TOTAL.fields, fields + 18);
+          rels = Math.min(TOTAL.relations, rels + 2);
+          renderCounts(created, fields, rels, 0);
+          if (applyCurrent) {
+            applyCurrent.textContent = COLL_NAMES[tick % COLL_NAMES.length];
+          }
+          if (applyLog && tick % 2 === 0) {
+            const name = COLL_NAMES[tick % COLL_NAMES.length];
+            applyLog.insertAdjacentHTML(
+              "beforeend",
+              `<div class="ok">14:02:${String(26 + tick).padStart(2, "0")}  schema  ✅ Collection created: ${name} (${created}/${TOTAL.collections})</div>`
+            );
+            applyLog.scrollTop = applyLog.scrollHeight;
+          }
+          if (created >= TOTAL.collections) {
+            stopApplyTimer();
+            applyApplyState("done");
+          }
+        }, 700);
+      } else if (applyState === "done") {
+        renderCounts(TOTAL.collections, TOTAL.fields, TOTAL.relations, 0);
+        if (collLabel) collLabel.textContent = "created";
+        if (applyStatus) applyStatus.textContent = "Schema applied";
+        if (applyCurrent) applyCurrent.textContent = "complete";
+        if (badge && step === 5) {
+          badge.className = "badge badge-ok";
+          badge.textContent = "Applied";
+        }
+      } else {
+        renderCounts(41, 210, 38, 2);
+        if (collLabel) collLabel.textContent = "partial";
+        if (applyStatus) applyStatus.textContent = "Apply failed";
+        if (applyCurrent) applyCurrent.textContent = "issues";
+        if (badge && step === 5) {
+          badge.className = "badge badge-err";
+          badge.textContent = "Apply failed";
+        }
+      }
+    };
+
+    const applyPack = (next) => {
+      pack = next;
+      packBtns.forEach((btn) => {
+        btn.classList.toggle("on", btn.dataset.modelsPack === pack);
+      });
+
+      const isDirectus = pack === "directus";
+      setHidden(document.querySelectorAll("[data-models-tree-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-models-tree-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-models-scan-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-models-scan-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-models-scan-note-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-models-scan-note-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-models-detect-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-models-detect-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-models-write-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-models-write-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-models-confirm-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-models-confirm-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-models-apply-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-models-apply-foreign]"), isDirectus);
+
+      const pathEl = document.querySelector("[data-models-tree-path]");
+      if (pathEl) {
+        pathEl.textContent = isDirectus
+          ? "extracted\\upload_1\\export1"
+          : "extracted\\upload_2\\wordpress-dump";
+      }
+
+      if (continueLabel) {
+        continueLabel.textContent = isDirectus
+          ? "Continue to write"
+          : "Continue (deferred)";
+      }
+      if (writeTitle) {
+        writeTitle.textContent = isDirectus
+          ? "Move schema into prepared"
+          : "Nothing to prepare yet";
+      }
+      if (writeSub) {
+        writeSub.textContent = isDirectus
+          ? "Copy verified Directus schema files into the active target’s prepared folder. Does not apply collections to Directus yet."
+          : "Foreign JSON stays parked under extracted. Schema mapping will land in a later release.";
+      }
+    };
+
+    const showStep = (n) => {
+      step = Number(n);
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.modelsPanel !== String(step);
+      });
+      railSteps.forEach((el) => {
+        const i = Number(el.dataset.modelsRailStep);
+        el.classList.remove("on", "done");
+        if (i < step) el.classList.add("done");
+        if (i === step) el.classList.add("on");
+      });
+      if (badge) {
+        if (step === 5 && pack === "directus") {
+          if (applyState === "running") {
+            badge.className = "badge badge-run";
+            badge.textContent = "Applying…";
+          } else if (applyState === "done") {
+            badge.className = "badge badge-ok";
+            badge.textContent = "Applied";
+          } else if (applyState === "failed") {
+            badge.className = "badge badge-err";
+            badge.textContent = "Apply failed";
+          } else {
+            badge.className = "badge badge-run";
+            badge.textContent = "Ready to apply";
+          }
+        } else {
+          const written =
+            pack === "directus" && doneNote && !doneNote.hidden && step === 3;
+          badge.className = written
+            ? "badge badge-ok"
+            : step >= 3 && pack === "foreign"
+              ? "badge badge-draft"
+              : "badge badge-map";
+          badge.textContent = written
+            ? "Schema prepared"
+            : step >= 3 && pack === "foreign"
+              ? "Deferred"
+              : stepLabels[step];
+        }
+      }
+    };
+
+    document.querySelectorAll("[data-models-goto]").forEach((btn) => {
+      btn.addEventListener("click", () => showStep(btn.dataset.modelsGoto));
+    });
+
+    packBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (doneNote) doneNote.hidden = true;
+        if (nextLinks) nextLinks.hidden = true;
+        if (writeBtn) {
+          writeBtn.textContent = "Write schema to prepared";
+          writeBtn.classList.remove("btn-disabled");
+          writeBtn.disabled = false;
+        }
+        stopApplyTimer();
+        applyState = "ready";
+        applyPack(btn.dataset.modelsPack);
+        if (pack === "directus") applyApplyState("ready");
+        showStep(step);
+      });
+    });
+
+    if (writeBtn) {
+      writeBtn.addEventListener("click", () => {
+        if (doneNote) doneNote.hidden = false;
+        if (nextLinks) nextLinks.hidden = false;
+        writeBtn.textContent = "Written";
+        writeBtn.classList.add("btn-disabled");
+        writeBtn.disabled = true;
+        if (badge) {
+          badge.className = "badge badge-ok";
+          badge.textContent = "Schema prepared";
+        }
+      });
+    }
+
+    applyStateBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        applyApplyState(btn.dataset.modelsApplyState);
+      });
+    });
+
+    if (applyStart) {
+      applyStart.addEventListener("click", () => {
+        applyApplyState(applyState === "failed" ? "running" : "running");
+      });
+    }
+
+    if (targetSelect) {
+      targetSelect.addEventListener("change", () => {
+        const staging = targetSelect.value === "Staging";
+        targetLabels.forEach((el) => {
+          el.textContent = staging ? "Staging" : "Production";
+        });
+        if (outPath) {
+          outPath.textContent = staging
+            ? "uploads/project_1/prepared/target_3/schema/"
+            : "uploads/project_1/prepared/target_4/schema/";
+        }
+      });
+    }
+
+    applyPack("directus");
+    applyApplyState("ready");
+    showStep(1);
+  }
 })();

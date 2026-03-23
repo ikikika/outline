@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Map data models — Migtool</title>
+  <title>Data models — Migtool</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -26,7 +26,7 @@
         <a class="active" href="mapping.html">Data models</a>
         <a href="field-mapping.html">Field mapping</a>
         <a href="preview.html">Preview</a>
-        <a href="assets.html">Assets</a>
+        <a href="prepare-assets.html">Prepare assets</a>
         <a href="collections.html">Collections</a>
         <a href="migration-status.html">Migrate</a>
         <a href="issues.html">Issues</a>
@@ -37,121 +37,531 @@
     <main class="main">
       <header class="topbar">
         <div class="crumbs">Acme Magazine rebuild / <strong>Data models</strong></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost">Accept all recommendations</button>
-          <a class="btn btn-primary" href="field-mapping.html">Map fields</a>
+        <div class="target-switch">
+          <label for="target">Target</label>
+          <select id="target" data-models-target>
+            <option selected>Staging</option>
+            <option>Production</option>
+          </select>
         </div>
       </header>
 
       <div class="content">
         <div class="page-head">
           <div>
-            <h1>Map JSON into Directus collections</h1>
-            <p>Migtool grouped records by shape and suggested collections. Confirm or retarget each group before field-level mapping.</p>
+            <h1>Prepare data models</h1>
+            <p>
+              Uploaded packs are structured JSON. For now we only handle <strong>schema</strong>:
+              if the source is Directus-compatible, copy it into
+              <span class="mono">prepared/target_{id}/schema/</span>.
+              Foreign shapes are parked — mapping comes later.
+            </p>
           </div>
+          <span class="badge badge-map" data-models-badge>Step 1 · Scan</span>
         </div>
 
-        <div class="split">
-          <aside class="card card-pad file-nav">
-            <div class="nav-label" style="padding-left:0">Uploaded files</div>
-            <div class="item active" data-file="wp-posts.json">
-              <b>wp-posts.json</b>
-              <span class="meta">4,120 records · 3 shapes</span>
-            </div>
-            <div class="item" data-file="wp-users.json">
-              <b>wp-users.json</b>
-              <span class="meta">86 records · 1 shape</span>
-            </div>
-            <div class="item" data-file="wp-terms.json">
-              <b>wp-terms.json</b>
-              <span class="meta">214 records · 2 shapes</span>
-            </div>
-            <div class="item" data-file="wp-media-manifest.json">
-              <b>wp-media-manifest.json</b>
-              <span class="meta">2,041 files</span>
-            </div>
-          </aside>
+        <ol class="flow-rail" data-models-rail>
+          <li class="flow-step on" data-models-rail-step="1">
+            <span class="flow-n">1</span>
+            <div><small>Sources</small><b>Scan JSON</b></div>
+          </li>
+          <li class="flow-step" data-models-rail-step="2">
+            <span class="flow-n">2</span>
+            <div><small>Detect</small><b>Compatibility</b></div>
+          </li>
+          <li class="flow-step" data-models-rail-step="3">
+            <span class="flow-n">3</span>
+            <div><small>Schema</small><b>Write prepared</b></div>
+          </li>
+          <li class="flow-step" data-models-rail-step="4">
+            <span class="flow-n">4</span>
+            <div><small>Review</small><b>Confirm</b></div>
+          </li>
+          <li class="flow-step" data-models-rail-step="5">
+            <span class="flow-n">5</span>
+            <div><small>Directus</small><b>Apply</b></div>
+          </li>
+        </ol>
 
-          <section class="card card-pad">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div>
-                <div class="meta">Source file</div>
-                <strong data-file-title>wp-posts.json</strong>
+        <div class="flow-layout">
+          <div class="flow-main">
+
+            <!-- Step 1: Scan -->
+            <section class="flow-card" data-models-panel="1">
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 1 · Sources</div>
+                  <h2>Scan uploaded structured JSON</h2>
+                  <p class="meta">Pick the pack under extracted that holds model definitions. We look for a Directus <span class="mono">schema/</span> tree or standalone schema JSON.</p>
+                </div>
               </div>
-              <span class="badge badge-map">WordPress post_type split</span>
-            </div>
 
-            <table class="map-table">
-              <thead>
-                <tr>
-                  <th>Detected group</th>
-                  <th>Sample</th>
-                  <th>Recommended collection</th>
-                  <th>Confidence</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <b>Posts</b>
-                    <div class="meta">post_type = post · 3,402 records</div>
-                  </td>
-                  <td>
-                    <pre class="json-preview" style="max-width:260px;max-height:140px;margin:0">{
-  <span class="k">"ID"</span>: <span class="n">1842</span>,
-  <span class="k">"post_title"</span>: <span class="s">"Autumn issue"</span>,
-  <span class="k">"post_content"</span>: <span class="s">"&lt;p&gt;…"</span>,
-  <span class="k">"post_status"</span>: <span class="s">"publish"</span>
+              <div class="state-switch" style="margin-bottom:16px" data-models-scenario>
+                <button type="button" class="on" data-models-pack="directus">Directus export</button>
+                <button type="button" data-models-pack="foreign">Foreign CMS JSON</button>
+              </div>
+
+              <div class="prep-pick-grid">
+                <div>
+                  <div class="meta" style="margin:0 0 8px">Extracted tree</div>
+                  <div class="win-explorer">
+                    <div class="win-explorer-bar">
+                      <span class="win-explorer-label">This PC</span>
+                      <span class="mono win-explorer-path" data-models-tree-path>extracted\upload_1\export1</span>
+                    </div>
+                    <ul class="win-tree" data-models-tree-directus>
+                      <li class="win-node open">
+                        <div class="win-row">
+                          <button type="button" class="win-twist" aria-label="Collapse"></button>
+                          <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                          <button type="button" class="win-label"><b>upload_1</b></button>
+                        </div>
+                        <ul class="win-children">
+                          <li class="win-node open">
+                            <div class="win-row selected">
+                              <button type="button" class="win-twist" aria-label="Collapse"></button>
+                              <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                              <button type="button" class="win-label"><b>export1</b></button>
+                            </div>
+                            <ul class="win-children">
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>schema</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>data</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>files</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>flows</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>files_metadata.json</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node last">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>folders.json</b></button>
+                                </div>
+                              </li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                    <ul class="win-tree" data-models-tree-foreign hidden>
+                      <li class="win-node open">
+                        <div class="win-row">
+                          <button type="button" class="win-twist" aria-label="Collapse"></button>
+                          <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                          <button type="button" class="win-label"><b>upload_2</b></button>
+                        </div>
+                        <ul class="win-children">
+                          <li class="win-node open">
+                            <div class="win-row selected">
+                              <button type="button" class="win-twist" aria-label="Collapse"></button>
+                              <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                              <button type="button" class="win-label"><b>wordpress-dump</b></button>
+                            </div>
+                            <ul class="win-children">
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>wp-posts.json</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>wp-users.json</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>wp-terms.json</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node last">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>wp-media-manifest.json</b></button>
+                                </div>
+                              </li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="meta" style="margin:0 0 8px">Detected in selection</div>
+                  <div class="flow-stats" style="grid-template-columns:1fr 1fr;margin-bottom:12px" data-models-scan-directus>
+                    <div><span class="k">JSON files</span><strong>6</strong><span class="d">schema + sidecars</span></div>
+                    <div><span class="k">Schema folder</span><strong>Yes</strong><span class="d">export1/schema</span></div>
+                    <div><span class="k">Collections</span><strong>88</strong><span class="d">schema_complete</span></div>
+                    <div><span class="k">Fields</span><strong>594</strong><span class="d">+ 106 relations</span></div>
+                  </div>
+                  <div class="flow-stats" style="grid-template-columns:1fr 1fr;margin-bottom:12px" data-models-scan-foreign hidden>
+                    <div><span class="k">JSON files</span><strong>4</strong><span class="d">flat records</span></div>
+                    <div><span class="k">Schema folder</span><strong>No</strong><span class="d">not Directus layout</span></div>
+                    <div><span class="k">Shapes</span><strong>WordPress</strong><span class="d">posts · users · terms</span></div>
+                    <div><span class="k">Records</span><strong>~4.4k</strong><span class="d">content rows</span></div>
+                  </div>
+                  <div class="notice notice-ok" data-models-scan-note-directus>
+                    Looks like a Directus export pack. Step 2 will verify schema files before copying into prepared.
+                  </div>
+                  <div class="notice notice-warn" data-models-scan-note-foreign hidden>
+                    No Directus <span class="mono">schema/</span> detected. These files stay in extracted — model mapping is deferred.
+                  </div>
+                </div>
+              </div>
+
+              <div class="flow-actions">
+                <a class="btn btn-ghost" href="create-project.html">Back to source files</a>
+                <button class="btn btn-primary" type="button" data-models-goto="2">Continue to detect</button>
+              </div>
+            </section>
+
+            <!-- Step 2: Detect -->
+            <section class="flow-card" data-models-panel="2" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 2 · Detect</div>
+                  <h2>Directus compatibility</h2>
+                  <p class="meta">Compatible means we can copy schema as-is into prepared. Incompatible sources are listed for a later mapping pass — not discarded.</p>
+                </div>
+              </div>
+
+              <div data-models-detect-directus>
+                <div class="notice notice-ok" style="margin:0 0 16px">
+                  Pack matches Directus export layout. Schema can move into
+                  <span class="mono">prepared/target_3/schema/</span> for Staging.
+                </div>
+
+                <div class="coll-row">
+                  <div><b>schema_complete.json</b><div class="meta">canonical snapshot</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">88 collections</div>
+                  <div class="mono">primary</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>collections.json</b><div class="meta">split export</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">88 rows</div>
+                  <div class="mono">sidecar</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>fields.json</b><div class="meta">split export</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">594 rows</div>
+                  <div class="mono">sidecar</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>relations.json</b><div class="meta">split export</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">106 rows</div>
+                  <div class="mono">sidecar</div>
+                </div>
+
+                <div class="prep-sample" style="margin-top:16px">
+                  <div class="meta">Sample collection (passthrough)</div>
+                  <pre class="payload-preview">{
+  "collection": "posts",
+  "meta": { "icon": "article", "display_template": "{{title}}" },
+  "schema": { "name": "posts" }
 }</pre>
-                  </td>
-                  <td>
-                    <span class="model-chip">posts</span>
-                    <div class="meta" style="margin-top:6px">string, wysiwyg, datetime, m2o authors</div>
-                  </td>
-                  <td>
-                    <div class="conf"><span style="width:97%"></span></div>
-                    <div class="meta">97%</div>
-                  </td>
-                  <td><a class="btn btn-sm btn-primary" href="field-mapping.html">Map fields</a></td>
-                </tr>
-                <tr>
-                  <td>
-                    <b>Pages</b>
-                    <div class="meta">post_type = page · 64 records</div>
-                  </td>
-                  <td class="mono meta">title, content, parent, menu_order</td>
-                  <td>
-                    <span class="model-chip">pages</span>
-                    <div class="meta" style="margin-top:6px">tree via parent_id</div>
-                  </td>
-                  <td>
-                    <div class="conf"><span style="width:94%"></span></div>
-                    <div class="meta">94%</div>
-                  </td>
-                  <td><button class="btn btn-sm btn-ghost">Change</button></td>
-                </tr>
-                <tr>
-                  <td>
-                    <b>Issues (CPT)</b>
-                    <div class="meta">post_type = issue · 654 records</div>
-                  </td>
-                  <td class="mono meta">cover, volume, on_sale_date</td>
-                  <td>
-                    <span class="model-chip">issues</span>
-                    <div class="meta" style="margin-top:6px">new collection</div>
-                  </td>
-                  <td>
-                    <div class="conf"><span style="width:88%"></span></div>
-                    <div class="meta">88%</div>
-                  </td>
-                  <td><button class="btn btn-sm btn-ghost">Skip</button></td>
-                </tr>
-              </tbody>
-            </table>
+                </div>
+              </div>
 
-            <div class="notice notice-ok" style="margin-top:16px">3 collections will be created in Directus staging. Authors from wp-users.json are recommended as <span class="model-chip">authors</span>, not <span class="mono">directus_users</span>.</div>
-          </section>
+              <div data-models-detect-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  Source JSON is structured but not Directus schema. Migtool will <strong>not</strong> invent collections yet —
+                  files stay in extracted until a mapping flow exists.
+                </div>
+
+                <div class="coll-row">
+                  <div><b>wp-posts.json</b><div class="meta">4,120 records · 3 shapes</div></div>
+                  <div><span class="badge badge-draft">Deferred</span></div>
+                  <div class="meta">content</div>
+                  <div class="mono">handle later</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>wp-users.json</b><div class="meta">86 records</div></div>
+                  <div><span class="badge badge-draft">Deferred</span></div>
+                  <div class="meta">authors</div>
+                  <div class="mono">handle later</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>wp-terms.json</b><div class="meta">214 records</div></div>
+                  <div><span class="badge badge-draft">Deferred</span></div>
+                  <div class="meta">taxonomy</div>
+                  <div class="mono">handle later</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>wp-media-manifest.json</b><div class="meta">2,041 files</div></div>
+                  <div><span class="badge badge-map">Assets path</span></div>
+                  <div class="meta">use Prepare assets</div>
+                  <div class="mono">not schema</div>
+                </div>
+
+                <div class="notice notice-info" style="margin-top:16px">
+                  Field mapping and foreign → Directus collection inference are out of scope for this screen.
+                  Continue with assets or wait for a mapping release.
+                </div>
+              </div>
+
+              <div class="flow-actions">
+                <button class="btn btn-ghost" type="button" data-models-goto="1">Back</button>
+                <button class="btn btn-primary" type="button" data-models-goto="3" data-models-continue-label>Continue to write</button>
+              </div>
+            </section>
+
+            <!-- Step 3: Write / defer -->
+            <section class="flow-card" data-models-panel="3" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 3 · Schema</div>
+                  <h2 data-models-write-title>Move schema into prepared</h2>
+                  <p class="meta" data-models-write-sub>Copy verified Directus schema files into the active target’s prepared folder. Does not apply collections to Directus yet.</p>
+                </div>
+              </div>
+
+              <div data-models-write-directus>
+                <div class="prep-output">
+                  <div class="prep-output-path">
+                    <span class="meta">Output</span>
+                    <code class="mono" data-models-out-path>uploads/project_1/prepared/target_3/schema/</code>
+                  </div>
+                  <div class="prep-output-tree">
+                    <div><span class="mono">schema_complete.json</span> <span class="meta">88 collections · 594 fields · 106 relations</span></div>
+                    <div><span class="mono">collections.json</span> <span class="meta">copied</span></div>
+                    <div><span class="mono">fields.json</span> <span class="meta">copied</span></div>
+                    <div><span class="mono">relations.json</span> <span class="meta">copied</span></div>
+                  </div>
+                </div>
+
+                <div class="flow-stats">
+                  <div><span class="k">Source</span><strong>export1</strong><span class="d">upload_1</span></div>
+                  <div><span class="k">Collections</span><strong>88</strong><span class="d">schema</span></div>
+                  <div><span class="k">Target</span><strong data-models-target-label>Staging</strong><span class="d">target_3</span></div>
+                  <div><span class="k">Phase</span><strong>schema</strong><span class="d">data / files later</span></div>
+                </div>
+
+                <div class="notice notice-info" style="margin-bottom:16px">
+                  Only <span class="mono">schema/</span> is written here. Data, files, and flows stay in extracted until their prepare steps run.
+                </div>
+
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-models-goto="2">Back</button>
+                  <button class="btn btn-primary" type="button" data-models-write>Write schema to prepared</button>
+                </div>
+
+                <div class="notice notice-ok" style="margin-top:16px" data-models-done hidden>
+                  Schema written to <span class="mono">prepared/target_3/schema/</span>.
+                  Next: confirm the apply payload, then push schema into Directus.
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap" data-models-next hidden>
+                  <button class="btn btn-primary" type="button" data-models-goto="4">Continue to confirm</button>
+                  <a class="btn btn-ghost" href="prepare-assets.html">Prepare assets</a>
+                </div>
+              </div>
+
+              <div data-models-write-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  Nothing to write for schema. Foreign JSON remains under extracted until mapping is available.
+                </div>
+
+                <div class="prep-output">
+                  <div class="prep-output-path">
+                    <span class="meta">Parked</span>
+                    <code class="mono">uploads/project_1/extracted/upload_2/wordpress-dump/</code>
+                  </div>
+                  <div class="prep-output-tree">
+                    <div><span class="mono">wp-posts.json</span> <span class="meta">deferred · handle later</span></div>
+                    <div><span class="mono">wp-users.json</span> <span class="meta">deferred · handle later</span></div>
+                    <div><span class="mono">wp-terms.json</span> <span class="meta">deferred · handle later</span></div>
+                    <div><span class="mono">wp-media-manifest.json</span> <span class="meta">optional · Prepare assets</span></div>
+                  </div>
+                </div>
+
+                <div class="flow-stats">
+                  <div><span class="k">Compatible</span><strong>0</strong><span class="d">schema files</span></div>
+                  <div><span class="k">Deferred</span><strong>3</strong><span class="d">content JSON</span></div>
+                  <div><span class="k">Prepared</span><strong>—</strong><span class="d">schema untouched</span></div>
+                  <div><span class="k">Next</span><strong>Assets</strong><span class="d">or wait</span></div>
+                </div>
+
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-models-goto="2">Back</button>
+                  <a class="btn btn-primary" href="prepare-assets.html">Continue to prepare assets</a>
+                  <a class="btn btn-ghost" href="field-mapping.html">Field mapping (later)</a>
+                </div>
+              </div>
+            </section>
+
+            <!-- Step 4: Confirm -->
+            <section class="flow-card" data-models-panel="4" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 4 · Review</div>
+                  <h2>Confirm schema apply</h2>
+                  <p class="meta">Posts a locked phase set to the active target. Only schema runs — data, files, and flows stay off.</p>
+                </div>
+              </div>
+
+              <div data-models-confirm-directus>
+                <div class="notice notice-info" style="margin:0 0 16px">
+                  Will create collections, fields, and relations on
+                  <strong data-models-target-label>Staging</strong> from
+                  <span class="mono">prepared/target_3/schema/</span>.
+                </div>
+
+                <div class="flow-stats">
+                  <div><span class="k">Collections</span><strong>88</strong><span class="d">to create</span></div>
+                  <div><span class="k">Fields</span><strong>594</strong><span class="d">to create</span></div>
+                  <div><span class="k">Relations</span><strong>106</strong><span class="d">to create</span></div>
+                  <div><span class="k">Target</span><strong data-models-target-label>Staging</strong><span class="d">reachable</span></div>
+                </div>
+
+                <div class="meta" style="margin:0 0 8px">Request body</div>
+                <pre class="payload-preview">{
+  "schema": true,
+  "data": false,
+  "files": false,
+  "flows": false
+}</pre>
+
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-models-goto="3">Back</button>
+                  <button class="btn btn-primary" type="button" data-models-goto="5">Continue to apply</button>
+                </div>
+              </div>
+
+              <div data-models-confirm-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  No prepared schema for this pack. Apply is unavailable until a Directus-compatible export is written.
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-models-goto="3">Back</button>
+                  <a class="btn btn-primary" href="prepare-assets.html">Continue to prepare assets</a>
+                </div>
+              </div>
+            </section>
+
+            <!-- Step 5: Apply in Directus -->
+            <section class="flow-card" data-models-panel="5" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 5 · Directus</div>
+                  <h2>Apply schema in Directus</h2>
+                  <p class="meta">Live import of collections into the active target. Progress and terminal output stream from the migrate job.</p>
+                </div>
+              </div>
+
+              <div data-models-apply-directus>
+                <div class="state-switch" style="margin-bottom:16px" data-models-apply-states>
+                  <button type="button" class="on" data-models-apply-state="ready">Ready</button>
+                  <button type="button" data-models-apply-state="running">Running</button>
+                  <button type="button" data-models-apply-state="done">Done</button>
+                  <button type="button" data-models-apply-state="failed">Failed</button>
+                </div>
+
+                <div class="flow-stats">
+                  <div>
+                    <span class="k">Collections</span>
+                    <strong data-models-coll-count>0 / 88</strong>
+                    <span class="d" data-models-coll-label>waiting</span>
+                  </div>
+                  <div>
+                    <span class="k">Fields</span>
+                    <strong data-models-field-count>0 / 594</strong>
+                    <span class="d">created</span>
+                  </div>
+                  <div>
+                    <span class="k">Relations</span>
+                    <strong data-models-rel-count>0 / 106</strong>
+                    <span class="d">created</span>
+                  </div>
+                  <div>
+                    <span class="k">Errors</span>
+                    <strong data-models-err-count>0</strong>
+                    <span class="d" data-models-err-label>none</span>
+                  </div>
+                </div>
+
+                <div class="flow-progress-block" style="margin-bottom:16px">
+                  <div class="flow-progress-top">
+                    <b data-models-apply-status>Ready to apply</b>
+                    <span class="mono" data-models-apply-pct>0%</span>
+                  </div>
+                  <div class="progress ok" style="height:10px" data-models-apply-bar>
+                    <span style="width:0%"></span>
+                  </div>
+                  <div class="meta" style="margin-top:8px">
+                    Current · <span class="mono" data-models-apply-current>—</span>
+                  </div>
+                </div>
+
+                <div class="notice notice-danger" style="margin-bottom:16px" data-models-apply-errors hidden>
+                  <b data-models-apply-errors-title>2 collections failed</b>
+                  <ul class="meta" style="margin:8px 0 0;padding-left:18px" data-models-apply-errors-list>
+                    <li><span class="mono">posts</span> — Failed to create collection: column "legacy_id" already exists</li>
+                    <li><span class="mono">pages.parent_id</span> — Failed to create relation: related collection missing</li>
+                  </ul>
+                </div>
+
+                <div class="meta" style="margin:0 0 8px">Terminal</div>
+                <div class="log" data-models-apply-log style="max-height:320px">
+                  <div class="info">14:02:01  schema  waiting — POST migrate when ready</div>
+                </div>
+
+                <div class="flow-actions" style="margin-top:16px">
+                  <button class="btn btn-ghost" type="button" data-models-goto="4">Back</button>
+                  <button class="btn btn-primary" type="button" data-models-apply-start>Apply schema</button>
+                  <a class="btn btn-ghost" href="prepare-assets.html" data-models-apply-next hidden>Continue to prepare assets</a>
+                </div>
+              </div>
+
+              <div data-models-apply-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  Apply is gated — no Directus-compatible schema was prepared for this pack.
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-models-goto="4">Back</button>
+                  <a class="btn btn-primary" href="prepare-assets.html">Continue to prepare assets</a>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </main>

@@ -17,9 +17,10 @@
     </div>
     <h1>CMS → Directus screens</h1>
     <p class="lede" style="color:var(--muted);max-width:62ch;margin:0 0 32px">
-      Static HTML mockups. Flow: login → projects → source → Directus targets → map → preview →
-      <strong>prepare assets</strong> → upload assets → collections → migrate data.
-      Prepare normalizes extracted media into <span class="mono">prepared/target_{id}/</span>; upload posts <span class="mono">files: true</span>.
+      Static HTML mockups. Flow: login → projects → source → Directus targets →
+      <strong>data models</strong> → preview → prepare assets → collections → migrate data.
+      Data models copies Directus-compatible <span class="mono">schema/</span> into
+      <span class="mono">prepared/target_{id}/</span>; foreign JSON is deferred. Prepare assets handles files.
     </p>
 
     <h2 style="letter-spacing:-0.03em">Requested</h2>
@@ -51,9 +52,9 @@
       <a class="card screen-card" href="mapping.html">
         <div class="thumb">04</div>
         <div class="body">
-          <div class="tag">Shape</div>
-          <h3>Map JSON → models</h3>
-          <p class="meta">Detected groups, sample JSON, recommended Directus collections.</p>
+          <div class="tag">Schema</div>
+          <h3>Data models</h3>
+          <p class="meta">Scan → prepare schema → confirm → apply in Directus with live progress and terminal.</p>
         </div>
       </a>
       <a class="card screen-card" href="migration-status.html">
@@ -135,9 +136,9 @@
     </div>
 
     <footer class="note">
-      Suggested path: Login → Dashboard → Create project → Directus targets → Map models → Field mapping → Preview →
-      Prepare assets → Upload assets → Collections → Migrate → Issues.
-      Open any HTML file in a browser; screens link through the sidebar. On Prepare assets, switch Has metadata / Map JSON / No metadata to preview paths.
+      Suggested path: Login → Dashboard → Create project → Directus targets → Data models → Field mapping → Preview →
+      Prepare assets → Collections → Migrate → Issues.
+      Open any HTML file in a browser; screens link through the sidebar. On Data models, switch Directus export / Foreign CMS JSON to preview both paths.
     </footer>
   </div>
 </body>
