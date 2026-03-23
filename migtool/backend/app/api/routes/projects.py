@@ -108,6 +108,7 @@ def _migration_out(run: MigrationRun) -> MigrationRunOut:
         error_detail=run.error_detail,
         summary=summary,
         progress=progress,
+        log=run.log_text,
         started_at=run.started_at,
         finished_at=run.finished_at,
         created_at=run.created_at,

@@ -80,7 +80,7 @@ def _ensure_upload_extract_columns() -> None:
 
 
 def _ensure_migration_progress_column() -> None:
-    """Add migration_runs.progress_json if missing (idempotent)."""
+    """Add migration_runs progress/log columns if missing (idempotent)."""
     with engine.begin() as conn:
         existing = {
             str(r[0]).lower()
@@ -100,6 +100,10 @@ def _ensure_migration_progress_column() -> None:
         if "progress_json" not in existing:
             conn.execute(
                 text("ALTER TABLE migration_runs ADD COLUMN progress_json TEXT NULL")
+            )
+        if "log_text" not in existing:
+            conn.execute(
+                text("ALTER TABLE migration_runs ADD COLUMN log_text TEXT NULL")
             )
 
 

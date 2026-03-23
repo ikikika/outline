@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 from sqlalchemy.orm import Session
 
@@ -20,6 +22,8 @@ from app.services.uploads import project_upload_dir
 logger = logging.getLogger(__name__)
 
 VALID_PHASES = frozenset({"schema", "data", "files", "flows"})
+_LOG_MAX_CHARS = 200_000
+_LOG_FLUSH_INTERVAL_S = 0.4
 
 
 def prepared_dir(project_id: int, target_id: int) -> Path:
@@ -87,6 +91,84 @@ def _write_progress(run_id: int, progress: dict[str, Any]) -> None:
         db.close()
 
 
+def _write_log(run_id: int, text: str) -> None:
+    """Persist captured terminal output."""
+    from app.db.session import SessionLocal
+
+    db = SessionLocal()
+    try:
+        run = db.get(MigrationRun, run_id)
+        if run is None:
+            return
+        run.log_text = text[-_LOG_MAX_CHARS:] if text else None
+        db.commit()
+    except Exception:  # noqa: BLE001 — never fail the import on log I/O
+        logger.exception("Failed to persist log for run %s", run_id)
+        db.rollback()
+    finally:
+        db.close()
+
+
+class _TerminalCapture:
+    """Tee stdout/stderr into a buffer persisted on the migration run."""
+
+    def __init__(self, run_id: int, mirror: TextIO):
+        self.run_id = run_id
+        self._mirror = mirror
+        self._chunks: list[str] = []
+        self._chars = 0
+        self._lock = threading.Lock()
+        self._dirty = False
+        self._last_flush = 0.0
+
+    def write(self, data: str) -> int:
+        if not isinstance(data, str):
+            data = str(data)
+        try:
+            self._mirror.write(data)
+        except Exception:  # noqa: BLE001
+            pass
+        if not data:
+            return 0
+        with self._lock:
+            self._chunks.append(data)
+            self._chars += len(data)
+            if self._chars > _LOG_MAX_CHARS * 2:
+                text = "".join(self._chunks)[-_LOG_MAX_CHARS:]
+                self._chunks = [text]
+                self._chars = len(text)
+            self._dirty = True
+        now = time.monotonic()
+        if now - self._last_flush >= _LOG_FLUSH_INTERVAL_S:
+            self.flush_to_db()
+        return len(data)
+
+    def flush(self) -> None:
+        try:
+            self._mirror.flush()
+        except Exception:  # noqa: BLE001
+            pass
+
+    def isatty(self) -> bool:
+        return False
+
+    def fileno(self) -> int:
+        return self._mirror.fileno()
+
+    def text(self) -> str:
+        with self._lock:
+            return "".join(self._chunks)[-_LOG_MAX_CHARS:]
+
+    def flush_to_db(self) -> None:
+        with self._lock:
+            if not self._dirty:
+                return
+            payload = "".join(self._chunks)[-_LOG_MAX_CHARS:]
+            self._dirty = False
+            self._last_flush = time.monotonic()
+        _write_log(self.run_id, payload)
+
+
 def process_migrate(db: Session, run_id: int) -> None:
     run = db.get(MigrationRun, run_id)
     if run is None:
@@ -102,6 +184,7 @@ def process_migrate(db: Session, run_id: int) -> None:
 
     run.status = "running"
     run.error_detail = None
+    run.log_text = None
     run.started_at = datetime.now(timezone.utc)
     run.progress_json = json.dumps(
         {
@@ -122,6 +205,8 @@ def process_migrate(db: Session, run_id: int) -> None:
     db.commit()
 
     source = prepared_dir(run.project_id, run.target_id)
+    capture = _TerminalCapture(run_id, sys.__stdout__)
+    old_out, old_err = sys.stdout, sys.stderr
     try:
         validate_prepared(source)
         flags = parse_phases(run.phases)
@@ -132,7 +217,11 @@ def process_migrate(db: Session, run_id: int) -> None:
         url = resolve_directus_base_url(target.url)
 
         def on_progress(progress: dict[str, Any]) -> None:
+            capture.flush_to_db()
             _write_progress(run_id, progress)
+
+        sys.stdout = capture  # type: ignore[assignment]
+        sys.stderr = capture  # type: ignore[assignment]
 
         # Serialize imports: module-level auth is shared with ThreadPoolExecutor workers.
         with import_lock:
@@ -149,11 +238,14 @@ def process_migrate(db: Session, run_id: int) -> None:
                 token=plaintext,
             )
 
+        capture.flush_to_db()
+
         run = db.get(MigrationRun, run_id)
         if run is None:
             return
         run.status = "completed"
         run.summary_json = json.dumps(summary, default=str)[:100_000]
+        run.log_text = capture.text() or run.log_text
         # Final progress snapshot from files summary when present.
         files_block = summary.get("files") if isinstance(summary, dict) else None
         if isinstance(files_block, dict):
@@ -184,6 +276,14 @@ def process_migrate(db: Session, run_id: int) -> None:
         db.commit()
     except Exception as exc:  # noqa: BLE001 — persist failure for UI
         logger.exception("Migration run %s failed", run_id)
+        try:
+            print(f"❌ Migration failed: {exc}", file=sys.stderr)
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            capture.flush_to_db()
+        except Exception:  # noqa: BLE001
+            pass
         db.rollback()
         run = db.get(MigrationRun, run_id)
         if run is None:
@@ -193,8 +293,12 @@ def process_migrate(db: Session, run_id: int) -> None:
             detail = str(exc)
         run.status = "failed"
         run.error_detail = detail[:500]
+        run.log_text = capture.text() or run.log_text
         run.finished_at = datetime.now(timezone.utc)
         db.commit()
+    finally:
+        sys.stdout = old_out
+        sys.stderr = old_err
 
 
 def run_migrate_job(run_id: int) -> None:

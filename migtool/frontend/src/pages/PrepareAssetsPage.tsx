@@ -208,6 +208,38 @@ function filesImportStats(run: MigrationRun | null): FilesImportStats | null {
   }
 }
 
+type LogLevel = 'ok' | 'info' | 'warn' | 'err'
+
+function classifyTerminalLine(text: string): LogLevel {
+  if (/❌|traceback|error uploading|failed to|migration failed|\berror\b/i.test(text)) {
+    return 'err'
+  }
+  if (/⚠️|⚠|\bwarn/i.test(text)) return 'warn'
+  if (
+    /✅|complete —|connected to directus|collection created|field created|relation created|progress:/i.test(
+      text,
+    )
+  ) {
+    return 'ok'
+  }
+  return 'info'
+}
+
+function parseTerminalLog(
+  log: string | null | undefined,
+): { id: string; level: LogLevel; text: string }[] {
+  if (!log) return []
+  return log
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+$/u, ''))
+    .filter((line) => line.trim().length > 0)
+    .map((text, i) => ({
+      id: `term-${i}`,
+      level: classifyTerminalLine(text),
+      text,
+    }))
+}
+
 function isMediaFile(file: ProjectSourceFile): boolean {
   if (file.kind === 'media') return true
   return !/\.(json|ndjson|xml|sql|txt|md|csv)$/i.test(file.original_name)
@@ -258,14 +290,10 @@ export function PrepareAssetsPage() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [elapsedTick, setElapsedTick] = useState(0)
   const [activityLog, setActivityLog] = useState<
-    { id: string; level: 'ok' | 'info' | 'warn' | 'err'; text: string }[]
+    { id: string; level: LogLevel; text: string }[]
   >([])
   const pollRef = useRef<number | null>(null)
   const logRef = useRef<HTMLDivElement | null>(null)
-  const loggedMilestonesRef = useRef<Set<number>>(new Set())
-  const loggedUploadStartRef = useRef(false)
-  const loggedFoldersRef = useRef(false)
-  const loggedTerminalRef = useRef(false)
 
   const invalidId = !Number.isFinite(projectId) || projectId <= 0
 
@@ -351,6 +379,7 @@ export function PrepareAssetsPage() {
   const preparedCount = writeResult?.records ?? mediaCount
   const preparedBytes = mediaBytes
   const importStats = filesImportStats(migrateRun)
+  const terminalLines = parseTerminalLog(migrateRun?.log)
   // elapsedTick keeps the duration label refreshing while running
   void elapsedTick
   const uploadDuration = formatDuration(
@@ -363,7 +392,7 @@ export function PrepareAssetsPage() {
     const el = logRef.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [activityLog, importStats?.currentFile, importStats?.processed, uploadState])
+  }, [activityLog, terminalLines.length, migrateRun?.log, uploadState])
 
   const filesPathLabel = filesFolderPath
     ? folderDisplayPath(filesFolderPath, uploads)
@@ -504,120 +533,17 @@ export function PrepareAssetsPage() {
 
   function resetActivityLog() {
     setActivityLog([])
-    loggedMilestonesRef.current = new Set()
-    loggedUploadStartRef.current = false
-    loggedFoldersRef.current = false
-    loggedTerminalRef.current = false
   }
 
-  function appendActivity(
-    level: 'ok' | 'info' | 'warn' | 'err',
-    text: string,
-  ) {
+  function appendActivity(level: LogLevel, text: string) {
     setActivityLog((prev) => [
       ...prev,
       { id: `${Date.now()}-${prev.length}-${Math.random()}`, level, text },
     ])
   }
 
-  function appendActivityMany(
-    lines: { level: 'ok' | 'info' | 'warn' | 'err'; text: string }[],
-  ) {
-    if (!lines.length) return
-    setActivityLog((prev) => [
-      ...prev,
-      ...lines.map((line, i) => ({
-        id: `${Date.now()}-${prev.length + i}-${Math.random()}`,
-        level: line.level,
-        text: line.text,
-      })),
-    ])
-  }
-
-  function syncActivityFromProgress(run: MigrationRun) {
-    const p = run.progress
-    if (!p) return
-
-    const lines: { level: 'ok' | 'info' | 'warn' | 'err'; text: string }[] = []
-    const foldersCreated = Number(p.folders_created ?? 0)
-
-    if (!loggedFoldersRef.current && p.phase === 'folders') {
-      loggedFoldersRef.current = true
-      lines.push({ level: 'info', text: 'assets  creating folders…' })
-    } else if (
-      !loggedFoldersRef.current &&
-      (p.phase === 'files' || p.phase === 'done')
-    ) {
-      loggedFoldersRef.current = true
-      lines.push({
-        level: 'ok',
-        text: `assets  folders applied — ${foldersCreated}`,
-      })
-    }
-
-    const total = Number(p.total ?? 0)
-    const processed = Number(p.processed ?? 0)
-
-    if (total > 0 && !loggedUploadStartRef.current) {
-      loggedUploadStartRef.current = true
-      lines.push({
-        level: 'info',
-        text: `assets  uploading ${total} files…`,
-      })
-    }
-
-    // Same cadence as server console: 10, 20, 30, …
-    if (total > 0) {
-      for (let m = 10; m <= processed; m += 10) {
-        if (!loggedMilestonesRef.current.has(m)) {
-          loggedMilestonesRef.current.add(m)
-          lines.push({
-            level: 'info',
-            text: `assets  progress ${m}/${total} files…`,
-          })
-        }
-      }
-    }
-
-    if (run.status === 'completed' && !loggedTerminalRef.current) {
-      loggedTerminalRef.current = true
-      const uploaded = Number(p.uploaded ?? 0)
-      const skipped = Number(p.skipped ?? 0)
-      const failed = Number(p.failed ?? 0)
-      lines.push({
-        level: failed > 0 ? 'warn' : 'ok',
-        text:
-          `assets  complete — ${uploaded} uploaded` +
-          (skipped > 0 ? `, ${skipped} skipped` : '') +
-          (failed > 0 ? `, ${failed} failed` : ', 0 failures'),
-      })
-    }
-
-    if (run.status === 'failed' && !loggedTerminalRef.current) {
-      loggedTerminalRef.current = true
-      lines.push({
-        level: 'err',
-        text: `assets  failed — ${run.error_detail || 'upload error'}`,
-      })
-      if (total > 0) {
-        lines.push({
-          level: 'info',
-          text:
-            `assets  stopped at ${processed}/${total}` +
-            (Number(p.uploaded ?? 0) > 0
-              ? ` · ${p.uploaded} uploaded`
-              : '') +
-            (Number(p.skipped ?? 0) > 0 ? ` · ${p.skipped} skipped` : ''),
-        })
-      }
-    }
-
-    appendActivityMany(lines)
-  }
-
   function applyRunStatus(run: MigrationRun) {
     setMigrateRun(run)
-    syncActivityFromProgress(run)
     if (run.status === 'completed') {
       stopPolling()
       setUploadState('done')
@@ -628,6 +554,12 @@ export function PrepareAssetsPage() {
       stopPolling()
       setUploadState('failed')
       setUploadError(run.error_detail || 'Upload to Directus failed')
+      if (!run.log) {
+        appendActivity(
+          'err',
+          `assets  failed — ${run.error_detail || 'upload error'}`,
+        )
+      }
       return
     }
     setUploadState('running')
@@ -1622,10 +1554,12 @@ export function PrepareAssetsPage() {
 
                       <div style={{ marginTop: 16 }}>
                         <div className="meta" style={{ margin: '0 0 8px' }}>
-                          Activity
+                          Terminal
                         </div>
-                        <div className="log" ref={logRef}>
-                          {uploadState === 'ready' && activityLog.length === 0 ? (
+                        <div className="log" ref={logRef} style={{ maxHeight: 360 }}>
+                          {uploadState === 'ready' &&
+                          activityLog.length === 0 &&
+                          terminalLines.length === 0 ? (
                             <>
                               <div className="info">
                                 assets  inventory loaded —{' '}
@@ -1640,27 +1574,14 @@ export function PrepareAssetsPage() {
                               {line.text}
                             </div>
                           ))}
-                          {uploadState === 'running' ? (
-                            <>
-                              <div className="info">
-                                assets  {importStats?.processed ?? 0}/
-                                {importStats?.total ?? '?'} processed
-                                {importStats && importStats.uploaded > 0
-                                  ? ` · ${importStats.uploaded} uploaded`
-                                  : ''}
-                                {importStats && importStats.skipped > 0
-                                  ? ` · ${importStats.skipped} skipped`
-                                  : ''}
-                                {importStats && importStats.failed > 0
-                                  ? ` · ${importStats.failed} failed`
-                                  : ''}
-                              </div>
-                              {importStats?.currentFile ? (
-                                <div className="info">
-                                  assets  current · {importStats.currentFile}
-                                </div>
-                              ) : null}
-                            </>
+                          {terminalLines.map((line) => (
+                            <div key={line.id} className={line.level}>
+                              {line.text}
+                            </div>
+                          ))}
+                          {uploadState === 'running' &&
+                          terminalLines.length === 0 ? (
+                            <div className="info">assets  waiting for terminal output…</div>
                           ) : null}
                         </div>
                       </div>

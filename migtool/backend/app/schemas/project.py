@@ -157,6 +157,7 @@ class MigrationRunOut(BaseModel):
     error_detail: str | None = None
     summary: dict | None = None
     progress: dict | None = None
+    log: str | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
     created_at: datetime

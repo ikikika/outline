@@ -162,6 +162,8 @@ class MigrationRun(Base):
     summary_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Live checkpoint while running (processed/total, current file, …).
     progress_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Captured stdout/stderr from the import process (terminal output for UI).
+    log_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

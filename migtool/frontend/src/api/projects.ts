@@ -122,6 +122,8 @@ export type MigrationRun = {
   error_detail: string | null
   summary: Record<string, unknown> | null
   progress: MigrationProgress | null
+  /** Captured stdout/stderr from the import process. */
+  log: string | null
   started_at: string | null
   finished_at: string | null
   created_at: string
