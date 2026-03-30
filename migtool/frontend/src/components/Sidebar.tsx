@@ -34,6 +34,9 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
   const prepareAssetsPath = projectId
     ? `/projects/${projectId}/prepare-assets`
     : '/create-project'
+  const collectionsPath = projectId
+    ? `/projects/${projectId}/collections`
+    : '/create-project'
 
   useEffect(() => {
     setOpen(false)
@@ -153,7 +156,9 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
           <NavLink to={prepareAssetsPath} className={navClass}>
             Prepare assets
           </NavLink>
-          <a href="#collections">Collections</a>
+          <NavLink to={collectionsPath} className={navClass}>
+            Collections
+          </NavLink>
           <a href="#migrate">Migrate</a>
           <a href="#issues">Issues</a>
         </nav>

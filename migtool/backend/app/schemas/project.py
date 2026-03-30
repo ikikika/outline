@@ -178,6 +178,45 @@ class PrepareSchemaOut(BaseModel):
     copied: int = 0
 
 
+class PrepareDataRequest(BaseModel):
+    """Copy Directus data/ from extracted into prepared/target_{id}/data/."""
+
+    upload_id: int
+    folder_path: str = Field(
+        default="",
+        max_length=1024,
+        description="Relative path under extracted/upload_{id}/ (e.g. export1 or export1/data)",
+    )
+    dry_run: bool = False
+
+    @field_validator("folder_path")
+    @classmethod
+    def normalize_folder_path(cls, value: str) -> str:
+        return value.replace("\\", "/").strip().strip("/")
+
+
+class DataFileRow(BaseModel):
+    name: str
+    role: str
+    detail: str
+    status: str
+    rows: int = 0
+
+
+class PrepareDataOut(BaseModel):
+    compatible: bool
+    json_files: int
+    data_folder: str | None = None
+    collections: int = 0
+    rows: int = 0
+    data_files: list[DataFileRow] = []
+    deferred_files: list[DataFileRow] = []
+    source_label: str = ""
+    output_path: str | None = None
+    copied_files: list[str] = []
+    copied: int = 0
+
+
 class MigrationStart(BaseModel):
     """Select which import phases to run (defaults: all)."""
 

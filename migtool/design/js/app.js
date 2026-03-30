@@ -878,4 +878,373 @@
     applyApplyState("ready");
     showStep(1);
   }
+
+  // Collections data wizard (design/collections.html)
+  const collRail = document.querySelector("[data-coll-rail]");
+  if (collRail) {
+    const panels = document.querySelectorAll("[data-coll-panel]");
+    const railSteps = document.querySelectorAll("[data-coll-rail-step]");
+    const badge = document.querySelector("[data-coll-badge]");
+    const packBtns = document.querySelectorAll("[data-coll-pack]");
+    const continueLabel = document.querySelector("[data-coll-continue-label]");
+    const writeTitle = document.querySelector("[data-coll-write-title]");
+    const writeSub = document.querySelector("[data-coll-write-sub]");
+    const writeBtn = document.querySelector("[data-coll-write]");
+    const doneNote = document.querySelector("[data-coll-done]");
+    const nextLinks = document.querySelector("[data-coll-next]");
+    const targetSelect = document.querySelector("[data-coll-target]");
+    const targetLabels = document.querySelectorAll("[data-coll-target-label]");
+    const outPath = document.querySelector("[data-coll-out-path]");
+    const applyStateBtns = document.querySelectorAll("[data-coll-apply-state]");
+    const applyStart = document.querySelector("[data-coll-apply-start]");
+    const applyNext = document.querySelector("[data-coll-apply-next]");
+    const applyLog = document.querySelector("[data-coll-apply-log]");
+    const applyErrors = document.querySelector("[data-coll-apply-errors]");
+    const fileCount = document.querySelector("[data-coll-file-count]");
+    const rowCount = document.querySelector("[data-coll-row-count]");
+    const skipCount = document.querySelector("[data-coll-skip-count]");
+    const errCount = document.querySelector("[data-coll-err-count]");
+    const errLabel = document.querySelector("[data-coll-err-label]");
+    const fileLabel = document.querySelector("[data-coll-file-label]");
+    const applyStatus = document.querySelector("[data-coll-apply-status]");
+    const applyPct = document.querySelector("[data-coll-apply-pct]");
+    const applyBar = document.querySelector("[data-coll-apply-bar] span");
+    const applyCurrent = document.querySelector("[data-coll-apply-current]");
+    const applyBarWrap = document.querySelector("[data-coll-apply-bar]");
+
+    let step = 1;
+    let pack = "directus";
+    let applyState = "ready";
+    let applyTimer = null;
+
+    const TOTAL = { collections: 64, rows: 12400 };
+    const COLL_NAMES = [
+      "authors",
+      "categories",
+      "posts",
+      "pages",
+      "issues",
+      "tags",
+      "redirects",
+      "media_meta",
+    ];
+
+    const stepLabels = {
+      1: "Step 1 · Scan",
+      2: "Step 2 · Detect",
+      3: "Step 3 · Prepare",
+      4: "Step 4 · Confirm",
+      5: "Step 5 · Apply",
+    };
+
+    const setHidden = (els, hidden) => {
+      els.forEach((el) => {
+        if (el) el.hidden = hidden;
+      });
+    };
+
+    const stopApplyTimer = () => {
+      if (applyTimer) {
+        clearInterval(applyTimer);
+        applyTimer = null;
+      }
+    };
+
+    const formatRows = (n) => {
+      if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+      return String(n);
+    };
+
+    const renderCounts = (files, rows, skipped, errors) => {
+      if (fileCount) fileCount.textContent = `${files} / ${TOTAL.collections}`;
+      if (rowCount) {
+        rowCount.textContent = `${formatRows(rows)} / ${formatRows(TOTAL.rows)}`;
+      }
+      if (skipCount) skipCount.textContent = String(skipped);
+      if (errCount) errCount.textContent = String(errors);
+      if (errLabel) errLabel.textContent = errors ? "failed" : "none";
+      const pct = Math.round((files / TOTAL.collections) * 100);
+      if (applyPct) applyPct.textContent = `${pct}%`;
+      if (applyBar) applyBar.style.width = `${pct}%`;
+    };
+
+    const applyLogs = {
+      ready: [
+        '<div class="info">14:18:01  data  waiting — POST migrate when ready</div>',
+        '<div class="info">14:18:01  data  prepared/target_3/data/ · 64 collections</div>',
+      ],
+      running: [
+        '<div class="ok">14:18:12  data  Importing collection data…</div>',
+        '<div class="info">14:18:12  data  Sorting collections by FK dependencies…</div>',
+        '<div class="ok">14:18:13  data  ✅ authors · 42 upserted</div>',
+        '<div class="ok">14:18:14  data  ✅ categories · 118 upserted</div>',
+        '<div class="ok">14:18:16  data  ✅ posts · 1,240 upserted</div>',
+        '<div class="info">14:18:17  data  Importing pages…</div>',
+      ],
+      done: [
+        '<div class="ok">14:18:12  data  Importing collection data…</div>',
+        '<div class="ok">14:22:04  data  ✅ redirects · 31 upserted (64/64)</div>',
+        '<div class="ok">14:22:05  data  complete — 12,401 rows · 0 failures</div>',
+      ],
+      failed: [
+        '<div class="ok">14:18:12  data  Importing collection data…</div>',
+        '<div class="ok">14:18:16  data  ✅ posts · 1,180 upserted · 60 failed</div>',
+        '<div class="err">14:19:02  data  ❌ Failed to upsert posts#1842: invalid foreign key author=99</div>',
+        '<div class="err">14:19:08  data  ❌ Failed to upsert pages#44: related collection missing</div>',
+        '<div class="warn">14:19:09  data  stopped — 41 collections · 2 failed · 21 remaining</div>',
+      ],
+    };
+
+    const applyApplyState = (next) => {
+      applyState = next;
+      stopApplyTimer();
+
+      applyStateBtns.forEach((btn) => {
+        btn.classList.toggle("on", btn.dataset.collApplyState === applyState);
+      });
+
+      if (applyLog) applyLog.innerHTML = applyLogs[applyState].join("");
+      if (applyErrors) applyErrors.hidden = applyState !== "failed";
+      if (applyNext) applyNext.hidden = applyState !== "done";
+      if (applyBarWrap) {
+        applyBarWrap.classList.remove("ok", "warn", "err");
+        if (applyState === "failed") applyBarWrap.classList.add("err");
+        else if (applyState === "running" || applyState === "done") {
+          applyBarWrap.classList.add("ok");
+        }
+      }
+
+      if (applyStart) {
+        if (applyState === "ready") {
+          applyStart.textContent = "Apply collection data";
+          applyStart.disabled = false;
+          applyStart.classList.remove("btn-disabled");
+        } else if (applyState === "running") {
+          applyStart.textContent = "Applying…";
+          applyStart.disabled = true;
+          applyStart.classList.add("btn-disabled");
+        } else if (applyState === "done") {
+          applyStart.textContent = "Applied";
+          applyStart.disabled = true;
+          applyStart.classList.add("btn-disabled");
+        } else {
+          applyStart.textContent = "Retry apply";
+          applyStart.disabled = false;
+          applyStart.classList.remove("btn-disabled");
+        }
+      }
+
+      if (applyState === "ready") {
+        renderCounts(0, 0, 0, 0);
+        if (fileLabel) fileLabel.textContent = "waiting";
+        if (applyStatus) applyStatus.textContent = "Ready to apply";
+        if (applyCurrent) applyCurrent.textContent = "—";
+      } else if (applyState === "running") {
+        let files = 8;
+        let rows = 1800;
+        renderCounts(files, rows, 2, 0);
+        if (fileLabel) fileLabel.textContent = "importing";
+        if (applyStatus) applyStatus.textContent = "Upserting collections…";
+        if (applyCurrent) applyCurrent.textContent = "posts";
+        if (badge && step === 5) {
+          badge.className = "badge badge-run";
+          badge.textContent = "Applying…";
+        }
+        let tick = 0;
+        applyTimer = setInterval(() => {
+          tick += 1;
+          files = Math.min(TOTAL.collections, files + 2);
+          rows = Math.min(TOTAL.rows, rows + 380);
+          renderCounts(files, rows, 2, 0);
+          if (applyCurrent) {
+            applyCurrent.textContent = COLL_NAMES[tick % COLL_NAMES.length];
+          }
+          if (applyLog && tick % 2 === 0) {
+            const name = COLL_NAMES[tick % COLL_NAMES.length];
+            applyLog.insertAdjacentHTML(
+              "beforeend",
+              `<div class="ok">14:18:${String(18 + tick).padStart(2, "0")}  data  ✅ ${name} · ${80 + tick * 12} upserted (${files}/${TOTAL.collections})</div>`
+            );
+            applyLog.scrollTop = applyLog.scrollHeight;
+          }
+          if (files >= TOTAL.collections) {
+            stopApplyTimer();
+            applyApplyState("done");
+          }
+        }, 700);
+      } else if (applyState === "done") {
+        renderCounts(TOTAL.collections, TOTAL.rows, 2, 0);
+        if (fileLabel) fileLabel.textContent = "imported";
+        if (applyStatus) applyStatus.textContent = "Collection data applied";
+        if (applyCurrent) applyCurrent.textContent = "complete";
+        if (badge && step === 5) {
+          badge.className = "badge badge-ok";
+          badge.textContent = "Applied";
+        }
+      } else {
+        renderCounts(41, 8200, 4, 2);
+        if (fileLabel) fileLabel.textContent = "partial";
+        if (applyStatus) applyStatus.textContent = "Apply failed";
+        if (applyCurrent) applyCurrent.textContent = "pages";
+        if (badge && step === 5) {
+          badge.className = "badge badge-err";
+          badge.textContent = "Apply failed";
+        }
+      }
+    };
+
+    const applyPack = (next) => {
+      pack = next;
+      packBtns.forEach((btn) => {
+        btn.classList.toggle("on", btn.dataset.collPack === pack);
+      });
+
+      const isDirectus = pack === "directus";
+      setHidden(document.querySelectorAll("[data-coll-tree-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-tree-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-scan-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-scan-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-scan-note-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-scan-note-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-detect-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-detect-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-write-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-write-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-confirm-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-confirm-foreign]"), isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-apply-directus]"), !isDirectus);
+      setHidden(document.querySelectorAll("[data-coll-apply-foreign]"), isDirectus);
+
+      const pathEl = document.querySelector("[data-coll-tree-path]");
+      if (pathEl) {
+        pathEl.textContent = isDirectus
+          ? "extracted\\upload_1\\export1\\data"
+          : "extracted\\upload_2\\wordpress-dump";
+      }
+
+      if (continueLabel) {
+        continueLabel.textContent = isDirectus
+          ? "Continue to write"
+          : "Continue (deferred)";
+      }
+      if (writeTitle) {
+        writeTitle.textContent = isDirectus
+          ? "Write prepared collection JSON"
+          : "Nothing to prepare yet";
+      }
+      if (writeSub) {
+        writeSub.textContent = isDirectus
+          ? "Copy verified Directus data files into the active target’s prepared folder. Does not upsert rows into Directus yet."
+          : "Foreign JSON stays parked under extracted. Collection mapping will land in a later release.";
+      }
+    };
+
+    const showStep = (n) => {
+      step = Number(n);
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.collPanel !== String(step);
+      });
+      railSteps.forEach((el) => {
+        const i = Number(el.dataset.collRailStep);
+        el.classList.remove("on", "done");
+        if (i < step) el.classList.add("done");
+        if (i === step) el.classList.add("on");
+      });
+      if (badge) {
+        if (step === 5 && pack === "directus") {
+          if (applyState === "running") {
+            badge.className = "badge badge-run";
+            badge.textContent = "Applying…";
+          } else if (applyState === "done") {
+            badge.className = "badge badge-ok";
+            badge.textContent = "Applied";
+          } else if (applyState === "failed") {
+            badge.className = "badge badge-err";
+            badge.textContent = "Apply failed";
+          } else {
+            badge.className = "badge badge-run";
+            badge.textContent = "Ready to apply";
+          }
+        } else {
+          const written =
+            pack === "directus" && doneNote && !doneNote.hidden && step === 3;
+          badge.className = written
+            ? "badge badge-ok"
+            : step >= 3 && pack === "foreign"
+              ? "badge badge-draft"
+              : "badge badge-map";
+          badge.textContent = written
+            ? "Data prepared"
+            : step >= 3 && pack === "foreign"
+              ? "Deferred"
+              : stepLabels[step];
+        }
+      }
+    };
+
+    document.querySelectorAll("[data-coll-goto]").forEach((btn) => {
+      btn.addEventListener("click", () => showStep(btn.dataset.collGoto));
+    });
+
+    packBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (doneNote) doneNote.hidden = true;
+        if (nextLinks) nextLinks.hidden = true;
+        if (writeBtn) {
+          writeBtn.textContent = "Write prepared JSON";
+          writeBtn.classList.remove("btn-disabled");
+          writeBtn.disabled = false;
+        }
+        stopApplyTimer();
+        applyState = "ready";
+        applyPack(btn.dataset.collPack);
+        if (pack === "directus") applyApplyState("ready");
+        showStep(step);
+      });
+    });
+
+    if (writeBtn) {
+      writeBtn.addEventListener("click", () => {
+        if (doneNote) doneNote.hidden = false;
+        if (nextLinks) nextLinks.hidden = false;
+        writeBtn.textContent = "Written";
+        writeBtn.classList.add("btn-disabled");
+        writeBtn.disabled = true;
+        if (badge) {
+          badge.className = "badge badge-ok";
+          badge.textContent = "Data prepared";
+        }
+      });
+    }
+
+    applyStateBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        applyApplyState(btn.dataset.collApplyState);
+      });
+    });
+
+    if (applyStart) {
+      applyStart.addEventListener("click", () => {
+        applyApplyState("running");
+      });
+    }
+
+    if (targetSelect) {
+      targetSelect.addEventListener("change", () => {
+        const staging = targetSelect.value === "Staging";
+        targetLabels.forEach((el) => {
+          el.textContent = staging ? "Staging" : "Production";
+        });
+        if (outPath) {
+          outPath.textContent = staging
+            ? "uploads/project_1/prepared/target_3/data/"
+            : "uploads/project_1/prepared/target_4/data/";
+        }
+      });
+    }
+
+    applyPack("directus");
+    applyApplyState("ready");
+    showStep(1);
+  }
 })();

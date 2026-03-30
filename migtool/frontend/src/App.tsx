@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './auth/ProtectedRoute'
+import { CollectionsPage } from './pages/CollectionsPage'
 import { ConnectDirectusPage } from './pages/ConnectDirectusPage'
 import { CreateProjectPage } from './pages/CreateProjectPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -57,6 +58,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <PrepareAssetsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:projectId/collections"
+        element={
+          <ProtectedRoute>
+            <CollectionsPage />
           </ProtectedRoute>
         }
       />

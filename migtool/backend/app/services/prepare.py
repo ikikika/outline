@@ -705,3 +705,224 @@ def build_prepared_schema(
         "copied_files": copied,
         "copied": len(copied),
     }
+
+
+def _count_data_rows(path: Path) -> int | None:
+    """Count items in a Directus collection data file (array or singleton object)."""
+    if not path.is_file() or path.name.startswith("_"):
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if isinstance(data, list):
+        if data and not isinstance(data[0], dict):
+            return None
+        return len(data)
+    if isinstance(data, dict):
+        # Singleton collection export, or reject manifest-like blobs.
+        if "collections_exported" in data or (
+            "collections" in data and "fields" in data
+        ):
+            return None
+        return 1
+    return None
+
+
+def _find_data_dir(pack_dir: Path) -> Path | None:
+    """Locate a Directus data/ directory under the selected pack folder."""
+    direct = pack_dir / "data"
+    if direct.is_dir():
+        return direct
+    if pack_dir.name.lower() == "data" and pack_dir.is_dir():
+        return pack_dir
+    try:
+        for child in sorted(pack_dir.iterdir()):
+            if child.is_dir() and child.name.lower() == "data":
+                return child
+            nested = child / "data"
+            if nested.is_dir():
+                return nested
+    except OSError:
+        return None
+    return None
+
+
+def _list_data_files(data_dir: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    try:
+        paths = sorted(
+            p for p in data_dir.iterdir() if p.is_file() and p.suffix.lower() == ".json"
+        )
+    except OSError:
+        return []
+
+    for path in paths:
+        if path.name.startswith("_"):
+            rows.append(
+                {
+                    "name": path.name,
+                    "role": "sidecar",
+                    "detail": "export order" if "manifest" in path.name.lower() else "sidecar",
+                    "status": "sidecar",
+                    "rows": 0,
+                }
+            )
+            continue
+        count = _count_data_rows(path)
+        if count is None:
+            rows.append(
+                {
+                    "name": path.name,
+                    "role": path.stem,
+                    "detail": "unreadable",
+                    "status": "deferred",
+                    "rows": 0,
+                }
+            )
+            continue
+        rows.append(
+            {
+                "name": path.name,
+                "role": path.stem,
+                "detail": f"{count:,} rows" if count != 1 else "1 row",
+                "status": "compatible",
+                "rows": count,
+            }
+        )
+    return rows
+
+
+def _list_deferred_data_json(pack_dir: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    try:
+        for path in sorted(pack_dir.rglob("*.json")):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(pack_dir).as_posix()
+            if "/data/" in f"/{rel}" or rel.startswith("data/"):
+                continue
+            if "/schema/" in f"/{rel}" or rel.startswith("schema/"):
+                continue
+            count = _count_json_array(path)
+            lower = path.name.lower()
+            if "media" in lower or "file" in lower:
+                status = "assets"
+                role = "not data"
+            else:
+                status = "deferred"
+                role = "handle later"
+            rows.append(
+                {
+                    "name": path.name,
+                    "role": role,
+                    "detail": f"{count:,} records" if count is not None else "json",
+                    "status": status,
+                    "rows": count or 0,
+                }
+            )
+    except OSError:
+        pass
+    return rows[:40]
+
+
+def analyze_data_pack(
+    *,
+    project_id: int,
+    upload_id: int,
+    folder_path: str,
+) -> dict[str, Any]:
+    """Detect Directus-compatible collection data under an extracted pack folder."""
+    extract_root = extract_dir_for_upload(project_id, upload_id)
+    if not extract_root.is_dir():
+        raise PrepareError("Upload has not been extracted yet")
+
+    pack_dir = _safe_under(extract_root, folder_path)
+    if not pack_dir.is_dir():
+        raise PrepareError(f"Folder not found: {folder_path or '(upload root)'}")
+
+    json_files = 0
+    try:
+        json_files = sum(1 for p in pack_dir.rglob("*.json") if p.is_file())
+    except OSError:
+        json_files = 0
+
+    data_dir = _find_data_dir(pack_dir)
+    data_files = _list_data_files(data_dir) if data_dir else []
+    compatible_files = [f for f in data_files if f["status"] == "compatible"]
+    compatible = bool(compatible_files)
+    total_rows = sum(int(f.get("rows") or 0) for f in compatible_files)
+
+    data_rel = None
+    if data_dir is not None:
+        try:
+            data_rel = data_dir.relative_to(extract_root).as_posix()
+        except ValueError:
+            data_rel = data_dir.name
+
+    return {
+        "compatible": compatible,
+        "json_files": json_files,
+        "data_folder": data_rel,
+        "collections": len(compatible_files),
+        "rows": total_rows,
+        "data_files": data_files if compatible else [],
+        "deferred_files": [] if compatible else _list_deferred_data_json(pack_dir),
+        "source_label": (data_dir.name if data_dir else pack_dir.name)
+        or f"upload_{upload_id}",
+    }
+
+
+def build_prepared_data(
+    *,
+    project_id: int,
+    target_id: int,
+    upload_id: int,
+    folder_path: str,
+) -> dict[str, Any]:
+    """
+    Copy Directus data/ into prepared/target_{target_id}/data/.
+
+    Foreign packs raise PrepareError — they stay under extracted.
+    """
+    analysis = analyze_data_pack(
+        project_id=project_id,
+        upload_id=upload_id,
+        folder_path=folder_path,
+    )
+    if not analysis["compatible"]:
+        raise PrepareError(
+            "No Directus-compatible data/ found — foreign JSON stays in extracted"
+        )
+
+    extract_root = extract_dir_for_upload(project_id, upload_id)
+    pack_dir = _safe_under(extract_root, folder_path)
+    data_dir = _find_data_dir(pack_dir)
+    if data_dir is None:
+        raise PrepareError("Data folder missing on disk")
+
+    out_root = prepared_dir(project_id, target_id)
+    out_data = out_root / "data"
+    if out_data.exists():
+        shutil.rmtree(out_data)
+    out_data.mkdir(parents=True, exist_ok=True)
+
+    copied: list[str] = []
+    for path in sorted(data_dir.iterdir()):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() != ".json":
+            continue
+        dest = out_data / path.name
+        shutil.copy2(path, dest)
+        copied.append(path.name)
+
+    if not copied:
+        raise PrepareError("Data folder is empty")
+
+    return {
+        **analysis,
+        "output_path": f"uploads/project_{project_id}/prepared/target_{target_id}/data/",
+        "copied_files": copied,
+        "copied": len(copied),
+    }

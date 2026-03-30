@@ -30,6 +30,8 @@ from app.schemas import (
     MigrationStart,
     PrepareAssetsOut,
     PrepareAssetsRequest,
+    PrepareDataOut,
+    PrepareDataRequest,
     PrepareSchemaOut,
     PrepareSchemaRequest,
     ProjectCreate,
@@ -53,8 +55,10 @@ from app.services.migrate import (
 )
 from app.services.prepare import (
     PrepareError,
+    analyze_data_pack,
     analyze_schema_pack,
     build_prepared,
+    build_prepared_data,
     build_prepared_schema,
 )
 from app.services.uploads import save_upload
@@ -711,6 +715,67 @@ def prepare_target_schema(
         ) from exc
 
     return PrepareSchemaOut(**summary)
+
+
+@router.post(
+    "/{project_id}/targets/{target_id}/prepare-data",
+    response_model=PrepareDataOut,
+)
+def prepare_target_data(
+    project_id: int,
+    target_id: int,
+    payload: PrepareDataRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PrepareDataOut:
+    """
+    Scan or copy Directus data/ into prepared/target_{id}/data/.
+
+    With dry_run=true, only analyzes compatibility (no disk write).
+    Foreign packs are never written — they stay under extracted.
+    """
+    project, target = _get_owned_target(db, user, project_id, target_id)
+
+    upload = (
+        db.query(ProjectUpload)
+        .filter(
+            ProjectUpload.id == payload.upload_id,
+            ProjectUpload.project_id == project.id,
+        )
+        .first()
+    )
+    if upload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Upload not found",
+        )
+    if upload.status != "ready":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Upload is not ready (status={upload.status})",
+        )
+
+    try:
+        if payload.dry_run:
+            summary = analyze_data_pack(
+                project_id=project.id,
+                upload_id=upload.id,
+                folder_path=payload.folder_path,
+            )
+        else:
+            summary = build_prepared_data(
+                project_id=project.id,
+                target_id=target.id,
+                upload_id=upload.id,
+                folder_path=payload.folder_path,
+            )
+    except PrepareError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return PrepareDataOut(**summary)
 
 
 @router.post(

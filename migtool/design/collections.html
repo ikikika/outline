@@ -26,7 +26,7 @@
         <a href="mapping.html">Data models</a>
         <a href="field-mapping.html">Field mapping</a>
         <a href="preview.html">Preview</a>
-        <a href="assets.html">Assets</a>
+        <a href="prepare-assets.html">Prepare assets</a>
         <a class="active" href="collections.html">Collections</a>
         <a href="migration-status.html">Migrate</a>
         <a href="issues.html">Issues</a>
@@ -39,107 +39,567 @@
         <div class="crumbs">Acme Magazine rebuild / <strong>Collections</strong></div>
         <div class="target-switch">
           <label for="target">Target</label>
-          <select id="target">
+          <select id="target" data-coll-target>
             <option selected>Staging</option>
             <option>Production</option>
           </select>
         </div>
       </header>
+
       <div class="content">
         <div class="page-head">
           <div>
-            <h1>Apply collections</h1>
-            <p>Rare schema step for the active target. Re-apply wipes collections and purges their data; the next migrate run will upsert.</p>
+            <h1>Import collection data</h1>
+            <p>
+              Move row JSON from extracted into
+              <span class="mono">prepared/target_{id}/data/</span>, then upsert into Directus.
+              Schema must already exist on the target — use
+              <a href="mapping.html"><u>Data models</u></a> first.
+            </p>
           </div>
-          <span class="badge badge-ok">Applied on Staging</span>
+          <span class="badge badge-map" data-coll-badge>Step 1 · Scan</span>
         </div>
 
-        <div class="notice notice-ok" style="margin-bottom:18px">
-          6 collections · 41 fields · 4 relations applied to Staging on Mar 8. Mapping changes require a wipe &amp; recreate.
-        </div>
+        <ol class="flow-rail" data-coll-rail>
+          <li class="flow-step on" data-coll-rail-step="1">
+            <span class="flow-n">1</span>
+            <div><small>Sources</small><b>Scan data</b></div>
+          </li>
+          <li class="flow-step" data-coll-rail-step="2">
+            <span class="flow-n">2</span>
+            <div><small>Detect</small><b>Compatibility</b></div>
+          </li>
+          <li class="flow-step" data-coll-rail-step="3">
+            <span class="flow-n">3</span>
+            <div><small>Prepare</small><b>Write JSON</b></div>
+          </li>
+          <li class="flow-step" data-coll-rail-step="4">
+            <span class="flow-n">4</span>
+            <div><small>Review</small><b>Confirm</b></div>
+          </li>
+          <li class="flow-step" data-coll-rail-step="5">
+            <span class="flow-n">5</span>
+            <div><small>Directus</small><b>Apply</b></div>
+          </li>
+        </ol>
 
-        <div class="grid grid-2">
-          <section class="card card-pad">
-            <h3 style="margin:0 0 8px">Will create on target</h3>
-            <div class="coll-row">
-              <div><b>authors</b><div class="meta">from wp-users.json</div></div>
-              <div><span class="badge badge-ok">Applied</span></div>
-              <div class="meta">8 fields</div>
-              <div class="mono">m2o ready</div>
-            </div>
-            <div class="coll-row">
-              <div><b>categories</b><div class="meta">from wp-terms.json</div></div>
-              <div><span class="badge badge-ok">Applied</span></div>
-              <div class="meta">5 fields</div>
-              <div class="mono">tree</div>
-            </div>
-            <div class="coll-row">
-              <div><b>posts</b><div class="meta">body HTML + author m2o</div></div>
-              <div><span class="badge badge-ok">Applied</span></div>
-              <div class="meta">18 fields</div>
-              <div class="mono">file cover</div>
-            </div>
-            <div class="coll-row">
-              <div><b>pages</b><div class="meta">parent tree</div></div>
-              <div><span class="badge badge-ok">Applied</span></div>
-              <div class="meta">12 fields</div>
-              <div class="mono">self m2o</div>
-            </div>
-            <div class="coll-row">
-              <div><b>issues</b><div class="meta">custom post type</div></div>
-              <div><span class="badge badge-ok">Applied</span></div>
-              <div class="meta">14 fields</div>
-              <div class="mono">dates</div>
-            </div>
-            <div class="coll-row">
-              <div><b>media_meta</b><div class="meta">optional sidecar</div></div>
-              <div><span class="badge badge-ok">Applied</span></div>
-              <div class="meta">6 fields</div>
-              <div class="mono">—</div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-              <a class="btn btn-ghost" href="mapping.html">Edit models</a>
-              <button class="btn btn-primary" type="button">Apply collections</button>
-              <a class="btn btn-ghost" href="migration-status.html">Continue to migrate</a>
-            </div>
-            <div style="margin-top:16px">
-              <div class="meta" style="margin:0 0 8px">This screen posts a locked phase set</div>
-              <div class="phase-picks" style="margin-bottom:10px">
-                <label class="phase-opt is-locked">
-                  <input type="checkbox" checked disabled />
-                  <span><b>schema</b><span class="meta">On</span></span>
-                </label>
-                <label class="phase-opt is-locked">
-                  <input type="checkbox" disabled />
-                  <span><b>files · data · flows</b><span class="meta">Off — use Assets / Migrate</span></span>
-                </label>
+        <div class="flow-layout">
+          <div class="flow-main">
+
+            <!-- Step 1: Scan -->
+            <section class="flow-card" data-coll-panel="1">
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 1 · Sources</div>
+                  <h2>Locate collection JSON</h2>
+                  <p class="meta">
+                    Pick the pack under extracted that holds per-collection row files.
+                    We look for a Directus <span class="mono">data/</span> tree
+                    (<span class="mono">{collection}.json</span> arrays).
+                  </p>
+                </div>
               </div>
-              <pre class="payload-preview">{
-  "schema": true,
-  "data": false,
+
+              <div class="state-switch" style="margin-bottom:16px" data-coll-scenario>
+                <button type="button" class="on" data-coll-pack="directus">Directus export</button>
+                <button type="button" data-coll-pack="foreign">Foreign CMS JSON</button>
+              </div>
+
+              <div class="prep-pick-grid">
+                <div>
+                  <div class="meta" style="margin:0 0 8px">Extracted tree</div>
+                  <div class="win-explorer">
+                    <div class="win-explorer-bar">
+                      <span class="win-explorer-label">This PC</span>
+                      <span class="mono win-explorer-path" data-coll-tree-path>extracted\upload_1\export1</span>
+                    </div>
+                    <ul class="win-tree" data-coll-tree-directus>
+                      <li class="win-node open">
+                        <div class="win-row">
+                          <button type="button" class="win-twist" aria-label="Collapse"></button>
+                          <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                          <button type="button" class="win-label"><b>upload_1</b></button>
+                        </div>
+                        <ul class="win-children">
+                          <li class="win-node open">
+                            <div class="win-row">
+                              <button type="button" class="win-twist" aria-label="Collapse"></button>
+                              <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                              <button type="button" class="win-label"><b>export1</b></button>
+                            </div>
+                            <ul class="win-children">
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>schema</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node open">
+                                <div class="win-row selected">
+                                  <button type="button" class="win-twist" aria-label="Collapse"></button>
+                                  <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>data</b></button>
+                                </div>
+                                <ul class="win-children">
+                                  <li class="win-node">
+                                    <div class="win-row">
+                                      <span class="win-twist spacer"></span>
+                                      <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                      <button type="button" class="win-label"><b>posts.json</b></button>
+                                    </div>
+                                  </li>
+                                  <li class="win-node">
+                                    <div class="win-row">
+                                      <span class="win-twist spacer"></span>
+                                      <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                      <button type="button" class="win-label"><b>pages.json</b></button>
+                                    </div>
+                                  </li>
+                                  <li class="win-node">
+                                    <div class="win-row">
+                                      <span class="win-twist spacer"></span>
+                                      <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                      <button type="button" class="win-label"><b>authors.json</b></button>
+                                    </div>
+                                  </li>
+                                  <li class="win-node last">
+                                    <div class="win-row">
+                                      <span class="win-twist spacer"></span>
+                                      <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                      <button type="button" class="win-label"><b>_manifest.json</b></button>
+                                    </div>
+                                  </li>
+                                </ul>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>files</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node last">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-folder" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>flows</b></button>
+                                </div>
+                              </li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                    <ul class="win-tree" data-coll-tree-foreign hidden>
+                      <li class="win-node open">
+                        <div class="win-row">
+                          <button type="button" class="win-twist" aria-label="Collapse"></button>
+                          <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                          <button type="button" class="win-label"><b>upload_2</b></button>
+                        </div>
+                        <ul class="win-children">
+                          <li class="win-node open">
+                            <div class="win-row selected">
+                              <button type="button" class="win-twist" aria-label="Collapse"></button>
+                              <span class="win-ico win-ico-folder open" aria-hidden="true"></span>
+                              <button type="button" class="win-label"><b>wordpress-dump</b></button>
+                            </div>
+                            <ul class="win-children">
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>wp-posts.json</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>wp-users.json</b></button>
+                                </div>
+                              </li>
+                              <li class="win-node last">
+                                <div class="win-row">
+                                  <span class="win-twist spacer"></span>
+                                  <span class="win-ico win-ico-file" aria-hidden="true"></span>
+                                  <button type="button" class="win-label"><b>wp-terms.json</b></button>
+                                </div>
+                              </li>
+                            </ul>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="meta" style="margin:0 0 8px">Detected in selection</div>
+                  <div class="flow-stats" style="grid-template-columns:1fr 1fr;margin-bottom:12px" data-coll-scan-directus>
+                    <div><span class="k">JSON files</span><strong>64</strong><span class="d">+ _manifest</span></div>
+                    <div><span class="k">Data folder</span><strong>Yes</strong><span class="d">export1/data</span></div>
+                    <div><span class="k">Collections</span><strong>64</strong><span class="d">named files</span></div>
+                    <div><span class="k">Rows</span><strong>~12.4k</strong><span class="d">across files</span></div>
+                  </div>
+                  <div class="flow-stats" style="grid-template-columns:1fr 1fr;margin-bottom:12px" data-coll-scan-foreign hidden>
+                    <div><span class="k">JSON files</span><strong>3</strong><span class="d">flat dumps</span></div>
+                    <div><span class="k">Data folder</span><strong>No</strong><span class="d">not Directus layout</span></div>
+                    <div><span class="k">Shapes</span><strong>WordPress</strong><span class="d">posts · users · terms</span></div>
+                    <div><span class="k">Records</span><strong>~4.4k</strong><span class="d">foreign rows</span></div>
+                  </div>
+                  <div class="notice notice-ok" data-coll-scan-note-directus>
+                    Looks like a Directus data pack. Step 2 will verify each
+                    <span class="mono">{collection}.json</span> before copying into prepared.
+                  </div>
+                  <div class="notice notice-warn" data-coll-scan-note-foreign hidden>
+                    No Directus <span class="mono">data/</span> detected. These files stay in extracted —
+                    collection mapping is deferred.
+                  </div>
+                </div>
+              </div>
+
+              <div class="flow-actions">
+                <a class="btn btn-ghost" href="mapping.html">Back to data models</a>
+                <button class="btn btn-primary" type="button" data-coll-goto="2">Continue to detect</button>
+              </div>
+            </section>
+
+            <!-- Step 2: Detect -->
+            <section class="flow-card" data-coll-panel="2" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 2 · Detect</div>
+                  <h2>Directus compatibility</h2>
+                  <p class="meta">
+                    Compatible means each file is a JSON array (or singleton object) of records
+                    keyed by collection name. Foreign shapes are listed for a later mapping pass.
+                  </p>
+                </div>
+              </div>
+
+              <div data-coll-detect-directus>
+                <div class="notice notice-ok" style="margin:0 0 16px">
+                  Pack matches Directus export layout. Row files can move into
+                  <span class="mono">prepared/target_3/data/</span> for Staging.
+                  Target schema is assumed applied.
+                </div>
+
+                <div class="coll-row">
+                  <div><b>posts.json</b><div class="meta">array of items</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">1,240 rows</div>
+                  <div class="mono">posts</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>pages.json</b><div class="meta">array of items</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">86 rows</div>
+                  <div class="mono">pages</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>authors.json</b><div class="meta">array of items</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">42 rows</div>
+                  <div class="mono">authors</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>categories.json</b><div class="meta">array of items</div></div>
+                  <div><span class="badge badge-ok">Compatible</span></div>
+                  <div class="meta">118 rows</div>
+                  <div class="mono">categories</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>_manifest.json</b><div class="meta">export order</div></div>
+                  <div><span class="badge badge-map">Sidecar</span></div>
+                  <div class="meta">64 collections</div>
+                  <div class="mono">sort hint</div>
+                </div>
+
+                <div class="prep-sample" style="margin-top:16px">
+                  <div class="meta">Sample row (passthrough)</div>
+                  <pre class="payload-preview">{
+  "id": 1842,
+  "status": "published",
+  "title": "Spring issue preview",
+  "author": 12,
+  "cover": "0d8a808b-311e-48e6-9b82-ca96a78f56b0"
+}</pre>
+                </div>
+              </div>
+
+              <div data-coll-detect-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  Source JSON is structured but not Directus collection data.
+                  Migtool will <strong>not</strong> invent row files yet — packs stay in extracted
+                  until a mapping flow exists.
+                </div>
+
+                <div class="coll-row">
+                  <div><b>wp-posts.json</b><div class="meta">4,120 records · 3 shapes</div></div>
+                  <div><span class="badge badge-draft">Deferred</span></div>
+                  <div class="meta">content</div>
+                  <div class="mono">handle later</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>wp-users.json</b><div class="meta">86 records</div></div>
+                  <div><span class="badge badge-draft">Deferred</span></div>
+                  <div class="meta">authors</div>
+                  <div class="mono">handle later</div>
+                </div>
+                <div class="coll-row">
+                  <div><b>wp-terms.json</b><div class="meta">214 records</div></div>
+                  <div><span class="badge badge-draft">Deferred</span></div>
+                  <div class="meta">taxonomy</div>
+                  <div class="mono">handle later</div>
+                </div>
+
+                <div class="notice notice-info" style="margin-top:16px">
+                  Field mapping and foreign → Directus collection inference are out of scope here.
+                  Continue with assets, or wait for a mapping release.
+                </div>
+              </div>
+
+              <div class="flow-actions">
+                <button class="btn btn-ghost" type="button" data-coll-goto="1">Back</button>
+                <button class="btn btn-primary" type="button" data-coll-goto="3" data-coll-continue-label>Continue to write</button>
+              </div>
+            </section>
+
+            <!-- Step 3: Write prepared -->
+            <section class="flow-card" data-coll-panel="3" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 3 · Prepare</div>
+                  <h2 data-coll-write-title>Write prepared collection JSON</h2>
+                  <p class="meta" data-coll-write-sub>
+                    Copy verified Directus data files into the active target’s prepared folder.
+                    Does not upsert rows into Directus yet.
+                  </p>
+                </div>
+              </div>
+
+              <div data-coll-write-directus>
+                <div class="prep-output">
+                  <div class="prep-output-path">
+                    <span class="meta">Output</span>
+                    <code class="mono" data-coll-out-path>uploads/project_1/prepared/target_3/data/</code>
+                  </div>
+                  <div class="prep-output-tree">
+                    <div><span class="mono">posts.json</span> <span class="meta">1,240 rows</span></div>
+                    <div><span class="mono">pages.json</span> <span class="meta">86 rows</span></div>
+                    <div><span class="mono">authors.json</span> <span class="meta">42 rows</span></div>
+                    <div><span class="mono">… 61 more</span> <span class="meta">copied</span></div>
+                    <div><span class="mono">_manifest.json</span> <span class="meta">sort order</span></div>
+                  </div>
+                </div>
+
+                <div class="flow-stats">
+                  <div><span class="k">Source</span><strong>data</strong><span class="d">export1</span></div>
+                  <div><span class="k">Collections</span><strong>64</strong><span class="d">JSON files</span></div>
+                  <div><span class="k">Target</span><strong data-coll-target-label>Staging</strong><span class="d">target_3</span></div>
+                  <div><span class="k">Phase</span><strong>data</strong><span class="d">schema / files separate</span></div>
+                </div>
+
+                <div class="notice notice-info" style="margin-bottom:16px">
+                  Only <span class="mono">data/</span> is written here. Schema stays under prepared from
+                  Data models; files from Prepare assets.
+                </div>
+
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-coll-goto="2">Back</button>
+                  <button class="btn btn-primary" type="button" data-coll-write>Write prepared JSON</button>
+                </div>
+
+                <div class="notice notice-ok" style="margin-top:16px" data-coll-done hidden>
+                  Collection data written to <span class="mono">prepared/target_3/data/</span>.
+                  Next: confirm the apply payload, then upsert into Directus.
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap" data-coll-next hidden>
+                  <button class="btn btn-primary" type="button" data-coll-goto="4">Continue to confirm</button>
+                  <a class="btn btn-ghost" href="prepare-assets.html">Prepare assets</a>
+                </div>
+              </div>
+
+              <div data-coll-write-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  Nothing to write for collection data. Foreign JSON remains under extracted until mapping is available.
+                </div>
+
+                <div class="prep-output">
+                  <div class="prep-output-path">
+                    <span class="meta">Parked</span>
+                    <code class="mono">uploads/project_1/extracted/upload_2/wordpress-dump/</code>
+                  </div>
+                  <div class="prep-output-tree">
+                    <div><span class="mono">wp-posts.json</span> <span class="meta">deferred · handle later</span></div>
+                    <div><span class="mono">wp-users.json</span> <span class="meta">deferred · handle later</span></div>
+                    <div><span class="mono">wp-terms.json</span> <span class="meta">deferred · handle later</span></div>
+                  </div>
+                </div>
+
+                <div class="flow-stats">
+                  <div><span class="k">Compatible</span><strong>0</strong><span class="d">data files</span></div>
+                  <div><span class="k">Deferred</span><strong>3</strong><span class="d">content JSON</span></div>
+                  <div><span class="k">Prepared</span><strong>—</strong><span class="d">data untouched</span></div>
+                  <div><span class="k">Next</span><strong>Assets</strong><span class="d">or wait</span></div>
+                </div>
+
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-coll-goto="2">Back</button>
+                  <a class="btn btn-primary" href="prepare-assets.html">Continue to prepare assets</a>
+                  <a class="btn btn-ghost" href="field-mapping.html">Field mapping (later)</a>
+                </div>
+              </div>
+            </section>
+
+            <!-- Step 4: Confirm -->
+            <section class="flow-card" data-coll-panel="4" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 4 · Review</div>
+                  <h2>Confirm collection apply</h2>
+                  <p class="meta">
+                    Posts a locked phase set to the active target. Only data runs —
+                    schema, files, and flows stay off.
+                  </p>
+                </div>
+              </div>
+
+              <div data-coll-confirm-directus>
+                <div class="notice notice-info" style="margin:0 0 16px">
+                  Will upsert rows into collections on
+                  <strong data-coll-target-label>Staging</strong> from
+                  <span class="mono">prepared/target_3/data/</span>.
+                  Existing items with matching primary keys are updated.
+                </div>
+
+                <div class="flow-stats">
+                  <div><span class="k">Collections</span><strong>64</strong><span class="d">to import</span></div>
+                  <div><span class="k">Rows</span><strong>~12.4k</strong><span class="d">to upsert</span></div>
+                  <div><span class="k">Mode</span><strong>upsert</strong><span class="d">by primary key</span></div>
+                  <div><span class="k">Target</span><strong data-coll-target-label>Staging</strong><span class="d">schema ready</span></div>
+                </div>
+
+                <div class="meta" style="margin:0 0 8px">Request body</div>
+                <pre class="payload-preview">{
+  "schema": false,
+  "data": true,
   "files": false,
   "flows": false
 }</pre>
-            </div>
-          </section>
 
-          <section class="danger-panel">
-            <h3>Wipe &amp; recreate</h3>
-            <p class="meta" style="color:inherit;opacity:0.9">Deletes these collections on <strong>Staging</strong>, purges all of their items, then recreates schema from the current mapping. Assets on this target are kept.</p>
-            <ul class="meta" style="color:inherit;opacity:0.9;padding-left:18px;margin:12px 0">
-              <li>Existing Directus items in these collections are removed</li>
-              <li>Next data run is forced to <strong>upsert</strong></li>
-              <li>Migrate stays gated until apply finishes</li>
-            </ul>
-            <div class="field" style="margin-bottom:12px">
-              <label for="confirm">Type STAGING to confirm</label>
-              <input id="confirm" placeholder="STAGING" />
-            </div>
-            <button class="btn btn-danger" type="button">Wipe collections &amp; purge data</button>
-          </section>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-coll-goto="3">Back</button>
+                  <button class="btn btn-primary" type="button" data-coll-goto="5">Continue to apply</button>
+                </div>
+              </div>
+
+              <div data-coll-confirm-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  No prepared collection data for this pack. Apply is unavailable until a
+                  Directus-compatible export is written.
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-coll-goto="3">Back</button>
+                  <a class="btn btn-primary" href="prepare-assets.html">Continue to prepare assets</a>
+                </div>
+              </div>
+            </section>
+
+            <!-- Step 5: Apply -->
+            <section class="flow-card" data-coll-panel="5" hidden>
+              <div class="flow-card-head">
+                <div>
+                  <div class="flow-kicker">Step 5 · Directus</div>
+                  <h2>Apply collection data</h2>
+                  <p class="meta">
+                    Live upsert into the active target. Progress and terminal output stream
+                    from the migrate job — collections sorted by FK dependency.
+                  </p>
+                </div>
+              </div>
+
+              <div data-coll-apply-directus>
+                <div class="state-switch" style="margin-bottom:16px" data-coll-apply-states>
+                  <button type="button" class="on" data-coll-apply-state="ready">Ready</button>
+                  <button type="button" data-coll-apply-state="running">Running</button>
+                  <button type="button" data-coll-apply-state="done">Done</button>
+                  <button type="button" data-coll-apply-state="failed">Failed</button>
+                </div>
+
+                <div class="flow-stats">
+                  <div>
+                    <span class="k">Collections</span>
+                    <strong data-coll-file-count>0 / 64</strong>
+                    <span class="d" data-coll-file-label>waiting</span>
+                  </div>
+                  <div>
+                    <span class="k">Rows</span>
+                    <strong data-coll-row-count>0 / 12.4k</strong>
+                    <span class="d">upserted</span>
+                  </div>
+                  <div>
+                    <span class="k">Skipped</span>
+                    <strong data-coll-skip-count>0</strong>
+                    <span class="d">empty / system</span>
+                  </div>
+                  <div>
+                    <span class="k">Errors</span>
+                    <strong data-coll-err-count>0</strong>
+                    <span class="d" data-coll-err-label>none</span>
+                  </div>
+                </div>
+
+                <div class="flow-progress-block" style="margin-bottom:16px">
+                  <div class="flow-progress-top">
+                    <b data-coll-apply-status>Ready to apply</b>
+                    <span class="mono" data-coll-apply-pct>0%</span>
+                  </div>
+                  <div class="progress ok" style="height:10px" data-coll-apply-bar>
+                    <span style="width:0%"></span>
+                  </div>
+                  <div class="meta" style="margin-top:8px">
+                    Current · <span class="mono" data-coll-apply-current>—</span>
+                  </div>
+                </div>
+
+                <div class="notice notice-danger" style="margin-bottom:16px" data-coll-apply-errors hidden>
+                  <b data-coll-apply-errors-title>2 collections failed</b>
+                  <ul class="meta" style="margin:8px 0 0;padding-left:18px" data-coll-apply-errors-list>
+                    <li><span class="mono">posts</span> — Failed to upsert item 1842: invalid foreign key author=99</li>
+                    <li><span class="mono">pages</span> — Failed to upsert item 44: related collection missing</li>
+                  </ul>
+                </div>
+
+                <div class="meta" style="margin:0 0 8px">Terminal</div>
+                <div class="log" data-coll-apply-log style="max-height:320px">
+                  <div class="info">14:18:01  data  waiting — POST migrate when ready</div>
+                </div>
+
+                <div class="flow-actions" style="margin-top:16px">
+                  <button class="btn btn-ghost" type="button" data-coll-goto="4">Back</button>
+                  <button class="btn btn-primary" type="button" data-coll-apply-start>Apply collection data</button>
+                  <a class="btn btn-ghost" href="migration-status.html" data-coll-apply-next hidden>Continue to migrate</a>
+                </div>
+              </div>
+
+              <div data-coll-apply-foreign hidden>
+                <div class="notice notice-warn" style="margin:0 0 16px">
+                  Apply is gated — no Directus-compatible collection data was prepared for this pack.
+                </div>
+                <div class="flow-actions">
+                  <button class="btn btn-ghost" type="button" data-coll-goto="4">Back</button>
+                  <a class="btn btn-primary" href="prepare-assets.html">Continue to prepare assets</a>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </main>
   </div>
+  <script src="js/app.js"></script>
 </body>
 </html>
