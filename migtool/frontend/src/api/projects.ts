@@ -91,6 +91,34 @@ export type PrepareAssetsResult = {
   folders: number
 }
 
+export type PrepareSchemaPayload = {
+  upload_id: number
+  folder_path: string
+  dry_run?: boolean
+}
+
+export type SchemaFileRow = {
+  name: string
+  role: string
+  detail: string
+  status: string
+}
+
+export type PrepareSchemaResult = {
+  compatible: boolean
+  json_files: number
+  schema_folder: string | null
+  collections: number
+  fields: number
+  relations: number
+  schema_files: SchemaFileRow[]
+  deferred_files: SchemaFileRow[]
+  source_label: string
+  output_path: string | null
+  copied_files: string[]
+  copied: number
+}
+
 export type MigrationStartPayload = {
   schema?: boolean
   data?: boolean
@@ -225,6 +253,20 @@ export function prepareTargetAssets(
 ): Promise<PrepareAssetsResult> {
   return request<PrepareAssetsResult>(
     `/projects/${projectId}/targets/${targetId}/prepare`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+export function prepareTargetSchema(
+  projectId: number,
+  targetId: number,
+  payload: PrepareSchemaPayload,
+): Promise<PrepareSchemaResult> {
+  return request<PrepareSchemaResult>(
+    `/projects/${projectId}/targets/${targetId}/prepare-schema`,
     {
       method: 'POST',
       body: JSON.stringify(payload),

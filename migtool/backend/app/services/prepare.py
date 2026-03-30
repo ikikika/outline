@@ -453,3 +453,255 @@ def build_prepared(
         "missing": missing,
         "folders": folders_count,
     }
+
+
+_SCHEMA_COMPLETE = "schema_complete.json"
+_SCHEMA_SIDECARS = ("collections.json", "fields.json", "relations.json")
+
+
+def _count_json_array(path: Path) -> int | None:
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if isinstance(data, list):
+        return len(data)
+    if isinstance(data, dict):
+        for key in ("collections", "fields", "relations", "data"):
+            val = data.get(key)
+            if isinstance(val, list):
+                return len(val)
+    return None
+
+
+def _schema_counts(schema_dir: Path) -> dict[str, int]:
+    """Read collection / field / relation counts from a Directus schema folder."""
+    complete = schema_dir / _SCHEMA_COMPLETE
+    if complete.is_file():
+        try:
+            data = json.loads(complete.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            data = None
+        if isinstance(data, dict):
+            return {
+                "collections": len(data.get("collections") or [])
+                if isinstance(data.get("collections"), list)
+                else 0,
+                "fields": len(data.get("fields") or [])
+                if isinstance(data.get("fields"), list)
+                else 0,
+                "relations": len(data.get("relations") or [])
+                if isinstance(data.get("relations"), list)
+                else 0,
+            }
+
+    return {
+        "collections": _count_json_array(schema_dir / "collections.json") or 0,
+        "fields": _count_json_array(schema_dir / "fields.json") or 0,
+        "relations": _count_json_array(schema_dir / "relations.json") or 0,
+    }
+
+
+def _find_schema_dir(pack_dir: Path) -> Path | None:
+    """Locate a Directus schema/ directory under the selected pack folder."""
+    direct = pack_dir / "schema"
+    if direct.is_dir():
+        return direct
+    # Selected the schema folder itself.
+    if pack_dir.name.lower() == "schema" and pack_dir.is_dir():
+        return pack_dir
+    # One-level search for nested export packs.
+    try:
+        for child in sorted(pack_dir.iterdir()):
+            if child.is_dir() and child.name.lower() == "schema":
+                return child
+            nested = child / "schema"
+            if nested.is_dir():
+                return nested
+    except OSError:
+        return None
+    return None
+
+
+def _is_directus_schema(schema_dir: Path) -> bool:
+    if (schema_dir / _SCHEMA_COMPLETE).is_file():
+        return True
+    return all((schema_dir / name).is_file() for name in _SCHEMA_SIDECARS)
+
+
+def _list_schema_files(schema_dir: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    preferred = (_SCHEMA_COMPLETE, *_SCHEMA_SIDECARS)
+    seen: set[str] = set()
+    for name in preferred:
+        path = schema_dir / name
+        if not path.is_file():
+            continue
+        seen.add(name)
+        count = _count_json_array(path)
+        role = "primary" if name == _SCHEMA_COMPLETE else "sidecar"
+        detail = ""
+        if name == _SCHEMA_COMPLETE and count is not None:
+            detail = f"{count} collections"
+        elif count is not None:
+            detail = f"{count} rows"
+        rows.append(
+            {
+                "name": name,
+                "role": role,
+                "detail": detail or "present",
+                "status": "compatible",
+            }
+        )
+    try:
+        for path in sorted(schema_dir.iterdir()):
+            if not path.is_file() or path.name in seen:
+                continue
+            if path.suffix.lower() != ".json":
+                continue
+            rows.append(
+                {
+                    "name": path.name,
+                    "role": "extra",
+                    "detail": "json",
+                    "status": "compatible",
+                }
+            )
+    except OSError:
+        pass
+    return rows
+
+
+def _list_deferred_json(pack_dir: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    try:
+        for path in sorted(pack_dir.rglob("*.json")):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(pack_dir).as_posix()
+            if "/schema/" in f"/{rel}" or rel.startswith("schema/"):
+                continue
+            count = _count_json_array(path)
+            lower = path.name.lower()
+            if "media" in lower or "file" in lower:
+                status = "assets"
+                note = "use Prepare assets"
+                role = "not schema"
+            else:
+                status = "deferred"
+                note = "content" if count else "json"
+                role = "handle later"
+            rows.append(
+                {
+                    "name": path.name,
+                    "role": role,
+                    "detail": f"{count:,} records" if count is not None else note,
+                    "status": status,
+                }
+            )
+    except OSError:
+        pass
+    return rows[:40]
+
+
+def analyze_schema_pack(
+    *,
+    project_id: int,
+    upload_id: int,
+    folder_path: str,
+) -> dict[str, Any]:
+    """Detect Directus-compatible schema under an extracted pack folder."""
+    extract_root = extract_dir_for_upload(project_id, upload_id)
+    if not extract_root.is_dir():
+        raise PrepareError("Upload has not been extracted yet")
+
+    pack_dir = _safe_under(extract_root, folder_path)
+    if not pack_dir.is_dir():
+        raise PrepareError(f"Folder not found: {folder_path or '(upload root)'}")
+
+    json_files = 0
+    try:
+        json_files = sum(1 for p in pack_dir.rglob("*.json") if p.is_file())
+    except OSError:
+        json_files = 0
+
+    schema_dir = _find_schema_dir(pack_dir)
+    compatible = bool(schema_dir and _is_directus_schema(schema_dir))
+    counts = _schema_counts(schema_dir) if compatible and schema_dir else {
+        "collections": 0,
+        "fields": 0,
+        "relations": 0,
+    }
+    schema_rel = ""
+    if schema_dir is not None:
+        try:
+            schema_rel = schema_dir.relative_to(extract_root).as_posix()
+        except ValueError:
+            schema_rel = schema_dir.name
+
+    return {
+        "compatible": compatible,
+        "json_files": json_files,
+        "schema_folder": schema_rel if schema_dir else None,
+        "collections": counts["collections"],
+        "fields": counts["fields"],
+        "relations": counts["relations"],
+        "schema_files": _list_schema_files(schema_dir) if compatible and schema_dir else [],
+        "deferred_files": [] if compatible else _list_deferred_json(pack_dir),
+        "source_label": pack_dir.name or f"upload_{upload_id}",
+    }
+
+
+def build_prepared_schema(
+    *,
+    project_id: int,
+    target_id: int,
+    upload_id: int,
+    folder_path: str,
+) -> dict[str, Any]:
+    """
+    Copy Directus schema/ into prepared/target_{target_id}/schema/.
+
+    Foreign packs raise PrepareError — they stay under extracted.
+    """
+    analysis = analyze_schema_pack(
+        project_id=project_id,
+        upload_id=upload_id,
+        folder_path=folder_path,
+    )
+    if not analysis["compatible"]:
+        raise PrepareError(
+            "No Directus-compatible schema/ found — foreign JSON stays in extracted"
+        )
+
+    extract_root = extract_dir_for_upload(project_id, upload_id)
+    pack_dir = _safe_under(extract_root, folder_path)
+    schema_dir = _find_schema_dir(pack_dir)
+    if schema_dir is None:
+        raise PrepareError("Schema folder missing on disk")
+
+    out_root = prepared_dir(project_id, target_id)
+    out_schema = out_root / "schema"
+    if out_schema.exists():
+        shutil.rmtree(out_schema)
+    out_schema.mkdir(parents=True, exist_ok=True)
+
+    copied: list[str] = []
+    for path in sorted(schema_dir.iterdir()):
+        if not path.is_file():
+            continue
+        dest = out_schema / path.name
+        shutil.copy2(path, dest)
+        copied.append(path.name)
+
+    if not copied:
+        raise PrepareError("Schema folder is empty")
+
+    return {
+        **analysis,
+        "output_path": f"uploads/project_{project_id}/prepared/target_{target_id}/schema/",
+        "copied_files": copied,
+        "copied": len(copied),
+    }

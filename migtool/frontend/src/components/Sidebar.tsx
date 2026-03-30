@@ -28,6 +28,9 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
   const sourceFilesPath = projectId
     ? `/projects/${projectId}/source-files`
     : '/create-project'
+  const dataModelsPath = projectId
+    ? `/projects/${projectId}/data-models`
+    : '/create-project'
   const prepareAssetsPath = projectId
     ? `/projects/${projectId}/prepare-assets`
     : '/create-project'
@@ -142,7 +145,9 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
           <NavLink to={connectPath} className={navClass}>
             Directus targets
           </NavLink>
-          <a href="#models">Data models</a>
+          <NavLink to={dataModelsPath} className={navClass}>
+            Data models
+          </NavLink>
           <a href="#fields">Field mapping</a>
           <a href="#preview">Preview</a>
           <NavLink to={prepareAssetsPath} className={navClass}>

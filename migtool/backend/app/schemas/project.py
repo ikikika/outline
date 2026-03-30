@@ -139,6 +139,45 @@ class PrepareAssetsOut(BaseModel):
     folders: int
 
 
+class PrepareSchemaRequest(BaseModel):
+    """Copy Directus schema/ from extracted into prepared/target_{id}/schema/."""
+
+    upload_id: int
+    folder_path: str = Field(
+        default="",
+        max_length=1024,
+        description="Relative path under extracted/upload_{id}/ (e.g. export1)",
+    )
+    dry_run: bool = False
+
+    @field_validator("folder_path")
+    @classmethod
+    def normalize_folder_path(cls, value: str) -> str:
+        return value.replace("\\", "/").strip().strip("/")
+
+
+class SchemaFileRow(BaseModel):
+    name: str
+    role: str
+    detail: str
+    status: str
+
+
+class PrepareSchemaOut(BaseModel):
+    compatible: bool
+    json_files: int
+    schema_folder: str | None = None
+    collections: int = 0
+    fields: int = 0
+    relations: int = 0
+    schema_files: list[SchemaFileRow] = []
+    deferred_files: list[SchemaFileRow] = []
+    source_label: str = ""
+    output_path: str | None = None
+    copied_files: list[str] = []
+    copied: int = 0
+
+
 class MigrationStart(BaseModel):
     """Select which import phases to run (defaults: all)."""
 

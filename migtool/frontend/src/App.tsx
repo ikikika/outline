@@ -3,6 +3,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute'
 import { ConnectDirectusPage } from './pages/ConnectDirectusPage'
 import { CreateProjectPage } from './pages/CreateProjectPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { DataModelsPage } from './pages/DataModelsPage'
 import { LoginPage } from './pages/LoginPage'
 import { PrepareAssetsPage } from './pages/PrepareAssetsPage'
 import { SourceFilesPage } from './pages/SourceFilesPage'
@@ -40,6 +41,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ConnectDirectusPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:projectId/data-models"
+        element={
+          <ProtectedRoute>
+            <DataModelsPage />
           </ProtectedRoute>
         }
       />

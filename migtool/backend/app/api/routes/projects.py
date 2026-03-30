@@ -30,6 +30,8 @@ from app.schemas import (
     MigrationStart,
     PrepareAssetsOut,
     PrepareAssetsRequest,
+    PrepareSchemaOut,
+    PrepareSchemaRequest,
     ProjectCreate,
     ProjectDetail,
     ProjectOut,
@@ -49,7 +51,12 @@ from app.services.migrate import (
     schedule_migrate,
     validate_prepared,
 )
-from app.services.prepare import PrepareError, build_prepared
+from app.services.prepare import (
+    PrepareError,
+    analyze_schema_pack,
+    build_prepared,
+    build_prepared_schema,
+)
 from app.services.uploads import save_upload
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -643,6 +650,67 @@ def prepare_target_assets(
         ) from exc
 
     return PrepareAssetsOut(**summary)
+
+
+@router.post(
+    "/{project_id}/targets/{target_id}/prepare-schema",
+    response_model=PrepareSchemaOut,
+)
+def prepare_target_schema(
+    project_id: int,
+    target_id: int,
+    payload: PrepareSchemaRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PrepareSchemaOut:
+    """
+    Scan or copy Directus schema/ into prepared/target_{id}/schema/.
+
+    With dry_run=true, only analyzes compatibility (no disk write).
+    Foreign packs are never written — they stay under extracted.
+    """
+    project, target = _get_owned_target(db, user, project_id, target_id)
+
+    upload = (
+        db.query(ProjectUpload)
+        .filter(
+            ProjectUpload.id == payload.upload_id,
+            ProjectUpload.project_id == project.id,
+        )
+        .first()
+    )
+    if upload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Upload not found",
+        )
+    if upload.status != "ready":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Upload is not ready (status={upload.status})",
+        )
+
+    try:
+        if payload.dry_run:
+            summary = analyze_schema_pack(
+                project_id=project.id,
+                upload_id=upload.id,
+                folder_path=payload.folder_path,
+            )
+        else:
+            summary = build_prepared_schema(
+                project_id=project.id,
+                target_id=target.id,
+                upload_id=upload.id,
+                folder_path=payload.folder_path,
+            )
+    except PrepareError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return PrepareSchemaOut(**summary)
 
 
 @router.post(
