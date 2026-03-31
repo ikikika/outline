@@ -8,6 +8,7 @@ import {
   getProject,
   prepareTargetData,
   startMigrate,
+  stopMigrate,
   type MigrationRun,
   type PrepareDataResult,
   type ProjectDetail,
@@ -19,7 +20,7 @@ import {
   type ExplorerSelection,
 } from '../components/WinExplorerTree'
 
-type ApplyState = 'ready' | 'running' | 'done' | 'failed'
+type ApplyState = 'ready' | 'running' | 'stopping' | 'stopped' | 'done' | 'failed'
 type LogLevel = 'ok' | 'info' | 'warn' | 'err'
 
 const STEP_LABELS: Record<number, string> = {
@@ -109,6 +110,10 @@ function badgeForStep(
     if (applyState === 'done') return { className: 'badge badge-ok', label: 'Applied' }
     if (applyState === 'failed')
       return { className: 'badge badge-err', label: 'Apply failed' }
+    if (applyState === 'stopped')
+      return { className: 'badge badge-draft', label: 'Stopped' }
+    if (applyState === 'stopping')
+      return { className: 'badge badge-run', label: 'Stopping…' }
     if (applyState === 'running')
       return { className: 'badge badge-run', label: 'Applying…' }
     return { className: 'badge badge-run', label: 'Ready to apply' }
@@ -212,12 +217,18 @@ export function CollectionsPage() {
   const dataSummary = useMemo(() => {
     const block = migrateRun?.summary
     if (!block || typeof block !== 'object') return null
-    // Summary keys are collection names with success/failed counts.
+    // Summary may nest under "data" or be flat collection keys.
+    const root =
+      block.data && typeof block.data === 'object'
+        ? (block.data as Record<string, unknown>)
+        : block
     let success = 0
     let failed = 0
     let collectionsDone = 0
-    for (const [key, val] of Object.entries(block)) {
-      if (key === 'schema' || key === 'files' || key === 'flows') continue
+    for (const [key, val] of Object.entries(root)) {
+      if (key === 'schema' || key === 'files' || key === 'flows' || key === '_deferred_fks')
+        continue
+      if (key === 'export_path' || key === 'target_url' || key === 'import_date') continue
       if (!val || typeof val !== 'object') continue
       const row = val as { success?: number; failed?: number }
       if (row.success != null || row.failed != null) {
@@ -230,27 +241,44 @@ export function CollectionsPage() {
     return { collectionsDone, success, failed }
   }, [migrateRun?.summary])
 
+  const progressCompleted = migrateRun?.progress?.completed_files?.length ?? 0
+  const progressTotal =
+    migrateRun?.progress?.total && migrateRun.progress.total > 0
+      ? migrateRun.progress.total
+      : totals.collections || 0
+  const progressSkipped = migrateRun?.progress?.skipped ?? 0
+
   const createdCollections =
-    dataSummary?.collectionsDone ??
-    (applyState === 'done' ? totals.collections : Math.min(logCollections, totals.collections || logCollections))
+    progressCompleted ||
+    dataSummary?.collectionsDone ||
+    (applyState === 'done'
+      ? totals.collections
+      : Math.min(logCollections, totals.collections || logCollections))
   const createdRows =
     dataSummary?.success ??
-    (applyState === 'done' ? totals.rows : 0)
+    (typeof migrateRun?.progress?.uploaded === 'number'
+      ? migrateRun.progress.uploaded
+      : applyState === 'done'
+        ? totals.rows
+        : 0)
   const errorCount =
     dataSummary?.failed ??
+    migrateRun?.progress?.failed ??
     (applyState === 'failed' ? Math.max(1, logErrors.length) : logErrors.length)
 
   const applyPct =
-    totals.collections > 0
-      ? Math.min(
-          100,
-          Math.round((createdCollections / totals.collections) * 100),
-        )
+    progressTotal > 0
+      ? Math.min(100, Math.round((createdCollections / progressTotal) * 100))
       : applyState === 'done'
         ? 100
-        : applyState === 'running'
+        : applyState === 'running' || applyState === 'stopping'
           ? 8
           : 0
+
+  const currentFromProgress =
+    migrateRun?.progress?.current_collection ||
+    migrateRun?.progress?.current_file?.replace(/\.json$/i, '') ||
+    null
 
   const currentFromLog = useMemo(() => {
     if (!migrateRun?.log) return null
@@ -262,6 +290,11 @@ export function CollectionsPage() {
     const last = matches[matches.length - 1]
     return last?.[1] ?? null
   }, [migrateRun?.log])
+
+  const canResume =
+    (applyState === 'stopped' || applyState === 'failed') &&
+    progressCompleted > 0 &&
+    (progressTotal === 0 || progressCompleted < progressTotal)
 
   const badge = badgeForStep(step, compatible, written, applyState)
 
@@ -381,6 +414,17 @@ export function CollectionsPage() {
       setApplyError(null)
       return
     }
+    if (run.status === 'stopped') {
+      stopPolling()
+      setApplyState('stopped')
+      setApplyError(null)
+      return
+    }
+    if (run.status === 'stopping') {
+      setApplyState('stopping')
+      setApplyError(null)
+      return
+    }
     if (run.status === 'failed') {
       stopPolling()
       setApplyState('failed')
@@ -439,12 +483,15 @@ export function CollectionsPage() {
     }
   }
 
-  async function handleApplyStart() {
-    if (!activeTarget || applyState === 'running') return
+  async function handleApplyStart(mode: 'start' | 'resume' | 'restart' = 'start') {
+    if (!activeTarget || applyState === 'running' || applyState === 'stopping')
+      return
     if (!written && !migrateRun) return
     stopPolling()
     setActivityLog([])
-    appendActivity('info', `data  migrate starting → ${activeTarget.name}`)
+    const label =
+      mode === 'resume' ? 'resuming' : mode === 'restart' ? 'restarting' : 'starting'
+    appendActivity('info', `data  migrate ${label} → ${activeTarget.name}`)
     setApplyError(null)
     setMigrateRun(null)
     setApplyState('running')
@@ -454,11 +501,16 @@ export function CollectionsPage() {
         data: true,
         files: false,
         flows: false,
+        mode,
       })
       setWritten(true)
-      appendActivity('ok', `data  migrate run #${run.id} started`)
+      appendActivity('ok', `data  migrate run #${run.id} ${mode}`)
       applyRunStatus(run)
-      if (run.status === 'pending' || run.status === 'running') {
+      if (
+        run.status === 'pending' ||
+        run.status === 'running' ||
+        run.status === 'stopping'
+      ) {
         startPolling(run.id, activeTarget.id)
       }
     } catch (err) {
@@ -470,6 +522,24 @@ export function CollectionsPage() {
           : 'Could not start collection data apply'
       setApplyError(message)
       appendActivity('err', `data  ${message}`)
+    }
+  }
+
+  async function handleApplyStop() {
+    if (!activeTarget || !migrateRun) return
+    if (applyState !== 'running' && applyState !== 'stopping') return
+    try {
+      appendActivity('warn', `data  stop requested for run #${migrateRun.id}`)
+      const run = await stopMigrate(projectId, activeTarget.id, migrateRun.id)
+      applyRunStatus(run)
+      if (run.status === 'stopping' || run.status === 'running') {
+        startPolling(run.id, activeTarget.id)
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not stop apply'
+      appendActivity('err', `data  ${message}`)
+      setApplyError(message)
     }
   }
 
@@ -499,11 +569,12 @@ export function CollectionsPage() {
         if (cancelled || !latest) return
         const phases = latest.phases.split(',').map((p) => p.trim())
         const dataOnly = phases.length === 1 && phases[0] === 'data'
-        if (!dataOnly && latest.status !== 'pending' && latest.status !== 'running') {
+        const activeStatuses = ['pending', 'running', 'stopping']
+        if (!dataOnly && !activeStatuses.includes(latest.status)) {
           return
         }
         if (!phases.includes('data')) return
-        if (latest.status === 'pending' || latest.status === 'running') {
+        if (activeStatuses.includes(latest.status)) {
           setWritten(true)
           setStep(5)
           setActivityLog([])
@@ -511,13 +582,18 @@ export function CollectionsPage() {
           applyRunStatus(latest)
           startPolling(latest.id, activeTarget.id)
         } else if (
-          (latest.status === 'failed' || latest.status === 'completed') &&
+          (latest.status === 'failed' ||
+            latest.status === 'completed' ||
+            latest.status === 'stopped') &&
           applyState === 'ready' &&
           !migrateRun &&
           dataOnly
         ) {
+          setWritten(true)
           setMigrateRun(latest)
-          if (latest.status === 'completed') setWritten(true)
+          if (latest.status === 'completed') setApplyState('done')
+          else if (latest.status === 'stopped') setApplyState('stopped')
+          else if (latest.status === 'failed') setApplyState('failed')
         }
       } catch {
         // Ignore — page still works without resume.
@@ -552,7 +628,11 @@ export function CollectionsPage() {
               <select
                 id="coll-target"
                 value={activeTarget?.id ?? ''}
-                disabled={targetSwitching || applyState === 'running'}
+                disabled={
+                  targetSwitching ||
+                  applyState === 'running' ||
+                  applyState === 'stopping'
+                }
                 onChange={(e) => void handleTargetChange(Number(e.target.value))}
               >
                 {targets.map((t) => (
@@ -1243,9 +1323,9 @@ export function CollectionsPage() {
                           <div className="flow-kicker">Step 5 · Directus</div>
                           <h2>Apply collection data</h2>
                           <p className="meta">
-                            Live upsert into the active target. Progress and terminal
-                            output stream from the migrate job — collections sorted by
-                            FK dependency.
+                            Live upsert into the active target. Progress is checkpointed
+                            per data JSON file — stop between files, then resume or
+                            restart. Collections are sorted by FK dependency.
                           </p>
                         </div>
                       </div>
@@ -1256,16 +1336,18 @@ export function CollectionsPage() {
                             <div>
                               <span className="k">Collections</span>
                               <strong>
-                                {createdCollections} / {totals.collections || '—'}
+                                {createdCollections} / {progressTotal || totals.collections || '—'}
                               </strong>
                               <span className="d">
-                                {applyState === 'running'
+                                {applyState === 'running' || applyState === 'stopping'
                                   ? 'importing'
                                   : applyState === 'done'
                                     ? 'imported'
-                                    : applyState === 'failed'
-                                      ? 'partial'
-                                      : 'waiting'}
+                                    : applyState === 'stopped'
+                                      ? 'paused'
+                                      : applyState === 'failed'
+                                        ? 'partial'
+                                        : 'waiting'}
                               </span>
                             </div>
                             <div>
@@ -1280,8 +1362,8 @@ export function CollectionsPage() {
                             </div>
                             <div>
                               <span className="k">Skipped</span>
-                              <strong>0</strong>
-                              <span className="d">empty / system</span>
+                              <strong>{progressSkipped}</strong>
+                              <span className="d">resume / empty</span>
                             </div>
                             <div>
                               <span className="k">Errors</span>
@@ -1302,15 +1384,23 @@ export function CollectionsPage() {
                                   ? 'Ready to apply'
                                   : applyState === 'running'
                                     ? 'Upserting collections…'
-                                    : applyState === 'done'
-                                      ? 'Collection data applied'
-                                      : 'Apply failed'}
+                                    : applyState === 'stopping'
+                                      ? 'Stopping after current file…'
+                                      : applyState === 'stopped'
+                                        ? 'Stopped — resume or restart'
+                                        : applyState === 'done'
+                                          ? 'Collection data applied'
+                                          : 'Apply failed'}
                               </b>
                               <span className="mono">{applyPct}%</span>
                             </div>
                             <div
                               className={`progress ${
-                                applyState === 'failed' ? 'err' : 'ok'
+                                applyState === 'failed'
+                                  ? 'err'
+                                  : applyState === 'stopped'
+                                    ? ''
+                                    : 'ok'
                               }`}
                               style={{ height: 10 }}
                             >
@@ -1319,11 +1409,20 @@ export function CollectionsPage() {
                             <div className="meta" style={{ marginTop: 8 }}>
                               Current ·{' '}
                               <span className="mono">
-                                {currentFromLog ??
+                                {currentFromProgress ??
+                                  currentFromLog ??
                                   (applyState === 'done' ? 'complete' : '—')}
                               </span>
                             </div>
                           </div>
+
+                          {applyState === 'stopped' ? (
+                            <div className="notice notice-warn" style={{ marginBottom: 16 }}>
+                              Stopped after {progressCompleted} file
+                              {progressCompleted === 1 ? '' : 's'}. Resume skips
+                              completed JSON files; restart re-imports all.
+                            </div>
+                          ) : null}
 
                           {(applyState === 'failed' || logErrors.length > 0) &&
                           applyState !== 'ready' ? (
@@ -1380,7 +1479,8 @@ export function CollectionsPage() {
                                 {line.text}
                               </div>
                             ))}
-                            {applyState === 'running' &&
+                            {(applyState === 'running' ||
+                              applyState === 'stopping') &&
                             terminalLines.length === 0 ? (
                               <div className="info">
                                 data  waiting for terminal output…
@@ -1393,33 +1493,69 @@ export function CollectionsPage() {
                               className="btn btn-ghost"
                               type="button"
                               onClick={() => setStep(4)}
-                              disabled={applyState === 'running'}
+                              disabled={
+                                applyState === 'running' ||
+                                applyState === 'stopping'
+                              }
                             >
                               Back
                             </button>
-                            <button
-                              className={`btn btn-primary${
-                                applyState === 'running' || applyState === 'done'
-                                  ? ' btn-disabled'
-                                  : ''
-                              }`}
-                              type="button"
-                              disabled={
-                                applyState === 'running' ||
-                                applyState === 'done' ||
-                                (!written && !migrateRun) ||
-                                !activeTarget
-                              }
-                              onClick={() => void handleApplyStart()}
-                            >
-                              {applyState === 'running'
-                                ? 'Applying…'
-                                : applyState === 'done'
-                                  ? 'Applied'
-                                  : applyState === 'failed'
-                                    ? 'Retry apply'
-                                    : 'Apply collection data'}
-                            </button>
+                            {applyState === 'running' ||
+                            applyState === 'stopping' ? (
+                              <button
+                                className="btn btn-ghost"
+                                type="button"
+                                disabled={applyState === 'stopping'}
+                                onClick={() => void handleApplyStop()}
+                              >
+                                {applyState === 'stopping'
+                                  ? 'Stopping…'
+                                  : 'Stop'}
+                              </button>
+                            ) : null}
+                            {canResume ? (
+                              <button
+                                className="btn btn-primary"
+                                type="button"
+                                disabled={!activeTarget}
+                                onClick={() => void handleApplyStart('resume')}
+                              >
+                                Resume
+                              </button>
+                            ) : null}
+                            {applyState === 'stopped' ||
+                            applyState === 'failed' ||
+                            applyState === 'done' ? (
+                              <button
+                                className={
+                                  canResume ? 'btn btn-ghost' : 'btn btn-primary'
+                                }
+                                type="button"
+                                disabled={!activeTarget || (!written && !migrateRun)}
+                                onClick={() =>
+                                  void handleApplyStart(
+                                    applyState === 'done' ||
+                                      applyState === 'stopped' ||
+                                      applyState === 'failed'
+                                      ? 'restart'
+                                      : 'start',
+                                  )
+                                }
+                              >
+                                {applyState === 'done'
+                                  ? 'Restart apply'
+                                  : 'Restart'}
+                              </button>
+                            ) : applyState === 'ready' ? (
+                              <button
+                                className="btn btn-primary"
+                                type="button"
+                                disabled={(!written && !migrateRun) || !activeTarget}
+                                onClick={() => void handleApplyStart('start')}
+                              >
+                                Apply collection data
+                              </button>
+                            ) : null}
                             {applyState === 'done' ? (
                               <Link
                                 className="btn btn-ghost"

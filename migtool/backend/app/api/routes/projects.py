@@ -48,8 +48,11 @@ from app.services.extract import (
     process_or_schedule,
 )
 from app.services.migrate import (
+    ACTIVE_STATUSES,
     encode_phases,
+    find_resume_checkpoint,
     prepared_dir,
+    request_migrate_stop,
     schedule_migrate,
     validate_prepared,
 )
@@ -794,6 +797,10 @@ def start_migrate(
     Import prepared export into the target Directus instance.
 
     Reads uploads/project_{id}/prepared/target_{id}/ (schema, data, files, flows).
+
+    mode:
+      - start / restart: import all selected phases from scratch
+      - resume: skip data/*.json files listed in the last stopped/failed checkpoint
     """
     project, target = _get_owned_target(db, user, project_id, target_id)
 
@@ -801,7 +808,7 @@ def start_migrate(
         db.query(MigrationRun)
         .filter(
             MigrationRun.target_id == target.id,
-            MigrationRun.status.in_(("pending", "running")),
+            MigrationRun.status.in_(tuple(ACTIVE_STATUSES)),
         )
         .first()
     )
@@ -821,6 +828,7 @@ def start_migrate(
         ) from exc
 
     opts = (payload or MigrationStart()).model_dump()
+    mode = opts.get("mode") or "start"
     phases = encode_phases(
         schema=opts["schema"],
         data=opts["data"],
@@ -833,16 +841,86 @@ def start_migrate(
             detail="Select at least one import phase",
         )
 
+    completed_files: list[str] = []
+    if mode == "resume" and opts.get("data"):
+        _prior, completed_files = find_resume_checkpoint(
+            db, target.id, phases=phases
+        )
+        if not completed_files:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nothing to resume — no stopped/failed data checkpoint found",
+            )
+
     run = MigrationRun(
         project_id=project.id,
         target_id=target.id,
         status="pending",
         phases=phases,
+        progress_json=json.dumps(
+            {
+                "phase": "queued",
+                "total": 0,
+                "processed": len(completed_files),
+                "uploaded": 0,
+                "failed": 0,
+                "skipped": len(completed_files),
+                "completed_files": completed_files,
+                "current_file": None,
+                "current_collection": None,
+                "mode": mode,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        ),
     )
     db.add(run)
     db.commit()
     db.refresh(run)
     schedule_migrate(run.id)
+    return _migration_out(run)
+
+
+@router.post(
+    "/{project_id}/targets/{target_id}/migrate/{run_id}/stop",
+    response_model=MigrationRunOut,
+)
+def stop_migrate(
+    project_id: int,
+    target_id: int,
+    run_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> MigrationRunOut:
+    """Request cooperative stop after the current collection JSON file finishes."""
+    _, target = _get_owned_target(db, user, project_id, target_id)
+    run = (
+        db.query(MigrationRun)
+        .filter(
+            MigrationRun.id == run_id,
+            MigrationRun.target_id == target.id,
+        )
+        .first()
+    )
+    if run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Migration run not found",
+        )
+    if run.status not in ("pending", "running"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot stop a migration with status '{run.status}'",
+        )
+
+    signaled = request_migrate_stop(run.id)
+    # Pending with no worker yet → mark stopped immediately.
+    if run.status == "pending" and run.started_at is None and not signaled:
+        run.status = "stopped"
+        run.finished_at = datetime.now(timezone.utc)
+    else:
+        run.status = "stopping"
+    db.commit()
+    db.refresh(run)
     return _migration_out(run)
 
 

@@ -152,6 +152,8 @@ export type MigrationStartPayload = {
   data?: boolean
   files?: boolean
   flows?: boolean
+  /** start = scratch; resume = skip completed data JSON files; restart = ignore checkpoint */
+  mode?: 'start' | 'resume' | 'restart'
 }
 
 export type MigrationProgress = {
@@ -164,8 +166,11 @@ export type MigrationProgress = {
   placeholders?: number
   folders_created?: number
   folders_failed?: number
+  completed_files?: string[]
   current_file?: string | null
+  current_collection?: string | null
   current_file_id?: string | null
+  mode?: string
   updated_at?: string
 }
 
@@ -348,5 +353,16 @@ export function getMigrateRun(
 ): Promise<MigrationRun> {
   return request<MigrationRun>(
     `/projects/${projectId}/targets/${targetId}/migrate/${runId}`,
+  )
+}
+
+export function stopMigrate(
+  projectId: number,
+  targetId: number,
+  runId: number,
+): Promise<MigrationRun> {
+  return request<MigrationRun>(
+    `/projects/${projectId}/targets/${targetId}/migrate/${runId}/stop`,
+    { method: 'POST' },
   )
 }

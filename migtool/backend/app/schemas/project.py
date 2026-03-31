@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -224,6 +225,9 @@ class MigrationStart(BaseModel):
     data: bool = True
     files: bool = True
     flows: bool = True
+    # start = from scratch; resume = skip completed data JSON files;
+    # restart = ignore checkpoint and re-import all data files.
+    mode: Literal["start", "resume", "restart"] = "start"
 
 
 class MigrationRunOut(BaseModel):

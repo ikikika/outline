@@ -34,6 +34,21 @@ class DirectusImportError(Exception):
     """Raised when import cannot proceed (missing path, connection, etc.)."""
 
 
+class DirectusImportCancelled(Exception):
+    """Raised when import is cooperatively stopped (e.g. user cancel)."""
+
+    def __init__(
+        self,
+        message: str = "Import stopped",
+        *,
+        data_summary: Optional[Dict] = None,
+        full_summary: Optional[Dict] = None,
+    ):
+        super().__init__(message)
+        self.data_summary = data_summary
+        self.full_summary = full_summary
+
+
 def configure(url: str, token: str) -> None:
     """Set Directus URL + bearer token for this process."""
     global _url, _headers
@@ -941,34 +956,92 @@ def sort_data_by_dependency(data_files: List[str], relations: List[Dict]) -> Lis
     return [f"{name}.json" for name in sorted_names]
 
 
-def import_data(data_path: str, include_collections: Optional[List[str]] = None,
-                exclude_collections: Optional[List[str]] = None,
-                upsert: bool = False,
-                source_path: str = None,
-                skip_validation: bool = False,
-                quiet: bool = False) -> Dict:
+def import_data(
+    data_path: str,
+    include_collections: Optional[List[str]] = None,
+    exclude_collections: Optional[List[str]] = None,
+    upsert: bool = False,
+    source_path: str = None,
+    skip_validation: bool = False,
+    quiet: bool = False,
+    skip_files: Optional[List[str]] = None,
+    progress_callback: Optional[Callable[[Dict], None]] = None,
+    should_cancel: Optional[Callable[[], bool]] = None,
+) -> Dict:
     """
     Import collection data from export.
-    
+
     Args:
         data_path: Path to data directory
         include_collections: Only import these collections
         exclude_collections: Skip these collections
         upsert: Update existing items instead of skipping
         source_path: Base export path (for loading relations)
-    
+        skip_files: Data filenames already imported (e.g. authors.json) — resume
+        progress_callback: Invoked after each file with a progress dict
+        should_cancel: When True between files, stop and raise DirectusImportCancelled
+
     Returns:
         Summary dict
+
+    Raises:
+        DirectusImportCancelled: cooperative stop between JSON files
     """
     print("\n📦 Importing collection data...")
-    
-    summary = {}
-    id_mapping = {}  # Track ID changes for maintaining relations
-    all_deferred_fks = []  # Collect deferred FK patches across all collections
-    
+
+    summary: Dict = {}
+    id_mapping: Dict = {}  # Track ID changes for maintaining relations
+    all_deferred_fks: List[Dict] = []  # Collect deferred FK patches across all collections
+    skip_set = {f for f in (skip_files or []) if f.endswith(".json")}
+    # Preserve prior completions so a second stop still resumes correctly.
+    completed_files: List[str] = [f for f in (skip_files or []) if f.endswith(".json")]
+
+    def emit(progress: Dict) -> None:
+        if progress_callback is None:
+            return
+        try:
+            progress_callback(progress)
+        except Exception:  # noqa: BLE001 — never fail import on progress I/O
+            logging.exception("progress_callback failed")
+
+    def cancelled() -> bool:
+        return bool(should_cancel and should_cancel())
+
+    def progress_snapshot(
+        *,
+        current_file: Optional[str],
+        current_collection: Optional[str],
+        phase: str = "data",
+    ) -> Dict:
+        success_total = sum(
+            int(v.get("success") or 0)
+            for k, v in summary.items()
+            if k != "_deferred_fks" and isinstance(v, dict)
+        )
+        failed_total = sum(
+            int(v.get("failed") or 0)
+            for k, v in summary.items()
+            if k != "_deferred_fks" and isinstance(v, dict)
+        )
+        return {
+            "phase": phase,
+            "total": total_files,
+            "processed": len(completed_files),
+            "uploaded": success_total,
+            "failed": failed_total,
+            "skipped": len(skip_set),
+            "completed_files": list(completed_files),
+            "current_file": current_file,
+            "current_collection": current_collection,
+            "current_file_id": None,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
     # Get list of data files
-    data_files = [f for f in os.listdir(data_path) if f.endswith('.json') and not f.startswith('_')]
-    
+    data_files = [
+        f for f in os.listdir(data_path) if f.endswith(".json") and not f.startswith("_")
+    ]
+
     # Try to load relations for dependency sorting
     relations = []
     if source_path:
@@ -982,7 +1055,7 @@ def import_data(data_path: str, include_collections: Optional[List[str]] = None,
             if os.path.exists(schema_complete_file):
                 schema = load_json(schema_complete_file)
                 relations = schema.get("relations", [])
-    
+
     # Sort by FK dependencies if we have relations
     if relations:
         print("  🔗 Sorting collections by FK dependencies...")
@@ -993,22 +1066,34 @@ def import_data(data_path: str, include_collections: Optional[List[str]] = None,
         if os.path.exists(manifest_path):
             manifest = load_json(manifest_path)
             collection_order = list(manifest.get("collections_exported", {}).keys())
-            data_files = sorted(data_files, key=lambda x: (
-                collection_order.index(x.replace('.json', '')) 
-                if x.replace('.json', '') in collection_order else 999
-            ))
-    
+            data_files = sorted(
+                data_files,
+                key=lambda x: (
+                    collection_order.index(x.replace(".json", ""))
+                    if x.replace(".json", "") in collection_order
+                    else 999
+                ),
+            )
+
     # Determine which collections will actually be imported
-    collections_to_import = []
+    files_to_import: List[str] = []
     for data_file in data_files:
-        collection_name = data_file.replace('.json', '')
+        collection_name = data_file.replace(".json", "")
         if include_collections and collection_name not in include_collections:
             continue
         if exclude_collections and collection_name in exclude_collections:
             continue
         if collection_name in SYSTEM_COLLECTIONS:
             continue
-        collections_to_import.append(collection_name)
+        files_to_import.append(data_file)
+
+    collections_to_import = [f.replace(".json", "") for f in files_to_import]
+    total_files = len(files_to_import)
+
+    if skip_set:
+        print(f"  ⏭️ Resume: skipping {len(skip_set)} completed file(s)")
+
+    emit(progress_snapshot(current_file=None, current_collection=None))
 
     # Temporarily disable validation if requested
     saved_validation = {}
@@ -1017,53 +1102,161 @@ def import_data(data_path: str, include_collections: Optional[List[str]] = None,
         saved_validation = disable_field_validation(collections_to_import)
 
     try:
-        for data_file in data_files:
-            collection_name = data_file.replace('.json', '')
-            
-            # Apply filters
-            if collection_name not in collections_to_import:
+        for data_file in files_to_import:
+            collection_name = data_file.replace(".json", "")
+
+            if cancelled():
+                print(f"  ⏹️ Stop requested — pausing before {collection_name}")
+                if all_deferred_fks:
+                    fk_patched, fk_failed = patch_deferred_fks(
+                        all_deferred_fks, quiet=quiet
+                    )
+                    summary["_deferred_fks"] = {
+                        "patched": fk_patched,
+                        "failed": fk_failed,
+                        "total": len(all_deferred_fks),
+                    }
+                    all_deferred_fks.clear()
+                emit(
+                    progress_snapshot(
+                        current_file=data_file,
+                        current_collection=collection_name,
+                        phase="stopped",
+                    )
+                )
+                raise DirectusImportCancelled(
+                    "Collection import stopped by user",
+                    data_summary=summary,
+                )
+
+            if data_file in skip_set:
+                print(f"  ⏭️ Skipping (already imported): {collection_name}")
+                if data_file not in completed_files:
+                    completed_files.append(data_file)
+                emit(
+                    progress_snapshot(
+                        current_file=data_file,
+                        current_collection=collection_name,
+                    )
+                )
                 continue
-            
+
+            emit(
+                progress_snapshot(
+                    current_file=data_file,
+                    current_collection=collection_name,
+                )
+            )
+
             filepath = os.path.join(data_path, data_file)
             items = load_json(filepath)
-            
+
             if not items:
                 print(f"  ⏭️ No data in: {collection_name}")
+                summary[collection_name] = {
+                    "success": 0,
+                    "failed": 0,
+                    "total": 0,
+                    "deferred": 0,
+                }
+                completed_files.append(data_file)
+                emit(
+                    progress_snapshot(
+                        current_file=data_file,
+                        current_collection=collection_name,
+                    )
+                )
                 continue
-            
+
             # Singleton collections may be exported as a single object — wrap in a list
             if isinstance(items, dict):
                 items = [items]
-            
+
             # Validate that items are dictionaries (not strings or other types)
-            if not isinstance(items, list) or (items and not isinstance(items[0], dict)):
-                print(f"  ⚠️ Invalid data format in {collection_name}, skipping (expected list of objects)")
+            if not isinstance(items, list) or (
+                items and not isinstance(items[0], dict)
+            ):
+                print(
+                    f"  ⚠️ Invalid data format in {collection_name}, "
+                    "skipping (expected list of objects)"
+                )
+                completed_files.append(data_file)
+                emit(
+                    progress_snapshot(
+                        current_file=data_file,
+                        current_collection=collection_name,
+                    )
+                )
                 continue
-            
+
             print(f"  📥 Importing {len(items)} items into: {collection_name}")
-            
+
             success, failed, new_mapping, deferred_fks = import_collection_data(
-                collection_name, items, id_mapping, upsert, quiet=quiet,
-                keep_nulls=upsert
+                collection_name,
+                items,
+                id_mapping,
+                upsert,
+                quiet=quiet,
+                keep_nulls=upsert,
             )
-            
+
             id_mapping[collection_name] = new_mapping
             all_deferred_fks.extend(deferred_fks)
-            
+
             deferred_count = len(deferred_fks)
             deferred_note = f", 🔄 {deferred_count} deferred" if deferred_count else ""
-            summary[collection_name] = {"success": success, "failed": failed, "total": len(items), "deferred": deferred_count}
+            summary[collection_name] = {
+                "success": success,
+                "failed": failed,
+                "total": len(items),
+                "deferred": deferred_count,
+            }
             print(f"    ✅ {success} imported, ❌ {failed} failed{deferred_note}")
+
+            completed_files.append(data_file)
+            emit(
+                progress_snapshot(
+                    current_file=data_file,
+                    current_collection=collection_name,
+                )
+            )
+
         # Second pass: patch deferred FK references now that all collections have data
         if all_deferred_fks:
+            if cancelled():
+                print("  ⏹️ Stop requested — patching deferred FKs then pausing")
             fk_patched, fk_failed = patch_deferred_fks(all_deferred_fks, quiet=quiet)
-            summary["_deferred_fks"] = {"patched": fk_patched, "failed": fk_failed, "total": len(all_deferred_fks)}
+            summary["_deferred_fks"] = {
+                "patched": fk_patched,
+                "failed": fk_failed,
+                "total": len(all_deferred_fks),
+            }
+            if cancelled():
+                emit(
+                    progress_snapshot(
+                        current_file=None,
+                        current_collection=None,
+                        phase="stopped",
+                    )
+                )
+                raise DirectusImportCancelled(
+                    "Collection import stopped by user",
+                    data_summary=summary,
+                )
+
+        emit(
+            progress_snapshot(
+                current_file=None,
+                current_collection=None,
+                phase="data_done",
+            )
+        )
     finally:
         # Always restore validation rules, even if import fails
         if saved_validation:
             print("  🔒 Restoring field validation...")
             restore_field_validation(saved_validation)
-    
+
     return summary
 
 
@@ -1548,7 +1741,9 @@ def run_import(
     quiet: bool = False,
     placeholder_files: bool = False,
     skip_existing_files: bool = True,
+    skip_data_files: Optional[List[str]] = None,
     progress_callback: Optional[Callable[[Dict], None]] = None,
+    should_cancel: Optional[Callable[[], bool]] = None,
     *,
     url: Optional[str] = None,
     token: Optional[str] = None,
@@ -1565,6 +1760,9 @@ def run_import(
         include_collections: Only import these collections
         exclude_collections: Skip these collections
         upsert: Update existing items instead of skipping
+        skip_data_files: Data JSON filenames to skip (resume)
+        progress_callback: Progress updates for data/files phases
+        should_cancel: Cooperative cancel check (data phase)
         url: Optional Directus base URL (sets thread config with token)
         token: Optional static token
 
@@ -1611,6 +1809,12 @@ def run_import(
         "import_date": datetime.now().isoformat(),
     }
 
+    if should_cancel and should_cancel():
+        raise DirectusImportCancelled(
+            "Import stopped by user",
+            full_summary=summary,
+        )
+
     if import_schema_flag:
         schema_path = os.path.join(export_path, "schema")
         if os.path.exists(schema_path):
@@ -1624,20 +1828,37 @@ def run_import(
     if import_data_flag:
         data_path = os.path.join(export_path, "data")
         if os.path.exists(data_path):
-            data_summary = import_data(
-                data_path,
-                include_collections,
-                exclude_collections,
-                upsert,
-                source_path=export_path,
-                skip_validation=skip_validation,
-                quiet=quiet,
-            )
-            summary["data"] = data_summary
+            try:
+                data_summary = import_data(
+                    data_path,
+                    include_collections,
+                    exclude_collections,
+                    upsert,
+                    source_path=export_path,
+                    skip_validation=skip_validation,
+                    quiet=quiet,
+                    skip_files=skip_data_files,
+                    progress_callback=progress_callback,
+                    should_cancel=should_cancel,
+                )
+                summary["data"] = data_summary
+            except DirectusImportCancelled as exc:
+                if exc.data_summary is not None:
+                    summary["data"] = exc.data_summary
+                raise DirectusImportCancelled(
+                    str(exc) or "Import stopped by user",
+                    data_summary=summary.get("data"),
+                    full_summary=summary,
+                ) from exc
         else:
             print("⚠️ Data directory not found, skipping...")
 
     if import_files_flag:
+        if should_cancel and should_cancel():
+            raise DirectusImportCancelled(
+                "Import stopped by user",
+                full_summary=summary,
+            )
         files_summary = import_files(
             export_path,
             placeholder_files=placeholder_files,

@@ -154,7 +154,7 @@ class MigrationRun(Base):
         ForeignKey("directus_targets.id", ondelete="CASCADE"),
         index=True,
     )
-    # pending | running | completed | failed
+    # pending | running | stopping | stopped | completed | failed
     status: Mapped[str] = mapped_column(String(32), default="pending")
     # Comma-separated phases requested: schema,data,files,flows
     phases: Mapped[str] = mapped_column(String(64), default="schema,data,files,flows")

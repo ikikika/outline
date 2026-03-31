@@ -16,14 +16,23 @@ from sqlalchemy.orm import Session
 from app.core.secrets import decrypt_secret
 from app.models.project import DirectusTarget, MigrationRun
 from app.services.directus import resolve_directus_base_url
-from app.services.directus_import import DirectusImportError, import_lock, run_import
+from app.services.directus_import import (
+    DirectusImportCancelled,
+    DirectusImportError,
+    import_lock,
+    run_import,
+)
 from app.services.uploads import project_upload_dir
 
 logger = logging.getLogger(__name__)
 
 VALID_PHASES = frozenset({"schema", "data", "files", "flows"})
+ACTIVE_STATUSES = frozenset({"pending", "running", "stopping"})
 _LOG_MAX_CHARS = 200_000
 _LOG_FLUSH_INTERVAL_S = 0.4
+
+_cancel_events: dict[int, threading.Event] = {}
+_cancel_lock = threading.Lock()
 
 
 def prepared_dir(project_id: int, target_id: int) -> Path:
@@ -73,6 +82,77 @@ def validate_prepared(path: Path) -> None:
         )
 
 
+def register_cancel(run_id: int) -> threading.Event:
+    event = threading.Event()
+    with _cancel_lock:
+        _cancel_events[run_id] = event
+    return event
+
+
+def clear_cancel(run_id: int) -> None:
+    with _cancel_lock:
+        _cancel_events.pop(run_id, None)
+
+
+def request_migrate_stop(run_id: int) -> bool:
+    """Signal a running migrate job to stop after the current collection file."""
+    with _cancel_lock:
+        event = _cancel_events.get(run_id)
+        if event is None:
+            return False
+        event.set()
+        return True
+
+
+def is_cancel_requested(run_id: int) -> bool:
+    with _cancel_lock:
+        event = _cancel_events.get(run_id)
+        return bool(event and event.is_set())
+
+
+def completed_data_files_from_run(run: MigrationRun) -> list[str]:
+    """Extract completed data/*.json filenames from a prior run's progress."""
+    if not run.progress_json:
+        return []
+    try:
+        progress = json.loads(run.progress_json)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(progress, dict):
+        return []
+    files = progress.get("completed_files") or []
+    if not isinstance(files, list):
+        return []
+    return [str(f) for f in files if isinstance(f, str) and f.endswith(".json")]
+
+
+def find_resume_checkpoint(
+    db: Session,
+    target_id: int,
+    *,
+    phases: str,
+) -> tuple[MigrationRun | None, list[str]]:
+    """
+    Latest stopped/failed run for this target+phases with a data checkpoint.
+    """
+    candidates = (
+        db.query(MigrationRun)
+        .filter(
+            MigrationRun.target_id == target_id,
+            MigrationRun.phases == phases,
+            MigrationRun.status.in_(("stopped", "failed")),
+        )
+        .order_by(MigrationRun.id.desc())
+        .limit(20)
+        .all()
+    )
+    for prior in candidates:
+        completed = completed_data_files_from_run(prior)
+        if completed:
+            return prior, completed
+    return None, []
+
+
 def _write_progress(run_id: int, progress: dict[str, Any]) -> None:
     """Persist a progress checkpoint with a short-lived DB session."""
     from app.db.session import SessionLocal
@@ -82,7 +162,19 @@ def _write_progress(run_id: int, progress: dict[str, Any]) -> None:
         run = db.get(MigrationRun, run_id)
         if run is None:
             return
-        run.progress_json = json.dumps(progress, default=str)[:50_000]
+        # Preserve mode from prior progress when emitters omit it.
+        prior_mode = None
+        if run.progress_json:
+            try:
+                prior = json.loads(run.progress_json)
+                if isinstance(prior, dict):
+                    prior_mode = prior.get("mode")
+            except json.JSONDecodeError:
+                prior_mode = None
+        payload = dict(progress)
+        if prior_mode and "mode" not in payload:
+            payload["mode"] = prior_mode
+        run.progress_json = json.dumps(payload, default=str)[:50_000]
         db.commit()
     except Exception:  # noqa: BLE001 — never fail the import on progress I/O
         logger.exception("Failed to persist progress for run %s", run_id)
@@ -172,6 +264,7 @@ class _TerminalCapture:
 def process_migrate(db: Session, run_id: int) -> None:
     run = db.get(MigrationRun, run_id)
     if run is None:
+        clear_cancel(run_id)
         return
 
     target = db.get(DirectusTarget, run.target_id)
@@ -180,6 +273,31 @@ def process_migrate(db: Session, run_id: int) -> None:
         run.error_detail = "Target not found"
         run.finished_at = datetime.now(timezone.utc)
         db.commit()
+        clear_cancel(run_id)
+        return
+
+    prior_progress: dict[str, Any] = {}
+    if run.progress_json:
+        try:
+            loaded = json.loads(run.progress_json)
+            if isinstance(loaded, dict):
+                prior_progress = loaded
+        except json.JSONDecodeError:
+            prior_progress = {}
+
+    skip_data_files = [
+        str(f)
+        for f in (prior_progress.get("completed_files") or [])
+        if isinstance(f, str) and f.endswith(".json")
+    ]
+    mode = str(prior_progress.get("mode") or "start")
+
+    if is_cancel_requested(run_id) or run.status == "stopping":
+        run.status = "stopped"
+        run.error_detail = None
+        run.finished_at = datetime.now(timezone.utc)
+        db.commit()
+        clear_cancel(run_id)
         return
 
     run.status = "running"
@@ -190,15 +308,18 @@ def process_migrate(db: Session, run_id: int) -> None:
         {
             "phase": "starting",
             "total": 0,
-            "processed": 0,
+            "processed": len(skip_data_files),
             "uploaded": 0,
             "failed": 0,
-            "skipped": 0,
+            "skipped": len(skip_data_files),
             "placeholders": 0,
             "folders_created": 0,
             "folders_failed": 0,
+            "completed_files": skip_data_files,
             "current_file": None,
+            "current_collection": None,
             "current_file_id": None,
+            "mode": mode,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
     )
@@ -220,6 +341,9 @@ def process_migrate(db: Session, run_id: int) -> None:
             capture.flush_to_db()
             _write_progress(run_id, progress)
 
+        def should_cancel() -> bool:
+            return is_cancel_requested(run_id)
+
         sys.stdout = capture  # type: ignore[assignment]
         sys.stderr = capture  # type: ignore[assignment]
 
@@ -233,7 +357,11 @@ def process_migrate(db: Session, run_id: int) -> None:
                 import_flows_flag=flags["flows"],
                 quiet=True,
                 skip_existing_files=True,
-                progress_callback=on_progress if flags["files"] else None,
+                skip_data_files=skip_data_files if flags["data"] else None,
+                progress_callback=on_progress
+                if (flags["files"] or flags["data"])
+                else None,
+                should_cancel=should_cancel if flags["data"] else None,
                 url=url,
                 token=plaintext,
             )
@@ -243,11 +371,22 @@ def process_migrate(db: Session, run_id: int) -> None:
         run = db.get(MigrationRun, run_id)
         if run is None:
             return
+
+        if is_cancel_requested(run_id):
+            run.status = "stopped"
+            run.error_detail = None
+            run.summary_json = json.dumps(summary, default=str)[:100_000]
+            run.log_text = capture.text() or run.log_text
+            run.finished_at = datetime.now(timezone.utc)
+            db.commit()
+            return
+
         run.status = "completed"
         run.summary_json = json.dumps(summary, default=str)[:100_000]
         run.log_text = capture.text() or run.log_text
         # Final progress snapshot from files summary when present.
         files_block = summary.get("files") if isinstance(summary, dict) else None
+        data_block = summary.get("data") if isinstance(summary, dict) else None
         if isinstance(files_block, dict):
             file_stats = files_block.get("files") or {}
             folder_stats = files_block.get("folders") or {}
@@ -267,11 +406,62 @@ def process_migrate(db: Session, run_id: int) -> None:
                     "folders_failed": int(folder_stats.get("failed") or 0),
                     "current_file": None,
                     "current_file_id": None,
+                    "mode": mode,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                },
+                default=str,
+            )[:50_000]
+        elif isinstance(data_block, dict):
+            # Prefer last progress_json (has completed_files); mark phase done.
+            completed = completed_data_files_from_run(run)
+            collections = {
+                k: v
+                for k, v in data_block.items()
+                if k != "_deferred_fks" and isinstance(v, dict)
+            }
+            success = sum(int(v.get("success") or 0) for v in collections.values())
+            failed = sum(int(v.get("failed") or 0) for v in collections.values())
+            total = len(completed) or len(collections)
+            run.progress_json = json.dumps(
+                {
+                    "phase": "done",
+                    "total": total,
+                    "processed": total,
+                    "uploaded": success,
+                    "failed": failed,
+                    "skipped": len(skip_data_files),
+                    "completed_files": completed,
+                    "current_file": None,
+                    "current_collection": None,
+                    "current_file_id": None,
+                    "mode": mode,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 },
                 default=str,
             )[:50_000]
         run.error_detail = None
+        run.finished_at = datetime.now(timezone.utc)
+        db.commit()
+    except DirectusImportCancelled as exc:
+        logger.info("Migration run %s stopped by user", run_id)
+        try:
+            print(f"⏹️ Migration stopped: {exc}", file=sys.stderr)
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            capture.flush_to_db()
+        except Exception:  # noqa: BLE001
+            pass
+        db.rollback()
+        run = db.get(MigrationRun, run_id)
+        if run is None:
+            return
+        summary = exc.full_summary
+        run.status = "stopped"
+        run.error_detail = None
+        if summary:
+            run.summary_json = json.dumps(summary, default=str)[:100_000]
+        run.log_text = capture.text() or run.log_text
         run.finished_at = datetime.now(timezone.utc)
         db.commit()
     except Exception as exc:  # noqa: BLE001 — persist failure for UI
@@ -299,6 +489,7 @@ def process_migrate(db: Session, run_id: int) -> None:
     finally:
         sys.stdout = old_out
         sys.stderr = old_err
+        clear_cancel(run_id)
 
 
 def run_migrate_job(run_id: int) -> None:
@@ -313,6 +504,7 @@ def run_migrate_job(run_id: int) -> None:
 
 def schedule_migrate(run_id: int) -> None:
     """Start import in a daemon thread (same pattern as extract)."""
+    register_cancel(run_id)
     thread = threading.Thread(
         target=run_migrate_job,
         args=(run_id,),
