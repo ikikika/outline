@@ -32,6 +32,7 @@ from app.schemas import (
     PrepareAssetsRequest,
     PrepareDataOut,
     PrepareDataRequest,
+    PreparedStatusOut,
     PrepareSchemaOut,
     PrepareSchemaRequest,
     ProjectCreate,
@@ -51,7 +52,10 @@ from app.services.migrate import (
     ACTIVE_STATUSES,
     encode_phases,
     find_resume_checkpoint,
+    inspect_prepared,
     prepared_dir,
+    reclaim_orphaned_migrate_runs,
+    reclaim_orphaned_run,
     request_migrate_stop,
     schedule_migrate,
     validate_prepared,
@@ -781,6 +785,21 @@ def prepare_target_data(
     return PrepareDataOut(**summary)
 
 
+@router.get(
+    "/{project_id}/targets/{target_id}/prepared",
+    response_model=PreparedStatusOut,
+)
+def get_prepared_status(
+    project_id: int,
+    target_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> PreparedStatusOut:
+    """Return what is already present under prepared/target_{id}/."""
+    project, target = _get_owned_target(db, user, project_id, target_id)
+    return PreparedStatusOut(**inspect_prepared(project.id, target.id))
+
+
 @router.post(
     "/{project_id}/targets/{target_id}/migrate",
     response_model=MigrationRunOut,
@@ -843,13 +862,13 @@ def start_migrate(
 
     completed_files: list[str] = []
     if mode == "resume" and opts.get("data"):
-        _prior, completed_files = find_resume_checkpoint(
+        prior, completed_files = find_resume_checkpoint(
             db, target.id, phases=phases
         )
-        if not completed_files:
+        if prior is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Nothing to resume — no stopped/failed data checkpoint found",
+                detail="Nothing to resume — no stopped/failed data run found",
             )
 
     run = MigrationRun(
@@ -891,7 +910,7 @@ def stop_migrate(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> MigrationRunOut:
-    """Request cooperative stop after the current collection JSON file finishes."""
+    """Request cooperative stop after the current row finishes."""
     _, target = _get_owned_target(db, user, project_id, target_id)
     run = (
         db.query(MigrationRun)
@@ -906,16 +925,22 @@ def stop_migrate(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Migration run not found",
         )
-    if run.status not in ("pending", "running"):
+    if run.status not in ("pending", "running", "stopping"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot stop a migration with status '{run.status}'",
         )
 
+    # Dead worker (API restart / crash): mark stopped immediately.
+    if reclaim_orphaned_run(run):
+        db.commit()
+        db.refresh(run)
+        return _migration_out(run)
+
     signaled = request_migrate_stop(run.id)
-    # Pending with no worker yet → mark stopped immediately.
-    if run.status == "pending" and run.started_at is None and not signaled:
+    if not signaled:
         run.status = "stopped"
+        run.error_detail = None
         run.finished_at = datetime.now(timezone.utc)
     else:
         run.status = "stopping"
@@ -936,6 +961,8 @@ def latest_migrate(
 ) -> MigrationRunOut | None:
     """Return the latest migration run for this target, if any."""
     _, target = _get_owned_target(db, user, project_id, target_id)
+    # Self-heal stuck runs left by previous process lifetimes.
+    reclaim_orphaned_migrate_runs(db)
     run = (
         db.query(MigrationRun)
         .filter(MigrationRun.target_id == target.id)
@@ -972,4 +999,7 @@ def get_migrate(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Migration run not found",
         )
+    if reclaim_orphaned_run(run):
+        db.commit()
+        db.refresh(run)
     return _migration_out(run)

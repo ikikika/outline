@@ -5,12 +5,14 @@ import {
   activateTarget,
   getLatestMigrate,
   getMigrateRun,
+  getPreparedStatus,
   getProject,
   prepareTargetData,
   startMigrate,
   stopMigrate,
   type MigrationRun,
   type PrepareDataResult,
+  type PreparedStatus,
   type ProjectDetail,
 } from '../api/projects'
 import { Sidebar } from '../components/Sidebar'
@@ -142,6 +144,9 @@ export function CollectionsPage() {
 
   const [written, setWritten] = useState(false)
   const [writeResult, setWriteResult] = useState<PrepareDataResult | null>(null)
+  const [preparedStatus, setPreparedStatus] = useState<PreparedStatus | null>(
+    null,
+  )
   const [writing, setWriting] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
 
@@ -197,8 +202,12 @@ export function CollectionsPage() {
   const compatible = scan?.compatible ?? null
   const isDirectus = compatible !== false
   const totals = {
-    collections: writeResult?.collections ?? scan?.collections ?? 0,
-    rows: writeResult?.rows ?? scan?.rows ?? 0,
+    collections:
+      writeResult?.collections ??
+      scan?.collections ??
+      preparedStatus?.collections ??
+      0,
+    rows: writeResult?.rows ?? scan?.rows ?? preparedStatus?.rows ?? 0,
   }
 
   const outputPath = activeTarget
@@ -247,6 +256,8 @@ export function CollectionsPage() {
       ? migrateRun.progress.total
       : totals.collections || 0
   const progressSkipped = migrateRun?.progress?.skipped ?? 0
+  const currentItemsDone = migrateRun?.progress?.current_items_done ?? 0
+  const currentItemsTotal = migrateRun?.progress?.current_items_total ?? 0
 
   const createdCollections =
     progressCompleted ||
@@ -255,30 +266,47 @@ export function CollectionsPage() {
       ? totals.collections
       : Math.min(logCollections, totals.collections || logCollections))
   const createdRows =
-    dataSummary?.success ??
     (typeof migrateRun?.progress?.uploaded === 'number'
       ? migrateRun.progress.uploaded
-      : applyState === 'done'
-        ? totals.rows
-        : 0)
+      : null) ??
+    dataSummary?.success ??
+    (applyState === 'done' ? totals.rows : 0)
   const errorCount =
+    (typeof migrateRun?.progress?.failed === 'number'
+      ? migrateRun.progress.failed
+      : null) ??
     dataSummary?.failed ??
-    migrateRun?.progress?.failed ??
     (applyState === 'failed' ? Math.max(1, logErrors.length) : logErrors.length)
 
+  const fileFraction =
+    currentItemsTotal > 0
+      ? Math.min(1, currentItemsDone / currentItemsTotal)
+      : applyState === 'running' || applyState === 'stopping'
+        ? 0.02
+        : 0
   const applyPct =
     progressTotal > 0
-      ? Math.min(100, Math.round((createdCollections / progressTotal) * 100))
+      ? Math.min(
+          100,
+          Math.round(
+            ((progressCompleted + fileFraction) / progressTotal) * 100,
+          ),
+        )
       : applyState === 'done'
         ? 100
         : applyState === 'running' || applyState === 'stopping'
-          ? 8
+          ? Math.max(3, Math.round(fileFraction * 100))
           : 0
 
   const currentFromProgress =
     migrateRun?.progress?.current_collection ||
     migrateRun?.progress?.current_file?.replace(/\.json$/i, '') ||
     null
+
+  const currentItemLabel =
+    currentItemsTotal > 0
+      ? `${currentItemsDone.toLocaleString()} / ${currentItemsTotal.toLocaleString()} rows`
+      : null
 
   const currentFromLog = useMemo(() => {
     if (!migrateRun?.log) return null
@@ -291,10 +319,17 @@ export function CollectionsPage() {
     return last?.[1] ?? null
   }, [migrateRun?.log])
 
+  const isFullyApplied =
+    applyState === 'done' ||
+    (progressTotal > 0 && progressCompleted >= progressTotal && applyState !== 'stopped')
+
+  // After stop/fail always offer Resume (even if still on the first JSON file).
   const canResume =
-    (applyState === 'stopped' || applyState === 'failed') &&
-    progressCompleted > 0 &&
-    (progressTotal === 0 || progressCompleted < progressTotal)
+    (applyState === 'stopped' || applyState === 'failed') && !isFullyApplied
+
+  const canSkipToApply = Boolean(
+    written || preparedStatus?.has_data || migrateRun,
+  )
 
   const badge = badgeForStep(step, compatible, written, applyState)
 
@@ -303,6 +338,11 @@ export function CollectionsPage() {
   )
   const previewFiles = compatibleFiles.slice(0, 4)
   const extraCompatible = Math.max(0, compatibleFiles.length - previewFiles.length)
+
+  function goToApply() {
+    if (preparedStatus?.has_data || migrateRun) setWritten(true)
+    setStep(5)
+  }
 
   // Prefer a pack that contains data/ when project loads.
   useEffect(() => {
@@ -344,9 +384,7 @@ export function CollectionsPage() {
         })
         if (!cancelled) {
           setScan(result)
-          setWritten(false)
-          setWriteResult(null)
-          setWriteError(null)
+          // Don't clear prepared-on-disk / in-flight apply state when scanning a pack.
         }
       } catch (err) {
         if (!cancelled) {
@@ -377,6 +415,7 @@ export function CollectionsPage() {
   function resetWriteAndApply() {
     setWritten(false)
     setWriteResult(null)
+    setPreparedStatus(null)
     setWriteError(null)
     setApplyState('ready')
     setMigrateRun(null)
@@ -436,22 +475,24 @@ export function CollectionsPage() {
 
   function startPolling(runId: number, targetId: number) {
     stopPolling()
+    const tick = async () => {
+      try {
+        const run = await getMigrateRun(projectId, targetId, runId)
+        applyRunStatus(run)
+      } catch (err) {
+        stopPolling()
+        setApplyState('failed')
+        setApplyError(
+          err instanceof ApiError
+            ? err.message
+            : 'Could not poll apply status',
+        )
+      }
+    }
+    void tick()
     pollRef.current = window.setInterval(() => {
-      void (async () => {
-        try {
-          const run = await getMigrateRun(projectId, targetId, runId)
-          applyRunStatus(run)
-        } catch (err) {
-          stopPolling()
-          setApplyState('failed')
-          setApplyError(
-            err instanceof ApiError
-              ? err.message
-              : 'Could not poll apply status',
-          )
-        }
-      })()
-    }, 1000)
+      void tick()
+    }, 500)
   }
 
   async function handleWrite() {
@@ -564,16 +605,37 @@ export function CollectionsPage() {
     if (invalidId || !activeTarget) return
     let cancelled = false
     ;(async () => {
+      let hasPreparedData = false
+      let prepared: PreparedStatus | null = null
+      try {
+        prepared = await getPreparedStatus(projectId, activeTarget.id)
+        if (cancelled) return
+        setPreparedStatus(prepared)
+        if (prepared.has_data) {
+          hasPreparedData = true
+          setWritten(true)
+        }
+      } catch {
+        // Prepared probe is optional.
+      }
+
       try {
         const latest = await getLatestMigrate(projectId, activeTarget.id)
-        if (cancelled || !latest) return
+        if (cancelled || !latest) {
+          if (!cancelled && hasPreparedData) setStep(5)
+          return
+        }
         const phases = latest.phases.split(',').map((p) => p.trim())
         const dataOnly = phases.length === 1 && phases[0] === 'data'
         const activeStatuses = ['pending', 'running', 'stopping']
         if (!dataOnly && !activeStatuses.includes(latest.status)) {
+          if (hasPreparedData) setStep(5)
           return
         }
-        if (!phases.includes('data')) return
+        if (!phases.includes('data')) {
+          if (hasPreparedData) setStep(5)
+          return
+        }
         if (activeStatuses.includes(latest.status)) {
           setWritten(true)
           setStep(5)
@@ -585,18 +647,31 @@ export function CollectionsPage() {
           (latest.status === 'failed' ||
             latest.status === 'completed' ||
             latest.status === 'stopped') &&
-          applyState === 'ready' &&
-          !migrateRun &&
           dataOnly
         ) {
           setWritten(true)
+          setStep(5)
           setMigrateRun(latest)
           if (latest.status === 'completed') setApplyState('done')
           else if (latest.status === 'stopped') setApplyState('stopped')
           else if (latest.status === 'failed') setApplyState('failed')
+        } else if (hasPreparedData) {
+          setStep(5)
         }
       } catch {
-        // Ignore — page still works without resume.
+        if (!cancelled && hasPreparedData) setStep(5)
+      }
+
+      if (
+        !cancelled &&
+        hasPreparedData &&
+        prepared &&
+        prepared.collections > 0
+      ) {
+        appendActivity(
+          'info',
+          `data  found prepared ${prepared.collections} collections · skip to apply`,
+        )
       }
     })()
     return () => {
@@ -703,7 +778,21 @@ export function CollectionsPage() {
                     <b>Confirm</b>
                   </div>
                 </li>
-                <li className={railClass(5, step)}>
+                <li
+                  className={railClass(5, step)}
+                  style={canSkipToApply ? { cursor: 'pointer' } : undefined}
+                  onClick={() => {
+                    if (canSkipToApply) goToApply()
+                  }}
+                  onKeyDown={(e) => {
+                    if (canSkipToApply && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault()
+                      goToApply()
+                    }
+                  }}
+                  role={canSkipToApply ? 'button' : undefined}
+                  tabIndex={canSkipToApply ? 0 : undefined}
+                >
                   <span className="flow-n">5</span>
                   <div>
                     <small>Directus</small>
@@ -714,6 +803,29 @@ export function CollectionsPage() {
 
               <div className="flow-layout">
                 <div className="flow-main">
+                  {canSkipToApply && step < 5 ? (
+                    <div className="notice notice-ok" style={{ margin: '0 0 16px' }}>
+                      Prepared collection data is ready
+                      {preparedStatus?.collections
+                        ? ` (${preparedStatus.collections} collections`
+                        : ''}
+                      {preparedStatus?.collections && preparedStatus.rows != null
+                        ? ` · ${preparedStatus.rows.toLocaleString()} rows)`
+                        : preparedStatus?.collections
+                          ? ')'
+                          : ''}
+                      .{' '}
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        style={{ marginLeft: 8 }}
+                        onClick={goToApply}
+                      >
+                        Skip to apply
+                      </button>
+                    </div>
+                  ) : null}
+
                   {step === 1 ? (
                     <section className="flow-card">
                       <div className="flow-card-head">
@@ -1283,8 +1395,8 @@ export function CollectionsPage() {
                             <button
                               className="btn btn-primary"
                               type="button"
-                              disabled={!written}
-                              onClick={() => setStep(5)}
+                              disabled={!canSkipToApply}
+                              onClick={goToApply}
                             >
                               Continue to apply
                             </button>
@@ -1324,8 +1436,8 @@ export function CollectionsPage() {
                           <h2>Apply collection data</h2>
                           <p className="meta">
                             Live upsert into the active target. Progress is checkpointed
-                            per data JSON file — stop between files, then resume or
-                            restart. Collections are sorted by FK dependency.
+                            per completed data JSON file. Stop finishes the current row,
+                            then you can resume (skips done files) or restart.
                           </p>
                         </div>
                       </div>
@@ -1383,9 +1495,11 @@ export function CollectionsPage() {
                                 {applyState === 'ready'
                                   ? 'Ready to apply'
                                   : applyState === 'running'
-                                    ? 'Upserting collections…'
+                                    ? currentFromProgress
+                                      ? `Upserting ${currentFromProgress}…`
+                                      : 'Upserting collections…'
                                     : applyState === 'stopping'
-                                      ? 'Stopping after current file…'
+                                      ? 'Stopping… (click Force stop if stuck)'
                                       : applyState === 'stopped'
                                         ? 'Stopped — resume or restart'
                                         : applyState === 'done'
@@ -1413,14 +1527,31 @@ export function CollectionsPage() {
                                   currentFromLog ??
                                   (applyState === 'done' ? 'complete' : '—')}
                               </span>
+                              {currentItemLabel ? (
+                                <>
+                                  {' '}
+                                  · <span className="mono">{currentItemLabel}</span>
+                                </>
+                              ) : applyState === 'running' ||
+                                applyState === 'stopping' ? (
+                                <> · live</>
+                              ) : null}
                             </div>
                           </div>
 
                           {applyState === 'stopped' ? (
                             <div className="notice notice-warn" style={{ marginBottom: 16 }}>
-                              Stopped after {progressCompleted} file
-                              {progressCompleted === 1 ? '' : 's'}. Resume skips
-                              completed JSON files; restart re-imports all.
+                              Stopped
+                              {migrateRun?.progress?.current_collection
+                                ? ` during ${migrateRun.progress.current_collection}`
+                                : ''}
+                              {progressCompleted
+                                ? ` after ${progressCompleted} file${
+                                    progressCompleted === 1 ? '' : 's'
+                                  }`
+                                : ''}
+                              . Resume continues from the next unfinished JSON file;
+                              restart re-imports all.
                             </div>
                           ) : null}
 
@@ -1505,11 +1636,10 @@ export function CollectionsPage() {
                               <button
                                 className="btn btn-ghost"
                                 type="button"
-                                disabled={applyState === 'stopping'}
                                 onClick={() => void handleApplyStop()}
                               >
                                 {applyState === 'stopping'
-                                  ? 'Stopping…'
+                                  ? 'Force stop'
                                   : 'Stop'}
                               </button>
                             ) : null}

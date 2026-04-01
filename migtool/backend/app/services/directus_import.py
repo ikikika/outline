@@ -43,10 +43,13 @@ class DirectusImportCancelled(Exception):
         *,
         data_summary: Optional[Dict] = None,
         full_summary: Optional[Dict] = None,
+        partial_items: Optional[Dict] = None,
     ):
         super().__init__(message)
         self.data_summary = data_summary
         self.full_summary = full_summary
+        # Mid-collection cancel: success/failed/id_mapping/deferred_fks/collection
+        self.partial_items = partial_items
 
 
 def configure(url: str, token: str) -> None:
@@ -687,35 +690,81 @@ def get_m2o_fields(collection: str) -> set:
     return m2o_fields
 
 
-def import_collection_data(collection_name: str, items: List[Dict], 
-                           id_mapping: Dict[str, Dict[int, int]] = None,
-                           upsert: bool = False,
-                           quiet: bool = False,
-                           keep_nulls: bool = False) -> Tuple[int, int, Dict[int, int], List[Dict]]:
+def import_collection_data(
+    collection_name: str,
+    items: List[Dict],
+    id_mapping: Dict[str, Dict[int, int]] = None,
+    upsert: bool = False,
+    quiet: bool = False,
+    keep_nulls: bool = False,
+    should_cancel: Optional[Callable[[], bool]] = None,
+    item_progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+) -> Tuple[int, int, Dict[int, int], List[Dict]]:
     """
     Import items into a collection.
-    
+
     Args:
         collection_name: Name of the collection
         items: List of items to import
         id_mapping: Optional mapping of old IDs to new IDs for relations
         upsert: If True, update existing items; if False, skip them
-    
+        should_cancel: When True between items, raise DirectusImportCancelled
+        item_progress_callback: Optional live progress for the current file
+
     Returns:
         Tuple of (success_count, failed_count, new_id_mapping, deferred_fks)
         deferred_fks is a list of dicts: {"collection", "item_id", "fk_fields": {field: value}}
+
+    Raises:
+        DirectusImportCancelled: stop requested between items (partial progress in
+        exception.partial_items; the collection file is NOT fully done)
     """
     success = 0
     failed = 0
     new_id_mapping = {}
     deferred_fks = []  # Track FK fields stripped on retry for second-pass patching
-    
+    last_progress_at = 0.0
+    progress_every = 10  # items
+
+    def emit_items(index: int) -> None:
+        nonlocal last_progress_at
+        if item_progress_callback is None:
+            return
+        now = time.monotonic()
+        # Emit on first item, every N items, or at least ~1.5s so the UI feels live.
+        if (
+            index > 1
+            and index % progress_every != 0
+            and now - last_progress_at < 1.5
+            and index < total_items
+        ):
+            return
+        last_progress_at = now
+        try:
+            item_progress_callback(
+                {
+                    "collection": collection_name,
+                    "current_items_done": index,
+                    "current_items_total": total_items,
+                    "success": success,
+                    "failed": failed,
+                }
+            )
+        except Exception:  # noqa: BLE001
+            logging.exception("item_progress_callback failed")
+        # Keep the terminal log moving even in quiet mode.
+        if quiet and index > 0 and (index % 50 == 0 or index == total_items):
+            print(
+                f"      … {collection_name}: {index}/{total_items} rows "
+                f"({success} ok, {failed} failed)"
+            )
+
     # Get field types to distinguish JSON fields from relation fields
     field_types = get_field_types(collection_name)
-    
+
     # Get M2O (foreign key) fields for this collection — used for FK-error retry
     m2o_fields = get_m2o_fields(collection_name)
-    
+
     # Detect ID type mismatch: if export has UUID IDs but target has integer PKs (or vice versa),
     # strip the id field to let Directus auto-generate new IDs
     strip_id = False
@@ -729,22 +778,41 @@ def import_collection_data(collection_name: str, items: List[Dict],
         elif isinstance(sample_id, int) and target_id_type == "uuid":
             strip_id = True
             print(f"    ⚠️ ID type mismatch (export=integer, target=uuid) — stripping IDs, Directus will auto-generate")
-    
+
     total_items = len(items)
-    
+    emit_items(0)
+
     for index, item in enumerate(items, start=1):
+        if should_cancel and should_cancel():
+            print(
+                f"  ⏹️ Stop requested during {collection_name} "
+                f"after {index - 1}/{total_items} items"
+            )
+            raise DirectusImportCancelled(
+                f"Stopped during {collection_name} at item {index}/{total_items}",
+                partial_items={
+                    "collection": collection_name,
+                    "success": success,
+                    "failed": failed,
+                    "processed": index - 1,
+                    "total": total_items,
+                    "id_mapping": new_id_mapping,
+                    "deferred_fks": deferred_fks,
+                },
+            )
+
         old_id = item.get("id")
         item_name = item.get("name")
         item_label = item_name or old_id or f"item_{index}"
         status_prefix = f"      [{index}/{total_items}]"
         if not quiet:
             print(f"{status_prefix} Processing {item_label}")
-        
+
         # Keep the original ID to maintain relations (unless type mismatch)
         item_to_insert = item.copy()
         if strip_id:
             item_to_insert.pop("id", None)
-        
+
         # Strip out fields that might cause issues:
         # - O2M/M2A fields (arrays with type 'alias') - these are alias fields populated via junction tables
         # - user_created/user_updated - might reference non-existent users
@@ -768,10 +836,10 @@ def import_collection_data(collection_name: str, items: List[Dict],
             # But keep nulls when upserting — user may intentionally want to clear fields
             elif value is None and not keep_nulls:
                 fields_to_strip.append(key)
-        
+
         for field in fields_to_strip:
             del item_to_insert[field]
-        
+
         # Update foreign key references using id_mapping
         if id_mapping:
             for key, value in item_to_insert.items():
@@ -780,9 +848,9 @@ def import_collection_data(collection_name: str, items: List[Dict],
                     related_collection = key[:-3]  # Remove '_id' suffix
                     if related_collection in id_mapping and value in id_mapping[related_collection]:
                         item_to_insert[key] = id_mapping[related_collection][value]
-        
+
         url = f"{get_directus_url()}/items/{collection_name}"
-        
+
         if upsert and old_id:
             # Try to update first — verify response has data to confirm item actually exists
             item_for_patch = {k: v for k, v in item_to_insert.items() if k != "id"}
@@ -793,12 +861,13 @@ def import_collection_data(collection_name: str, items: List[Dict],
                 new_id_mapping[old_id] = old_id
                 if not quiet:
                     print(f"{status_prefix} 🔄 Updated existing item: {item_label}")
+                emit_items(index)
                 continue
             # PATCH failed or returned empty — item doesn't exist, fall through to POST
-        
+
         # Create new item
         success_flag, response = api_request("POST", url, json=item_to_insert)
-        
+
         if success_flag:
             success += 1
             new_id = response.get("data", {}).get("id", old_id)
@@ -827,7 +896,7 @@ def import_collection_data(collection_name: str, items: List[Dict],
                     "foreign", "constraint", "violates", "invalid foreign key",
                     "related values are not allowed", "field_invalid",
                 ])
-                
+
                 if is_fk_error and m2o_fields:
                     # Strip M2O FK fields that have values and retry
                     stripped_fks = {}
@@ -835,7 +904,7 @@ def import_collection_data(collection_name: str, items: List[Dict],
                     for fk_field in m2o_fields:
                         if fk_field in item_no_fk and item_no_fk[fk_field] is not None:
                             stripped_fks[fk_field] = item_no_fk.pop(fk_field)
-                    
+
                     if stripped_fks:
                         if not quiet:
                             print(f"{status_prefix} 🔄 FK error for {item_label}, retrying without: {', '.join(stripped_fks.keys())}")
@@ -862,7 +931,9 @@ def import_collection_data(collection_name: str, items: List[Dict],
                 else:
                     failed += 1
                     print(f"{status_prefix} ⚠️ Failed to import item {item_label}: {response}")
-    
+
+        emit_items(index)
+
     return success, failed, new_id_mapping, deferred_fks
 
 
@@ -979,7 +1050,7 @@ def import_data(
         source_path: Base export path (for loading relations)
         skip_files: Data filenames already imported (e.g. authors.json) — resume
         progress_callback: Invoked after each file with a progress dict
-        should_cancel: When True between files, stop and raise DirectusImportCancelled
+        should_cancel: When True between items/files, stop and raise DirectusImportCancelled
 
     Returns:
         Summary dict
@@ -1012,17 +1083,21 @@ def import_data(
         current_file: Optional[str],
         current_collection: Optional[str],
         phase: str = "data",
+        current_items_done: int = 0,
+        current_items_total: int = 0,
+        extra_success: int = 0,
+        extra_failed: int = 0,
     ) -> Dict:
         success_total = sum(
             int(v.get("success") or 0)
             for k, v in summary.items()
             if k != "_deferred_fks" and isinstance(v, dict)
-        )
+        ) + extra_success
         failed_total = sum(
             int(v.get("failed") or 0)
             for k, v in summary.items()
             if k != "_deferred_fks" and isinstance(v, dict)
-        )
+        ) + extra_failed
         return {
             "phase": phase,
             "total": total_files,
@@ -1033,6 +1108,8 @@ def import_data(
             "completed_files": list(completed_files),
             "current_file": current_file,
             "current_collection": current_collection,
+            "current_items_done": current_items_done,
+            "current_items_total": current_items_total,
             "current_file_id": None,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
@@ -1095,6 +1172,30 @@ def import_data(
 
     emit(progress_snapshot(current_file=None, current_collection=None))
 
+    def raise_stopped(
+        *,
+        current_file: Optional[str],
+        current_collection: Optional[str],
+        message: str = "Collection import stopped by user",
+    ) -> None:
+        if all_deferred_fks:
+            print("  🔗 Patching deferred FKs before pause…")
+            fk_patched, fk_failed = patch_deferred_fks(all_deferred_fks, quiet=quiet)
+            summary["_deferred_fks"] = {
+                "patched": fk_patched,
+                "failed": fk_failed,
+                "total": len(all_deferred_fks),
+            }
+            all_deferred_fks.clear()
+        emit(
+            progress_snapshot(
+                current_file=current_file,
+                current_collection=current_collection,
+                phase="stopped",
+            )
+        )
+        raise DirectusImportCancelled(message, data_summary=summary)
+
     # Temporarily disable validation if requested
     saved_validation = {}
     if skip_validation and collections_to_import:
@@ -1107,26 +1208,9 @@ def import_data(
 
             if cancelled():
                 print(f"  ⏹️ Stop requested — pausing before {collection_name}")
-                if all_deferred_fks:
-                    fk_patched, fk_failed = patch_deferred_fks(
-                        all_deferred_fks, quiet=quiet
-                    )
-                    summary["_deferred_fks"] = {
-                        "patched": fk_patched,
-                        "failed": fk_failed,
-                        "total": len(all_deferred_fks),
-                    }
-                    all_deferred_fks.clear()
-                emit(
-                    progress_snapshot(
-                        current_file=data_file,
-                        current_collection=collection_name,
-                        phase="stopped",
-                    )
-                )
-                raise DirectusImportCancelled(
-                    "Collection import stopped by user",
-                    data_summary=summary,
+                raise_stopped(
+                    current_file=data_file,
+                    current_collection=collection_name,
                 )
 
             if data_file in skip_set:
@@ -1191,14 +1275,58 @@ def import_data(
 
             print(f"  📥 Importing {len(items)} items into: {collection_name}")
 
-            success, failed, new_mapping, deferred_fks = import_collection_data(
-                collection_name,
-                items,
-                id_mapping,
-                upsert,
-                quiet=quiet,
-                keep_nulls=upsert,
-            )
+            def on_item_progress(info: Dict[str, Any]) -> None:
+                emit(
+                    progress_snapshot(
+                        current_file=data_file,
+                        current_collection=collection_name,
+                        current_items_done=int(info.get("current_items_done") or 0),
+                        current_items_total=int(info.get("current_items_total") or 0),
+                        extra_success=int(info.get("success") or 0),
+                        extra_failed=int(info.get("failed") or 0),
+                    )
+                )
+
+            try:
+                success, failed, new_mapping, deferred_fks = import_collection_data(
+                    collection_name,
+                    items,
+                    id_mapping,
+                    upsert,
+                    quiet=quiet,
+                    keep_nulls=upsert,
+                    should_cancel=should_cancel,
+                    item_progress_callback=on_item_progress,
+                )
+            except DirectusImportCancelled as exc:
+                # Mid-file stop: keep partial stats, do NOT mark file completed
+                # so resume re-walks this JSON (duplicate→PATCH for rows already in).
+                partial = exc.partial_items or {}
+                part_success = int(partial.get("success") or 0)
+                part_failed = int(partial.get("failed") or 0)
+                part_total = int(partial.get("total") or len(items))
+                part_mapping = partial.get("id_mapping") or {}
+                part_deferred = partial.get("deferred_fks") or []
+                id_mapping[collection_name] = part_mapping
+                all_deferred_fks.extend(part_deferred)
+                summary[collection_name] = {
+                    "success": part_success,
+                    "failed": part_failed,
+                    "total": part_total,
+                    "deferred": len(part_deferred),
+                    "partial": True,
+                    "processed": int(partial.get("processed") or 0),
+                }
+                print(
+                    f"    ⏹️ Paused {collection_name}: "
+                    f"{part_success} imported, {part_failed} failed "
+                    f"({partial.get('processed', 0)}/{part_total})"
+                )
+                raise_stopped(
+                    current_file=data_file,
+                    current_collection=collection_name,
+                    message=str(exc) or "Collection import stopped by user",
+                )
 
             id_mapping[collection_name] = new_mapping
             all_deferred_fks.extend(deferred_fks)

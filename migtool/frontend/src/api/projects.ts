@@ -147,6 +147,20 @@ export type PrepareDataResult = {
   copied: number
 }
 
+export type PreparedStatus = {
+  path: string
+  exists: boolean
+  has_schema: boolean
+  has_data: boolean
+  has_files: boolean
+  has_flows: boolean
+  schema_files: number
+  data_files: number
+  data_file_names: string[]
+  collections: number
+  rows: number
+}
+
 export type MigrationStartPayload = {
   schema?: boolean
   data?: boolean
@@ -169,6 +183,8 @@ export type MigrationProgress = {
   completed_files?: string[]
   current_file?: string | null
   current_collection?: string | null
+  current_items_done?: number
+  current_items_total?: number
   current_file_id?: string | null
   mode?: string
   updated_at?: string
@@ -318,6 +334,15 @@ export function prepareTargetData(
       method: 'POST',
       body: JSON.stringify(payload),
     },
+  )
+}
+
+export function getPreparedStatus(
+  projectId: number,
+  targetId: number,
+): Promise<PreparedStatus> {
+  return request<PreparedStatus>(
+    `/projects/${projectId}/targets/${targetId}/prepared`,
   )
 }
 

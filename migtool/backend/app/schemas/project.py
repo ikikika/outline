@@ -218,6 +218,22 @@ class PrepareDataOut(BaseModel):
     copied: int = 0
 
 
+class PreparedStatusOut(BaseModel):
+    """What is already on disk under prepared/target_{id}/."""
+
+    path: str
+    exists: bool
+    has_schema: bool = False
+    has_data: bool = False
+    has_files: bool = False
+    has_flows: bool = False
+    schema_files: int = 0
+    data_files: int = 0
+    data_file_names: list[str] = []
+    collections: int = 0
+    rows: int = 0
+
+
 class MigrationStart(BaseModel):
     """Select which import phases to run (defaults: all)."""
 

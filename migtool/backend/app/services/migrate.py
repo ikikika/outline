@@ -39,6 +39,51 @@ def prepared_dir(project_id: int, target_id: int) -> Path:
     return project_upload_dir(project_id) / "prepared" / f"target_{target_id}"
 
 
+def inspect_prepared(project_id: int, target_id: int) -> dict[str, Any]:
+    """Summarize what already exists under prepared/target_{id}/."""
+    root = prepared_dir(project_id, target_id)
+    schema_dir = root / "schema"
+    data_dir = root / "data"
+    flows_dir = root / "flows"
+    has_files = (root / "files_metadata.json").is_file() or (root / "files").is_dir()
+
+    data_files: list[str] = []
+    data_rows = 0
+    if data_dir.is_dir():
+        for path in sorted(data_dir.glob("*.json")):
+            if path.name.startswith("_"):
+                continue
+            data_files.append(path.name)
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if isinstance(payload, list):
+                data_rows += len(payload)
+            elif isinstance(payload, dict):
+                data_rows += 1
+
+    schema_files = 0
+    if schema_dir.is_dir():
+        schema_files = sum(
+            1 for p in schema_dir.glob("*.json") if not p.name.startswith("_")
+        )
+
+    return {
+        "path": f"uploads/project_{project_id}/prepared/target_{target_id}/",
+        "exists": root.is_dir(),
+        "has_schema": schema_dir.is_dir() and schema_files > 0,
+        "has_data": len(data_files) > 0,
+        "has_files": has_files,
+        "has_flows": flows_dir.is_dir(),
+        "schema_files": schema_files,
+        "data_files": len(data_files),
+        "data_file_names": data_files[:200],
+        "collections": len(data_files),
+        "rows": data_rows,
+    }
+
+
 def encode_phases(
     *,
     schema: bool = True,
@@ -94,8 +139,14 @@ def clear_cancel(run_id: int) -> None:
         _cancel_events.pop(run_id, None)
 
 
+def has_active_worker(run_id: int) -> bool:
+    """True while a migrate thread still holds a cancel event for this run."""
+    with _cancel_lock:
+        return run_id in _cancel_events
+
+
 def request_migrate_stop(run_id: int) -> bool:
-    """Signal a running migrate job to stop after the current collection file."""
+    """Signal a running migrate job to stop after the current row."""
     with _cancel_lock:
         event = _cancel_events.get(run_id)
         if event is None:
@@ -108,6 +159,39 @@ def is_cancel_requested(run_id: int) -> bool:
     with _cancel_lock:
         event = _cancel_events.get(run_id)
         return bool(event and event.is_set())
+
+
+def reclaim_orphaned_run(run: MigrationRun) -> bool:
+    """
+    If this run looks active but has no live worker (API restart, crashed thread),
+    mark it stopped so the UI can resume/restart.
+    """
+    if run.status not in ACTIVE_STATUSES:
+        return False
+    if has_active_worker(run.id):
+        return False
+    run.status = "stopped"
+    run.error_detail = None
+    if run.finished_at is None:
+        run.finished_at = datetime.now(timezone.utc)
+    return True
+
+
+def reclaim_orphaned_migrate_runs(db: Session) -> int:
+    """Mark all orphaned active migration runs as stopped. Returns count updated."""
+    orphans = (
+        db.query(MigrationRun)
+        .filter(MigrationRun.status.in_(tuple(ACTIVE_STATUSES)))
+        .all()
+    )
+    count = 0
+    for run in orphans:
+        if reclaim_orphaned_run(run):
+            count += 1
+    if count:
+        db.commit()
+        logger.info("Reclaimed %s orphaned migration run(s) as stopped", count)
+    return count
 
 
 def completed_data_files_from_run(run: MigrationRun) -> list[str]:
@@ -133,7 +217,10 @@ def find_resume_checkpoint(
     phases: str,
 ) -> tuple[MigrationRun | None, list[str]]:
     """
-    Latest stopped/failed run for this target+phases with a data checkpoint.
+    Latest stopped/failed run for this target+phases that can be resumed.
+
+    Returns the prior run even when completed_files is empty (stopped mid-first
+    file) so callers can still continue the job.
     """
     candidates = (
         db.query(MigrationRun)
@@ -147,8 +234,25 @@ def find_resume_checkpoint(
         .all()
     )
     for prior in candidates:
+        # Prefer a run that has data-phase progress (or any stopped data job).
         completed = completed_data_files_from_run(prior)
         if completed:
+            return prior, completed
+        if prior.progress_json:
+            try:
+                progress = json.loads(prior.progress_json)
+            except json.JSONDecodeError:
+                progress = None
+            if isinstance(progress, dict) and progress.get("phase") in (
+                "data",
+                "stopped",
+                "queued",
+                "starting",
+                "data_done",
+            ):
+                return prior, completed
+        # Data-only phases with no progress still count as resumable.
+        if phases == "data" or "data" in {p.strip() for p in phases.split(",")}:
             return prior, completed
     return None, []
 

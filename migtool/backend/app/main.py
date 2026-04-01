@@ -119,6 +119,15 @@ async def lifespan(_: FastAPI):
     _ensure_token_column_width()
     _ensure_upload_extract_columns()
     _ensure_migration_progress_column()
+    # Daemon migrate threads die with the process; clear stuck pending/running/stopping.
+    from app.db.session import SessionLocal
+    from app.services.migrate import reclaim_orphaned_migrate_runs
+
+    db = SessionLocal()
+    try:
+        reclaim_orphaned_migrate_runs(db)
+    finally:
+        db.close()
     yield
 
 
