@@ -141,26 +141,30 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
             </svg>
             Settings
           </a>
-          <div className="nav-label">This project</div>
-          <NavLink to={sourceFilesPath} className={navClass}>
-            Source files
-          </NavLink>
-          <NavLink to={connectPath} className={navClass}>
-            Directus targets
-          </NavLink>
-          <NavLink to={dataModelsPath} className={navClass}>
-            Data models
-          </NavLink>
-          <a href="#fields">Field mapping</a>
-          <a href="#preview">Preview</a>
-          <NavLink to={prepareAssetsPath} className={navClass}>
-            Prepare assets
-          </NavLink>
-          <NavLink to={collectionsPath} className={navClass}>
-            Collections
-          </NavLink>
-          <a href="#migrate">Migrate</a>
-          <a href="#issues">Issues</a>
+          {projectId ? (
+            <>
+              <div className="nav-label">This project</div>
+              <NavLink to={sourceFilesPath} className={navClass}>
+                Source files
+              </NavLink>
+              <NavLink to={connectPath} className={navClass}>
+                Directus targets
+              </NavLink>
+              <NavLink to={dataModelsPath} className={navClass}>
+                Data models
+              </NavLink>
+              <a href="#fields">Field mapping</a>
+              <a href="#preview">Preview</a>
+              <NavLink to={prepareAssetsPath} className={navClass}>
+                Prepare assets
+              </NavLink>
+              <NavLink to={collectionsPath} className={navClass}>
+                Collections
+              </NavLink>
+              <a href="#migrate">Migrate</a>
+              <a href="#issues">Issues</a>
+            </>
+          ) : null}
         </nav>
         <div className="sidebar-foot">
           <span className="avatar">{user?.initials ?? '??'}</span>
