@@ -59,6 +59,10 @@ function formatRows(n: number): string {
 }
 
 function classifyTerminalLine(text: string): LogLevel {
+  // Success summaries include "❌ 0 failed" — not an error.
+  if (/✅.*❌\s*0\s+failed/i.test(text) || /imported,\s*❌\s*0\b/i.test(text)) {
+    return 'ok'
+  }
   if (/❌|traceback|failed to|migration failed|\berror\b/i.test(text)) {
     return 'err'
   }
@@ -98,7 +102,17 @@ function extractErrorsFromLog(log: string | null | undefined): string[] {
   return log
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => /❌|failed to upsert|failed to/i.test(line))
+    .filter((line) => {
+      if (!line) return false
+      // "✅ 4 imported, ❌ 0 failed" is a success summary, not a failure.
+      if (/❌\s*0\s+failed/i.test(line)) return false
+      if (/✅.*imported/i.test(line) && /❌\s*0\b/i.test(line)) return false
+      return (
+        /traceback|failed to upsert|failed to import|migration failed|⚠️\s*Failed/i.test(
+          line,
+        ) || /❌\s*[1-9]/.test(line) || (/❌/.test(line) && !/❌\s*0\b/.test(line))
+      )
+    })
     .slice(0, 12)
 }
 
@@ -1555,7 +1569,8 @@ export function CollectionsPage() {
                             </div>
                           ) : null}
 
-                          {(applyState === 'failed' || logErrors.length > 0) &&
+                          {(applyState === 'failed' ||
+                            (logErrors.length > 0 && errorCount > 0)) &&
                           applyState !== 'ready' ? (
                             <div
                               className="notice notice-danger"
@@ -1563,8 +1578,8 @@ export function CollectionsPage() {
                             >
                               <b>
                                 {applyError ||
-                                  `${errorCount || logErrors.length} error${
-                                    (errorCount || logErrors.length) === 1
+                                  `${Math.max(errorCount, logErrors.length)} error${
+                                    Math.max(errorCount, logErrors.length) === 1
                                       ? ''
                                       : 's'
                                   }`}
@@ -1577,8 +1592,8 @@ export function CollectionsPage() {
                                     paddingLeft: 18,
                                   }}
                                 >
-                                  {logErrors.map((line) => (
-                                    <li key={line}>{line}</li>
+                                  {logErrors.map((line, i) => (
+                                    <li key={`${i}-${line.slice(0, 40)}`}>{line}</li>
                                   ))}
                                 </ul>
                               ) : null}
