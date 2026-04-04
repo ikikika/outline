@@ -194,8 +194,123 @@ def reclaim_orphaned_migrate_runs(db: Session) -> int:
     return count
 
 
+def _data_block_from_summary(run: MigrationRun) -> dict[str, Any] | None:
+    """Return the per-collection data summary dict from a run, if present."""
+    if not run.summary_json:
+        return None
+    try:
+        summary = json.loads(run.summary_json)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(summary, dict):
+        return None
+    data = summary.get("data")
+    if isinstance(data, dict):
+        return data
+    # Flat summary (data-only) may store collection keys at the top level.
+    if any(
+        isinstance(v, dict) and ("success" in v or "failed" in v)
+        for k, v in summary.items()
+        if k not in ("schema", "files", "flows", "_deferred_fks")
+    ):
+        return summary
+    return None
+
+
+def failed_data_files_from_run(run: MigrationRun) -> list[str]:
+    """
+    Data JSON filenames that finished with row failures.
+
+    Prefer progress.failed_files; fall back to summary collections with failed > 0
+    (covers older runs that still marked those files completed).
+    """
+    names: list[str] = []
+    if run.progress_json:
+        try:
+            progress = json.loads(run.progress_json)
+        except json.JSONDecodeError:
+            progress = None
+        if isinstance(progress, dict):
+            listed = progress.get("failed_files") or []
+            if isinstance(listed, list):
+                names = [
+                    str(f)
+                    for f in listed
+                    if isinstance(f, str) and f.endswith(".json")
+                ]
+    if names:
+        return names
+
+    data = _data_block_from_summary(run)
+    if not data:
+        return []
+    out: list[str] = []
+    for key, val in data.items():
+        if key == "_deferred_fks" or not isinstance(val, dict):
+            continue
+        if int(val.get("failed") or 0) > 0:
+            out.append(f"{key}.json" if not key.endswith(".json") else key)
+    return out
+
+
+def _progress_failed_count(run: MigrationRun) -> int:
+    if not run.progress_json:
+        return 0
+    try:
+        progress = json.loads(run.progress_json)
+    except json.JSONDecodeError:
+        return 0
+    if not isinstance(progress, dict):
+        return 0
+    try:
+        return int(progress.get("failed") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _log_has_import_failures(run: MigrationRun) -> bool:
+    text = run.log_text or ""
+    if not text:
+        return False
+    for line in text.splitlines():
+        lower = line.lower()
+        if "❌ 0 failed" in lower or "❌ 0 " in lower:
+            continue
+        if (
+            "failed to import" in lower
+            or "failed to upsert" in lower
+            or "migration failed" in lower
+            or "⚠️ failed" in lower
+            or ("❌" in line and "failed" in lower)
+        ):
+            return True
+    return False
+
+
+def run_has_data_failures(run: MigrationRun) -> bool:
+    """True when the run recorded row failures (progress, summary, or log)."""
+    if failed_data_files_from_run(run):
+        return True
+    if _progress_failed_count(run) > 0:
+        return True
+    data = _data_block_from_summary(run)
+    if data:
+        for key, val in data.items():
+            if key == "_deferred_fks" or not isinstance(val, dict):
+                continue
+            if int(val.get("failed") or 0) > 0:
+                return True
+    return _log_has_import_failures(run)
+
+
 def completed_data_files_from_run(run: MigrationRun) -> list[str]:
-    """Extract completed data/*.json filenames from a prior run's progress."""
+    """
+    Extract completed data/*.json filenames from a prior run's progress.
+
+    Files with row failures are excluded so resume can retry-upsert them.
+    When failures are known but not attributable to specific files, returns []
+    so resume re-upserts everything (safe with upsert-by-PK).
+    """
     if not run.progress_json:
         return []
     try:
@@ -207,7 +322,15 @@ def completed_data_files_from_run(run: MigrationRun) -> list[str]:
     files = progress.get("completed_files") or []
     if not isinstance(files, list):
         return []
-    return [str(f) for f in files if isinstance(f, str) and f.endswith(".json")]
+    failed = set(failed_data_files_from_run(run))
+    if not failed and run_has_data_failures(run):
+        # Failures recorded but files unknown — do not skip any collection.
+        return []
+    return [
+        str(f)
+        for f in files
+        if isinstance(f, str) and f.endswith(".json") and f not in failed
+    ]
 
 
 def find_resume_checkpoint(
@@ -217,7 +340,7 @@ def find_resume_checkpoint(
     phases: str,
 ) -> tuple[MigrationRun | None, list[str]]:
     """
-    Latest stopped/failed run for this target+phases that can be resumed.
+    Latest stopped/failed (or completed-with-row-failures) run that can be resumed.
 
     Returns the prior run even when completed_files is empty (stopped mid-first
     file) so callers can still continue the job.
@@ -227,16 +350,21 @@ def find_resume_checkpoint(
         .filter(
             MigrationRun.target_id == target_id,
             MigrationRun.phases == phases,
-            MigrationRun.status.in_(("stopped", "failed")),
+            MigrationRun.status.in_(("stopped", "failed", "completed")),
         )
         .order_by(MigrationRun.id.desc())
         .limit(20)
         .all()
     )
     for prior in candidates:
+        has_failures = run_has_data_failures(prior)
+        # Fully successful completed runs are not resume targets.
+        if prior.status == "completed" and not has_failures:
+            continue
         # Prefer a run that has data-phase progress (or any stopped data job).
         completed = completed_data_files_from_run(prior)
-        if completed:
+        failed_files = failed_data_files_from_run(prior)
+        if completed or failed_files or has_failures:
             return prior, completed
         if prior.progress_json:
             try:
@@ -249,6 +377,7 @@ def find_resume_checkpoint(
                 "queued",
                 "starting",
                 "data_done",
+                "done",
             ):
                 return prior, completed
         # Data-only phases with no progress still count as resumable.
@@ -460,6 +589,9 @@ def process_migrate(db: Session, run_id: int) -> None:
                 import_files_flag=flags["files"],
                 import_flows_flag=flags["flows"],
                 quiet=True,
+                # Collection apply is always upsert-by-PK so resume/retry of
+                # failed collections updates rows already created.
+                upsert=True if flags["data"] else False,
                 skip_existing_files=True,
                 skip_data_files=skip_data_files if flags["data"] else None,
                 progress_callback=on_progress
@@ -485,12 +617,41 @@ def process_migrate(db: Session, run_id: int) -> None:
             db.commit()
             return
 
-        run.status = "completed"
-        run.summary_json = json.dumps(summary, default=str)[:100_000]
-        run.log_text = capture.text() or run.log_text
         # Final progress snapshot from files summary when present.
         files_block = summary.get("files") if isinstance(summary, dict) else None
         data_block = summary.get("data") if isinstance(summary, dict) else None
+        data_row_failures = 0
+        failed_files: list[str] = []
+        if isinstance(data_block, dict):
+            collections = {
+                k: v
+                for k, v in data_block.items()
+                if k != "_deferred_fks" and isinstance(v, dict)
+            }
+            data_row_failures = sum(
+                int(v.get("failed") or 0) for v in collections.values()
+            )
+            failed_files = [
+                f"{name}.json"
+                for name, v in collections.items()
+                if int(v.get("failed") or 0) > 0
+            ]
+
+        # Row-level collection failures → failed so UI can retry upsert.
+        if data_row_failures > 0:
+            run.status = "failed"
+            run.error_detail = (
+                f"{data_row_failures} row failure"
+                f"{'' if data_row_failures == 1 else 's'} across "
+                f"{len(failed_files)} collection"
+                f"{'' if len(failed_files) == 1 else 's'}; retry to upsert"
+            )[:500]
+        else:
+            run.status = "completed"
+            run.error_detail = None
+
+        run.summary_json = json.dumps(summary, default=str)[:100_000]
+        run.log_text = capture.text() or run.log_text
         if isinstance(files_block, dict):
             file_stats = files_block.get("files") or {}
             folder_stats = files_block.get("folders") or {}
@@ -518,23 +679,28 @@ def process_migrate(db: Session, run_id: int) -> None:
         elif isinstance(data_block, dict):
             # Prefer last progress_json (has completed_files); mark phase done.
             completed = completed_data_files_from_run(run)
+            # Re-read after ensure failed files are not in completed.
+            completed = [f for f in completed if f not in set(failed_files)]
             collections = {
                 k: v
                 for k, v in data_block.items()
                 if k != "_deferred_fks" and isinstance(v, dict)
             }
             success = sum(int(v.get("success") or 0) for v in collections.values())
-            failed = sum(int(v.get("failed") or 0) for v in collections.values())
-            total = len(completed) or len(collections)
+            failed = data_row_failures
+            total = len(collections) or (
+                len(completed) + len(failed_files)
+            )
             run.progress_json = json.dumps(
                 {
-                    "phase": "done",
+                    "phase": "done" if failed == 0 else "data_done",
                     "total": total,
-                    "processed": total,
+                    "processed": len(completed),
                     "uploaded": success,
                     "failed": failed,
                     "skipped": len(skip_data_files),
                     "completed_files": completed,
+                    "failed_files": failed_files,
                     "current_file": None,
                     "current_collection": None,
                     "current_file_id": None,
@@ -543,7 +709,6 @@ def process_migrate(db: Session, run_id: int) -> None:
                 },
                 default=str,
             )[:50_000]
-        run.error_detail = None
         run.finished_at = datetime.now(timezone.utc)
         db.commit()
     except DirectusImportCancelled as exc:

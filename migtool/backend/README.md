@@ -75,7 +75,7 @@ docker compose restart api
 | `POST` | `/api/projects/{id}/targets/{tid}/prepare-schema` | Scan or copy Directus `schema/` into `prepared/target_{tid}/schema/` (body: `upload_id`, `folder_path`, optional `dry_run`) |
 | `POST` | `/api/projects/{id}/targets/{tid}/prepare-data` | Scan or copy Directus `data/` into `prepared/target_{tid}/data/` (body: `upload_id`, `folder_path`, optional `dry_run`) |
 | `GET` | `/api/projects/{id}/targets/{tid}/prepared` | What’s already under `prepared/target_{tid}/` (schema/data/files/flows counts) |
-| `POST` | `/api/projects/{id}/targets/{tid}/migrate` | Start import from `prepared/target_{tid}/` (body: `schema`/`data`/`files`/`flows` booleans, optional `mode`: `start` \| `resume` \| `restart`). Progress is checkpointed on the run (`progress`); data resume skips completed `*.json` files; file uploads skip IDs already in Directus. |
+| `POST` | `/api/projects/{id}/targets/{tid}/migrate` | Start import from `prepared/target_{tid}/` (body: `schema`/`data`/`files`/`flows` booleans, optional `mode`: `start` \| `resume` \| `restart`). Progress is checkpointed on the run (`progress`); data resume skips completed `*.json` files (collections with row failures are left incomplete and re-upserted); file uploads skip IDs already in Directus. |
 | `POST` | `/api/projects/{id}/targets/{tid}/migrate/{run_id}/stop` | Cooperative stop after the current row (partial file is re-imported on resume) |
 | `GET` | `/api/projects/{id}/targets/{tid}/migrate` | Latest migration run status |
 | `GET` | `/api/projects/{id}/targets/{tid}/migrate/{run_id}` | One migration run |

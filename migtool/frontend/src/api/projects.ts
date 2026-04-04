@@ -166,7 +166,7 @@ export type MigrationStartPayload = {
   data?: boolean
   files?: boolean
   flows?: boolean
-  /** start = scratch; resume = skip completed data JSON files; restart = ignore checkpoint */
+  /** start = scratch; resume = skip ok files, retry-upsert failed; restart = all */
   mode?: 'start' | 'resume' | 'restart'
 }
 
@@ -181,6 +181,8 @@ export type MigrationProgress = {
   folders_created?: number
   folders_failed?: number
   completed_files?: string[]
+  /** Data JSON files that finished with row failures (retry-upsert targets). */
+  failed_files?: string[]
   current_file?: string | null
   current_collection?: string | null
   current_items_done?: number

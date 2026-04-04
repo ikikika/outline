@@ -819,7 +819,8 @@ def start_migrate(
 
     mode:
       - start / restart: import all selected phases from scratch
-      - resume: skip data/*.json files listed in the last stopped/failed checkpoint
+      - resume: skip data/*.json files that completed with zero row failures;
+        collections that had failures are re-upserted
     """
     project, target = _get_owned_target(db, user, project_id, target_id)
 

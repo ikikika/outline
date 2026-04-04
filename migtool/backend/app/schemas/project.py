@@ -241,7 +241,8 @@ class MigrationStart(BaseModel):
     data: bool = True
     files: bool = True
     flows: bool = True
-    # start = from scratch; resume = skip completed data JSON files;
+    # start = from scratch; resume = skip completed data JSON files
+    #   (collections with row failures are not treated as completed);
     # restart = ignore checkpoint and re-import all data files.
     mode: Literal["start", "resume", "restart"] = "start"
 

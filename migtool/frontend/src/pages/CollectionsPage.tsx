@@ -116,6 +116,37 @@ function extractErrorsFromLog(log: string | null | undefined): string[] {
     .slice(0, 12)
 }
 
+/** Row/collection failures from progress, summary, or terminal log. */
+function runHasCollectionFailures(run: MigrationRun | null | undefined): boolean {
+  if (!run) return false
+  if ((run.progress?.failed_files?.length ?? 0) > 0) return true
+  if ((run.progress?.failed ?? 0) > 0) return true
+  const block = run.summary
+  if (block && typeof block === 'object') {
+    const root =
+      block.data && typeof block.data === 'object'
+        ? (block.data as Record<string, unknown>)
+        : (block as Record<string, unknown>)
+    for (const [key, val] of Object.entries(root)) {
+      if (
+        key === 'schema' ||
+        key === 'files' ||
+        key === 'flows' ||
+        key === '_deferred_fks' ||
+        key === 'export_path' ||
+        key === 'target_url' ||
+        key === 'import_date'
+      ) {
+        continue
+      }
+      if (!val || typeof val !== 'object') continue
+      const row = val as { failed?: number }
+      if (Number(row.failed ?? 0) > 0) return true
+    }
+  }
+  return extractErrorsFromLog(run.log).length > 0
+}
+
 function badgeForStep(
   step: number,
   compatible: boolean | null,
@@ -333,13 +364,15 @@ export function CollectionsPage() {
     return last?.[1] ?? null
   }, [migrateRun?.log])
 
-  const isFullyApplied =
-    applyState === 'done' ||
-    (progressTotal > 0 && progressCompleted >= progressTotal && applyState !== 'stopped')
+  const hasFailedCollections = runHasCollectionFailures(migrateRun)
 
-  // After stop/fail always offer Resume (even if still on the first JSON file).
+  // Stopped mid-run, failed, or completed-with-row-errors → Resume / Retry failed.
   const canResume =
-    (applyState === 'stopped' || applyState === 'failed') && !isFullyApplied
+    applyState === 'stopped' ||
+    applyState === 'failed' ||
+    (applyState === 'done' && hasFailedCollections)
+
+  const resumeLabel = hasFailedCollections ? 'Retry failed' : 'Resume'
 
   const canSkipToApply = Boolean(
     written || preparedStatus?.has_data || migrateRun,
@@ -463,8 +496,20 @@ export function CollectionsPage() {
     setMigrateRun(run)
     if (run.status === 'completed') {
       stopPolling()
-      setApplyState('done')
-      setApplyError(null)
+      // Older runs (and edge cases) can be "completed" with row failures in the
+      // log/summary — surface those as failed so Retry failed is available.
+      if (runHasCollectionFailures(run)) {
+        setApplyState('failed')
+        const failCount =
+          run.progress?.failed ?? extractErrorsFromLog(run.log).length
+        setApplyError(
+          run.error_detail ||
+            `${failCount > 0 ? failCount : 'Some'} row failure(s); retry to upsert`,
+        )
+      } else {
+        setApplyState('done')
+        setApplyError(null)
+      }
       return
     }
     if (run.status === 'stopped') {
@@ -545,7 +590,13 @@ export function CollectionsPage() {
     stopPolling()
     setActivityLog([])
     const label =
-      mode === 'resume' ? 'resuming' : mode === 'restart' ? 'restarting' : 'starting'
+      mode === 'resume'
+        ? hasFailedCollections
+          ? 'retrying failed'
+          : 'resuming'
+        : mode === 'restart'
+          ? 'restarting'
+          : 'starting'
     appendActivity('info', `data  migrate ${label} → ${activeTarget.name}`)
     setApplyError(null)
     setMigrateRun(null)
@@ -1451,7 +1502,8 @@ export function CollectionsPage() {
                           <p className="meta">
                             Live upsert into the active target. Progress is checkpointed
                             per completed data JSON file. Stop finishes the current row,
-                            then you can resume (skips done files) or restart.
+                            then you can resume (skips ok files), retry failed collections,
+                            or restart.
                           </p>
                         </div>
                       </div>
@@ -1565,7 +1617,22 @@ export function CollectionsPage() {
                                   }`
                                 : ''}
                               . Resume continues from the next unfinished JSON file;
-                              restart re-imports all.
+                              collections with row failures are re-upserted; restart
+                              re-imports all.
+                            </div>
+                          ) : null}
+
+                          {applyState === 'failed' && hasFailedCollections ? (
+                            <div className="notice notice-warn" style={{ marginBottom: 16 }}>
+                              {migrateRun?.progress?.failed_files?.length
+                                ? `${migrateRun.progress.failed_files.length} collection${
+                                    migrateRun.progress.failed_files.length === 1
+                                      ? ''
+                                      : 's'
+                                  } had row failures`
+                                : 'Some collections had row failures'}
+                              . Retry failed re-upserts those collections (skips ones
+                              that completed cleanly); restart re-imports all.
                             </div>
                           ) : null}
 
@@ -1665,7 +1732,7 @@ export function CollectionsPage() {
                                 disabled={!activeTarget}
                                 onClick={() => void handleApplyStart('resume')}
                               >
-                                Resume
+                                {resumeLabel}
                               </button>
                             ) : null}
                             {applyState === 'stopped' ||

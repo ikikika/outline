@@ -1066,6 +1066,8 @@ def import_data(
     skip_set = {f for f in (skip_files or []) if f.endswith(".json")}
     # Preserve prior completions so a second stop still resumes correctly.
     completed_files: List[str] = [f for f in (skip_files or []) if f.endswith(".json")]
+    # Collections that finished with row failures — eligible for retry upsert.
+    failed_files: List[str] = []
 
     def emit(progress: Dict) -> None:
         if progress_callback is None:
@@ -1106,6 +1108,7 @@ def import_data(
             "failed": failed_total,
             "skipped": len(skip_set),
             "completed_files": list(completed_files),
+            "failed_files": list(failed_files),
             "current_file": current_file,
             "current_collection": current_collection,
             "current_items_done": current_items_done,
@@ -1341,7 +1344,19 @@ def import_data(
             }
             print(f"    ✅ {success} imported, ❌ {failed} failed{deferred_note}")
 
-            completed_files.append(data_file)
+            # Only checkpoint fully successful collections. Row failures stay
+            # out of completed_files so resume/retry can upsert them again.
+            if failed > 0:
+                if data_file not in failed_files:
+                    failed_files.append(data_file)
+                print(
+                    f"    🔁 {collection_name} left incomplete for retry "
+                    f"({failed} row failure{'s' if failed != 1 else ''})"
+                )
+            else:
+                if data_file in failed_files:
+                    failed_files.remove(data_file)
+                completed_files.append(data_file)
             emit(
                 progress_snapshot(
                     current_file=data_file,
