@@ -304,18 +304,39 @@ export function CollectionsPage() {
   const currentItemsDone = migrateRun?.progress?.current_items_done ?? 0
   const currentItemsTotal = migrateRun?.progress?.current_items_total ?? 0
 
-  const createdCollections =
-    progressCompleted ||
-    dataSummary?.collectionsDone ||
-    (applyState === 'done'
-      ? totals.collections
-      : Math.min(logCollections, totals.collections || logCollections))
+  const isResumeRun =
+    migrateRun?.progress?.mode === 'resume' || progressSkipped > 0
+  const remainingThisRun = Math.max(progressTotal - progressSkipped, 0)
+  const doneThisRun = (() => {
+    if (!isResumeRun) return progressCompleted
+    if (progressCompleted >= progressSkipped) {
+      return progressCompleted - progressSkipped
+    }
+    // Final rewrite may omit prior skips from completed_files — use summary.
+    return dataSummary?.collectionsDone ?? Math.max(progressCompleted, 0)
+  })()
+
+  const createdCollections = isResumeRun
+    ? doneThisRun || dataSummary?.collectionsDone || 0
+    : progressCompleted ||
+      dataSummary?.collectionsDone ||
+      (applyState === 'done'
+        ? totals.collections
+        : Math.min(logCollections, totals.collections || logCollections))
+  const collectionsDenom = isResumeRun
+    ? Math.max(
+        remainingThisRun,
+        doneThisRun,
+        dataSummary?.collectionsDone ?? 0,
+        1,
+      )
+    : progressTotal || totals.collections || 0
   const createdRows =
     (typeof migrateRun?.progress?.uploaded === 'number'
       ? migrateRun.progress.uploaded
       : null) ??
     dataSummary?.success ??
-    (applyState === 'done' ? totals.rows : 0)
+    (applyState === 'done' && !isResumeRun ? totals.rows : 0)
   const errorCount =
     (typeof migrateRun?.progress?.failed === 'number'
       ? migrateRun.progress.failed
@@ -329,8 +350,18 @@ export function CollectionsPage() {
       : applyState === 'running' || applyState === 'stopping'
         ? 0.02
         : 0
-  const applyPct =
-    progressTotal > 0
+  const applyPct = isResumeRun
+    ? collectionsDenom > 0
+      ? Math.min(
+          100,
+          Math.round(((doneThisRun + fileFraction) / collectionsDenom) * 100),
+        )
+      : applyState === 'done'
+        ? 100
+        : applyState === 'running' || applyState === 'stopping'
+          ? Math.max(3, Math.round(fileFraction * 100))
+          : 0
+    : progressTotal > 0
       ? Math.min(
           100,
           Math.round(
@@ -343,6 +374,12 @@ export function CollectionsPage() {
           ? Math.max(3, Math.round(fileFraction * 100))
           : 0
 
+  // Cap at 100 when resume finished cleanly even if counts are slightly off.
+  const displayPct =
+    isResumeRun && applyState === 'done' && errorCount === 0
+      ? 100
+      : applyPct
+
   const currentFromProgress =
     migrateRun?.progress?.current_collection ||
     migrateRun?.progress?.current_file?.replace(/\.json$/i, '') ||
@@ -352,6 +389,27 @@ export function CollectionsPage() {
     currentItemsTotal > 0
       ? `${currentItemsDone.toLocaleString()} / ${currentItemsTotal.toLocaleString()} rows`
       : null
+
+  const progressTitle =
+    applyState === 'ready'
+      ? 'Ready to apply'
+      : applyState === 'running'
+        ? currentFromProgress
+          ? `Upserting ${currentFromProgress}…`
+          : isResumeRun
+            ? 'Retrying collections…'
+            : 'Upserting collections…'
+        : applyState === 'stopping'
+          ? 'Stopping… (click Force stop if stuck)'
+          : applyState === 'stopped'
+            ? 'Stopped — resume or restart'
+            : applyState === 'done'
+              ? isResumeRun
+                ? 'Retry complete'
+                : 'Collection data applied'
+              : isResumeRun
+                ? 'Retry failed'
+                : 'Apply failed'
 
   const currentFromLog = useMemo(() => {
     if (!migrateRun?.log) return null
@@ -1514,34 +1572,47 @@ export function CollectionsPage() {
                             <div>
                               <span className="k">Collections</span>
                               <strong>
-                                {createdCollections} / {progressTotal || totals.collections || '—'}
+                                {isResumeRun
+                                  ? `${createdCollections} / ${collectionsDenom}`
+                                  : `${createdCollections} / ${progressTotal || totals.collections || '—'}`}
                               </strong>
                               <span className="d">
-                                {applyState === 'running' || applyState === 'stopping'
-                                  ? 'importing'
-                                  : applyState === 'done'
-                                    ? 'imported'
-                                    : applyState === 'stopped'
-                                      ? 'paused'
-                                      : applyState === 'failed'
-                                        ? 'partial'
-                                        : 'waiting'}
+                                {isResumeRun
+                                  ? applyState === 'stopped'
+                                    ? 'paused'
+                                    : 'this retry'
+                                  : applyState === 'running' ||
+                                      applyState === 'stopping'
+                                    ? 'importing'
+                                    : applyState === 'done'
+                                      ? 'imported'
+                                      : applyState === 'stopped'
+                                        ? 'paused'
+                                        : applyState === 'failed'
+                                          ? 'partial'
+                                          : 'waiting'}
                               </span>
                             </div>
                             <div>
                               <span className="k">Rows</span>
                               <strong>
-                                {createdRows
-                                  ? formatRows(createdRows)
-                                  : '0'}{' '}
-                                / {totals.rows ? formatRows(totals.rows) : '—'}
+                                {createdRows ? formatRows(createdRows) : '0'}
+                                {isResumeRun
+                                  ? null
+                                  : ` / ${totals.rows ? formatRows(totals.rows) : '—'}`}
                               </strong>
-                              <span className="d">upserted</span>
+                              <span className="d">
+                                {isResumeRun
+                                  ? 'upserted this run'
+                                  : 'upserted'}
+                              </span>
                             </div>
                             <div>
                               <span className="k">Skipped</span>
                               <strong>{progressSkipped}</strong>
-                              <span className="d">resume / empty</span>
+                              <span className="d">
+                                {isResumeRun ? 'already ok' : 'resume / empty'}
+                              </span>
                             </div>
                             <div>
                               <span className="k">Errors</span>
@@ -1557,22 +1628,8 @@ export function CollectionsPage() {
                             style={{ marginBottom: 16 }}
                           >
                             <div className="flow-progress-top">
-                              <b>
-                                {applyState === 'ready'
-                                  ? 'Ready to apply'
-                                  : applyState === 'running'
-                                    ? currentFromProgress
-                                      ? `Upserting ${currentFromProgress}…`
-                                      : 'Upserting collections…'
-                                    : applyState === 'stopping'
-                                      ? 'Stopping… (click Force stop if stuck)'
-                                      : applyState === 'stopped'
-                                        ? 'Stopped — resume or restart'
-                                        : applyState === 'done'
-                                          ? 'Collection data applied'
-                                          : 'Apply failed'}
-                              </b>
-                              <span className="mono">{applyPct}%</span>
+                              <b>{progressTitle}</b>
+                              <span className="mono">{displayPct}%</span>
                             </div>
                             <div
                               className={`progress ${
@@ -1584,9 +1641,15 @@ export function CollectionsPage() {
                               }`}
                               style={{ height: 10 }}
                             >
-                              <span style={{ width: `${applyPct}%` }} />
+                              <span style={{ width: `${displayPct}%` }} />
                             </div>
                             <div className="meta" style={{ marginTop: 8 }}>
+                              {isResumeRun && progressSkipped > 0 ? (
+                                <>
+                                  {progressSkipped} already ok
+                                  {' · '}
+                                </>
+                              ) : null}
                               Current ·{' '}
                               <span className="mono">
                                 {currentFromProgress ??

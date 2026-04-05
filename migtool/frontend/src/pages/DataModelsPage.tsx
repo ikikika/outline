@@ -5,11 +5,13 @@ import {
   activateTarget,
   getLatestMigrate,
   getMigrateRun,
+  getPreparedStatus,
   getProject,
   prepareTargetSchema,
   startMigrate,
   type MigrationRun,
   type PrepareSchemaResult,
+  type PreparedStatus,
   type ProjectDetail,
 } from '../api/projects'
 import { Sidebar } from '../components/Sidebar'
@@ -122,6 +124,7 @@ function badgeForStep(
   compatible: boolean | null,
   written: boolean,
   applyState: ApplyState,
+  hasPreparedSchema: boolean,
 ): { className: string; label: string } {
   if (step === 5 && compatible !== false) {
     if (applyState === 'done') return { className: 'badge badge-ok', label: 'Applied' }
@@ -129,9 +132,11 @@ function badgeForStep(
       return { className: 'badge badge-err', label: 'Apply failed' }
     if (applyState === 'running')
       return { className: 'badge badge-run', label: 'Applying…' }
+    if (hasPreparedSchema || written)
+      return { className: 'badge badge-ok', label: 'Schema prepared' }
     return { className: 'badge badge-run', label: 'Ready to apply' }
   }
-  if (step === 3 && written)
+  if ((step === 3 || hasPreparedSchema) && written)
     return { className: 'badge badge-ok', label: 'Schema prepared' }
   if (step >= 3 && compatible === false)
     return { className: 'badge badge-draft', label: 'Deferred' }
@@ -155,6 +160,9 @@ export function DataModelsPage() {
 
   const [written, setWritten] = useState(false)
   const [writeResult, setWriteResult] = useState<PrepareSchemaResult | null>(null)
+  const [preparedStatus, setPreparedStatus] = useState<PreparedStatus | null>(
+    null,
+  )
   const [writing, setWriting] = useState(false)
   const [writeError, setWriteError] = useState<string | null>(null)
 
@@ -269,7 +277,23 @@ export function DataModelsPage() {
     return last?.[1] ?? null
   }, [migrateRun?.log])
 
-  const badge = badgeForStep(step, compatible, written, applyState)
+  const canSkipToApply = Boolean(
+    written || preparedStatus?.has_schema || migrateRun,
+  )
+  const hasPreparedSchema = Boolean(preparedStatus?.has_schema || written)
+
+  const badge = badgeForStep(
+    step,
+    compatible,
+    written,
+    applyState,
+    hasPreparedSchema,
+  )
+
+  function goToApply() {
+    if (preparedStatus?.has_schema || migrateRun) setWritten(true)
+    setStep(5)
+  }
 
   // Prefer a pack that contains schema/ when project loads.
   useEffect(() => {
@@ -314,8 +338,7 @@ export function DataModelsPage() {
         })
         if (!cancelled) {
           setScan(result)
-          setWritten(false)
-          setWriteResult(null)
+          // Don't clear prepared-on-disk / in-flight apply state when scanning a pack.
           setWriteError(null)
         }
       } catch (err) {
@@ -347,6 +370,7 @@ export function DataModelsPage() {
   function resetWriteAndApply() {
     setWritten(false)
     setWriteResult(null)
+    setPreparedStatus(null)
     setWriteError(null)
     setApplyState('ready')
     setMigrateRun(null)
@@ -431,6 +455,19 @@ export function DataModelsPage() {
       setWriteResult(result)
       setScan(result)
       setWritten(true)
+      setPreparedStatus((prev) => ({
+        path: prev?.path ?? outputPath,
+        exists: true,
+        has_schema: true,
+        has_data: prev?.has_data ?? false,
+        has_files: prev?.has_files ?? false,
+        has_flows: prev?.has_flows ?? false,
+        schema_files: result.copied || result.schema_files?.length || prev?.schema_files || 0,
+        data_files: prev?.data_files ?? 0,
+        data_file_names: prev?.data_file_names ?? [],
+        collections: prev?.collections ?? 0,
+        rows: prev?.rows ?? 0,
+      }))
     } catch (err) {
       setWriteError(
         err instanceof ApiError ? err.message : 'Could not write schema',
@@ -491,29 +528,43 @@ export function DataModelsPage() {
     }
   }
 
-  // Reattach to an in-flight schema migrate.
+  // Resume prior schema prepare / migrate — jump straight to apply.
   useEffect(() => {
     if (invalidId || !activeTarget) return
     let cancelled = false
     ;(async () => {
+      let hasPreparedSchema = false
+      let prepared: PreparedStatus | null = null
+      try {
+        prepared = await getPreparedStatus(projectId, activeTarget.id)
+        if (cancelled) return
+        setPreparedStatus(prepared)
+        if (prepared.has_schema) {
+          hasPreparedSchema = true
+          setWritten(true)
+        }
+      } catch {
+        // Prepared probe is optional.
+      }
+
       try {
         const latest = await getLatestMigrate(projectId, activeTarget.id)
-        if (cancelled || !latest) return
-        const schemaPhase =
-          latest.phases === 'schema' ||
-          latest.phases
-            .split(',')
-            .map((p) => p.trim())
-            .includes('schema')
-        if (!schemaPhase) return
-        // Prefer schema-only runs for this screen.
-        const phases = latest.phases.split(',').map((p) => p.trim())
-        const schemaOnly =
-          phases.length === 1 && phases[0] === 'schema'
-        if (!schemaOnly && latest.status !== 'pending' && latest.status !== 'running') {
+        if (cancelled || !latest) {
+          if (!cancelled && hasPreparedSchema) setStep(5)
           return
         }
-        if (latest.status === 'pending' || latest.status === 'running') {
+        const phases = latest.phases.split(',').map((p) => p.trim())
+        const schemaOnly = phases.length === 1 && phases[0] === 'schema'
+        const activeStatuses = ['pending', 'running']
+        if (!schemaOnly && !activeStatuses.includes(latest.status)) {
+          if (hasPreparedSchema) setStep(5)
+          return
+        }
+        if (!phases.includes('schema')) {
+          if (hasPreparedSchema) setStep(5)
+          return
+        }
+        if (activeStatuses.includes(latest.status)) {
           setWritten(true)
           setStep(5)
           setActivityLog([])
@@ -522,15 +573,30 @@ export function DataModelsPage() {
           startPolling(latest.id, activeTarget.id)
         } else if (
           (latest.status === 'failed' || latest.status === 'completed') &&
-          applyState === 'ready' &&
-          !migrateRun &&
           schemaOnly
         ) {
+          setWritten(true)
+          setStep(5)
           setMigrateRun(latest)
-          if (latest.status === 'completed') setWritten(true)
+          if (latest.status === 'completed') setApplyState('done')
+          else if (latest.status === 'failed') setApplyState('failed')
+        } else if (hasPreparedSchema) {
+          setStep(5)
         }
       } catch {
-        // Ignore — page still works without resume.
+        if (!cancelled && hasPreparedSchema) setStep(5)
+      }
+
+      if (
+        !cancelled &&
+        hasPreparedSchema &&
+        prepared &&
+        prepared.schema_files > 0
+      ) {
+        appendActivity(
+          'info',
+          `schema  found prepared ${prepared.schema_files} files · skip to apply`,
+        )
       }
     })()
     return () => {
@@ -629,7 +695,21 @@ export function DataModelsPage() {
                     <b>Confirm</b>
                   </div>
                 </li>
-                <li className={railClass(5, step)}>
+                <li
+                  className={railClass(5, step)}
+                  style={canSkipToApply ? { cursor: 'pointer' } : undefined}
+                  onClick={() => {
+                    if (canSkipToApply) goToApply()
+                  }}
+                  onKeyDown={(e) => {
+                    if (canSkipToApply && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault()
+                      goToApply()
+                    }
+                  }}
+                  role={canSkipToApply ? 'button' : undefined}
+                  tabIndex={canSkipToApply ? 0 : undefined}
+                >
                   <span className="flow-n">5</span>
                   <div>
                     <small>Directus</small>
@@ -640,6 +720,49 @@ export function DataModelsPage() {
 
               <div className="flow-layout">
                 <div className="flow-main">
+                  {hasPreparedSchema ? (
+                    <div className="notice notice-ok" style={{ margin: '0 0 16px' }}>
+                      {applyState === 'done' ? (
+                        <>
+                          Schema was previously applied to{' '}
+                          <strong>{activeTarget?.name ?? 'this target'}</strong>
+                          {migrateRun?.id != null ? ` (run #${migrateRun.id})` : ''}.
+                          Prepared files remain under{' '}
+                          <span className="mono">{outputPath}</span>
+                          {preparedStatus?.schema_files
+                            ? ` · ${preparedStatus.schema_files} files`
+                            : ''}
+                          .
+                        </>
+                      ) : (
+                        <>
+                          Schema already prepared for{' '}
+                          <strong>{activeTarget?.name ?? 'this target'}</strong>
+                          {preparedStatus?.schema_files
+                            ? ` (${preparedStatus.schema_files} files)`
+                            : ''}
+                          {' '}under{' '}
+                          <span className="mono">{outputPath}</span>.
+                          {step < 5 ? (
+                            <>
+                              {' '}
+                              <button
+                                className="btn btn-primary"
+                                type="button"
+                                style={{ marginLeft: 8 }}
+                                onClick={goToApply}
+                              >
+                                Skip to apply
+                              </button>
+                            </>
+                          ) : (
+                            <> You can apply it again or overwrite by writing a new pack.</>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : null}
+
                   {step === 1 ? (
                     <section className="flow-card">
                       <div className="flow-card-head">
@@ -1189,7 +1312,7 @@ export function DataModelsPage() {
   "files": false,
   "flows": false
 }`}</pre>
-                          {!written ? (
+                          {!written && !canSkipToApply ? (
                             <div className="notice notice-warn" style={{ marginTop: 16 }}>
                               Write schema to prepared in step 3 before applying.
                             </div>
@@ -1205,8 +1328,8 @@ export function DataModelsPage() {
                             <button
                               className="btn btn-primary"
                               type="button"
-                              disabled={!written}
-                              onClick={() => setStep(5)}
+                              disabled={!canSkipToApply}
+                              onClick={goToApply}
                             >
                               Continue to apply
                             </button>

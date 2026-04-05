@@ -688,9 +688,20 @@ def process_migrate(db: Session, run_id: int) -> None:
             }
             success = sum(int(v.get("success") or 0) for v in collections.values())
             failed = data_row_failures
-            total = len(collections) or (
-                len(completed) + len(failed_files)
-            )
+            # Pack-scoped total: completed + still-failed (not this-run summary length).
+            prior_total = 0
+            if run.progress_json:
+                try:
+                    prior_prog = json.loads(run.progress_json)
+                    if isinstance(prior_prog, dict):
+                        prior_total = int(prior_prog.get("total") or 0)
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    prior_total = 0
+            total = max(
+                prior_total,
+                len(completed) + len(failed_files),
+                len(skip_data_files) + len(collections),
+            ) or len(collections)
             run.progress_json = json.dumps(
                 {
                     "phase": "done" if failed == 0 else "data_done",
