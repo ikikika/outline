@@ -2,8 +2,48 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { ApiError } from '../api/client'
-import { listProjects, type Project } from '../api/projects'
+import {
+  listProjects,
+  type PhaseMigrationStatus,
+  type Project,
+} from '../api/projects'
 import { Sidebar } from '../components/Sidebar'
+
+const PHASE_LABEL: Record<string, string> = {
+  completed: 'Applied',
+  running: 'Running',
+  failed: 'Failed',
+  stopped: 'Stopped',
+  prepared: 'Prepared',
+  not_started: 'Not started',
+}
+
+function phaseBadge(status: string): string {
+  if (status === 'completed') return 'badge badge-ok'
+  if (status === 'running') return 'badge badge-run'
+  if (status === 'failed') return 'badge badge-err'
+  if (status === 'prepared') return 'badge badge-map'
+  return 'badge badge-draft'
+}
+
+function PhaseRow({
+  title,
+  phase,
+  to,
+}: {
+  title: string
+  phase: PhaseMigrationStatus
+  to: string
+}) {
+  const label = PHASE_LABEL[phase.status] ?? phase.status
+  return (
+    <Link className="mig-phase" to={to}>
+      <span className="mig-phase-title">{title}</span>
+      <span className={phaseBadge(phase.status)}>{label}</span>
+      {phase.detail ? <span className="meta">{phase.detail}</span> : null}
+    </Link>
+  )
+}
 
 export function DashboardPage() {
   const { user, logout } = useAuth()
@@ -108,36 +148,64 @@ export function DashboardPage() {
 
           {!loading && projects.length > 0 ? (
             <div className="target-list" style={{ marginTop: 24 }}>
-              {projects.map((project) => (
-                <article className="target-card" key={project.id}>
-                  <div>
-                    <h3>
-                      {project.name}{' '}
-                      <span className="badge badge-draft">{project.status}</span>
-                    </h3>
-                    <div className="meta" style={{ marginTop: 6 }}>
-                      {project.note || 'No note'} · {project.upload_count}{' '}
-                      file{project.upload_count === 1 ? '' : 's'} ·{' '}
-                      {project.target_count} Directus target
-                      {project.target_count === 1 ? '' : 's'}
+              {projects.map((project) => {
+                const mig = project.migration
+                return (
+                  <article className="target-card target-card-project" key={project.id}>
+                    <div>
+                      <h3>
+                        {project.name}{' '}
+                        <span className="badge badge-draft">{project.status}</span>
+                      </h3>
+                      <div className="meta" style={{ marginTop: 6 }}>
+                        {project.note || 'No note'} · {project.upload_count}{' '}
+                        file{project.upload_count === 1 ? '' : 's'} ·{' '}
+                        {project.target_count} Directus target
+                        {project.target_count === 1 ? '' : 's'}
+                        {mig?.target_name ? ` · ${mig.target_name}` : ''}
+                      </div>
+                      {mig ? (
+                        <div className="mig-phases">
+                          <PhaseRow
+                            title="Assets"
+                            phase={mig.assets}
+                            to={`/projects/${project.id}/prepare-assets`}
+                          />
+                          <PhaseRow
+                            title="Data models"
+                            phase={mig.data_models}
+                            to={`/projects/${project.id}/data-models`}
+                          />
+                          <PhaseRow
+                            title="Collections"
+                            phase={mig.collections}
+                            to={`/projects/${project.id}/collections`}
+                          />
+                        </div>
+                      ) : project.target_count === 0 ? (
+                        <div className="meta" style={{ marginTop: 10 }}>
+                          Connect a Directus target to track schema, assets, and
+                          collections.
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <Link
-                      className="btn btn-sm btn-ghost"
-                      to={`/projects/${project.id}/source-files`}
-                    >
-                      Source files
-                    </Link>
-                    <Link
-                      className="btn btn-sm btn-primary"
-                      to={`/projects/${project.id}/connect-directus`}
-                    >
-                      Directus targets
-                    </Link>
-                  </div>
-                </article>
-              ))}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <Link
+                        className="btn btn-sm btn-ghost"
+                        to={`/projects/${project.id}/source-files`}
+                      >
+                        Source files
+                      </Link>
+                      <Link
+                        className="btn btn-sm btn-primary"
+                        to={`/projects/${project.id}/connect-directus`}
+                      >
+                        Directus targets
+                      </Link>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           ) : null}
         </div>

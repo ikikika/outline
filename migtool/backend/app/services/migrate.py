@@ -45,7 +45,9 @@ def inspect_prepared(project_id: int, target_id: int) -> dict[str, Any]:
     schema_dir = root / "schema"
     data_dir = root / "data"
     flows_dir = root / "flows"
-    has_files = (root / "files_metadata.json").is_file() or (root / "files").is_dir()
+    files_dir = root / "files"
+    files_meta = root / "files_metadata.json"
+    has_files = files_meta.is_file() or files_dir.is_dir()
 
     data_files: list[str] = []
     data_rows = 0
@@ -69,6 +71,23 @@ def inspect_prepared(project_id: int, target_id: int) -> dict[str, Any]:
             1 for p in schema_dir.glob("*.json") if not p.name.startswith("_")
         )
 
+    asset_files = 0
+    if files_meta.is_file():
+        try:
+            meta = json.loads(files_meta.read_text(encoding="utf-8"))
+            if isinstance(meta, list):
+                asset_files = len(meta)
+            elif isinstance(meta, dict):
+                records = meta.get("files") or meta.get("data") or meta.get("records")
+                if isinstance(records, list):
+                    asset_files = len(records)
+                else:
+                    asset_files = 1
+        except (OSError, json.JSONDecodeError):
+            asset_files = 0
+    if asset_files == 0 and files_dir.is_dir():
+        asset_files = sum(1 for p in files_dir.rglob("*") if p.is_file())
+
     return {
         "path": f"uploads/project_{project_id}/prepared/target_{target_id}/",
         "exists": root.is_dir(),
@@ -81,6 +100,301 @@ def inspect_prepared(project_id: int, target_id: int) -> dict[str, Any]:
         "data_file_names": data_files[:200],
         "collections": len(data_files),
         "rows": data_rows,
+        "asset_files": asset_files,
+    }
+
+
+def _parse_json_obj(raw: str | None) -> dict[str, Any] | None:
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _phases_set(phases: str | None) -> set[str]:
+    return {p.strip() for p in (phases or "").split(",") if p.strip()}
+
+
+def _phase_applied_in_run(run: MigrationRun, phase: str) -> bool:
+    """
+    True when this run actually applied the given phase successfully.
+
+    A multi-phase job can finish as failed (e.g. data row errors) after schema
+    or files already succeeded — treat those phases as applied.
+    """
+    if phase not in _phases_set(run.phases):
+        return False
+    if run.status == "completed":
+        return True
+
+    summary = _parse_json_obj(run.summary_json)
+    if not summary:
+        return False
+
+    if phase == "schema":
+        block = summary.get("schema")
+        if not isinstance(block, dict):
+            return False
+        cols = block.get("collections") if isinstance(block.get("collections"), dict) else {}
+        fields = block.get("fields") if isinstance(block.get("fields"), dict) else {}
+        rels = block.get("relations") if isinstance(block.get("relations"), dict) else {}
+        return (
+            int(cols.get("created") or 0)
+            + int(cols.get("skipped") or 0)
+            + int(fields.get("created") or 0)
+            + int(rels.get("created") or 0)
+        ) > 0
+
+    if phase == "files":
+        block = summary.get("files")
+        if not isinstance(block, dict):
+            return False
+        files_block = block.get("files") if isinstance(block.get("files"), dict) else block
+        if not isinstance(files_block, dict):
+            return False
+        return (
+            int(files_block.get("uploaded") or 0)
+            + int(files_block.get("skipped") or 0)
+            + int(files_block.get("placeholder") or 0)
+        ) > 0
+
+    if phase == "data":
+        data = summary.get("data") if isinstance(summary.get("data"), dict) else summary
+        if not isinstance(data, dict):
+            return False
+        for key, val in data.items():
+            if key in ("schema", "files", "flows", "_deferred_fks", "export_path", "target_url", "import_date"):
+                continue
+            if not isinstance(val, dict):
+                continue
+            if int(val.get("success") or 0) > 0:
+                return True
+        return False
+
+    return False
+
+
+def _best_run_for_phase(
+    db: Session,
+    target_id: int,
+    phase: str,
+) -> MigrationRun | None:
+    """
+    Pick the most informative run for a phase.
+
+    Prefer an in-flight run, then any run where the phase was applied, then the
+    latest attempt that included the phase (failed/stopped).
+    """
+    runs = (
+        db.query(MigrationRun)
+        .filter(MigrationRun.target_id == target_id)
+        .order_by(MigrationRun.id.desc())
+        .limit(80)
+        .all()
+    )
+    matching = [r for r in runs if phase in _phases_set(r.phases)]
+    if not matching:
+        return None
+
+    for run in matching:
+        if run.status in ACTIVE_STATUSES:
+            return run
+
+    for run in matching:
+        if _phase_applied_in_run(run, phase):
+            return run
+
+    return matching[0]
+
+
+def _phase_status_from_run(
+    run: MigrationRun | None,
+    phase: str,
+    *,
+    prepared: bool,
+) -> str:
+    if run is not None:
+        if run.status in ACTIVE_STATUSES:
+            return "running"
+        if _phase_applied_in_run(run, phase):
+            return "completed"
+        if run.status == "failed":
+            return "failed"
+        if run.status == "stopped":
+            return "stopped"
+        if run.status == "completed":
+            return "completed"
+    if prepared:
+        return "prepared"
+    return "not_started"
+
+
+def _schema_phase_detail(
+    run: MigrationRun | None,
+    prepared: dict[str, Any],
+) -> str | None:
+    summary = _parse_json_obj(run.summary_json if run else None)
+    if summary:
+        block = summary.get("schema") if isinstance(summary.get("schema"), dict) else None
+        if block:
+            cols = block.get("collections") if isinstance(block.get("collections"), dict) else {}
+            created = int(cols.get("created") or 0)
+            skipped = int(cols.get("skipped") or 0)
+            failed = int(cols.get("failed") or 0)
+            if created or skipped or failed:
+                parts = []
+                if created:
+                    parts.append(f"{created} collections")
+                elif skipped:
+                    parts.append(f"{skipped} collections")
+                if failed:
+                    parts.append(f"{failed} failed")
+                return " · ".join(parts) if parts else None
+    if run is not None and _phase_applied_in_run(run, "schema"):
+        schema_files = int(prepared.get("schema_files") or 0)
+        if schema_files:
+            return f"{schema_files} schema files applied"
+        return "schema applied"
+    schema_files = int(prepared.get("schema_files") or 0)
+    if schema_files:
+        return f"{schema_files} schema files prepared"
+    return None
+
+
+def _files_phase_detail(
+    run: MigrationRun | None,
+    prepared: dict[str, Any],
+) -> str | None:
+    progress = _parse_json_obj(run.progress_json if run else None)
+    if progress and run is not None and (
+        run.status in ACTIVE_STATUSES or _phase_applied_in_run(run, "files")
+    ):
+        uploaded = int(progress.get("uploaded") or 0)
+        total = int(progress.get("total") or 0)
+        failed = int(progress.get("failed") or 0)
+        if uploaded or total:
+            label = f"{uploaded}"
+            if total:
+                label = f"{uploaded}/{total}"
+            label += " files"
+            if failed:
+                label += f" · {failed} failed"
+            return label
+    summary = _parse_json_obj(run.summary_json if run else None)
+    if summary and isinstance(summary.get("files"), dict):
+        files_block = summary["files"].get("files") or summary["files"]
+        if isinstance(files_block, dict):
+            uploaded = int(files_block.get("uploaded") or 0)
+            skipped = int(files_block.get("skipped") or 0)
+            if uploaded or skipped:
+                n = uploaded or skipped
+                return f"{n} files uploaded" if uploaded else f"{n} files skipped"
+    if run is not None and _phase_applied_in_run(run, "files"):
+        assets = int(prepared.get("asset_files") or 0)
+        if assets:
+            return f"{assets} files applied"
+        return "assets applied"
+    assets = int(prepared.get("asset_files") or 0)
+    if assets:
+        return f"{assets} files prepared"
+    if prepared.get("has_files"):
+        return "assets prepared"
+    return None
+
+
+def _data_phase_detail(
+    run: MigrationRun | None,
+    prepared: dict[str, Any],
+) -> str | None:
+    progress = _parse_json_obj(run.progress_json if run else None)
+    if progress:
+        completed = progress.get("completed_files")
+        done = len(completed) if isinstance(completed, list) else int(progress.get("processed") or 0)
+        total = int(progress.get("total") or 0)
+        uploaded = int(progress.get("uploaded") or 0)
+        failed = int(progress.get("failed") or 0)
+        parts: list[str] = []
+        if total:
+            parts.append(f"{done}/{total} collections")
+        elif done:
+            parts.append(f"{done} collections")
+        if uploaded:
+            parts.append(f"{uploaded:,} rows")
+        if failed:
+            parts.append(f"{failed} failed")
+        if parts:
+            return " · ".join(parts)
+    if run is not None and _phase_applied_in_run(run, "data"):
+        return "collections applied"
+    collections = int(prepared.get("collections") or 0)
+    rows = int(prepared.get("rows") or 0)
+    if collections:
+        label = f"{collections} collections prepared"
+        if rows:
+            label += f" · {rows:,} rows"
+        return label
+    return None
+
+
+def project_migration_summary(
+    db: Session,
+    project_id: int,
+    targets: list[DirectusTarget],
+) -> dict[str, Any] | None:
+    """
+    Compact per-phase migration status for the active (or first) Directus target.
+
+    Phases map to product language:
+      schema → data models, files → assets, data → collections
+    """
+    if not targets:
+        return None
+    active = next((t for t in targets if t.is_active), None) or targets[0]
+    prepared = inspect_prepared(project_id, active.id)
+
+    schema_run = _best_run_for_phase(db, active.id, "schema")
+    files_run = _best_run_for_phase(db, active.id, "files")
+    data_run = _best_run_for_phase(db, active.id, "data")
+
+    def phase_block(
+        run: MigrationRun | None,
+        phase: str,
+        *,
+        prepared_flag: bool,
+        detail: str | None,
+    ) -> dict[str, Any]:
+        status = _phase_status_from_run(run, phase, prepared=prepared_flag)
+        return {
+            "status": status,
+            "detail": detail,
+            "run_id": run.id if run else None,
+            "run_status": run.status if run else None,
+        }
+
+    return {
+        "target_id": active.id,
+        "target_name": active.name,
+        "data_models": phase_block(
+            schema_run,
+            "schema",
+            prepared_flag=bool(prepared.get("has_schema")),
+            detail=_schema_phase_detail(schema_run, prepared),
+        ),
+        "assets": phase_block(
+            files_run,
+            "files",
+            prepared_flag=bool(prepared.get("has_files")),
+            detail=_files_phase_detail(files_run, prepared),
+        ),
+        "collections": phase_block(
+            data_run,
+            "data",
+            prepared_flag=bool(prepared.get("has_data")),
+            detail=_data_phase_detail(data_run, prepared),
+        ),
     }
 
 

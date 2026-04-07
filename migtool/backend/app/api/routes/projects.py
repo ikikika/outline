@@ -37,6 +37,7 @@ from app.schemas import (
     PrepareSchemaRequest,
     ProjectCreate,
     ProjectDetail,
+    ProjectMigrationSummary,
     ProjectOut,
     ProjectSourceFileOut,
     ProjectUpdate,
@@ -54,6 +55,7 @@ from app.services.migrate import (
     find_resume_checkpoint,
     inspect_prepared,
     prepared_dir,
+    project_migration_summary,
     reclaim_orphaned_migrate_runs,
     reclaim_orphaned_run,
     request_migrate_stop,
@@ -133,7 +135,12 @@ def _migration_out(run: MigrationRun) -> MigrationRunOut:
     )
 
 
-def _project_out(project: Project) -> ProjectOut:
+def _project_out(project: Project, db: Session | None = None) -> ProjectOut:
+    migration = None
+    if db is not None and project.targets:
+        raw = project_migration_summary(db, project.id, list(project.targets))
+        if raw:
+            migration = ProjectMigrationSummary(**raw)
     return ProjectOut(
         id=project.id,
         name=project.name,
@@ -147,11 +154,12 @@ def _project_out(project: Project) -> ProjectOut:
         source_file_count=(
             len(project.source_files) if project.source_files is not None else 0
         ),
+        migration=migration,
     )
 
 
-def _project_detail(project: Project) -> ProjectDetail:
-    base = _project_out(project)
+def _project_detail(project: Project, db: Session | None = None) -> ProjectDetail:
+    base = _project_out(project, db)
     return ProjectDetail(
         **base.model_dump(),
         targets=[_target_out(t) for t in (project.targets or [])],
@@ -200,7 +208,7 @@ def _load_project_detail(db: Session, user: User, project_id: int) -> ProjectDet
         with_uploads=True,
         with_source_files=True,
     )
-    return _project_detail(project)
+    return _project_detail(project, db)
 
 
 @router.get("", response_model=list[ProjectOut])
@@ -219,7 +227,7 @@ def list_projects(
         .order_by(Project.updated_at.desc())
         .all()
     )
-    return [_project_out(p) for p in projects]
+    return [_project_out(p, db) for p in projects]
 
 
 @router.post("", response_model=ProjectDetail, status_code=status.HTTP_201_CREATED)

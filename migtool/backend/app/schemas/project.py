@@ -232,6 +232,24 @@ class PreparedStatusOut(BaseModel):
     data_file_names: list[str] = []
     collections: int = 0
     rows: int = 0
+    asset_files: int = 0
+
+
+class PhaseMigrationStatus(BaseModel):
+    """One migrate phase: data models (schema), assets (files), or collections (data)."""
+
+    status: str  # not_started | prepared | running | completed | failed | stopped
+    detail: str | None = None
+    run_id: int | None = None
+    run_status: str | None = None
+
+
+class ProjectMigrationSummary(BaseModel):
+    target_id: int
+    target_name: str
+    data_models: PhaseMigrationStatus
+    assets: PhaseMigrationStatus
+    collections: PhaseMigrationStatus
 
 
 class MigrationStart(BaseModel):
@@ -275,6 +293,7 @@ class ProjectOut(BaseModel):
     target_count: int = 0
     upload_count: int = 0
     source_file_count: int = 0
+    migration: ProjectMigrationSummary | None = None
 
     model_config = {"from_attributes": True}
 

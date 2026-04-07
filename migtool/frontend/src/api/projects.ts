@@ -11,6 +11,22 @@ export type Project = {
   target_count: number
   upload_count: number
   source_file_count: number
+  migration?: ProjectMigrationSummary | null
+}
+
+export type PhaseMigrationStatus = {
+  status: string
+  detail: string | null
+  run_id: number | null
+  run_status: string | null
+}
+
+export type ProjectMigrationSummary = {
+  target_id: number
+  target_name: string
+  data_models: PhaseMigrationStatus
+  assets: PhaseMigrationStatus
+  collections: PhaseMigrationStatus
 }
 
 export type DirectusTarget = {
@@ -159,6 +175,7 @@ export type PreparedStatus = {
   data_file_names: string[]
   collections: number
   rows: number
+  asset_files?: number
 }
 
 export type MigrationStartPayload = {
