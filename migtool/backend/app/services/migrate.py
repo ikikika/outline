@@ -124,55 +124,88 @@ def _phase_applied_in_run(run: MigrationRun, phase: str) -> bool:
 
     A multi-phase job can finish as failed (e.g. data row errors) after schema
     or files already succeeded — treat those phases as applied.
+
+    For files, "applied" means at least one file was uploaded, skipped (already
+    in Directus), or created as a placeholder — not merely that the run exited
+    with status completed.
     """
     if phase not in _phases_set(run.phases):
         return False
-    if run.status == "completed":
-        return True
 
     summary = _parse_json_obj(run.summary_json)
-    if not summary:
-        return False
 
     if phase == "schema":
-        block = summary.get("schema")
-        if not isinstance(block, dict):
-            return False
-        cols = block.get("collections") if isinstance(block.get("collections"), dict) else {}
-        fields = block.get("fields") if isinstance(block.get("fields"), dict) else {}
-        rels = block.get("relations") if isinstance(block.get("relations"), dict) else {}
-        return (
-            int(cols.get("created") or 0)
-            + int(cols.get("skipped") or 0)
-            + int(fields.get("created") or 0)
-            + int(rels.get("created") or 0)
-        ) > 0
+        if summary:
+            block = summary.get("schema")
+            if isinstance(block, dict):
+                cols = (
+                    block.get("collections")
+                    if isinstance(block.get("collections"), dict)
+                    else {}
+                )
+                fields = (
+                    block.get("fields") if isinstance(block.get("fields"), dict) else {}
+                )
+                rels = (
+                    block.get("relations")
+                    if isinstance(block.get("relations"), dict)
+                    else {}
+                )
+                return (
+                    int(cols.get("created") or 0)
+                    + int(cols.get("skipped") or 0)
+                    + int(fields.get("created") or 0)
+                    + int(rels.get("created") or 0)
+                ) > 0
+        return run.status == "completed"
 
     if phase == "files":
-        block = summary.get("files")
-        if not isinstance(block, dict):
-            return False
-        files_block = block.get("files") if isinstance(block.get("files"), dict) else block
-        if not isinstance(files_block, dict):
-            return False
-        return (
-            int(files_block.get("uploaded") or 0)
-            + int(files_block.get("skipped") or 0)
-            + int(files_block.get("placeholder") or 0)
-        ) > 0
+        if summary:
+            block = summary.get("files")
+            if isinstance(block, dict):
+                files_block = (
+                    block.get("files") if isinstance(block.get("files"), dict) else block
+                )
+                if isinstance(files_block, dict):
+                    return (
+                        int(files_block.get("uploaded") or 0)
+                        + int(files_block.get("skipped") or 0)
+                        + int(files_block.get("placeholder") or 0)
+                    ) > 0
+                return False
+        # Fall back to progress when summary is missing (older / partial runs).
+        progress = _parse_json_obj(run.progress_json)
+        if progress:
+            return (
+                int(progress.get("uploaded") or 0)
+                + int(progress.get("skipped") or 0)
+                + int(progress.get("placeholders") or 0)
+            ) > 0
+        return False
 
     if phase == "data":
-        data = summary.get("data") if isinstance(summary.get("data"), dict) else summary
-        if not isinstance(data, dict):
-            return False
-        for key, val in data.items():
-            if key in ("schema", "files", "flows", "_deferred_fks", "export_path", "target_url", "import_date"):
-                continue
-            if not isinstance(val, dict):
-                continue
-            if int(val.get("success") or 0) > 0:
-                return True
-        return False
+        if summary:
+            data = (
+                summary.get("data") if isinstance(summary.get("data"), dict) else summary
+            )
+            if isinstance(data, dict):
+                for key, val in data.items():
+                    if key in (
+                        "schema",
+                        "files",
+                        "flows",
+                        "_deferred_fks",
+                        "export_path",
+                        "target_url",
+                        "import_date",
+                    ):
+                        continue
+                    if not isinstance(val, dict):
+                        continue
+                    if int(val.get("success") or 0) > 0:
+                        return True
+                return False
+        return run.status == "completed"
 
     return False
 
@@ -210,6 +243,43 @@ def _best_run_for_phase(
     return matching[0]
 
 
+def _data_progress_counts(run: MigrationRun | None) -> tuple[int, int, int, int]:
+    """Return (done, total, rows, failed) from a data run's progress."""
+    if run is None:
+        return 0, 0, 0, 0
+    progress = _parse_json_obj(run.progress_json)
+    if not progress:
+        return 0, 0, 0, 0
+    completed = progress.get("completed_files")
+    done = (
+        len(completed)
+        if isinstance(completed, list)
+        else int(progress.get("processed") or 0)
+    )
+    total = int(progress.get("total") or 0)
+    rows = int(progress.get("uploaded") or 0)
+    failed = int(progress.get("failed") or 0)
+    failed_files = progress.get("failed_files")
+    if isinstance(failed_files, list) and failed_files and not failed:
+        failed = len(failed_files)
+    return done, total, rows, failed
+
+
+def _phase_fully_applied(run: MigrationRun, phase: str) -> bool:
+    """True when the phase finished with full coverage (not a partial stop)."""
+    if not _phase_applied_in_run(run, phase):
+        return False
+    if phase == "data":
+        done, total, _rows, failed = _data_progress_counts(run)
+        if failed > 0:
+            return False
+        if total > 0:
+            return done >= total and run.status == "completed"
+        return run.status == "completed"
+    # Schema / files: only a clean completed run counts as fully applied.
+    return run.status == "completed"
+
+
 def _phase_status_from_run(
     run: MigrationRun | None,
     phase: str,
@@ -219,13 +289,29 @@ def _phase_status_from_run(
     if run is not None:
         if run.status in ACTIVE_STATUSES:
             return "running"
-        if _phase_applied_in_run(run, phase):
-            return "completed"
+        # Prefer terminal run status over "any success" so a stopped/failed
+        # import that got partway through does not show as Applied.
         if run.status == "failed":
             return "failed"
         if run.status == "stopped":
             return "stopped"
+        if _phase_fully_applied(run, phase):
+            return "completed"
+        # Completed run but incomplete coverage (e.g. 17/64 collections).
         if run.status == "completed":
+            _done, total, _rows, failed = _data_progress_counts(run)
+            if phase == "data" and (failed > 0 or (total > 0 and _done < total)):
+                return "failed" if failed > 0 else "stopped"
+            if _phase_applied_in_run(run, phase):
+                return "completed"
+            progress = _parse_json_obj(run.progress_json)
+            failed_n = int((progress or {}).get("failed") or 0) if progress else 0
+            if failed_n > 0:
+                return "failed"
+            if prepared:
+                return "prepared"
+            return "not_started"
+        if _phase_applied_in_run(run, phase):
             return "completed"
     if prepared:
         return "prepared"
@@ -240,25 +326,56 @@ def _schema_phase_detail(
     if summary:
         block = summary.get("schema") if isinstance(summary.get("schema"), dict) else None
         if block:
-            cols = block.get("collections") if isinstance(block.get("collections"), dict) else {}
+            cols = (
+                block.get("collections")
+                if isinstance(block.get("collections"), dict)
+                else {}
+            )
+            fields = (
+                block.get("fields") if isinstance(block.get("fields"), dict) else {}
+            )
+            rels = (
+                block.get("relations")
+                if isinstance(block.get("relations"), dict)
+                else {}
+            )
             created = int(cols.get("created") or 0)
             skipped = int(cols.get("skipped") or 0)
             failed = int(cols.get("failed") or 0)
-            if created or skipped or failed:
-                parts = []
+            fields_n = int(fields.get("created") or 0)
+            rels_n = int(rels.get("created") or 0)
+            if created or skipped or failed or fields_n or rels_n:
+                parts: list[str] = []
                 if created:
                     parts.append(f"{created} collections")
                 elif skipped:
-                    parts.append(f"{skipped} collections")
+                    parts.append(f"{skipped} collections exist")
+                if fields_n:
+                    parts.append(f"{fields_n} fields")
+                if rels_n:
+                    parts.append(f"{rels_n} relations")
                 if failed:
                     parts.append(f"{failed} failed")
                 return " · ".join(parts) if parts else None
-    if run is not None and _phase_applied_in_run(run, "schema"):
-        schema_files = int(prepared.get("schema_files") or 0)
-        if schema_files:
-            return f"{schema_files} schema files applied"
-        return "schema applied"
+
     schema_files = int(prepared.get("schema_files") or 0)
+    if run is not None:
+        if run.status == "stopped":
+            if schema_files:
+                return f"stopped · {schema_files} schema files on disk"
+            return "stopped before schema finished"
+        if run.status == "failed":
+            err = (run.error_detail or "").strip()
+            if err:
+                return err[:80]
+            if schema_files:
+                return f"failed · {schema_files} schema files on disk"
+            return "schema apply failed"
+        if _phase_applied_in_run(run, "schema"):
+            if schema_files:
+                return f"{schema_files} schema files applied"
+            return "schema applied"
+
     if schema_files:
         return f"{schema_files} schema files prepared"
     return None
@@ -269,29 +386,49 @@ def _files_phase_detail(
     prepared: dict[str, Any],
 ) -> str | None:
     progress = _parse_json_obj(run.progress_json if run else None)
-    if progress and run is not None and (
-        run.status in ACTIVE_STATUSES or _phase_applied_in_run(run, "files")
-    ):
+    if progress and run is not None:
         uploaded = int(progress.get("uploaded") or 0)
-        total = int(progress.get("total") or 0)
+        skipped = int(progress.get("skipped") or 0)
         failed = int(progress.get("failed") or 0)
-        if uploaded or total:
-            label = f"{uploaded}"
+        placeholders = int(progress.get("placeholders") or 0)
+        total = int(progress.get("total") or 0) or (
+            uploaded + skipped + failed + placeholders
+        )
+        if uploaded or skipped or failed or placeholders or total:
+            # Prefer a clear skipped-only label (common on resume).
+            if skipped and not uploaded and not failed:
+                n = total or skipped
+                return f"{skipped}/{n} skipped" if n else f"{skipped} skipped"
+            parts: list[str] = []
             if total:
-                label = f"{uploaded}/{total}"
-            label += " files"
+                parts.append(f"{uploaded}/{total} files")
+            else:
+                parts.append(f"{uploaded} files")
+            if skipped:
+                parts.append(f"{skipped} skipped")
             if failed:
-                label += f" · {failed} failed"
-            return label
+                parts.append(f"{failed} failed")
+            if placeholders and not skipped:
+                parts.append(f"{placeholders} placeholders")
+            return " · ".join(parts)
     summary = _parse_json_obj(run.summary_json if run else None)
     if summary and isinstance(summary.get("files"), dict):
         files_block = summary["files"].get("files") or summary["files"]
         if isinstance(files_block, dict):
             uploaded = int(files_block.get("uploaded") or 0)
             skipped = int(files_block.get("skipped") or 0)
-            if uploaded or skipped:
-                n = uploaded or skipped
-                return f"{n} files uploaded" if uploaded else f"{n} files skipped"
+            failed = int(files_block.get("failed") or 0)
+            if uploaded or skipped or failed:
+                if skipped and not uploaded and not failed:
+                    return f"{skipped} files skipped"
+                parts = []
+                if uploaded:
+                    parts.append(f"{uploaded} uploaded")
+                if skipped:
+                    parts.append(f"{skipped} skipped")
+                if failed:
+                    parts.append(f"{failed} failed")
+                return " · ".join(parts) if parts else None
     if run is not None and _phase_applied_in_run(run, "files"):
         assets = int(prepared.get("asset_files") or 0)
         if assets:
@@ -309,13 +446,10 @@ def _data_phase_detail(
     run: MigrationRun | None,
     prepared: dict[str, Any],
 ) -> str | None:
+    done, total, uploaded, failed = _data_progress_counts(run)
     progress = _parse_json_obj(run.progress_json if run else None)
-    if progress:
-        completed = progress.get("completed_files")
-        done = len(completed) if isinstance(completed, list) else int(progress.get("processed") or 0)
-        total = int(progress.get("total") or 0)
-        uploaded = int(progress.get("uploaded") or 0)
-        failed = int(progress.get("failed") or 0)
+    skipped = int((progress or {}).get("skipped") or 0) if progress else 0
+    if done or total or uploaded or failed or skipped:
         parts: list[str] = []
         if total:
             parts.append(f"{done}/{total} collections")
@@ -323,11 +457,13 @@ def _data_phase_detail(
             parts.append(f"{done} collections")
         if uploaded:
             parts.append(f"{uploaded:,} rows")
+        if skipped and done < (total or done + skipped):
+            parts.append(f"{skipped} skipped")
         if failed:
             parts.append(f"{failed} failed")
         if parts:
             return " · ".join(parts)
-    if run is not None and _phase_applied_in_run(run, "data"):
+    if run is not None and _phase_fully_applied(run, "data"):
         return "collections applied"
     collections = int(prepared.get("collections") or 0)
     rows = int(prepared.get("rows") or 0)

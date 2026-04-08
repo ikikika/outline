@@ -154,15 +154,12 @@ export function Sidebar({ projectId: projectIdProp }: SidebarProps) {
                 Data models
               </NavLink>
               <a href="#fields">Field mapping</a>
-              <a href="#preview">Preview</a>
               <NavLink to={prepareAssetsPath} className={navClass}>
                 Prepare assets
               </NavLink>
               <NavLink to={collectionsPath} className={navClass}>
                 Collections
               </NavLink>
-              <a href="#migrate">Migrate</a>
-              <a href="#issues">Issues</a>
             </>
           ) : null}
         </nav>
