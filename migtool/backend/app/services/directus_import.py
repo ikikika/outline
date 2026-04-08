@@ -452,8 +452,12 @@ def sort_collections_by_dependency(collections: List[Dict], relations: List[Dict
     return sorted_collections
 
 
-def import_schema(schema_path: str, include_collections: Optional[List[str]] = None,
-                  exclude_collections: Optional[List[str]] = None) -> Dict:
+def import_schema(
+    schema_path: str,
+    include_collections: Optional[List[str]] = None,
+    exclude_collections: Optional[List[str]] = None,
+    should_cancel: Optional[Callable[[], bool]] = None,
+) -> Dict:
     """
     Import schema (collections, fields, relations) from export.
     
@@ -461,11 +465,22 @@ def import_schema(schema_path: str, include_collections: Optional[List[str]] = N
         schema_path: Path to schema directory or schema_complete.json
         include_collections: Only import schema for these collections
         exclude_collections: Skip schema for these collections
+        should_cancel: When True between units of work, raise DirectusImportCancelled
     
     Returns:
         Summary dict
     """
     print("\n📋 Importing schema...")
+
+    def cancelled() -> bool:
+        return bool(should_cancel and should_cancel())
+
+    def check_cancel(summary: Dict) -> None:
+        if cancelled():
+            raise DirectusImportCancelled(
+                "Schema import stopped by user",
+                full_summary={"schema": summary},
+            )
     
     # Load schema
     schema_file = os.path.join(schema_path, "schema_complete.json")
@@ -545,6 +560,7 @@ def import_schema(schema_path: str, include_collections: Optional[List[str]] = N
     if folder_collections:
         print("\n  📂 Creating folder collections...")
         for collection in folder_collections:
+            check_cancel(summary)
             collection_name = collection.get("collection")
             
             if collection_name in SYSTEM_COLLECTIONS:
@@ -562,6 +578,7 @@ def import_schema(schema_path: str, include_collections: Optional[List[str]] = N
     # 1b. Create regular collections (with minimal schema - no FK constraints)
     print("\n  📁 Creating collections...")
     for collection in regular_collections:
+        check_cancel(summary)
         collection_name = collection.get("collection")
         
         if collection_name in SYSTEM_COLLECTIONS:
@@ -599,6 +616,7 @@ def import_schema(schema_path: str, include_collections: Optional[List[str]] = N
         non_relational = [f for f in collection_fields if not is_relational_field(f)]
         
         for field in non_relational:
+            check_cancel(summary)
             field_name = field.get("field")
             
             if field_name in existing_fields:
@@ -625,6 +643,7 @@ def import_schema(schema_path: str, include_collections: Optional[List[str]] = N
         relational = [f for f in collection_fields if is_relational_field(f)]
         
         for field in relational:
+            check_cancel(summary)
             field_name = field.get("field")
             
             if field_name in existing_fields:
@@ -641,6 +660,7 @@ def import_schema(schema_path: str, include_collections: Optional[List[str]] = N
     # Allow relations to directus_files (needed for file/image fields)
     allowed_system_targets = {"directus_files"}
     for relation in relations:
+        check_cancel(summary)
         if relation.get("collection") in SYSTEM_COLLECTIONS:
             continue
         related = relation.get("related_collection")
@@ -657,6 +677,7 @@ def import_schema(schema_path: str, include_collections: Optional[List[str]] = N
     # Refresh existing collections (includes both pre-existing and newly created)
     all_target_collections = set(get_existing_collections())
     for collection in collections:
+        check_cancel(summary)
         collection_name = collection.get("collection")
         group = (collection.get("meta") or {}).get("group")
         
@@ -1546,10 +1567,14 @@ def upload_file(file_info: Dict, files_path: str, folder_mapping: Dict[str, str]
         return "failed", used_placeholder
 
 
-def import_files(export_path: str, max_workers: int = 3,
-                 placeholder_files: bool = False,
-                 skip_existing: bool = True,
-                 progress_callback: Optional[Callable[[Dict], None]] = None) -> Dict:
+def import_files(
+    export_path: str,
+    max_workers: int = 3,
+    placeholder_files: bool = False,
+    skip_existing: bool = True,
+    progress_callback: Optional[Callable[[Dict], None]] = None,
+    should_cancel: Optional[Callable[[], bool]] = None,
+) -> Dict:
     """
     Import folders and files from export.
 
@@ -1559,6 +1584,7 @@ def import_files(export_path: str, max_workers: int = 3,
         placeholder_files: If True, create placeholder assets for missing source files
         skip_existing: Skip files that already exist in Directus (resume-safe)
         progress_callback: Optional callable invoked after each file with a progress dict
+        should_cancel: When True between files, raise DirectusImportCancelled
 
     Returns:
         Summary dict
@@ -1577,6 +1603,9 @@ def import_files(export_path: str, max_workers: int = 3,
             progress_callback(progress)
         except Exception:  # noqa: BLE001 — never fail import on progress I/O
             logging.exception("progress_callback failed")
+
+    def cancelled() -> bool:
+        return bool(should_cancel and should_cancel())
 
     # 1. Import folders first
     folders_file = os.path.join(export_path, "folders.json")
@@ -1604,6 +1633,11 @@ def import_files(export_path: str, max_workers: int = 3,
             visit_folder(f.get("id"))
 
         for folder in sorted_folders:
+            if cancelled():
+                raise DirectusImportCancelled(
+                    "File import stopped by user",
+                    full_summary={"files": summary},
+                )
             success, new_id = create_folder(folder, folder_mapping)
             if success:
                 folder_mapping[folder.get("id")] = new_id
@@ -1656,6 +1690,15 @@ def import_files(export_path: str, max_workers: int = 3,
         })
 
         for file_info in files_metadata:
+            if cancelled():
+                summary["files"]["uploaded"] = uploaded
+                summary["files"]["failed"] = failed
+                summary["files"]["placeholder"] = placeholders
+                summary["files"]["skipped"] = skipped
+                raise DirectusImportCancelled(
+                    "File import stopped by user",
+                    full_summary={"files": summary},
+                )
             name = file_info.get("filename_download") or file_info.get("id") or "?"
             file_id = file_info.get("id")
             result, used_placeholder = upload_file(
@@ -1905,7 +1948,7 @@ def run_import(
         upsert: Update existing items instead of skipping
         skip_data_files: Data JSON filenames to skip (resume)
         progress_callback: Progress updates for data/files phases
-        should_cancel: Cooperative cancel check (data phase)
+        should_cancel: Cooperative cancel check (schema/data/files phases)
         url: Optional Directus base URL (sets thread config with token)
         token: Optional static token
 
@@ -1961,10 +2004,21 @@ def run_import(
     if import_schema_flag:
         schema_path = os.path.join(export_path, "schema")
         if os.path.exists(schema_path):
-            schema_summary = import_schema(
-                schema_path, include_collections, exclude_collections
-            )
-            summary["schema"] = schema_summary
+            try:
+                schema_summary = import_schema(
+                    schema_path,
+                    include_collections,
+                    exclude_collections,
+                    should_cancel=should_cancel,
+                )
+                summary["schema"] = schema_summary
+            except DirectusImportCancelled as exc:
+                if exc.full_summary and "schema" in exc.full_summary:
+                    summary["schema"] = exc.full_summary["schema"]
+                raise DirectusImportCancelled(
+                    str(exc) or "Import stopped by user",
+                    full_summary=summary,
+                ) from exc
         else:
             print("⚠️ Schema directory not found, skipping...")
 
@@ -2002,13 +2056,22 @@ def run_import(
                 "Import stopped by user",
                 full_summary=summary,
             )
-        files_summary = import_files(
-            export_path,
-            placeholder_files=placeholder_files,
-            skip_existing=skip_existing_files,
-            progress_callback=progress_callback,
-        )
-        summary["files"] = files_summary
+        try:
+            files_summary = import_files(
+                export_path,
+                placeholder_files=placeholder_files,
+                skip_existing=skip_existing_files,
+                progress_callback=progress_callback,
+                should_cancel=should_cancel,
+            )
+            summary["files"] = files_summary
+        except DirectusImportCancelled as exc:
+            if exc.full_summary and "files" in exc.full_summary:
+                summary["files"] = exc.full_summary["files"]
+            raise DirectusImportCancelled(
+                str(exc) or "Import stopped by user",
+                full_summary=summary,
+            ) from exc
 
     if import_flows_flag:
         flows_path = os.path.join(export_path, "flows")

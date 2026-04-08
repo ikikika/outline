@@ -9,6 +9,7 @@ import {
   getProject,
   prepareTargetSchema,
   startMigrate,
+  stopMigrate,
   type MigrationRun,
   type PrepareSchemaResult,
   type PreparedStatus,
@@ -21,7 +22,7 @@ import {
   type ExplorerSelection,
 } from '../components/WinExplorerTree'
 
-type ApplyState = 'ready' | 'running' | 'done' | 'failed'
+type ApplyState = 'ready' | 'running' | 'stopping' | 'stopped' | 'done' | 'failed'
 type LogLevel = 'ok' | 'info' | 'warn' | 'err'
 
 const STEP_LABELS: Record<number, string> = {
@@ -130,6 +131,10 @@ function badgeForStep(
     if (applyState === 'done') return { className: 'badge badge-ok', label: 'Applied' }
     if (applyState === 'failed')
       return { className: 'badge badge-err', label: 'Apply failed' }
+    if (applyState === 'stopped')
+      return { className: 'badge badge-draft', label: 'Stopped' }
+    if (applyState === 'stopping')
+      return { className: 'badge badge-run', label: 'Stopping…' }
     if (applyState === 'running')
       return { className: 'badge badge-run', label: 'Applying…' }
     if (hasPreparedSchema || written)
@@ -264,7 +269,7 @@ export function DataModelsPage() {
         )
       : applyState === 'done'
         ? 100
-        : applyState === 'running'
+        : applyState === 'running' || applyState === 'stopping'
           ? 8
           : 0
 
@@ -276,6 +281,9 @@ export function DataModelsPage() {
     const last = matches[matches.length - 1]
     return last?.[1] ?? null
   }, [migrateRun?.log])
+
+  const canResume =
+    applyState === 'stopped' || applyState === 'failed'
 
   const canSkipToApply = Boolean(
     written || preparedStatus?.has_schema || migrateRun,
@@ -414,6 +422,16 @@ export function DataModelsPage() {
       setApplyError(run.error_detail || 'Schema apply failed')
       return
     }
+    if (run.status === 'stopped') {
+      stopPolling()
+      setApplyState('stopped')
+      setApplyError(null)
+      return
+    }
+    if (run.status === 'stopping') {
+      setApplyState('stopping')
+      return
+    }
     setApplyState('running')
   }
 
@@ -479,12 +497,19 @@ export function DataModelsPage() {
     }
   }
 
-  async function handleApplyStart() {
-    if (!activeTarget || applyState === 'running') return
+  async function handleApplyStart(mode: 'start' | 'resume' | 'restart' = 'start') {
+    if (!activeTarget || applyState === 'running' || applyState === 'stopping')
+      return
     if (!written && !migrateRun) return
     stopPolling()
     setActivityLog([])
-    appendActivity('info', `schema  migrate starting → ${activeTarget.name}`)
+    const label =
+      mode === 'resume'
+        ? 'resuming'
+        : mode === 'restart'
+          ? 'restarting'
+          : 'starting'
+    appendActivity('info', `schema  migrate ${label} → ${activeTarget.name}`)
     setApplyError(null)
     setMigrateRun(null)
     setApplyState('running')
@@ -494,11 +519,16 @@ export function DataModelsPage() {
         data: false,
         files: false,
         flows: false,
+        mode,
       })
       setWritten(true)
-      appendActivity('ok', `schema  migrate run #${run.id} started`)
+      appendActivity('ok', `schema  migrate run #${run.id} ${mode}`)
       applyRunStatus(run)
-      if (run.status === 'pending' || run.status === 'running') {
+      if (
+        run.status === 'pending' ||
+        run.status === 'running' ||
+        run.status === 'stopping'
+      ) {
         startPolling(run.id, activeTarget.id)
       }
     } catch (err) {
@@ -508,6 +538,24 @@ export function DataModelsPage() {
         err instanceof ApiError ? err.message : 'Could not start schema apply'
       setApplyError(message)
       appendActivity('err', `schema  ${message}`)
+    }
+  }
+
+  async function handleApplyStop() {
+    if (!activeTarget || !migrateRun) return
+    if (applyState !== 'running' && applyState !== 'stopping') return
+    try {
+      appendActivity('warn', `schema  stop requested for run #${migrateRun.id}`)
+      const run = await stopMigrate(projectId, activeTarget.id, migrateRun.id)
+      applyRunStatus(run)
+      if (run.status === 'stopping' || run.status === 'running') {
+        startPolling(run.id, activeTarget.id)
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not stop apply'
+      appendActivity('err', `schema  ${message}`)
+      setApplyError(message)
     }
   }
 
@@ -555,7 +603,7 @@ export function DataModelsPage() {
         }
         const phases = latest.phases.split(',').map((p) => p.trim())
         const schemaOnly = phases.length === 1 && phases[0] === 'schema'
-        const activeStatuses = ['pending', 'running']
+        const activeStatuses = ['pending', 'running', 'stopping']
         if (!schemaOnly && !activeStatuses.includes(latest.status)) {
           if (hasPreparedSchema) setStep(5)
           return
@@ -572,13 +620,16 @@ export function DataModelsPage() {
           applyRunStatus(latest)
           startPolling(latest.id, activeTarget.id)
         } else if (
-          (latest.status === 'failed' || latest.status === 'completed') &&
+          (latest.status === 'failed' ||
+            latest.status === 'completed' ||
+            latest.status === 'stopped') &&
           schemaOnly
         ) {
           setWritten(true)
           setStep(5)
           setMigrateRun(latest)
           if (latest.status === 'completed') setApplyState('done')
+          else if (latest.status === 'stopped') setApplyState('stopped')
           else if (latest.status === 'failed') setApplyState('failed')
         } else if (hasPreparedSchema) {
           setStep(5)
@@ -626,7 +677,11 @@ export function DataModelsPage() {
               <select
                 id="models-target"
                 value={activeTarget?.id ?? ''}
-                disabled={targetSwitching || applyState === 'running'}
+                disabled={
+                  targetSwitching ||
+                  applyState === 'running' ||
+                  applyState === 'stopping'
+                }
                 onChange={(e) => void handleTargetChange(Number(e.target.value))}
               >
                 {targets.map((t) => (
@@ -1369,8 +1424,8 @@ export function DataModelsPage() {
                           <h2>Apply schema in Directus</h2>
                           <p className="meta">
                             Live import of collections into the active target.
-                            Progress and terminal output stream from the migrate
-                            job.
+                            Stop finishes the current collection/field, then you
+                            can resume (skips existing) or restart.
                           </p>
                         </div>
                       </div>
@@ -1384,13 +1439,16 @@ export function DataModelsPage() {
                                 {createdCollections} / {totals.collections || '—'}
                               </strong>
                               <span className="d">
-                                {applyState === 'running'
+                                {applyState === 'running' ||
+                                applyState === 'stopping'
                                   ? 'creating'
                                   : applyState === 'done'
                                     ? 'created'
-                                    : applyState === 'failed'
-                                      ? 'partial'
-                                      : 'waiting'}
+                                    : applyState === 'stopped'
+                                      ? 'paused'
+                                      : applyState === 'failed'
+                                        ? 'partial'
+                                        : 'waiting'}
                               </span>
                             </div>
                             <div>
@@ -1423,15 +1481,23 @@ export function DataModelsPage() {
                                   ? 'Ready to apply'
                                   : applyState === 'running'
                                     ? 'Applying collections…'
-                                    : applyState === 'done'
-                                      ? 'Schema applied'
-                                      : 'Apply failed'}
+                                    : applyState === 'stopping'
+                                      ? 'Stopping… (click Force stop if stuck)'
+                                      : applyState === 'stopped'
+                                        ? 'Stopped — resume or restart'
+                                        : applyState === 'done'
+                                          ? 'Schema applied'
+                                          : 'Apply failed'}
                               </b>
                               <span className="mono">{applyPct}%</span>
                             </div>
                             <div
                               className={`progress ${
-                                applyState === 'failed' ? 'err' : 'ok'
+                                applyState === 'failed'
+                                  ? 'err'
+                                  : applyState === 'stopped'
+                                    ? ''
+                                    : 'ok'
                               }`}
                               style={{ height: 10 }}
                             >
@@ -1445,6 +1511,19 @@ export function DataModelsPage() {
                               </span>
                             </div>
                           </div>
+
+                          {applyState === 'stopped' ? (
+                            <div
+                              className="notice notice-warn"
+                              style={{ marginBottom: 16 }}
+                            >
+                              Stopped
+                              {currentFromLog ? ` during ${currentFromLog}` : ''}
+                              . Resume continues and skips collections already
+                              on the target; restart re-runs the full schema
+                              apply.
+                            </div>
+                          ) : null}
 
                           {(applyState === 'failed' || logErrors.length > 0) &&
                           applyState !== 'ready' ? (
@@ -1501,7 +1580,8 @@ export function DataModelsPage() {
                                 {line.text}
                               </div>
                             ))}
-                            {applyState === 'running' &&
+                            {(applyState === 'running' ||
+                              applyState === 'stopping') &&
                             terminalLines.length === 0 ? (
                               <div className="info">
                                 schema  waiting for terminal output…
@@ -1514,33 +1594,72 @@ export function DataModelsPage() {
                               className="btn btn-ghost"
                               type="button"
                               onClick={() => setStep(4)}
-                              disabled={applyState === 'running'}
+                              disabled={
+                                applyState === 'running' ||
+                                applyState === 'stopping'
+                              }
                             >
                               Back
                             </button>
-                            <button
-                              className={`btn btn-primary${
-                                applyState === 'running' || applyState === 'done'
-                                  ? ' btn-disabled'
-                                  : ''
-                              }`}
-                              type="button"
-                              disabled={
-                                applyState === 'running' ||
-                                applyState === 'done' ||
-                                (!written && !migrateRun) ||
-                                !activeTarget
-                              }
-                              onClick={() => void handleApplyStart()}
-                            >
-                              {applyState === 'running'
-                                ? 'Applying…'
-                                : applyState === 'done'
-                                  ? 'Applied'
-                                  : applyState === 'failed'
-                                    ? 'Retry apply'
-                                    : 'Apply schema'}
-                            </button>
+                            {applyState === 'running' ||
+                            applyState === 'stopping' ? (
+                              <button
+                                className="btn btn-ghost"
+                                type="button"
+                                onClick={() => void handleApplyStop()}
+                              >
+                                {applyState === 'stopping'
+                                  ? 'Force stop'
+                                  : 'Stop'}
+                              </button>
+                            ) : null}
+                            {canResume ? (
+                              <button
+                                className="btn btn-primary"
+                                type="button"
+                                disabled={!activeTarget}
+                                onClick={() => void handleApplyStart('resume')}
+                              >
+                                Resume
+                              </button>
+                            ) : null}
+                            {applyState === 'stopped' ||
+                            applyState === 'failed' ||
+                            applyState === 'done' ? (
+                              <button
+                                className={
+                                  canResume ? 'btn btn-ghost' : 'btn btn-primary'
+                                }
+                                type="button"
+                                disabled={
+                                  !activeTarget || (!written && !migrateRun)
+                                }
+                                onClick={() =>
+                                  void handleApplyStart(
+                                    applyState === 'done' ||
+                                      applyState === 'stopped' ||
+                                      applyState === 'failed'
+                                      ? 'restart'
+                                      : 'start',
+                                  )
+                                }
+                              >
+                                {applyState === 'done'
+                                  ? 'Restart apply'
+                                  : 'Restart'}
+                              </button>
+                            ) : applyState === 'ready' ? (
+                              <button
+                                className="btn btn-primary"
+                                type="button"
+                                disabled={
+                                  (!written && !migrateRun) || !activeTarget
+                                }
+                                onClick={() => void handleApplyStart('start')}
+                              >
+                                Apply schema
+                              </button>
+                            ) : null}
                             {applyState === 'done' ? (
                               <Link
                                 className="btn btn-ghost"

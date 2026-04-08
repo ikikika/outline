@@ -911,7 +911,7 @@ def process_migrate(db: Session, run_id: int) -> None:
                 progress_callback=on_progress
                 if (flags["files"] or flags["data"])
                 else None,
-                should_cancel=should_cancel if flags["data"] else None,
+                should_cancel=should_cancel,
                 url=url,
                 token=plaintext,
             )

@@ -7,6 +7,7 @@ import {
   getProject,
   prepareTargetAssets,
   startMigrate,
+  stopMigrate,
   type MigrationProgress,
   type MigrationRun,
   type PrepareAssetsResult,
@@ -24,7 +25,7 @@ import {
 } from '../components/WinExplorerTree'
 
 type MetaMode = 'directus' | 'map' | 'generate'
-type UploadState = 'ready' | 'running' | 'done' | 'failed'
+type UploadState = 'ready' | 'running' | 'stopping' | 'stopped' | 'done' | 'failed'
 
 const STEP_LABELS: Record<number, string> = {
   1: 'Step 1 · Locate',
@@ -259,6 +260,8 @@ function badgeForStep(
   if (step === 5) {
     if (uploadState === 'done') return { className: 'badge badge-ok', label: 'Upload complete' }
     if (uploadState === 'failed') return { className: 'badge badge-err', label: 'Upload failed' }
+    if (uploadState === 'stopped') return { className: 'badge badge-draft', label: 'Stopped' }
+    if (uploadState === 'stopping') return { className: 'badge badge-run', label: 'Stopping…' }
     if (uploadState === 'running') return { className: 'badge badge-run', label: 'Uploading…' }
     return { className: 'badge badge-run', label: 'Ready to upload' }
   }
@@ -307,7 +310,7 @@ export function PrepareAssetsPage() {
   }, [])
 
   useEffect(() => {
-    if (uploadState !== 'running') return
+    if (uploadState !== 'running' && uploadState !== 'stopping') return
     const id = window.setInterval(() => setElapsedTick((n) => n + 1), 1000)
     return () => window.clearInterval(id)
   }, [uploadState])
@@ -562,6 +565,16 @@ export function PrepareAssetsPage() {
       }
       return
     }
+    if (run.status === 'stopped') {
+      stopPolling()
+      setUploadState('stopped')
+      setUploadError(null)
+      return
+    }
+    if (run.status === 'stopping') {
+      setUploadState('stopping')
+      return
+    }
     setUploadState('running')
   }
 
@@ -585,13 +598,26 @@ export function PrepareAssetsPage() {
     }, 1000)
   }
 
-  async function handleUploadStart() {
-    if (!activeTarget || uploadState === 'running') return
+  async function handleUploadStart(
+    mode: 'start' | 'resume' | 'restart' = 'start',
+  ) {
+    if (
+      !activeTarget ||
+      uploadState === 'running' ||
+      uploadState === 'stopping'
+    )
+      return
     // Allow retry/resume even if this session didn't just write (prepared dir on disk).
     if (!written && !migrateRun) return
     stopPolling()
     resetActivityLog()
-    appendActivity('info', `assets  migrate starting → ${activeTarget.name}`)
+    const label =
+      mode === 'resume'
+        ? 'resuming'
+        : mode === 'restart'
+          ? 'restarting'
+          : 'starting'
+    appendActivity('info', `assets  migrate ${label} → ${activeTarget.name}`)
     setUploadError(null)
     setMigrateRun(null)
     setUploadState('running')
@@ -601,11 +627,16 @@ export function PrepareAssetsPage() {
         data: false,
         files: true,
         flows: false,
+        mode,
       })
       setWritten(true)
-      appendActivity('ok', `assets  migrate run #${run.id} started`)
+      appendActivity('ok', `assets  migrate run #${run.id} ${mode}`)
       applyRunStatus(run)
-      if (run.status === 'pending' || run.status === 'running') {
+      if (
+        run.status === 'pending' ||
+        run.status === 'running' ||
+        run.status === 'stopping'
+      ) {
         startPolling(run.id, activeTarget.id)
       }
     } catch (err) {
@@ -615,6 +646,24 @@ export function PrepareAssetsPage() {
         err instanceof ApiError ? err.message : 'Could not start upload'
       setUploadError(message)
       appendActivity('err', `assets  ${message}`)
+    }
+  }
+
+  async function handleUploadStop() {
+    if (!activeTarget || !migrateRun) return
+    if (uploadState !== 'running' && uploadState !== 'stopping') return
+    try {
+      appendActivity('warn', `assets  stop requested for run #${migrateRun.id}`)
+      const run = await stopMigrate(projectId, activeTarget.id, migrateRun.id)
+      applyRunStatus(run)
+      if (run.status === 'stopping' || run.status === 'running') {
+        startPolling(run.id, activeTarget.id)
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : 'Could not stop upload'
+      appendActivity('err', `assets  ${message}`)
+      setUploadError(message)
     }
   }
 
@@ -630,7 +679,8 @@ export function PrepareAssetsPage() {
           latest.phases === 'files' ||
           latest.phases.split(',').map((p) => p.trim()).includes('files')
         if (!filesPhase) return
-        if (latest.status === 'pending' || latest.status === 'running') {
+        const activeStatuses = ['pending', 'running', 'stopping']
+        if (activeStatuses.includes(latest.status)) {
           setWritten(true)
           setStep(5)
           resetActivityLog()
@@ -638,12 +688,23 @@ export function PrepareAssetsPage() {
           applyRunStatus(latest)
           startPolling(latest.id, activeTarget.id)
         } else if (
-          (latest.status === 'failed' || latest.status === 'completed') &&
+          (latest.status === 'failed' ||
+            latest.status === 'completed' ||
+            latest.status === 'stopped') &&
           uploadState === 'ready' &&
           !migrateRun
         ) {
           setMigrateRun(latest)
-          if (latest.status === 'completed') setWritten(true)
+          if (latest.status === 'completed') {
+            setWritten(true)
+            setUploadState('done')
+          } else if (latest.status === 'stopped') {
+            setWritten(true)
+            setUploadState('stopped')
+            setStep(5)
+          } else if (latest.status === 'failed') {
+            setUploadState('failed')
+          }
         }
       } catch {
         // Ignore — page still works without resume.
@@ -1286,7 +1347,9 @@ export function PrepareAssetsPage() {
                           <p className="meta">
                             Posts <span className="mono">files: true</span> only —
                             schema, data, and flows stay off. Creates folders first,
-                            then uploads files in batches.
+                            then uploads files in batches. Stop finishes the current
+                            file; resume skips IDs already in Directus; restart
+                            re-runs the upload.
                           </p>
                         </div>
                       </div>
@@ -1313,7 +1376,7 @@ export function PrepareAssetsPage() {
                               className="btn btn-primary btn-lg"
                               type="button"
                               disabled={(!written && !migrateRun) || !activeTarget}
-                              onClick={() => void handleUploadStart()}
+                              onClick={() => void handleUploadStart('start')}
                             >
                               Upload {preparedCount || 0} assets
                             </button>
@@ -1324,18 +1387,27 @@ export function PrepareAssetsPage() {
   "files": true,
   "flows": false
 }`}</pre>
-                          {migrateRun?.status === 'failed' && importStats ? (
+                          {migrateRun?.status === 'failed' ||
+                          migrateRun?.status === 'stopped' ? (
                             <div className="notice notice-warn" style={{ marginTop: 16 }}>
-                              Last run #{migrateRun.id} stopped at{' '}
-                              {importStats.processed}/{importStats.total || '?'} (
-                              {importStats.uploaded} uploaded
-                              {importStats.skipped
-                                ? `, ${importStats.skipped} skipped`
+                              Last run #{migrateRun.id}{' '}
+                              {migrateRun.status === 'stopped' ? 'stopped' : 'failed'}{' '}
+                              at{' '}
+                              {importStats
+                                ? `${importStats.processed}/${importStats.total || '?'}`
+                                : '?'}
+                              {importStats
+                                ? ` (${importStats.uploaded} uploaded${
+                                    importStats.skipped
+                                      ? `, ${importStats.skipped} skipped`
+                                      : ''
+                                  }${
+                                    importStats.failed
+                                      ? `, ${importStats.failed} failed`
+                                      : ''
+                                  })`
                                 : ''}
-                              {importStats.failed
-                                ? `, ${importStats.failed} failed`
-                                : ''}
-                              ). Retry continues and skips files already in Directus.
+                              . Resume continues and skips files already in Directus.
                             </div>
                           ) : null}
                           {!written && !migrateRun ? (
@@ -1355,11 +1427,16 @@ export function PrepareAssetsPage() {
                         </div>
                       ) : null}
 
-                      {uploadState === 'running' ? (
+                      {uploadState === 'running' ||
+                      uploadState === 'stopping' ? (
                         <div className="flow-upload">
                           <div className="flow-progress-block">
                             <div className="flow-progress-top">
-                              <b>Uploading to {activeTarget?.name ?? 'Directus'}…</b>
+                              <b>
+                                {uploadState === 'stopping'
+                                  ? 'Stopping… (click Force stop if stuck)'
+                                  : `Uploading to ${activeTarget?.name ?? 'Directus'}…`}
+                              </b>
                               <span className="mono">
                                 {importStats
                                   ? `${importStats.processed} / ${importStats.total || '?'}`
@@ -1419,16 +1496,81 @@ export function PrepareAssetsPage() {
                             <button
                               className="btn btn-ghost"
                               type="button"
+                              disabled
+                            >
+                              Back
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              type="button"
+                              onClick={() => void handleUploadStop()}
+                            >
+                              {uploadState === 'stopping'
+                                ? 'Force stop'
+                                : 'Stop'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {uploadState === 'stopped' ? (
+                        <div className="flow-upload">
+                          <div className="notice notice-warn" style={{ margin: '0 0 16px' }}>
+                            Stopped
+                            {importStats?.currentFile
+                              ? ` during ${importStats.currentFile}`
+                              : ''}
+                            {importStats
+                              ? ` after ${importStats.processed}/${importStats.total || '?'}`
+                              : ''}
+                            . Resume skips files already in Directus; restart
+                            re-runs the upload (still skips existing IDs).
+                          </div>
+                          <div className="flow-stats">
+                            <div>
+                              <span className="k">Uploaded</span>
+                              <strong>{importStats?.uploaded ?? 0}</strong>
+                              <span className="d">before stop</span>
+                            </div>
+                            <div>
+                              <span className="k">Skipped</span>
+                              <strong>{importStats?.skipped ?? 0}</strong>
+                              <span className="d">already present</span>
+                            </div>
+                            <div>
+                              <span className="k">Failed</span>
+                              <strong>{importStats?.failed ?? 0}</strong>
+                              <span className="d">files</span>
+                            </div>
+                            <div>
+                              <span className="k">Run</span>
+                              <strong>#{migrateRun?.id ?? '—'}</strong>
+                              <span className="d">id</span>
+                            </div>
+                          </div>
+                          <div className="flow-actions">
+                            <button
+                              className="btn btn-ghost"
+                              type="button"
                               onClick={() => setStep(4)}
                             >
                               Back
                             </button>
                             <button
-                              className="btn btn-ghost btn-disabled"
+                              className="btn btn-primary"
                               type="button"
-                              disabled
+                              disabled={!activeTarget}
+                              onClick={() => void handleUploadStart('resume')}
                             >
-                              Cancel (coming soon)
+                              Resume
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              type="button"
+                              disabled={!activeTarget}
+                              onClick={() => void handleUploadStart('restart')}
+                            >
+                              Restart
                             </button>
                           </div>
                         </div>
@@ -1497,6 +1639,14 @@ export function PrepareAssetsPage() {
                             >
                               Upload again
                             </button>
+                            <button
+                              className="btn btn-primary"
+                              type="button"
+                              disabled={!activeTarget}
+                              onClick={() => void handleUploadStart('restart')}
+                            >
+                              Restart upload
+                            </button>
                           </div>
                         </div>
                       ) : null}
@@ -1544,9 +1694,18 @@ export function PrepareAssetsPage() {
                             <button
                               className="btn btn-primary"
                               type="button"
-                              onClick={() => void handleUploadStart()}
+                              disabled={!activeTarget}
+                              onClick={() => void handleUploadStart('resume')}
                             >
-                              Retry upload
+                              Resume
+                            </button>
+                            <button
+                              className="btn btn-ghost"
+                              type="button"
+                              disabled={!activeTarget}
+                              onClick={() => void handleUploadStart('restart')}
+                            >
+                              Restart
                             </button>
                           </div>
                         </div>
@@ -1579,9 +1738,11 @@ export function PrepareAssetsPage() {
                               {line.text}
                             </div>
                           ))}
-                          {uploadState === 'running' &&
-                          terminalLines.length === 0 ? (
-                            <div className="info">assets  waiting for terminal output…</div>
+                          {uploadState === 'running' ||
+                          uploadState === 'stopping' ? (
+                            terminalLines.length === 0 ? (
+                              <div className="info">assets  waiting for terminal output…</div>
+                            ) : null
                           ) : null}
                         </div>
                       </div>
