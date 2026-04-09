@@ -115,16 +115,6 @@ export function DashboardPage() {
               <div className="d">{projects.length ? 'In workspace' : 'Placeholder'}</div>
             </div>
             <div className="card stat">
-              <div className="k">Records imported</div>
-              <div className="v">—</div>
-              <div className="d">No runs yet</div>
-            </div>
-            <div className="card stat">
-              <div className="k">Open issues</div>
-              <div className="v">0</div>
-              <div className="d">All clear</div>
-            </div>
-            <div className="card stat">
               <div className="k">Connected Directus</div>
               <div className="v">{loading ? '…' : connected}</div>
               <div className="d">{connected ? 'Targets saved' : 'Not connected'}</div>
