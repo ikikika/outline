@@ -26,6 +26,7 @@ from app.schemas import (
     DirectusTargetCreate,
     DirectusTargetOut,
     DirectusTargetUpdate,
+    MetadataKeysOut,
     MigrationRunOut,
     MigrationStart,
     PrepareAssetsOut,
@@ -69,6 +70,7 @@ from app.services.prepare import (
     build_prepared,
     build_prepared_data,
     build_prepared_schema,
+    peek_metadata_keys,
 )
 from app.services.uploads import save_upload
 
@@ -342,6 +344,47 @@ def list_source_files(
 ) -> list[ProjectSourceFileOut]:
     project = _get_owned_project(db, user, project_id, with_source_files=True)
     return [_source_file_out(s) for s in project.source_files]
+
+
+@router.get(
+    "/{project_id}/source-files/{file_id}/metadata-keys",
+    response_model=MetadataKeysOut,
+)
+def get_metadata_keys(
+    project_id: int,
+    file_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> MetadataKeysOut:
+    """Flatten keys from a metadata JSON for the Prepare assets map UI."""
+    project = _get_owned_project(db, user, project_id)
+    row = (
+        db.query(ProjectSourceFile)
+        .filter(
+            ProjectSourceFile.id == file_id,
+            ProjectSourceFile.project_id == project.id,
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Source file not found",
+        )
+    path = extract_dir_for_upload(project.id, row.upload_id) / row.relative_path
+    if not path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Source file missing on disk",
+        )
+    try:
+        payload = peek_metadata_keys(path)
+    except PrepareError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    return MetadataKeysOut(**payload)
 
 
 @router.post(
@@ -661,6 +704,7 @@ def prepare_target_assets(
             mode=payload.mode,  # type: ignore[arg-type]
             placeholders=payload.placeholders,
             metadata_abs_path=meta_path,
+            field_map=payload.field_map,
         )
     except PrepareError as exc:
         raise HTTPException(

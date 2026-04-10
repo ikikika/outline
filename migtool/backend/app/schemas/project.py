@@ -122,11 +122,39 @@ class PrepareAssetsRequest(BaseModel):
     mode: str = Field(default="generate", pattern="^(directus|map|generate)$")
     placeholders: bool = True
     metadata_file_id: int | None = None
+    # Directus field → source key (or __skip__ / __generate_uuid__ / …)
+    field_map: dict[str, str] | None = None
 
     @field_validator("folder_path")
     @classmethod
     def normalize_folder_path(cls, value: str) -> str:
         return value.replace("\\", "/").strip().strip("/")
+
+
+class MetadataKeyRow(BaseModel):
+    key: str
+    type: str
+
+
+class DirectusFileFieldSpecial(BaseModel):
+    value: str
+    label: str
+
+
+class DirectusFileFieldRow(BaseModel):
+    key: str
+    type: str
+    required: str = "0"
+    specials: list[DirectusFileFieldSpecial] = []
+
+
+class MetadataKeysOut(BaseModel):
+    """Flattened keys from a selected metadata JSON (for map UI)."""
+
+    records: int
+    keys: list[MetadataKeyRow]
+    directus_fields: list[DirectusFileFieldRow]
+    suggested_map: dict[str, str]
 
 
 class PrepareAssetsOut(BaseModel):

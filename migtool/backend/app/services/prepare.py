@@ -43,6 +43,23 @@ _MEDIA_EXTS = {
 }
 _SKIP_NAMES = {".ds_store", "thumbs.db", "files_metadata.json", "folders.json"}
 
+# Special field-map sentinels (frontend → prepare).
+_MAP_SKIP = "__skip__"
+_MAP_GENERATE_UUID = "__generate_uuid__"
+_MAP_FROM_ID_EXT = "__from_id_ext__"
+_MAP_DERIVE_FILENAME = "__derive_filename__"
+_MAP_FROM_DISK = "__from_disk__"
+_MAP_FROM_EXTENSION = "__from_extension__"
+_MAP_FROM_FILENAME = "__from_filename__"
+_MAP_DEFAULT_LOCAL = "__default_local__"
+_MAP_EMPTY_OBJECT = "__empty_object__"
+
+_DIRECTUS_EXAMPLE_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "directus_files_metadata.example.json"
+)
+
+_directus_example_cache: dict[str, Any] | None = None
+
 # Valid 1x1 PNG so Directus/sharp can extract image metadata.
 _PNG_PLACEHOLDER = bytes.fromhex(
     "89504E470D0A1A0A"
@@ -56,6 +73,188 @@ _PDF_PLACEHOLDER = b"%PDF-1.1\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
 
 class PrepareError(ValueError):
     """User-facing prepare failure."""
+
+
+def _load_directus_example() -> dict[str, Any]:
+    """Load Directus files_metadata field shape from the bundled example JSON."""
+    global _directus_example_cache
+    if _directus_example_cache is not None:
+        return _directus_example_cache
+    try:
+        raw = json.loads(_DIRECTUS_EXAMPLE_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PrepareError(
+            f"Could not read Directus field example JSON: {exc}"
+        ) from exc
+    if not isinstance(raw, dict) or not isinstance(raw.get("sample"), dict):
+        raise PrepareError(
+            "directus_files_metadata.example.json must have a 'sample' object"
+        )
+    _directus_example_cache = raw
+    return raw
+
+
+def _directus_sample() -> dict[str, Any]:
+    sample = _load_directus_example()["sample"]
+    assert isinstance(sample, dict)
+    return sample
+
+
+def _directus_required_fields() -> set[str]:
+    raw = _load_directus_example().get("required_fields") or []
+    return {str(k) for k in raw if isinstance(k, str)}
+
+
+def _directus_default_map() -> dict[str, str]:
+    raw = _load_directus_example().get("default_map") or {}
+    if not isinstance(raw, dict):
+        return {}
+    return {
+        str(k): str(v)
+        for k, v in raw.items()
+        if isinstance(k, str) and isinstance(v, str) and v
+    }
+
+
+def _directus_specials() -> dict[str, list[dict[str, str]]]:
+    raw = _load_directus_example().get("specials") or {}
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, list[dict[str, str]]] = {}
+    for key, items in raw.items():
+        if not isinstance(key, str) or not isinstance(items, list):
+            continue
+        rows: list[dict[str, str]] = []
+        for item in items:
+            if (
+                isinstance(item, dict)
+                and isinstance(item.get("value"), str)
+                and isinstance(item.get("label"), str)
+            ):
+                rows.append({"value": item["value"], "label": item["label"]})
+        out[key] = rows
+    return out
+
+
+def _directus_type_label(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int) and not isinstance(value, bool):
+        return "number · null"
+    if isinstance(value, float):
+        return "number · null"
+    if isinstance(value, str):
+        if len(value) == 36 and value.count("-") == 4:
+            return "string · uuid"
+        if "/" in value and not value.startswith("http"):
+            return "string · mime"
+        if "T" in value and "-" in value:
+            return "datetime"
+        return "string"
+    if isinstance(value, list):
+        return "array · null"
+    if isinstance(value, dict):
+        return "object" if value else "object · null"
+    return type(value).__name__
+
+
+def load_directus_file_fields() -> list[dict[str, Any]]:
+    """
+    Field rows for the map UI — derived purely from the example JSON sample.
+    """
+    sample = _directus_sample()
+    required = _directus_required_fields()
+    specials = _directus_specials()
+    skip_opt = [{"value": _MAP_SKIP, "label": "— skip / null —"}]
+    fields: list[dict[str, Any]] = []
+    for key, value in sample.items():
+        if not isinstance(key, str):
+            continue
+        field_specials = list(specials.get(key) or [])
+        if not any(s.get("value") == _MAP_SKIP for s in field_specials):
+            if key not in required:
+                field_specials = field_specials + skip_opt
+        if not field_specials:
+            field_specials = list(skip_opt)
+        fields.append(
+            {
+                "key": key,
+                "type": _directus_type_label(value),
+                "required": "1" if key in required else "0",
+                "specials": field_specials,
+            }
+        )
+    return fields
+
+
+def _suggest_source_key(
+    field_key: str,
+    key_set: set[str],
+    key_types: dict[str, str] | None = None,
+) -> str | None:
+    """Match a Directus field to a source key by name only (no hardcoded CMS paths)."""
+    types = key_types or {}
+
+    def is_container(key: str) -> bool:
+        tip = types.get(key, "")
+        return tip in ("object", "array") or tip.startswith("object") or tip.startswith("array")
+
+    def pick_shallowest(candidates: list[str]) -> str | None:
+        if not candidates:
+            return None
+        candidates.sort(key=lambda k: (k.count("."), len(k)))
+        return candidates[0]
+
+    # 1) Exact name, but prefer a scalar child over a parent object/array
+    #    (e.g. title → title.rendered, not title as object).
+    if field_key in key_set:
+        if not is_container(field_key):
+            return field_key
+        child_prefix = f"{field_key}."
+        children = [
+            k
+            for k in key_set
+            if k.startswith(child_prefix) and not is_container(k)
+        ]
+        chosen = pick_shallowest(children)
+        if chosen:
+            return chosen
+
+    # 2) Case-insensitive exact (scalar preferred).
+    lower = field_key.lower()
+    ci_hits = [k for k in key_set if k.lower() == lower]
+    for key in ci_hits:
+        if not is_container(key):
+            return key
+    for key in ci_hits:
+        child_prefix = f"{key}."
+        children = [
+            k
+            for k in key_set
+            if k.startswith(child_prefix) and not is_container(k)
+        ]
+        chosen = pick_shallowest(children)
+        if chosen:
+            return chosen
+
+    # 3) Leaf of a dotted path (e.g. media_details.width → width).
+    #    Prefer the shallowest scalar match.
+    leaf_hits = [
+        key
+        for key in key_set
+        if (leaf := key.rsplit(".", 1)[-1]) == field_key or leaf.lower() == lower
+    ]
+    scalar_leaves = [k for k in leaf_hits if not is_container(k)]
+    chosen = pick_shallowest(scalar_leaves) or pick_shallowest(leaf_hits)
+    if chosen:
+        return chosen
+
+    # 4) Fall back to exact container key if nothing better.
+    if field_key in key_set:
+        return field_key
+    return None
 
 
 def _safe_under(root: Path, relative: str) -> Path:
@@ -89,13 +288,191 @@ def _parse_uuid_prefix(name: str) -> str | None:
     return m.group(1).lower() if m else None
 
 
-def _nested_get(obj: dict[str, Any], dotted: str) -> Any:
+def _nested_get(obj: dict[str, Any] | Any, dotted: str) -> Any:
+    """Resolve a dotted path, including list indexes (e.g. acf.0.name)."""
     cur: Any = obj
     for part in dotted.split("."):
+        if part == "":
+            return None
+        if isinstance(cur, list):
+            try:
+                idx = int(part)
+            except ValueError:
+                # Bare key after a list → use first element, then key.
+                if not cur:
+                    return None
+                cur = cur[0]
+                if not isinstance(cur, dict) or part not in cur:
+                    return None
+                cur = cur[part]
+                continue
+            if idx < 0 or idx >= len(cur):
+                return None
+            cur = cur[idx]
+            continue
         if not isinstance(cur, dict) or part not in cur:
             return None
         cur = cur[part]
     return cur
+
+
+def _type_hint(value: Any) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int) and not isinstance(value, bool):
+        return "number"
+    if isinstance(value, float):
+        return "number"
+    if isinstance(value, str):
+        if value.startswith("http://") or value.startswith("https://"):
+            return "string · url"
+        if len(value) == 36 and value.count("-") == 4:
+            return "string · uuid-ish"
+        return "string"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "object"
+    return type(value).__name__
+
+
+def _flatten_keys(
+    obj: Any,
+    *,
+    prefix: str = "",
+    depth: int = 0,
+    max_depth: int = 8,
+) -> list[tuple[str, str]]:
+    """
+    Return (dotted_key, type_hint) pairs from a sample record.
+
+    Nested objects become dotted paths (e.g. title.rendered, media_details.width).
+    Parent object/array keys are included alongside their children.
+    Arrays of objects contribute keys from every element (paths use .0 for mapping).
+    """
+    out: list[tuple[str, str]] = []
+    if depth > max_depth:
+        if prefix:
+            out.append((prefix, _type_hint(obj)))
+        return out
+
+    if isinstance(obj, list):
+        if prefix:
+            out.append((prefix, "array"))
+        # Merge keys from all object elements (cap to keep large arrays cheap).
+        seen: set[str] = set()
+        found_object = False
+        for item in obj[:50]:
+            if isinstance(item, dict):
+                found_object = True
+                nested_prefix = f"{prefix}.0" if prefix else "0"
+                for key, tip in _flatten_keys(
+                    item,
+                    prefix=nested_prefix,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                ):
+                    if key not in seen:
+                        seen.add(key)
+                        out.append((key, tip))
+            elif isinstance(item, list):
+                found_object = True
+                nested_prefix = f"{prefix}.0" if prefix else "0"
+                for key, tip in _flatten_keys(
+                    item,
+                    prefix=nested_prefix,
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                ):
+                    if key not in seen:
+                        seen.add(key)
+                        out.append((key, tip))
+        if not found_object and not prefix:
+            # Top-level array of scalars — nothing else to expose.
+            pass
+        return out
+
+    if not isinstance(obj, dict):
+        if prefix:
+            out.append((prefix, _type_hint(obj)))
+        return out
+
+    for key, value in obj.items():
+        if not isinstance(key, str) or not key:
+            continue
+        path = f"{prefix}.{key}" if prefix else key
+
+        if isinstance(value, dict):
+            # Always expose the object itself, then its nested fields.
+            out.append((path, "object"))
+            if depth >= max_depth:
+                continue
+            out.extend(
+                _flatten_keys(
+                    value, prefix=path, depth=depth + 1, max_depth=max_depth
+                )
+            )
+            continue
+
+        if isinstance(value, list):
+            if depth >= max_depth:
+                out.append((path, "array"))
+                continue
+            out.extend(
+                _flatten_keys(
+                    value, prefix=path, depth=depth + 1, max_depth=max_depth
+                )
+            )
+            continue
+
+        out.append((path, _type_hint(value)))
+    return out
+
+
+def peek_metadata_keys(path: Path) -> dict[str, Any]:
+    """
+    Inspect a metadata JSON file and return flattened source keys + suggested map.
+
+    Directus target fields come from the bundled example JSON; source keys come
+    only from the selected file (any structure). Keys are unioned across records
+    so optional / varying shapes are not missed.
+    """
+    records = _load_json_records(path)
+    seen: set[str] = set()
+    key_rows: list[dict[str, str]] = []
+    # Cap how many records we scan for key discovery.
+    for sample in records[:100]:
+        if not isinstance(sample, dict):
+            continue
+        for name, tip in _flatten_keys(sample):
+            if name in seen:
+                continue
+            seen.add(name)
+            key_rows.append({"key": name, "type": tip})
+
+    key_rows.sort(key=lambda row: row["key"])
+
+    key_set = {row["key"] for row in key_rows}
+    key_types = {row["key"]: row["type"] for row in key_rows}
+    defaults = _directus_default_map()
+    fields = load_directus_file_fields()
+    suggested: dict[str, str] = {}
+    for field in fields:
+        fk = field["key"]
+        matched = _suggest_source_key(fk, key_set, key_types)
+        if matched:
+            suggested[fk] = matched
+        else:
+            suggested[fk] = defaults.get(fk, _MAP_SKIP)
+
+    return {
+        "records": len(records),
+        "keys": key_rows,
+        "directus_fields": fields,
+        "suggested_map": suggested,
+    }
 
 
 def _load_json_records(path: Path) -> list[dict[str, Any]]:
@@ -119,7 +496,95 @@ def _load_json_records(path: Path) -> list[dict[str, Any]]:
     return out
 
 
+def _as_int(val: Any) -> int | None:
+    if isinstance(val, bool) or val is None:
+        return None
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def _strip_html(text: str) -> str:
+    if text.startswith("<") and ">" in text:
+        return re.sub(r"<[^>]+>", "", text).strip()
+    return text
+
+
+def _derive_filename(value: Any, fallback: str) -> str:
+    if value is None:
+        return fallback
+    download = value
+    if isinstance(download, str) and ("/" in download or download.startswith("http")):
+        download = Path(download.split("?")[0]).name
+    return str(download or fallback).strip() or fallback
+
+
+def _resolve_mapped_value(
+    *,
+    field: str,
+    src: str | None,
+    rec: dict[str, Any],
+    file_id: str,
+    download: str,
+    sample_default: Any,
+) -> Any:
+    """Resolve one field from field_map sentinel or source key."""
+    if src == _MAP_GENERATE_UUID:
+        return str(uuid.uuid4())
+    if src == _MAP_DEFAULT_LOCAL:
+        return "local"
+    if src == _MAP_FROM_ID_EXT:
+        return f"{file_id}{Path(download).suffix}"
+    if src == _MAP_DERIVE_FILENAME:
+        return file_id
+    if src == _MAP_FROM_FILENAME:
+        return _title_from_name(download)
+    if src == _MAP_FROM_EXTENSION:
+        return _guess_mime(download)
+    if src == _MAP_FROM_DISK:
+        return None
+    if src == _MAP_EMPTY_OBJECT:
+        return {}
+    if src == _MAP_SKIP or not src:
+        return None
+    if src.startswith("__"):
+        return None
+
+    raw = _nested_get(rec, src)
+    if field == "filename_download":
+        return _derive_filename(raw, f"{file_id}")
+    if isinstance(raw, str) and (
+        field == "title" or field == "description" or isinstance(sample_default, str)
+    ):
+        text = _strip_html(raw.strip())
+        if field == "title":
+            return text or _title_from_name(download)
+        if field == "description":
+            return text or None
+        return text if text else raw
+    if isinstance(sample_default, dict) or field == "metadata":
+        return raw if isinstance(raw, dict) else ({} if field == "metadata" else None)
+    if isinstance(sample_default, list) or field == "tags":
+        return raw if isinstance(raw, list) else None
+    if isinstance(sample_default, (int, float)) and not isinstance(sample_default, bool):
+        return _as_int(raw)
+    # Null sample defaults that look numeric from field name suffix / common dims.
+    if raw is not None and isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        if field.endswith(("_x", "_y")) or field in {
+            "filesize",
+            "width",
+            "height",
+            "duration",
+        }:
+            return _as_int(raw)
+    if raw is None:
+        return None
+    return raw
+
+
 def _normalize_directus_record(rec: dict[str, Any]) -> dict[str, Any]:
+    sample = _directus_sample()
     file_id = str(rec.get("id") or "").strip()
     if not file_id:
         raise PrepareError("Directus metadata record missing id")
@@ -128,98 +593,159 @@ def _normalize_directus_record(rec: dict[str, Any]) -> dict[str, Any]:
     )
     disk = str(rec.get("filename_disk") or "").strip()
     if not disk:
-        ext = Path(download).suffix
-        disk = f"{file_id}{ext}"
-    mime = str(rec.get("type") or _guess_mime(download))
-    filesize = rec.get("filesize")
-    try:
-        filesize_int = int(filesize) if filesize is not None else None
-    except (TypeError, ValueError):
-        filesize_int = None
-    return {
-        "id": file_id,
-        "storage": rec.get("storage") or "local",
-        "filename_disk": disk,
-        "filename_download": download,
-        "title": rec.get("title") or _title_from_name(download),
-        "type": mime,
-        "folder": rec.get("folder"),
-        "filesize": filesize_int,
-        "width": rec.get("width"),
-        "height": rec.get("height"),
-        "description": rec.get("description"),
-        "tags": rec.get("tags"),
-        "metadata": rec.get("metadata") if isinstance(rec.get("metadata"), dict) else {},
+        disk = f"{file_id}{Path(download).suffix}"
+
+    out: dict[str, Any] = {}
+    for key, sample_val in sample.items():
+        if key == "id":
+            out[key] = file_id
+        elif key == "filename_download":
+            out[key] = download
+        elif key == "filename_disk":
+            out[key] = disk
+        elif key == "storage":
+            out[key] = rec.get("storage") or "local"
+        elif key == "type":
+            out[key] = str(rec.get("type") or _guess_mime(download))
+        elif key == "title":
+            out[key] = rec.get("title") or _title_from_name(download)
+        elif key == "filesize":
+            out[key] = _as_int(rec.get("filesize"))
+        elif key == "metadata":
+            meta = rec.get("metadata")
+            out[key] = meta if isinstance(meta, dict) else {}
+        elif key in sample:
+            val = rec.get(key, sample_val)
+            if key in (
+                "width",
+                "height",
+                "duration",
+                "focal_point_x",
+                "focal_point_y",
+            ):
+                out[key] = _as_int(val)
+            else:
+                out[key] = val
+    return out
+
+
+def _map_record(
+    rec: dict[str, Any],
+    field_map: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Map arbitrary source JSON → Directus file fields via field_map."""
+    fmap = {
+        str(k): str(v)
+        for k, v in (field_map or {}).items()
+        if isinstance(k, str) and isinstance(v, str) and v
     }
+    defaults = _directus_default_map()
+    sample = _directus_sample()
 
-
-def _map_record(rec: dict[str, Any]) -> dict[str, Any]:
-    """Best-effort map of common CMS / WP-shaped keys → Directus file fields."""
-    file_id = (
-        _nested_get(rec, "id")
-        or _nested_get(rec, "uuid")
-        or _nested_get(rec, "guid")
-    )
-    if file_id is not None:
-        file_id = str(file_id).strip()
+    # Resolve id first (other sentinels may depend on it).
+    id_src = fmap.get("id") or defaults.get("id") or _MAP_GENERATE_UUID
+    if id_src == _MAP_GENERATE_UUID:
+        file_id = str(uuid.uuid4())
+    elif id_src and not id_src.startswith("__"):
+        raw_id = _nested_get(rec, id_src)
+        file_id = str(raw_id).strip() if raw_id is not None else str(uuid.uuid4())
     else:
         file_id = str(uuid.uuid4())
 
-    download = (
-        _nested_get(rec, "filename_download")
-        or _nested_get(rec, "source_url")
-        or _nested_get(rec, "url")
-        or _nested_get(rec, "guid.rendered")
-        or _nested_get(rec, "slug")
-        or _nested_get(rec, "title.rendered")
-        or _nested_get(rec, "title")
-    )
-    if isinstance(download, str) and ("/" in download or download.startswith("http")):
-        download = Path(download.split("?")[0]).name
-    download = str(download or f"{file_id}").strip() or f"{file_id}"
+    # Resolve download name next (mime / disk / title may depend on it).
+    dl_src = fmap.get("filename_download") or defaults.get("filename_download")
+    if dl_src and not dl_src.startswith("__"):
+        download = _derive_filename(_nested_get(rec, dl_src), file_id)
+    else:
+        download = file_id
 
-    title = (
-        _nested_get(rec, "title.rendered")
-        or _nested_get(rec, "title")
-        or _title_from_name(download)
-    )
-    mime = (
-        _nested_get(rec, "mime_type")
-        or _nested_get(rec, "type")
-        or _nested_get(rec, "media_type")
-        or _guess_mime(download)
-    )
-    filesize = (
-        _nested_get(rec, "media_details.filesize")
-        or _nested_get(rec, "filesize")
-        or _nested_get(rec, "size")
-    )
-    width = _nested_get(rec, "media_details.width") or _nested_get(rec, "width")
-    height = _nested_get(rec, "media_details.height") or _nested_get(rec, "height")
+    out: dict[str, Any] = {}
+    for field, sample_default in sample.items():
+        if field == "id":
+            out[field] = file_id
+            continue
+        if field == "filename_download":
+            out[field] = download
+            continue
 
-    ext = Path(download).suffix
-    disk = str(_nested_get(rec, "filename_disk") or f"{file_id}{ext}")
+        src = fmap.get(field)
+        if src is None:
+            src = defaults.get(field, _MAP_SKIP)
 
-    try:
-        filesize_int = int(filesize) if filesize is not None else None
-    except (TypeError, ValueError):
-        filesize_int = None
+        if field == "filename_disk" and src == _MAP_FROM_ID_EXT:
+            out[field] = f"{file_id}{Path(download).suffix}"
+            continue
+        if field == "storage" and (
+            src in (_MAP_DEFAULT_LOCAL, _MAP_SKIP) or not src or src.startswith("__")
+        ):
+            out[field] = "local"
+            continue
+        if field == "type" and src in (_MAP_FROM_EXTENSION, _MAP_SKIP):
+            out[field] = _guess_mime(download)
+            continue
+        if field == "title" and src in (_MAP_FROM_FILENAME, _MAP_SKIP):
+            out[field] = _title_from_name(download)
+            continue
+        if field == "metadata":
+            if src == _MAP_SKIP:
+                out[field] = None
+            elif src == _MAP_EMPTY_OBJECT or not src or src.startswith("__"):
+                out[field] = {}
+            else:
+                raw_meta = _nested_get(rec, src)
+                out[field] = raw_meta if isinstance(raw_meta, dict) else {}
+            continue
 
-    return {
-        "id": file_id,
-        "storage": "local",
-        "filename_disk": disk,
-        "filename_download": download,
-        "title": str(title) if title else _title_from_name(download),
-        "type": str(mime),
-        "folder": None,
-        "filesize": filesize_int,
-        "width": width if isinstance(width, int) else None,
-        "height": height if isinstance(height, int) else None,
-        "description": None,
-        "tags": None,
-        "metadata": {},
-    }
+        value = _resolve_mapped_value(
+            field=field,
+            src=src,
+            rec=rec,
+            file_id=file_id,
+            download=download,
+            sample_default=sample_default,
+        )
+
+        if field == "storage" and not value:
+            value = "local"
+        if field == "type" and not value:
+            value = _guess_mime(download)
+        if field == "title" and not value:
+            value = _title_from_name(download)
+        if field == "filename_disk" and not value:
+            value = f"{file_id}{Path(download).suffix}"
+        if field in ("folder", "uploaded_by", "modified_by") and value is not None:
+            value = str(value).strip() or None
+        if (
+            field
+            in (
+                "created_on",
+                "modified_on",
+                "uploaded_on",
+                "charset",
+                "embed",
+                "location",
+                "tus_id",
+                "description",
+            )
+            and value is not None
+            and not isinstance(value, (dict, list))
+        ):
+            value = str(value)
+
+        out[field] = value
+
+    # Ensure title/type are strings for prepare pipeline.
+    out["title"] = str(out.get("title") or _title_from_name(download))
+    out["type"] = str(out.get("type") or _guess_mime(download))
+    out["filename_disk"] = str(
+        out.get("filename_disk") or f"{file_id}{Path(download).suffix}"
+    )
+    out["filename_download"] = str(out.get("filename_download") or download)
+    if not isinstance(out.get("metadata"), dict) and out.get("metadata") is not None:
+        out["metadata"] = {}
+    elif out.get("metadata") is None and fmap.get("metadata") != _MAP_SKIP:
+        out["metadata"] = {}
+    return out
 
 
 def _list_media_files(folder: Path) -> list[Path]:
@@ -238,6 +764,7 @@ def _list_media_files(folder: Path) -> list[Path]:
 
 
 def _generate_records(folder: Path) -> list[dict[str, Any]]:
+    sample = _directus_sample()
     records: list[dict[str, Any]] = []
     for path in _list_media_files(folder):
         parsed = _parse_uuid_prefix(path.name)
@@ -250,7 +777,8 @@ def _generate_records(folder: Path) -> list[dict[str, Any]]:
                 download = rest[1:] or path.name
         mime = _guess_mime(download)
         ext = Path(download).suffix or path.suffix
-        records.append(
+        record: dict[str, Any] = {key: None for key in sample}
+        record.update(
             {
                 "id": file_id,
                 "storage": "local",
@@ -258,16 +786,12 @@ def _generate_records(folder: Path) -> list[dict[str, Any]]:
                 "filename_download": download,
                 "title": _title_from_name(download),
                 "type": mime,
-                "folder": None,
                 "filesize": path.stat().st_size,
-                "width": None,
-                "height": None,
-                "description": None,
-                "tags": None,
                 "metadata": {},
                 "_source_path": str(path),
             }
         )
+        records.append(record)
     return records
 
 
@@ -345,6 +869,7 @@ def build_prepared(
     mode: MetaMode,
     placeholders: bool = True,
     metadata_abs_path: Path | None = None,
+    field_map: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     Write prepared/target_{target_id}/ with files/, files_metadata.json, folders.json.
@@ -368,7 +893,7 @@ def build_prepared(
         if mode == "directus":
             records = [_normalize_directus_record(r) for r in raw]
         else:
-            records = [_map_record(r) for r in raw]
+            records = [_map_record(r, field_map) for r in raw]
     else:
         raise PrepareError(f"Unknown mode: {mode}")
 

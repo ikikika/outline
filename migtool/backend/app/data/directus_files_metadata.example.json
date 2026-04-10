@@ -1,0 +1,71 @@
+{
+  "required_fields": [
+    "id",
+    "storage",
+    "filename_disk",
+    "filename_download",
+    "type"
+  ],
+  "default_map": {
+    "id": "__generate_uuid__",
+    "storage": "__default_local__",
+    "filename_disk": "__from_id_ext__",
+    "filename_download": "__derive_filename__",
+    "title": "__from_filename__",
+    "type": "__from_extension__",
+    "filesize": "__from_disk__",
+    "metadata": "__empty_object__"
+  },
+  "specials": {
+    "id": [{ "value": "__generate_uuid__", "label": "— generate UUID —" }],
+    "storage": [{ "value": "__default_local__", "label": "— local —" }],
+    "filename_disk": [
+      { "value": "__from_id_ext__", "label": "— from id + extension —" }
+    ],
+    "filename_download": [
+      { "value": "__derive_filename__", "label": "— derive from URL / path —" },
+      { "value": "__from_disk__", "label": "— from disk name —" }
+    ],
+    "title": [
+      { "value": "__from_filename__", "label": "— from filename —" },
+      { "value": "__skip__", "label": "— skip —" }
+    ],
+    "type": [{ "value": "__from_extension__", "label": "— from extension —" }],
+    "filesize": [
+      { "value": "__from_disk__", "label": "— from disk —" },
+      { "value": "__skip__", "label": "— skip —" }
+    ],
+    "metadata": [
+      { "value": "__empty_object__", "label": "— empty {} —" },
+      { "value": "__skip__", "label": "— skip / null —" }
+    ]
+  },
+  "sample": {
+    "id": "0d8a808b-311e-48e6-9b82-ca96a78f56b0",
+    "storage": "local",
+    "filename_disk": "0d8a808b-311e-48e6-9b82-ca96a78f56b0.jpg",
+    "filename_download": "train.jpg",
+    "title": "Train",
+    "type": "image/jpeg",
+    "folder": null,
+    "uploaded_by": null,
+    "created_on": null,
+    "modified_by": null,
+    "modified_on": null,
+    "charset": null,
+    "filesize": 1727550,
+    "width": 2048,
+    "height": 2048,
+    "duration": null,
+    "embed": null,
+    "description": null,
+    "location": null,
+    "tags": null,
+    "metadata": {},
+    "focal_point_x": null,
+    "focal_point_y": null,
+    "tus_id": null,
+    "tus_data": null,
+    "uploaded_on": null
+  }
+}

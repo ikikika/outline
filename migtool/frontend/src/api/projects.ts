@@ -94,6 +94,8 @@ export type PrepareAssetsPayload = {
   mode: PrepareMode
   placeholders?: boolean
   metadata_file_id?: number | null
+  /** Directus field → source key or sentinel (__skip__, __generate_uuid__, …) */
+  field_map?: Record<string, string> | null
 }
 
 export type PrepareAssetsResult = {
@@ -105,6 +107,25 @@ export type PrepareAssetsResult = {
   skipped: number
   missing: number
   folders: number
+}
+
+export type MetadataKeyRow = {
+  key: string
+  type: string
+}
+
+export type DirectusFileFieldRow = {
+  key: string
+  type: string
+  required: string
+  specials: { value: string; label: string }[]
+}
+
+export type MetadataKeysResult = {
+  records: number
+  keys: MetadataKeyRow[]
+  directus_fields: DirectusFileFieldRow[]
+  suggested_map: Record<string, string>
 }
 
 export type PrepareSchemaPayload = {
@@ -325,6 +346,15 @@ export function prepareTargetAssets(
       method: 'POST',
       body: JSON.stringify(payload),
     },
+  )
+}
+
+export function getMetadataKeys(
+  projectId: number,
+  fileId: number,
+): Promise<MetadataKeysResult> {
+  return request<MetadataKeysResult>(
+    `/projects/${projectId}/source-files/${fileId}/metadata-keys`,
   )
 }
 

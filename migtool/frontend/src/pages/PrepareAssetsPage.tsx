@@ -3,11 +3,13 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
   getLatestMigrate,
+  getMetadataKeys,
   getMigrateRun,
   getProject,
   prepareTargetAssets,
   startMigrate,
   stopMigrate,
+  type MetadataKeysResult,
   type MigrationProgress,
   type MigrationRun,
   type PrepareAssetsResult,
@@ -48,7 +50,7 @@ const META_COPY: Record<
   },
   map: {
     h: 'Map source JSON → files_metadata.json',
-    s: 'Match source keys to Directus file fields. Unmapped keys are dropped unless you pin them into metadata.',
+    s: 'Each row is a Directus file field. Pick a source key from the selected JSON (left), or a generate/skip option.',
     note: 'Selected JSON needs mapping before prepare can write files_metadata.json.',
     noteClass: 'notice notice-info',
     stat: 'mapped',
@@ -61,36 +63,6 @@ const META_COPY: Record<
     stat: 'generated',
   },
 }
-
-const MAP_ROWS = [
-  { key: 'id', type: 'string · uuid-ish', options: ['id', 'filename_disk', '— skip —'], selected: 'id' },
-  {
-    key: 'source_url',
-    type: 'string',
-    options: ['filename_download', '— derive filename —', '— skip —'],
-    selected: '— derive filename —',
-  },
-  { key: 'title.rendered', type: 'string', options: ['title', '— skip —'], selected: 'title' },
-  { key: 'mime_type', type: 'string', options: ['type', '— skip —'], selected: 'type' },
-  {
-    key: 'media_details.filesize',
-    type: 'number',
-    options: ['filesize', '— from disk —'],
-    selected: 'filesize',
-  },
-  {
-    key: 'media_details.width',
-    type: 'number',
-    options: ['width', '— skip —'],
-    selected: 'width',
-  },
-  {
-    key: 'media_details.height',
-    type: 'number',
-    options: ['height', '— skip —'],
-    selected: 'height',
-  },
-]
 
 const DEMO_GAPS = [
   {
@@ -284,6 +256,10 @@ export function PrepareAssetsPage() {
   const [metaKey, setMetaKey] = useState<string>('none')
   const [mode, setMode] = useState<MetaMode>('generate')
   const [placeholders, setPlaceholders] = useState(true)
+  const [fieldMap, setFieldMap] = useState<Record<string, string>>({})
+  const [metaKeys, setMetaKeys] = useState<MetadataKeysResult | null>(null)
+  const [metaKeysLoading, setMetaKeysLoading] = useState(false)
+  const [metaKeysError, setMetaKeysError] = useState<string | null>(null)
   const [written, setWritten] = useState(false)
   const [writeResult, setWriteResult] = useState<PrepareAssetsResult | null>(null)
   const [writing, setWriting] = useState(false)
@@ -452,6 +428,44 @@ export function PrepareAssetsPage() {
     setMode('generate')
   }, [filesFolderPath, sourceFiles])
 
+  // Load flattened source keys when a metadata JSON is selected for map mode.
+  useEffect(() => {
+    if (invalidId || metaKey === 'none') {
+      setMetaKeys(null)
+      setMetaKeysError(null)
+      setFieldMap({})
+      return
+    }
+    const fileId = Number(metaKey)
+    if (!Number.isFinite(fileId) || fileId <= 0) return
+
+    let cancelled = false
+    setMetaKeysLoading(true)
+    setMetaKeysError(null)
+    ;(async () => {
+      try {
+        const data = await getMetadataKeys(projectId, fileId)
+        if (cancelled) return
+        setMetaKeys(data)
+        setFieldMap(data.suggested_map ?? {})
+      } catch (err) {
+        if (cancelled) return
+        setMetaKeys(null)
+        setFieldMap({})
+        setMetaKeysError(
+          err instanceof ApiError
+            ? err.message
+            : 'Could not read keys from metadata JSON',
+        )
+      } finally {
+        if (!cancelled) setMetaKeysLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [projectId, metaKey, invalidId])
+
   if (invalidId) {
     return <Navigate to="/create-project" replace />
   }
@@ -513,6 +527,7 @@ export function PrepareAssetsPage() {
         placeholders,
         metadata_file_id:
           metaKey !== 'none' && mode !== 'generate' ? Number(metaKey) : null,
+        field_map: mode === 'map' ? fieldMap : null,
       })
       setWriteResult(result)
       setWritten(true)
@@ -956,39 +971,93 @@ export function PrepareAssetsPage() {
                       {mode === 'map' ? (
                         <div>
                           <div className="notice notice-info" style={{ margin: '0 0 16px' }}>
-                            Source JSON is not Directus-shaped. Map keys below, or
-                            switch detection to generate-from-folder.
+                            Source JSON is not Directus-shaped. Map each Directus
+                            field to a source key from the selected JSON, or use a
+                            generate/skip option.
                           </div>
+                          {metaKeysLoading ? (
+                            <p className="meta">Reading source keys…</p>
+                          ) : null}
+                          {metaKeysError ? (
+                            <div
+                              className="notice notice-danger"
+                              style={{ marginBottom: 16, color: 'var(--rose)' }}
+                            >
+                              {metaKeysError}
+                            </div>
+                          ) : null}
+                          {metaKeys ? (
+                            <div className="meta" style={{ margin: '0 0 12px' }}>
+                              {metaKeys.records} record
+                              {metaKeys.records === 1 ? '' : 's'} ·{' '}
+                              {metaKeys.keys.length} source key
+                              {metaKeys.keys.length === 1 ? '' : 's'} detected
+                            </div>
+                          ) : null}
                           <div className="prep-map-table">
                             <div className="prep-map-head">
                               <span>Source key</span>
                               <span />
-                              <span>files_metadata field</span>
+                              <span>Directus field</span>
                             </div>
-                            {MAP_ROWS.map((row) => (
-                              <div className="prep-map-row" key={row.key}>
-                                <div className="field-item">
-                                  <b>{row.key}</b>
-                                  <div className="t">{row.type}</div>
+                            {(metaKeys?.directus_fields ?? []).map((field) => {
+                              const sourceKeys = metaKeys?.keys ?? []
+                              const specials = field.specials?.length
+                                ? field.specials
+                                : [{ value: '__skip__', label: '— skip / null —' }]
+                              const required = field.required === '1'
+                              const value =
+                                fieldMap[field.key] ??
+                                specials[0]?.value ??
+                                '__skip__'
+                              return (
+                                <div className="prep-map-row" key={field.key}>
+                                  <select
+                                    value={value}
+                                    onChange={(e) =>
+                                      setFieldMap((prev) => ({
+                                        ...prev,
+                                        [field.key]: e.target.value,
+                                      }))
+                                    }
+                                    disabled={metaKeysLoading || !metaKeys}
+                                  >
+                                    <optgroup label="From JSON">
+                                      {sourceKeys.map((k) => (
+                                        <option key={k.key} value={k.key}>
+                                          {k.key}
+                                          {k.type ? ` · ${k.type}` : ''}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                    <optgroup label="Special">
+                                      {specials.map((s) => (
+                                        <option key={s.value} value={s.value}>
+                                          {s.label}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  </select>
+                                  <div className="bridge">→</div>
+                                  <div className="field-item">
+                                    <b>
+                                      {field.key}
+                                      {required ? ' *' : ''}
+                                    </b>
+                                    <div className="t">{field.type}</div>
+                                  </div>
                                 </div>
-                                <div className="bridge">→</div>
-                                <select defaultValue={row.selected}>
-                                  {row.options.map((opt) => (
-                                    <option key={opt} value={opt}>
-                                      {opt}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
                           <div className="meta" style={{ marginTop: 12 }}>
-                            Required targets:{' '}
-                            <span className="mono">id</span>,{' '}
-                            <span className="mono">filename_disk</span>,{' '}
-                            <span className="mono">filename_download</span>,{' '}
-                            <span className="mono">type</span>. Missing required
-                            fields can be generated (new UUID, mime from extension).
+                            Required Directus fields:{' '}
+                            {(metaKeys?.directus_fields ?? [])
+                              .filter((f) => f.required === '1')
+                              .map((f) => f.key)
+                              .join(', ') || '—'}
+                            . Missing values can be generated (UUID, mime from
+                            extension, size from disk).
                           </div>
                         </div>
                       ) : null}
