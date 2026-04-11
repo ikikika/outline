@@ -168,6 +168,23 @@ class PrepareAssetsOut(BaseModel):
     folders: int
 
 
+class PrepareGapRow(BaseModel):
+    id: str
+    name: str
+    path: str
+    missing: bool
+    source: str | None = None
+
+
+class PrepareGapsOut(BaseModel):
+    """Metadata records vs binaries on disk (prepare Step 3 preview)."""
+
+    records: int
+    on_disk: int
+    missing: int
+    rows: list[PrepareGapRow]
+
+
 class PrepareSchemaRequest(BaseModel):
     """Copy Directus schema/ from extracted into prepared/target_{id}/schema/."""
 

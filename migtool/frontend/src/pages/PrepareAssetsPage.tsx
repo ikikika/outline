@@ -7,12 +7,14 @@ import {
   getMigrateRun,
   getProject,
   prepareTargetAssets,
+  previewPrepareGaps,
   startMigrate,
   stopMigrate,
   type MetadataKeysResult,
   type MigrationProgress,
   type MigrationRun,
   type PrepareAssetsResult,
+  type PrepareGapsResult,
   type ProjectDetail,
   type ProjectSourceFile,
 } from '../api/projects'
@@ -64,33 +66,6 @@ const META_COPY: Record<
   },
 }
 
-const DEMO_GAPS = [
-  {
-    name: 'train.jpg',
-    id: '0d8a808b-…',
-    path: 'files/0d8a808b-…_train.jpg',
-    missing: false,
-  },
-  {
-    name: 'hero-banner.png',
-    id: 'a1b2c3d4-…',
-    path: 'files/a1b2c3d4-…_hero-banner.png',
-    missing: true,
-  },
-  {
-    name: 'press-kit.pdf',
-    id: 'e5f6a7b8-…',
-    path: 'files/e5f6a7b8-…_press-kit.pdf',
-    missing: true,
-  },
-  {
-    name: 'cablecar.png',
-    id: '2c5ee712-…',
-    path: 'files/2c5ee712-…_cablecar.png',
-    missing: false,
-  },
-]
-
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -98,6 +73,60 @@ function formatSize(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+function metaStorageKey(projectId: number, folderPath: string): string {
+  return `migtool.prepare.meta.${projectId}.${folderPath}`
+}
+
+function readStoredMetaSelection(
+  projectId: number,
+  folderPath: string,
+  options: ProjectSourceFile[],
+): string | null {
+  try {
+    const raw = sessionStorage.getItem(metaStorageKey(projectId, folderPath))
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { id?: string; path?: string }
+    if (parsed.id === 'none') return 'none'
+    if (parsed.id && options.some((f) => String(f.id) === parsed.id)) {
+      return parsed.id
+    }
+    if (parsed.path) {
+      const byPath = options.find((f) => f.relative_path === parsed.path)
+      if (byPath) return String(byPath.id)
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+function writeStoredMetaSelection(
+  projectId: number,
+  folderPath: string,
+  metaKey: string,
+  sourceFiles: ProjectSourceFile[],
+): void {
+  try {
+    if (metaKey === 'none') {
+      sessionStorage.setItem(
+        metaStorageKey(projectId, folderPath),
+        JSON.stringify({ id: 'none' }),
+      )
+      return
+    }
+    const file = sourceFiles.find((f) => String(f.id) === metaKey)
+    sessionStorage.setItem(
+      metaStorageKey(projectId, folderPath),
+      JSON.stringify({
+        id: metaKey,
+        path: file?.relative_path ?? '',
+      }),
+    )
+  } catch {
+    /* ignore */
+  }
 }
 
 function formatDuration(startedAt?: string | null, finishedAt?: string | null): string {
@@ -260,6 +289,9 @@ export function PrepareAssetsPage() {
   const [metaKeys, setMetaKeys] = useState<MetadataKeysResult | null>(null)
   const [metaKeysLoading, setMetaKeysLoading] = useState(false)
   const [metaKeysError, setMetaKeysError] = useState<string | null>(null)
+  const [gaps, setGaps] = useState<PrepareGapsResult | null>(null)
+  const [gapsLoading, setGapsLoading] = useState(false)
+  const [gapsError, setGapsError] = useState<string | null>(null)
   const [written, setWritten] = useState(false)
   const [writeResult, setWriteResult] = useState<PrepareAssetsResult | null>(null)
   const [writing, setWriting] = useState(false)
@@ -273,6 +305,12 @@ export function PrepareAssetsPage() {
   >([])
   const pollRef = useRef<number | null>(null)
   const logRef = useRef<HTMLDivElement | null>(null)
+  /** User picked a metadata JSON (or "none") — don't clobber on folder refresh. */
+  const metaTouchedRef = useRef(false)
+  const metaKeyRef = useRef(metaKey)
+  metaKeyRef.current = metaKey
+  /** Last folder we ran metadata auto-init for (avoid re-defaulting on sourceFiles refresh). */
+  const metaInitFolderRef = useRef<string | null>(null)
 
   const invalidId = !Number.isFinite(projectId) || projectId <= 0
 
@@ -340,20 +378,12 @@ export function PrepareAssetsPage() {
     /\.(jpe?g|png|gif|webp|svg|avif)$/i.test(f.original_name),
   ).length
   const otherCount = Math.max(0, mediaCount - imageCount)
-  const gapRows =
-    mediaCount > 0
-      ? mediaFiles.slice(0, 6).map((f) => ({
-          name: f.original_name,
-          id: String(f.id),
-          path: `files/${f.original_name}`,
-          missing: false,
-        }))
-      : DEMO_GAPS
-  const gapMissing = gapRows.filter((r) => r.missing).length
+  const gapRows = gaps?.rows ?? []
+  const gapMissing = gaps?.missing ?? 0
   const missingCount = gapMissing
-  const realCopyCount = Math.max(0, (mediaCount || gapRows.length) - missingCount)
+  const realCopyCount = gaps?.on_disk ?? 0
   const placeholderCount = placeholders ? missingCount : 0
-  const recordCount = mediaCount || gapRows.length
+  const recordCount = gaps?.records ?? mediaCount
 
   const preparedCount = writeResult?.records ?? mediaCount
   const preparedBytes = mediaBytes
@@ -409,24 +439,62 @@ export function PrepareAssetsPage() {
   }, [sourceFiles, filesFolderPath])
 
   useEffect(() => {
-    if (!filesFolderPath) return
+    if (!filesFolderPath || invalidId) return
     const options = jsonOptionsNearFolder(filesFolderPath, sourceFiles)
+    const optionIds = new Set(options.map((f) => String(f.id)))
+    const current = metaKeyRef.current
+
+    const applyChoice = (key: string) => {
+      setMetaKey(key)
+      writeStoredMetaSelection(projectId, filesFolderPath, key, sourceFiles)
+      if (key === 'none') {
+        setMode('generate')
+        return
+      }
+      const file = options.find((f) => String(f.id) === key)
+      setMode(file ? guessMetaMode(file.original_name) : 'map')
+    }
+
+    // Keep the live selection when it is still a valid option.
+    if (current !== 'none' && optionIds.has(current)) {
+      writeStoredMetaSelection(projectId, filesFolderPath, current, sourceFiles)
+      metaInitFolderRef.current = filesFolderPath
+      return
+    }
+    if (current === 'none' && metaTouchedRef.current) {
+      writeStoredMetaSelection(projectId, filesFolderPath, 'none', sourceFiles)
+      metaInitFolderRef.current = filesFolderPath
+      return
+    }
+
+    // Restore last choice for this project + folder (by id or relative path).
+    const stored = readStoredMetaSelection(projectId, filesFolderPath, options)
+    if (stored !== null) {
+      metaTouchedRef.current = true
+      metaInitFolderRef.current = filesFolderPath
+      if (stored !== current) applyChoice(stored)
+      return
+    }
+
+    // Already initialized this folder with a default — don't thrash on refresh.
+    if (metaInitFolderRef.current === filesFolderPath) {
+      return
+    }
+    metaInitFolderRef.current = filesFolderPath
+
     const directus = options.find((f) =>
       /files_metadata/i.test(f.original_name),
     )
     if (directus) {
-      setMetaKey(String(directus.id))
-      setMode('directus')
+      applyChoice(String(directus.id))
       return
     }
     if (options[0]) {
-      setMetaKey(String(options[0].id))
-      setMode(guessMetaMode(options[0].original_name))
+      applyChoice(String(options[0].id))
       return
     }
-    setMetaKey('none')
-    setMode('generate')
-  }, [filesFolderPath, sourceFiles])
+    applyChoice('none')
+  }, [filesFolderPath, sourceFiles, projectId, invalidId])
 
   // Load flattened source keys when a metadata JSON is selected for map mode.
   useEffect(() => {
@@ -466,6 +534,67 @@ export function PrepareAssetsPage() {
     }
   }, [projectId, metaKey, invalidId])
 
+  // Real gap preview: metadata records vs binaries in the selected folder.
+  useEffect(() => {
+    if (invalidId || !activeTarget || !filesFolderPath) {
+      return
+    }
+    const match = filesFolderPath.match(/^upload:(\d+)(?:\/(.*))?$/)
+    if (!match) {
+      setGaps(null)
+      setGapsError('Select a files folder under an extracted upload')
+      return
+    }
+    if (mode !== 'generate' && (metaKey === 'none' || !Number(metaKey))) {
+      setGaps(null)
+      setGapsError(null)
+      return
+    }
+
+    const fieldMapJson = mode === 'map' ? JSON.stringify(fieldMap) : ''
+    let cancelled = false
+    setGapsLoading(true)
+    setGapsError(null)
+    ;(async () => {
+      try {
+        const data = await previewPrepareGaps(projectId, activeTarget.id, {
+          upload_id: Number(match[1]),
+          folder_path: match[2] ?? '',
+          mode,
+          placeholders,
+          metadata_file_id:
+            metaKey !== 'none' && mode !== 'generate' ? Number(metaKey) : null,
+          field_map: mode === 'map' ? (JSON.parse(fieldMapJson) as Record<string, string>) : null,
+        })
+        if (cancelled) return
+        setGaps(data)
+      } catch (err) {
+        if (cancelled) return
+        setGaps(null)
+        setGapsError(
+          err instanceof ApiError
+            ? err.message
+            : 'Could not compare metadata to disk files',
+        )
+      } finally {
+        if (!cancelled) setGapsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [
+    projectId,
+    invalidId,
+    activeTarget?.id,
+    filesFolderPath,
+    mode,
+    metaKey,
+    placeholders,
+    // Re-run when map bindings change
+    mode === 'map' ? JSON.stringify(fieldMap) : '',
+  ])
+
   if (invalidId) {
     return <Navigate to="/create-project" replace />
   }
@@ -483,16 +612,25 @@ export function PrepareAssetsPage() {
       return
     }
     if (sel.file && (sel.file.kind === 'json' || /\.json$/i.test(sel.name))) {
-      setMetaKey(String(sel.file.id))
+      metaTouchedRef.current = true
+      const next = String(sel.file.id)
+      setMetaKey(next)
       setMode(guessMetaMode(sel.name))
+      if (filesFolderPath) {
+        writeStoredMetaSelection(projectId, filesFolderPath, next, sourceFiles)
+      }
     }
   }
 
   function applyMetaSelect(value: string) {
+    metaTouchedRef.current = true
     setMetaKey(value)
     setWritten(false)
     setWriteResult(null)
     setWriteError(null)
+    if (filesFolderPath) {
+      writeStoredMetaSelection(projectId, filesFolderPath, value, sourceFiles)
+    }
     if (value === 'none') {
       setMode('generate')
       return
@@ -877,7 +1015,7 @@ export function PrepareAssetsPage() {
                               onChange={(e) => applyMetaSelect(e.target.value)}
                             >
                               {jsonChoices.map((f) => (
-                                <option key={f.id} value={f.id}>
+                                <option key={f.id} value={String(f.id)}>
                                   {f.relative_path}
                                   {/files_metadata/i.test(f.original_name)
                                     ? ' · Directus shape'
@@ -1184,36 +1322,68 @@ export function PrepareAssetsPage() {
                           <span>Status</span>
                           <span>Action</span>
                         </div>
-                        {gapRows.map((row) => (
-                          <div className="prep-gap-row" key={`${row.name}-${row.id}`}>
-                            <div>
-                              <b>{row.name}</b>
-                              <div className="meta mono">{row.id}</div>
-                            </div>
-                            <div className="mono meta">{row.path}</div>
-                            <div>
-                              <span
-                                className={`badge ${row.missing ? 'badge-err' : 'badge-ok'}`}
-                              >
-                                {row.missing ? 'Missing' : 'On disk'}
-                              </span>
-                            </div>
-                            <div>
-                              {row.missing ? (
-                                <span
-                                  className={`badge ${
-                                    placeholders ? 'badge-run' : 'badge-draft'
-                                  }`}
-                                >
-                                  {placeholders ? 'Placeholder' : 'Skip'}
-                                </span>
-                              ) : (
-                                <span className="meta">—</span>
-                              )}
+                        {gapsLoading ? (
+                          <div className="prep-gap-row">
+                            <div className="meta" style={{ gridColumn: '1 / -1' }}>
+                              Checking metadata against disk…
                             </div>
                           </div>
-                        ))}
+                        ) : null}
+                        {gapsError ? (
+                          <div className="prep-gap-row">
+                            <div
+                              className="notice notice-danger"
+                              style={{ gridColumn: '1 / -1', color: 'var(--rose)' }}
+                            >
+                              {gapsError}
+                            </div>
+                          </div>
+                        ) : null}
+                        {!gapsLoading && !gapsError && gapRows.length === 0 ? (
+                          <div className="prep-gap-row">
+                            <div className="meta" style={{ gridColumn: '1 / -1' }}>
+                              No metadata records to check.
+                            </div>
+                          </div>
+                        ) : null}
+                        {!gapsLoading
+                          ? gapRows.map((row) => (
+                              <div className="prep-gap-row" key={`${row.name}-${row.id}`}>
+                                <div>
+                                  <b>{row.name}</b>
+                                  <div className="meta mono">{row.id}</div>
+                                </div>
+                                <div className="mono meta">{row.path}</div>
+                                <div>
+                                  <span
+                                    className={`badge ${row.missing ? 'badge-err' : 'badge-ok'}`}
+                                  >
+                                    {row.missing ? 'Missing' : 'On disk'}
+                                  </span>
+                                </div>
+                                <div>
+                                  {row.missing ? (
+                                    <span
+                                      className={`badge ${
+                                        placeholders ? 'badge-run' : 'badge-draft'
+                                      }`}
+                                    >
+                                      {placeholders ? 'Placeholder' : 'Skip'}
+                                    </span>
+                                  ) : (
+                                    <span className="meta">—</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          : null}
                       </div>
+                      {!gapsLoading && gaps ? (
+                        <div className="meta" style={{ marginTop: 12 }}>
+                          {gaps.on_disk} on disk · {gaps.missing} missing ·{' '}
+                          {gaps.records} record{gaps.records === 1 ? '' : 's'}
+                        </div>
+                      ) : null}
 
                       {placeholders ? (
                         <div className="notice notice-warn" style={{ marginTop: 16 }}>
@@ -1631,7 +1801,7 @@ export function PrepareAssetsPage() {
                               disabled={!activeTarget}
                               onClick={() => void handleUploadStart('resume')}
                             >
-                              Resume
+                              Retry failed
                             </button>
                             <button
                               className="btn btn-ghost"
@@ -1639,7 +1809,7 @@ export function PrepareAssetsPage() {
                               disabled={!activeTarget}
                               onClick={() => void handleUploadStart('restart')}
                             >
-                              Restart
+                              Restart upload
                             </button>
                           </div>
                         </div>
@@ -1698,18 +1868,22 @@ export function PrepareAssetsPage() {
                               Back
                             </button>
                             <button
-                              className="btn btn-ghost"
+                              className="btn btn-primary"
                               type="button"
-                              onClick={() => {
-                                setUploadState('ready')
-                                setMigrateRun(null)
-                                setUploadError(null)
-                              }}
+                              disabled={
+                                !activeTarget || (importStats?.failed ?? 0) === 0
+                              }
+                              title={
+                                (importStats?.failed ?? 0) === 0
+                                  ? 'No failed files to retry'
+                                  : 'Resume and retry files that failed'
+                              }
+                              onClick={() => void handleUploadStart('resume')}
                             >
-                              Upload again
+                              Retry failed
                             </button>
                             <button
-                              className="btn btn-primary"
+                              className="btn btn-ghost"
                               type="button"
                               disabled={!activeTarget}
                               onClick={() => void handleUploadStart('restart')}
@@ -1766,7 +1940,7 @@ export function PrepareAssetsPage() {
                               disabled={!activeTarget}
                               onClick={() => void handleUploadStart('resume')}
                             >
-                              Resume
+                              Retry failed
                             </button>
                             <button
                               className="btn btn-ghost"
@@ -1774,7 +1948,7 @@ export function PrepareAssetsPage() {
                               disabled={!activeTarget}
                               onClick={() => void handleUploadStart('restart')}
                             >
-                              Restart
+                              Restart upload
                             </button>
                           </div>
                         </div>

@@ -860,6 +860,98 @@ def _find_folders_json(files_dir: Path, meta_path: Path | None) -> Path | None:
     return None
 
 
+def _load_prepare_records(
+    *,
+    files_dir: Path,
+    mode: MetaMode,
+    metadata_abs_path: Path | None = None,
+    field_map: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
+    if mode == "generate":
+        return _generate_records(files_dir)
+    if mode in ("directus", "map"):
+        if metadata_abs_path is None or not metadata_abs_path.is_file():
+            raise PrepareError("Metadata JSON is required for this mode")
+        raw = _load_json_records(metadata_abs_path)
+        if mode == "directus":
+            return [_normalize_directus_record(r) for r in raw]
+        return [_map_record(r, field_map) for r in raw]
+    raise PrepareError(f"Unknown mode: {mode}")
+
+
+def _expected_prepared_path(record: dict[str, Any]) -> str:
+    download = str(record.get("filename_download") or record.get("id") or "file")
+    dest_name = f"{record['id']}_{download}"
+    folder_id = record.get("folder")
+    if folder_id:
+        return f"files/{folder_id}/{dest_name}"
+    return f"files/{dest_name}"
+
+
+def preview_asset_gaps(
+    *,
+    project_id: int,
+    upload_id: int,
+    folder_path: str,
+    mode: MetaMode,
+    metadata_abs_path: Path | None = None,
+    field_map: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """
+    Compare resolved metadata records to binaries in the selected folder.
+
+    Does not write prepared output. Uses the same matching rules as prepare.
+    """
+    extract_root = extract_dir_for_upload(project_id, upload_id)
+    if not extract_root.is_dir():
+        raise PrepareError("Upload has not been extracted yet")
+
+    files_dir = _safe_under(extract_root, folder_path)
+    if not files_dir.is_dir():
+        raise PrepareError(f"Files folder not found: {folder_path or '(upload root)'}")
+
+    records = _load_prepare_records(
+        files_dir=files_dir,
+        mode=mode,
+        metadata_abs_path=metadata_abs_path,
+        field_map=field_map,
+    )
+
+    rows: list[dict[str, Any]] = []
+    on_disk = 0
+    missing = 0
+    for record in records:
+        src = _find_source_binary(files_dir, record)
+        download = str(record.get("filename_download") or "")
+        found = src is not None
+        if found:
+            on_disk += 1
+        else:
+            missing += 1
+        source_rel = None
+        if src is not None:
+            try:
+                source_rel = src.relative_to(extract_root).as_posix()
+            except ValueError:
+                source_rel = src.name
+        rows.append(
+            {
+                "id": str(record.get("id") or ""),
+                "name": download or str(record.get("id") or "file"),
+                "path": _expected_prepared_path(record),
+                "missing": not found,
+                "source": source_rel,
+            }
+        )
+
+    return {
+        "records": len(records),
+        "on_disk": on_disk,
+        "missing": missing,
+        "rows": rows,
+    }
+
+
 def build_prepared(
     *,
     project_id: int,
@@ -884,18 +976,12 @@ def build_prepared(
     if not files_dir.is_dir():
         raise PrepareError(f"Files folder not found: {folder_path or '(upload root)'}")
 
-    if mode == "generate":
-        records = _generate_records(files_dir)
-    elif mode in ("directus", "map"):
-        if metadata_abs_path is None or not metadata_abs_path.is_file():
-            raise PrepareError("Metadata JSON is required for this mode")
-        raw = _load_json_records(metadata_abs_path)
-        if mode == "directus":
-            records = [_normalize_directus_record(r) for r in raw]
-        else:
-            records = [_map_record(r, field_map) for r in raw]
-    else:
-        raise PrepareError(f"Unknown mode: {mode}")
+    records = _load_prepare_records(
+        files_dir=files_dir,
+        mode=mode,
+        metadata_abs_path=metadata_abs_path,
+        field_map=field_map,
+    )
 
     out_root = prepared_dir(project_id, target_id)
     out_files = out_root / "files"

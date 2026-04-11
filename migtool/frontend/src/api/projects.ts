@@ -109,6 +109,21 @@ export type PrepareAssetsResult = {
   folders: number
 }
 
+export type PrepareGapRow = {
+  id: string
+  name: string
+  path: string
+  missing: boolean
+  source?: string | null
+}
+
+export type PrepareGapsResult = {
+  records: number
+  on_disk: number
+  missing: number
+  rows: PrepareGapRow[]
+}
+
 export type MetadataKeyRow = {
   key: string
   type: string
@@ -342,6 +357,20 @@ export function prepareTargetAssets(
 ): Promise<PrepareAssetsResult> {
   return request<PrepareAssetsResult>(
     `/projects/${projectId}/targets/${targetId}/prepare`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+export function previewPrepareGaps(
+  projectId: number,
+  targetId: number,
+  payload: PrepareAssetsPayload,
+): Promise<PrepareGapsResult> {
+  return request<PrepareGapsResult>(
+    `/projects/${projectId}/targets/${targetId}/prepare-gaps`,
     {
       method: 'POST',
       body: JSON.stringify(payload),
