@@ -166,6 +166,8 @@ class PrepareAssetsOut(BaseModel):
     skipped: int
     missing: int
     folders: int
+    id_map_entries: int = 0
+    id_map_path: str | None = None
 
 
 class PrepareGapRow(BaseModel):
@@ -183,6 +185,7 @@ class PrepareGapsOut(BaseModel):
     on_disk: int
     missing: int
     rows: list[PrepareGapRow]
+    id_map_entries: int = 0
 
 
 class PrepareSchemaRequest(BaseModel):

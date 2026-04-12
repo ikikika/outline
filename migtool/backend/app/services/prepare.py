@@ -18,6 +18,9 @@ MetaMode = Literal["directus", "map", "generate"]
 _UUID_RE = re.compile(
     r"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
 )
+_UUID_FULL_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
 _MEDIA_EXTS = {
     ".jpg",
     ".jpeg",
@@ -286,6 +289,66 @@ def _title_from_name(name: str) -> str:
 def _parse_uuid_prefix(name: str) -> str | None:
     m = _UUID_RE.match(Path(name).stem)
     return m.group(1).lower() if m else None
+
+
+def _is_uuid(value: Any) -> bool:
+    if value is None:
+        return False
+    return bool(_UUID_FULL_RE.match(str(value).strip()))
+
+
+def _resolve_directus_file_id(
+    raw_id: Any,
+    id_map: dict[str, str],
+) -> str:
+    """
+    Return a Directus file UUID.
+
+    Non-UUID source ids (e.g. WP integers) are remapped via id_map (stable across
+    re-runs when the map is loaded from disk first).
+    """
+    if raw_id is None:
+        return str(uuid.uuid4())
+    source_key = str(raw_id).strip()
+    if not source_key:
+        return str(uuid.uuid4())
+    if _is_uuid(source_key):
+        return source_key.lower()
+    existing = id_map.get(source_key)
+    if existing and _is_uuid(existing):
+        return existing.lower()
+    new_id = str(uuid.uuid4())
+    id_map[source_key] = new_id
+    return new_id
+
+
+def _load_file_id_map(path: Path) -> dict[str, str]:
+    if not path.is_file():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, str] = {}
+    for key, value in raw.items():
+        if value is None:
+            continue
+        sk = str(key).strip()
+        sv = str(value).strip()
+        if sk and _is_uuid(sv):
+            out[sk] = sv.lower()
+    return out
+
+
+def _write_file_id_map(path: Path, id_map: dict[str, str]) -> None:
+    # Stable key order for readable diffs.
+    payload = {str(k): str(v) for k, v in sorted(id_map.items(), key=lambda kv: str(kv[0]))}
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _nested_get(obj: dict[str, Any] | Any, dotted: str) -> Any:
@@ -583,11 +646,17 @@ def _resolve_mapped_value(
     return raw
 
 
-def _normalize_directus_record(rec: dict[str, Any]) -> dict[str, Any]:
+def _normalize_directus_record(
+    rec: dict[str, Any],
+    id_map: dict[str, str] | None = None,
+) -> dict[str, Any]:
     sample = _directus_sample()
-    file_id = str(rec.get("id") or "").strip()
-    if not file_id:
+    shared = id_map if id_map is not None else {}
+    raw_id = rec.get("id")
+    if raw_id is None or str(raw_id).strip() == "":
         raise PrepareError("Directus metadata record missing id")
+    # Remap non-UUID ids (e.g. mislabeled export) so Directus accepts them.
+    file_id = _resolve_directus_file_id(raw_id, shared)
     download = (
         str(rec.get("filename_download") or rec.get("filename_disk") or file_id).strip()
     )
@@ -632,6 +701,7 @@ def _normalize_directus_record(rec: dict[str, Any]) -> dict[str, Any]:
 def _map_record(
     rec: dict[str, Any],
     field_map: dict[str, str] | None = None,
+    id_map: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Map arbitrary source JSON → Directus file fields via field_map."""
     fmap = {
@@ -641,16 +711,28 @@ def _map_record(
     }
     defaults = _directus_default_map()
     sample = _directus_sample()
+    shared = id_map if id_map is not None else {}
 
     # Resolve id first (other sentinels may depend on it).
     id_src = fmap.get("id") or defaults.get("id") or _MAP_GENERATE_UUID
     if id_src == _MAP_GENERATE_UUID:
-        file_id = str(uuid.uuid4())
+        # Still record a stable map when the source row has a non-UUID id
+        # (common for WP) even if the UI chose "generate UUID".
+        raw_fallback = rec.get("id") if isinstance(rec, dict) else None
+        if raw_fallback is not None and not _is_uuid(raw_fallback):
+            file_id = _resolve_directus_file_id(raw_fallback, shared)
+        else:
+            file_id = str(uuid.uuid4())
     elif id_src and not id_src.startswith("__"):
         raw_id = _nested_get(rec, id_src)
-        file_id = str(raw_id).strip() if raw_id is not None else str(uuid.uuid4())
+        # Non-UUID source ids → generate UUID and record in file_id_map.
+        file_id = _resolve_directus_file_id(raw_id, shared)
     else:
-        file_id = str(uuid.uuid4())
+        raw_fallback = rec.get("id") if isinstance(rec, dict) else None
+        if raw_fallback is not None and not _is_uuid(raw_fallback):
+            file_id = _resolve_directus_file_id(raw_fallback, shared)
+        else:
+            file_id = str(uuid.uuid4())
 
     # Resolve download name next (mime / disk / title may depend on it).
     dl_src = fmap.get("filename_download") or defaults.get("filename_download")
@@ -866,17 +948,54 @@ def _load_prepare_records(
     mode: MetaMode,
     metadata_abs_path: Path | None = None,
     field_map: dict[str, str] | None = None,
-) -> list[dict[str, Any]]:
+    id_map: dict[str, str] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """
+    Build Directus file records for prepare / gap preview.
+
+    Returns (records, id_map) where id_map is source_id → uuid for any non-UUID
+    source ids that were remapped (mutates / extends the provided id_map).
+    """
+    shared = id_map if id_map is not None else {}
     if mode == "generate":
-        return _generate_records(files_dir)
+        return _generate_records(files_dir), shared
     if mode in ("directus", "map"):
         if metadata_abs_path is None or not metadata_abs_path.is_file():
             raise PrepareError("Metadata JSON is required for this mode")
         raw = _load_json_records(metadata_abs_path)
         if mode == "directus":
-            return [_normalize_directus_record(r) for r in raw]
-        return [_map_record(r, field_map) for r in raw]
+            return (
+                [_normalize_directus_record(r, id_map=shared) for r in raw],
+                shared,
+            )
+        return (
+            [_map_record(r, field_map, id_map=shared) for r in raw],
+            shared,
+        )
     raise PrepareError(f"Unknown mode: {mode}")
+
+
+def _finalize_non_uuid_ids(
+    records: list[dict[str, Any]],
+    id_map: dict[str, str],
+) -> None:
+    """
+    Safety net: any leftover non-UUID Directus file ids get remapped in place.
+    Updates filename_disk when it was clearly derived from the old id.
+    """
+    for record in records:
+        old = record.get("id")
+        if old is None or _is_uuid(old):
+            continue
+        old_key = str(old).strip()
+        new_id = _resolve_directus_file_id(old_key, id_map)
+        record["id"] = new_id
+        disk = str(record.get("filename_disk") or "")
+        if disk == old_key or disk.startswith(f"{old_key}."):
+            suffix = Path(disk).suffix if disk.startswith(f"{old_key}.") else Path(
+                str(record.get("filename_download") or "")
+            ).suffix
+            record["filename_disk"] = f"{new_id}{suffix}"
 
 
 def _expected_prepared_path(record: dict[str, Any]) -> str:
@@ -896,11 +1015,13 @@ def preview_asset_gaps(
     mode: MetaMode,
     metadata_abs_path: Path | None = None,
     field_map: dict[str, str] | None = None,
+    target_id: int | None = None,
 ) -> dict[str, Any]:
     """
     Compare resolved metadata records to binaries in the selected folder.
 
     Does not write prepared output. Uses the same matching rules as prepare.
+    When target_id is set, reuses an existing file_id_map.json for stable UUIDs.
     """
     extract_root = extract_dir_for_upload(project_id, upload_id)
     if not extract_root.is_dir():
@@ -910,12 +1031,20 @@ def preview_asset_gaps(
     if not files_dir.is_dir():
         raise PrepareError(f"Files folder not found: {folder_path or '(upload root)'}")
 
-    records = _load_prepare_records(
+    id_map: dict[str, str] = {}
+    if target_id is not None:
+        id_map = _load_file_id_map(
+            prepared_dir(project_id, target_id) / "file_id_map.json"
+        )
+
+    records, id_map = _load_prepare_records(
         files_dir=files_dir,
         mode=mode,
         metadata_abs_path=metadata_abs_path,
         field_map=field_map,
+        id_map=id_map,
     )
+    _finalize_non_uuid_ids(records, id_map)
 
     rows: list[dict[str, Any]] = []
     on_disk = 0
@@ -949,6 +1078,7 @@ def preview_asset_gaps(
         "on_disk": on_disk,
         "missing": missing,
         "rows": rows,
+        "id_map_entries": len(id_map),
     }
 
 
@@ -966,6 +1096,9 @@ def build_prepared(
     """
     Write prepared/target_{target_id}/ with files/, files_metadata.json, folders.json.
 
+    When source ids mapped to Directus `id` are not UUIDs, remaps them and writes
+    file_id_map.json (old id → uuid) beside the metadata.
+
     Returns a summary dict for the API response.
     """
     extract_root = extract_dir_for_upload(project_id, upload_id)
@@ -976,19 +1109,24 @@ def build_prepared(
     if not files_dir.is_dir():
         raise PrepareError(f"Files folder not found: {folder_path or '(upload root)'}")
 
-    records = _load_prepare_records(
+    out_root = prepared_dir(project_id, target_id)
+    out_root.mkdir(parents=True, exist_ok=True)
+    map_path = out_root / "file_id_map.json"
+    id_map = _load_file_id_map(map_path)
+
+    records, id_map = _load_prepare_records(
         files_dir=files_dir,
         mode=mode,
         metadata_abs_path=metadata_abs_path,
         field_map=field_map,
+        id_map=id_map,
     )
+    _finalize_non_uuid_ids(records, id_map)
 
-    out_root = prepared_dir(project_id, target_id)
     out_files = out_root / "files"
     if out_files.exists():
         shutil.rmtree(out_files)
     out_files.mkdir(parents=True, exist_ok=True)
-    out_root.mkdir(parents=True, exist_ok=True)
 
     written_meta: list[dict[str, Any]] = []
     copied = 0
@@ -1041,6 +1179,14 @@ def build_prepared(
         encoding="utf-8",
     )
 
+    if id_map:
+        _write_file_id_map(map_path, id_map)
+        id_map_written = True
+    else:
+        if map_path.is_file():
+            map_path.unlink()
+        id_map_written = False
+
     folders_src = _find_folders_json(files_dir, metadata_abs_path)
     folders_out = out_root / "folders.json"
     if folders_src is not None:
@@ -1063,6 +1209,12 @@ def build_prepared(
         "skipped": skipped,
         "missing": missing,
         "folders": folders_count,
+        "id_map_entries": len(id_map),
+        "id_map_path": (
+            f"uploads/project_{project_id}/prepared/target_{target_id}/file_id_map.json"
+            if id_map_written
+            else None
+        ),
     }
 
 

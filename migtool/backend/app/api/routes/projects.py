@@ -793,6 +793,7 @@ def prepare_target_gaps(
             mode=payload.mode,  # type: ignore[arg-type]
             metadata_abs_path=meta_path,
             field_map=payload.field_map,
+            target_id=target_id,
         )
     except PrepareError as exc:
         raise HTTPException(

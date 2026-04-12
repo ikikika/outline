@@ -107,6 +107,8 @@ export type PrepareAssetsResult = {
   skipped: number
   missing: number
   folders: number
+  id_map_entries?: number
+  id_map_path?: string | null
 }
 
 export type PrepareGapRow = {

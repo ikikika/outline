@@ -1474,6 +1474,16 @@ export function PrepareAssetsPage() {
                                 : 'copied if present · else []'}
                             </span>
                           </div>
+                          {(writeResult?.id_map_entries ?? 0) > 0 ? (
+                            <div>
+                              <span className="mono">file_id_map.json</span>{' '}
+                              <span className="meta">
+                                {writeResult?.id_map_entries} source id
+                                {writeResult?.id_map_entries === 1 ? '' : 's'} →
+                                UUID
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 
@@ -1569,6 +1579,9 @@ export function PrepareAssetsPage() {
                             : ''}
                           {writeResult.skipped
                             ? `, ${writeResult.skipped} skipped`
+                            : ''}
+                          {writeResult.id_map_entries
+                            ? `, ${writeResult.id_map_entries} ids remapped in file_id_map.json`
                             : ''}
                           . Next: upload assets to{' '}
                           {activeTarget?.name ?? 'Directus'}.
