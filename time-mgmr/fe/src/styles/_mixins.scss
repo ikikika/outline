@@ -1,0 +1,67 @@
+@use "sass:map";
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+$breakpoints: (
+  sm: 640px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+  '2xl': 1536px,
+);
+
+@mixin respond-to($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (max-width: map.get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  }
+}
+
+@mixin respond-from($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (min-width: map.get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  }
+}
+
+@mixin responsive($breakpoint) {
+  @include respond-to($breakpoint) {
+    @content;
+  }
+}
+
+@mixin responsive-sm {
+  @include respond-to(sm) {
+    @content;
+  }
+}
+
+@mixin responsive-md {
+  @include respond-to(md) {
+    @content;
+  }
+}
+
+@mixin responsive-lg {
+  @include respond-to(lg) {
+    @content;
+  }
+}
+
+@mixin responsive-xl {
+  @include respond-to(xl) {
+    @content;
+  }
+}
+
+@mixin responsive-2xl {
+  @include respond-to('2xl') {
+    @content;
+  }
+}

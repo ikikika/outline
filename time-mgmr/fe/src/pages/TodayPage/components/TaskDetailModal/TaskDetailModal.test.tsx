@@ -1,0 +1,190 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  elapsedSecondsForEntries,
+  formatClock,
+  TaskDetailModal,
+} from './TaskDetailModal';
+import type { ITask, ITimeEntry } from '@/features/activities';
+
+vi.mock('@/components/ui', () => ({
+  Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button {...props}>{children}</button>
+  ),
+}));
+
+vi.mock('@/features/reports', () => ({
+  buildActivityMetrics: () => ({
+    plannedMinutes: 120,
+    actualMinutes: 0,
+    varianceMinutes: -120,
+    accuracyRatio: null,
+    varianceKind: 'untracked',
+    entryCount: 0,
+  }),
+}));
+
+vi.mock('../../utils/taskBlockColor/taskBlockColor', () => ({
+  getTaskBlockColor: () => '#2563eb',
+}));
+
+const task: ITask = {
+  id: 'task-1',
+  activityId: 'activity-1',
+  title: 'Deep work',
+  date: '2026-07-19',
+  plannedStart: '09:00',
+  plannedEnd: '11:00',
+  categoryId: 'deep_work',
+  notes: '',
+  status: 'planned',
+  createdAt: '2026-07-19T00:00:00.000Z',
+  updatedAt: '2026-07-19T00:00:00.000Z',
+};
+
+const baseProps = {
+  task,
+  entries: [] as ITimeEntry[],
+  runningEntry: null as ITimeEntry | null,
+  onClose: vi.fn(),
+  onEdit: vi.fn(),
+  onDelete: vi.fn(),
+  onStatus: vi.fn(),
+  onStart: vi.fn(),
+  onStop: vi.fn(),
+  onLogManual: vi.fn(),
+};
+
+describe('formatClock', () => {
+  it('formats under an hour as M:SS', () => {
+    expect(formatClock(65)).toBe('1:05');
+    expect(formatClock(5)).toBe('0:05');
+  });
+
+  it('formats hours as H:MM:SS', () => {
+    expect(formatClock(3723)).toBe('1:02:03');
+  });
+});
+
+describe('elapsedSecondsForEntries', () => {
+  it('sums completed minutes and live running seconds', () => {
+    const now = Date.parse('2026-07-19T10:00:30.000Z');
+    const entries: ITimeEntry[] = [
+      {
+        id: 'e1',
+        taskId: 'task-1',
+        startAt: '2026-07-19T09:00:00.000Z',
+        endAt: '2026-07-19T09:30:00.000Z',
+        durationMinutes: 30,
+        source: 'timer',
+        createdAt: '2026-07-19T09:00:00.000Z',
+        updatedAt: '2026-07-19T09:30:00.000Z',
+      },
+      {
+        id: 'e2',
+        taskId: 'task-1',
+        startAt: '2026-07-19T09:59:00.000Z',
+        endAt: null,
+        durationMinutes: null,
+        source: 'timer',
+        createdAt: '2026-07-19T09:59:00.000Z',
+        updatedAt: '2026-07-19T09:59:00.000Z',
+      },
+    ];
+    expect(elapsedSecondsForEntries(entries, now)).toBe(30 * 60 + 90);
+  });
+});
+
+describe('TaskDetailModal focus mode', () => {
+  it('expands to full screen with a Start button and times', async () => {
+    const user = userEvent.setup();
+    render(<TaskDetailModal {...baseProps} />);
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+
+    expect(screen.getByRole('heading', { name: 'Deep work' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
+    expect(screen.getByText('Elapsed')).toBeInTheDocument();
+    expect(screen.getByText('Remaining')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeInTheDocument();
+  });
+
+  it('exits focus mode back to the detail modal', async () => {
+    const user = userEvent.setup();
+    render(<TaskDetailModal {...baseProps} />);
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+    await user.click(screen.getByRole('button', { name: 'Exit focus mode' }));
+
+    expect(screen.getByRole('heading', { name: 'Deep work' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Expand to full screen' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Exit focus mode' })).not.toBeInTheDocument();
+  });
+
+  it('shows Stop when the timer is running for this task', async () => {
+    const user = userEvent.setup();
+    const runningEntry: ITimeEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        entries={[runningEntry]}
+        runningEntry={runningEntry}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument();
+  });
+
+  it('calls onStart from the focus Start button', async () => {
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    render(<TaskDetailModal {...baseProps} onStart={onStart} />);
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(onStart).toHaveBeenCalledWith('task-1');
+  });
+
+  it('calls onStop from the focus Stop button', async () => {
+    const user = userEvent.setup();
+    const onStop = vi.fn();
+    const runningEntry: ITimeEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        entries={[runningEntry]}
+        runningEntry={runningEntry}
+        onStop={onStop}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+    await user.click(screen.getByRole('button', { name: 'Stop' }));
+
+    expect(onStop).toHaveBeenCalledWith('entry-1');
+  });
+});

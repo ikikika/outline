@@ -1,0 +1,37 @@
+.container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.fieldError {
+  color: var(--color-alert-error-text);
+  font-size: 0.75rem;
+}
+
+.submitError {
+  padding: 1rem;
+  background-color: var(--color-alert-error-bg);
+  border: 1px solid var(--color-alert-error-border);
+  border-radius: 0.375rem;
+  color: var(--color-alert-error-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+}

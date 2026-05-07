@@ -1,0 +1,176 @@
+:root {
+  /* Colors - Light Mode */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-text-inverse: #ffffff;
+
+  --color-bg: #ffffff;
+  --color-surface: #f9fafb;
+  --color-surface-elevated: #ffffff;
+
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+
+  --color-border: #e5e7eb;
+  --color-input-border: #d1d5db;
+  --color-secondary-bg: #e5e7eb;
+  --color-secondary-bg-hover: #d1d5db;
+
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-danger-bg: #ef4444;
+  --color-danger-bg-hover: #dc2626;
+  --color-alert-error-bg: #fee2e2;
+  --color-alert-error-border: #fecaca;
+  --color-alert-error-text: #991b1b;
+  --color-warning: #f59e0b;
+  --color-ghost-bg-hover: #eff6ff;
+
+  --color-primary-ring: rgba(37, 99, 235, 0.2);
+  --color-error-ring: rgba(220, 38, 38, 0.2);
+  --shadow-interactive: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-card-elevated: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+  /* Landing page palette */
+  --landing-page-bg: #0f172a;
+  --landing-nav-bg: rgba(15, 23, 42, 0.85);
+  --landing-surface: #1e293b;
+  --landing-border: #334155;
+  --landing-divider: rgba(255, 255, 255, 0.06);
+  --landing-text: #f1f5f9;
+  --landing-text-strong: #f8fafc;
+  --landing-text-muted: #94a3b8;
+  --landing-text-soft: #cbd5e1;
+  --landing-text-dim: #475569;
+  --landing-badge-bg: rgba(59, 130, 246, 0.15);
+  --landing-badge-border: rgba(59, 130, 246, 0.35);
+  --landing-badge-text: #93c5fd;
+  --landing-highlight-purple: #c084fc;
+  --landing-highlight-green: #86efac;
+  --landing-feature-hover-border: #3b82f6;
+  --landing-shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
+  --landing-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+
+  /* Backward-compatible aliases */
+  --color-background: var(--color-bg);
+  --color-secondary: var(--color-text-secondary);
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-text-inverse: #ffffff;
+
+  --color-bg: #111827;
+  --color-surface: #1f2933;
+  --color-surface-elevated: #111827;
+
+  --color-text: #f9fafb;
+  --color-text-secondary: #9ca3af;
+
+  --color-border: #374151;
+  --color-input-border: #4b5563;
+  --color-secondary-bg: #374151;
+  --color-secondary-bg-hover: #4b5563;
+
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-danger-bg: #ef4444;
+  --color-danger-bg-hover: #f87171;
+  --color-alert-error-bg: rgba(239, 68, 68, 0.2);
+  --color-alert-error-border: rgba(239, 68, 68, 0.45);
+  --color-alert-error-text: #fecaca;
+  --color-warning: #fbbf24;
+  --color-ghost-bg-hover: rgba(59, 130, 246, 0.15);
+
+  --color-primary-ring: rgba(96, 165, 250, 0.3);
+  --color-error-ring: rgba(239, 68, 68, 0.3);
+  --shadow-interactive: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-card-elevated: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
+
+  /* Landing page palette (intentionally static visual identity) */
+  --landing-page-bg: #0f172a;
+  --landing-nav-bg: rgba(15, 23, 42, 0.85);
+  --landing-surface: #1e293b;
+  --landing-border: #334155;
+  --landing-divider: rgba(255, 255, 255, 0.06);
+  --landing-text: #f1f5f9;
+  --landing-text-strong: #f8fafc;
+  --landing-text-muted: #94a3b8;
+  --landing-text-soft: #cbd5e1;
+  --landing-text-dim: #475569;
+  --landing-badge-bg: rgba(59, 130, 246, 0.15);
+  --landing-badge-border: rgba(59, 130, 246, 0.35);
+  --landing-badge-text: #93c5fd;
+  --landing-highlight-purple: #c084fc;
+  --landing-highlight-green: #86efac;
+  --landing-feature-hover-border: #3b82f6;
+  --landing-shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
+  --landing-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+
+  /* Backward-compatible aliases */
+  --color-background: var(--color-bg);
+  --color-secondary: var(--color-text-secondary);
+}
+
+/* Velvet Theme Overrides */
+[data-theme="velvet"] {
+  --color-primary: #be123c;
+  --color-primary-hover: #9f1239;
+  --color-text-inverse: #fff1f2;
+
+  --color-bg: #2b0b12;
+  --color-surface: #3b0f19;
+  --color-surface-elevated: #4c1320;
+
+  --color-text: #ffe4e6;
+  --color-text-secondary: #fda4af;
+
+  --color-border: #881337;
+  --color-input-border: #9f1239;
+  --color-secondary-bg: #5f172a;
+  --color-secondary-bg-hover: #7f1d3a;
+
+  --color-success: #22c55e;
+  --color-error: #fb7185;
+  --color-danger-bg: #e11d48;
+  --color-danger-bg-hover: #be123c;
+  --color-alert-error-bg: rgba(225, 29, 72, 0.2);
+  --color-alert-error-border: rgba(251, 113, 133, 0.45);
+  --color-alert-error-text: #fecdd3;
+  --color-warning: #fb7185;
+  --color-ghost-bg-hover: rgba(251, 113, 133, 0.16);
+
+  --color-primary-ring: rgba(244, 63, 94, 0.35);
+  --color-error-ring: rgba(251, 113, 133, 0.35);
+  --shadow-interactive: 0 4px 12px rgba(34, 5, 10, 0.45);
+  --shadow-card-elevated: 0 1px 3px 0 rgba(34, 5, 10, 0.4), 0 1px 2px -1px rgba(34, 5, 10, 0.4);
+  --shadow-card-hover: 0 4px 6px -1px rgba(34, 5, 10, 0.5), 0 2px 4px -2px rgba(34, 5, 10, 0.5);
+
+  /* Landing page palette (intentionally static visual identity) */
+  --landing-page-bg: #0f172a;
+  --landing-nav-bg: rgba(15, 23, 42, 0.85);
+  --landing-surface: #1e293b;
+  --landing-border: #334155;
+  --landing-divider: rgba(255, 255, 255, 0.06);
+  --landing-text: #f1f5f9;
+  --landing-text-strong: #f8fafc;
+  --landing-text-muted: #94a3b8;
+  --landing-text-soft: #cbd5e1;
+  --landing-text-dim: #475569;
+  --landing-badge-bg: rgba(59, 130, 246, 0.15);
+  --landing-badge-border: rgba(59, 130, 246, 0.35);
+  --landing-badge-text: #93c5fd;
+  --landing-highlight-purple: #c084fc;
+  --landing-highlight-green: #86efac;
+  --landing-feature-hover-border: #3b82f6;
+  --landing-shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
+  --landing-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+
+  /* Backward-compatible aliases */
+  --color-background: var(--color-bg);
+  --color-secondary: var(--color-text-secondary);
+}

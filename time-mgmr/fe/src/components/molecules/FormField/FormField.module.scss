@@ -1,0 +1,21 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.error {
+  color: var(--color-alert-error-text);
+  font-size: 0.75rem;
+}
+
+.helperText {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}

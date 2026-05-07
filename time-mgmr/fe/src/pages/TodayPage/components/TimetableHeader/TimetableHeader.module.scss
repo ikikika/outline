@@ -1,0 +1,56 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text, #111827);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.viewToggleBtn {
+  border: none;
+  background: transparent;
+  padding: 0.28rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.viewToggleBtn + .viewToggleBtn {
+  border-left: 1px solid var(--color-border, #e5e7eb);
+}
+
+.viewToggleBtnActive {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--color-primary, #2563eb);
+}
+
+.dateInput {
+  width: auto;
+  height: 2rem;
+  font-size: 0.8rem;
+}

@@ -1,0 +1,232 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--landing-page-bg);
+  color: var(--landing-text);
+  font-family: inherit;
+}
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--landing-divider);
+  position: sticky;
+  top: 0;
+  background-color: var(--landing-nav-bg);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+}
+
+.navLogo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--landing-text);
+  letter-spacing: -0.02em;
+}
+
+.navLinks {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+
+  a {
+    text-decoration: none;
+  }
+}
+
+/* ── Hero ── */
+.hero {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 6rem 2rem;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    padding: 4rem 1.5rem;
+  }
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  background-color: var(--landing-badge-bg);
+  border: 1px solid var(--landing-badge-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--landing-badge-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.heroTitle {
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--landing-text-strong);
+}
+
+.heroSubtitle {
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: var(--landing-text-muted);
+  max-width: 480px;
+}
+
+.heroActions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+
+  a {
+    text-decoration: none;
+  }
+}
+
+/* ── Code block visual ── */
+.heroVisual {
+  display: flex;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.codeBlock {
+  background-color: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 0.75rem;
+  padding: 1.75rem 2rem;
+  font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.9rem;
+  line-height: 1.9;
+  color: var(--landing-text-soft);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--landing-shadow-lg);
+
+  em {
+    color: var(--landing-highlight-purple);
+    font-style: normal;
+  }
+
+  b {
+    color: var(--landing-highlight-green);
+    font-weight: normal;
+  }
+}
+
+.codeLine {
+  display: block;
+}
+
+/* ── Features ── */
+.features {
+  background-color: var(--landing-page-bg);
+  padding: 5rem 2rem;
+  border-top: 1px solid var(--landing-divider);
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--landing-text);
+  margin-bottom: 3rem;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.featureCard {
+  background-color: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 0.75rem;
+  padding: 1.75rem;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    border-color: var(--landing-feature-hover-border);
+    transform: translateY(-2px);
+  }
+}
+
+.featureIcon {
+  font-size: 1.75rem;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.featureTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--landing-text);
+  margin-bottom: 0.5rem;
+}
+
+.featureDesc {
+  font-size: 0.9rem;
+  color: var(--landing-text-muted);
+  line-height: 1.65;
+}
+
+/* ── CTA ── */
+.cta {
+  padding: 6rem 2rem;
+  text-align: center;
+  background: var(--landing-gradient);
+  border-top: 1px solid var(--landing-divider);
+
+  a {
+    text-decoration: none;
+  }
+}
+
+.ctaTitle {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--landing-text-strong);
+  margin-bottom: 1rem;
+}
+
+.ctaSubtitle {
+  color: var(--landing-text-muted);
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+}
+
+/* ── Footer ── */
+.footer {
+  padding: 1.5rem 2rem;
+  text-align: center;
+  border-top: 1px solid var(--landing-divider);
+  font-size: 0.875rem;
+  color: var(--landing-text-dim);
+}
