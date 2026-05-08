@@ -33,7 +33,6 @@ export interface ITasksJsonFile {
 interface IImportedTaskLike {
   id?: string;
   activityId?: string;
-  acitvity_id?: string;
   title?: string;
   date?: string;
   plannedStart?: string;
@@ -80,7 +79,7 @@ export function normalizeImportedTasks(
 
     return {
       id: String(task.id ?? ''),
-      activityId: String(task.activityId ?? task.acitvity_id ?? task.id ?? ''),
+      activityId: String(task.activityId ?? task.id ?? ''),
       title: String(task.title ?? ''),
       date: startDate,
       plannedStart: normalizedStart,

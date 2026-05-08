@@ -14,7 +14,7 @@ describe('jsonBackup', () => {
       [
         {
           id: 'task01',
-          acitvity_id: 'ai-agents',
+          activityId: 'ai-agents',
           title: 'AI agent vid 01',
           plannedStart: '2026-07-19T08:00:00.000Z',
           plannedEnd: '2026-07-19T10:15:00.000Z',
@@ -23,7 +23,7 @@ describe('jsonBackup', () => {
         },
         {
           id: 'task05',
-          acitvity_id: 'ai-agents',
+          activityId: 'ai-agents',
           title: 'AI agent vid 05',
           plannedStart: '2026-07-20T09:00:00.000Z',
           plannedEnd: '2026-07-20T13:15:00.000Z',
@@ -48,6 +48,7 @@ describe('jsonBackup', () => {
     });
     expect(normalized[1]).toMatchObject({
       id: 'task05',
+      activityId: 'ai-agents',
       date: '2026-07-20',
       plannedStart: '09:00',
       plannedEnd: '13:15',

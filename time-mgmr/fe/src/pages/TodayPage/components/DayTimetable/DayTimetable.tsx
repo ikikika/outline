@@ -7,14 +7,21 @@ import {
   todayKey,
   type ITask,
 } from '@/features/activities';
-import { assignOverlapColumns, overlapColumnStyle } from '../../utils/overlapLayout/overlapLayout';
+import {
+  assignOverlapColumns,
+  overlapColumnStyle,
+  visualOverlapEnd,
+} from '../../utils/overlapLayout/overlapLayout';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './DayTimetable.module.scss';
 
 const DAY_START_HOUR = 0;
 const DAY_END_HOUR = 24;
 const PX_PER_MINUTE = 1.2;
+const MIN_BLOCK_HEIGHT_PX = 28;
 const SNAP_MINUTES = 15;
+/** Ignore pointer jitter below this before treating a gesture as a drag. */
+const DRAG_THRESHOLD_PX = 8;
 const NOW_TICK_MS = 30_000;
 
 interface DayTimetableProps {
@@ -32,6 +39,7 @@ interface DragState {
   offsetY: number;
   previewStart: number;
   originStart: number;
+  originClientY: number;
   pointerId: number;
   moved: boolean;
 }
@@ -139,7 +147,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
       return {
         id: activity.id,
         start,
-        end: start + duration,
+        end: visualOverlapEnd(start, duration, MIN_BLOCK_HEIGHT_PX, PX_PER_MINUTE),
       };
     });
     return assignOverlapColumns(intervals);
@@ -187,6 +195,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
       offsetY,
       previewStart: start,
       originStart: start,
+      originClientY: event.clientY,
       pointerId: event.pointerId,
       moved: false,
     });
@@ -194,31 +203,36 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!drag) return;
+
+    const distance = Math.abs(event.clientY - drag.originClientY);
+    if (!drag.moved && distance < DRAG_THRESHOLD_PX) {
+      return;
+    }
+
     const nextStart = clampStart(
       clientYToStartMinutes(event.clientY, drag.offsetY),
       drag.duration
     );
-    const moved = drag.moved || Math.abs(nextStart - drag.originStart) > 0;
-    setDrag({ ...drag, previewStart: nextStart, moved });
+    setDrag({ ...drag, previewStart: nextStart, moved: true });
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!drag) return;
-    const nextStart = clampStart(
-      clientYToStartMinutes(event.clientY, drag.offsetY),
-      drag.duration
-    );
     const id = drag.id;
-    const wasClick = !drag.moved && nextStart === drag.originStart;
     const activity = activities.find((item) => item.id === id);
+    const didDrag = drag.moved;
+    const nextStart = didDrag
+      ? clampStart(clientYToStartMinutes(event.clientY, drag.offsetY), drag.duration)
+      : drag.originStart;
+    const duration = drag.duration;
     setDrag(null);
 
-    if (wasClick) {
+    if (!didDrag) {
       if (activity) onSelect?.(activity);
       return;
     }
 
-    onReschedule(id, minutesToTime(nextStart), minutesToTime(nextStart + drag.duration));
+    onReschedule(id, minutesToTime(nextStart), minutesToTime(nextStart + duration));
   };
 
   return (
@@ -274,7 +288,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
               const isDragging = drag?.id === activity.id;
               const start = isDragging && drag ? drag.previewStart : baseStart;
               const top = (start - dayStartMinutes) * PX_PER_MINUTE;
-              const height = Math.max(duration * PX_PER_MINUTE, 28);
+              const height = Math.max(duration * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX);
               const placement = overlapLayout.get(activity.id) ?? {
                 column: 0,
                 columnCount: 1,

@@ -8,14 +8,21 @@ import {
   todayKey,
   type ITask,
 } from '@/features/activities';
-import { assignOverlapColumns, overlapColumnStyle } from '../../utils/overlapLayout/overlapLayout';
+import {
+  assignOverlapColumns,
+  overlapColumnStyle,
+  visualOverlapEnd,
+} from '../../utils/overlapLayout/overlapLayout';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './WeekTimetable.module.scss';
 
 const DAY_START_HOUR = 0;
 const DAY_END_HOUR = 24;
 const PX_PER_MINUTE = 1.2;
+const MIN_BLOCK_HEIGHT_PX = 22;
 const SNAP_MINUTES = 15;
+/** Ignore pointer jitter below this before treating a gesture as a drag. */
+const DRAG_THRESHOLD_PX = 8;
 const NOW_TICK_MS = 30_000;
 
 interface WeekTimetableProps {
@@ -36,6 +43,7 @@ interface DragState {
   offsetY: number;
   previewStart: number;
   originStart: number;
+  originClientY: number;
   moved: boolean;
 }
 
@@ -115,7 +123,11 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
         const isDragging = drag?.id === activity.id;
         const start =
           isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
-        return { id: activity.id, start, end: start + duration };
+        return {
+          id: activity.id,
+          start,
+          end: visualOverlapEnd(start, duration, MIN_BLOCK_HEIGHT_PX, PX_PER_MINUTE),
+        };
       });
       layouts.set(day, assignOverlapColumns(intervals));
     }
@@ -205,30 +217,36 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       offsetY,
       previewStart: start,
       originStart: start,
+      originClientY: event.clientY,
       moved: false,
     });
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!drag) return;
+
+    const distance = Math.abs(event.clientY - drag.originClientY);
+    if (!drag.moved && distance < DRAG_THRESHOLD_PX) {
+      return;
+    }
+
     const nextStart = clampStart(
       clientYToStartMinutes(event.clientY, drag.offsetY, drag.date),
       drag.duration
     );
-    const moved = drag.moved || Math.abs(nextStart - drag.originStart) > 0;
-    setDrag({ ...drag, previewStart: nextStart, moved });
+    setDrag({ ...drag, previewStart: nextStart, moved: true });
   };
 
   const handlePointerUp = () => {
     if (!drag) return;
     const id = drag.id;
-    const nextStart = drag.previewStart;
-    const wasClick = !drag.moved && nextStart === drag.originStart;
     const activity = activities.find((item) => item.id === id);
+    const didDrag = drag.moved;
+    const nextStart = drag.previewStart;
     const duration = drag.duration;
     setDrag(null);
 
-    if (wasClick) {
+    if (!didDrag) {
       if (activity) onSelect?.(activity);
       return;
     }
@@ -309,7 +327,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                   const isDragging = drag?.id === activity.id;
                   const start = isDragging && drag ? drag.previewStart : baseStart;
                   const top = (start - dayStartMinutes) * PX_PER_MINUTE;
-                  const height = Math.max(duration * PX_PER_MINUTE, 22);
+                  const height = Math.max(duration * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX);
                   const placement = layout?.get(activity.id) ?? { column: 0, columnCount: 1 };
                   const { left, width } = overlapColumnStyle(placement, 2);
 

@@ -67,6 +67,20 @@ export function assignOverlapColumns(
   return result;
 }
 
+/**
+ * End minute used for overlap packing when blocks have a min rendered height.
+ * Keeps column layout in sync with what the user actually sees stacked on the track.
+ */
+export function visualOverlapEnd(
+  start: number,
+  durationMinutes: number,
+  minHeightPx: number,
+  pxPerMinute: number
+): number {
+  const visualDuration = Math.max(durationMinutes, minHeightPx / pxPerMinute);
+  return start + visualDuration;
+}
+
 /** CSS left/width for a placed column (percent of track, with small gutters). */
 export function overlapColumnStyle(
   placement: IOverlapPlacement,

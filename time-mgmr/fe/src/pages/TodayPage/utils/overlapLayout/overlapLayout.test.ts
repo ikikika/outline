@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { assignOverlapColumns, overlapColumnStyle } from './overlapLayout';
+import {
+  assignOverlapColumns,
+  overlapColumnStyle,
+  visualOverlapEnd,
+} from './overlapLayout';
 
 describe('assignOverlapColumns', () => {
   it('gives full width to a single block', () => {
@@ -36,6 +40,39 @@ describe('assignOverlapColumns', () => {
     ]);
     expect(layout.get('a')?.columnCount).toBe(2);
     expect(layout.get('c')).toEqual({ column: 0, columnCount: 1 });
+  });
+
+  it('columns short abutting blocks when min height makes them visually overlap', () => {
+    const pxPerMinute = 1.2;
+    const minHeightPx = 28;
+    const aStart = 540;
+    const aDuration = 21; // shorter than min visual height (~23.3m)
+    const bStart = 561; // starts when a ends in raw time
+    const layout = assignOverlapColumns([
+      {
+        id: 'a',
+        start: aStart,
+        end: visualOverlapEnd(aStart, aDuration, minHeightPx, pxPerMinute),
+      },
+      {
+        id: 'b',
+        start: bStart,
+        end: visualOverlapEnd(bStart, 20, minHeightPx, pxPerMinute),
+      },
+    ]);
+    expect(layout.get('a')?.columnCount).toBe(2);
+    expect(layout.get('b')?.columnCount).toBe(2);
+    expect(layout.get('a')?.column).not.toBe(layout.get('b')?.column);
+  });
+});
+
+describe('visualOverlapEnd', () => {
+  it('uses planned duration when taller than the min block height', () => {
+    expect(visualOverlapEnd(100, 60, 28, 1.2)).toBe(160);
+  });
+
+  it('extends end to the min rendered height in minutes', () => {
+    expect(visualOverlapEnd(100, 5, 28, 1.2)).toBeCloseTo(100 + 28 / 1.2);
   });
 });
 
