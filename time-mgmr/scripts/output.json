@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "exportedAt": "2026-07-20T04:37:59.618Z",
+  "tasks": [
+    {
+      "id": "56468647",
+      "activityId": "github-copilot",
+      "title": "GitHub Copilot CLI",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 917
+    },
+    {
+      "id": "54695299",
+      "activityId": "github-copilot",
+      "title": "Hooks with GitHub Copilot",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 1006
+    },
+    {
+      "id": "54679635",
+      "activityId": "github-copilot",
+      "title": "Extending the postToolUse hook logic with GitHub Copilot CLI",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 1073
+    },
+    {
+      "id": "56468791",
+      "activityId": "github-copilot",
+      "title": "Detect insecure code with GitHub Copilot Chat",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 727
+    },
+    {
+      "id": "54629557",
+      "activityId": "github-copilot",
+      "title": "Sub agents with GitHub Copilot Chat",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 842
+    },
+    {
+      "id": "54963273",
+      "activityId": "github-copilot",
+      "title": "Agent Skills in GitHub Copilot",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 903
+    },
+    {
+      "id": "56468801",
+      "activityId": "github-copilot",
+      "title": "When To Use Custom Agents, Custom Prompts, Agent Skills, and Instructions",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 343
+    }
+  ]
+}

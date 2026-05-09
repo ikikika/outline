@@ -1,0 +1,204 @@
+{
+	"results": [
+		{
+			"_class": "lecture",
+			"id": 56468647,
+			"title": "GitHub Copilot CLI",
+			"created": "2026-06-04T02:05:21Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73627795,
+				"asset_type": "Video",
+				"title": "36 - GitHub Copilot CLI.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "36-GitHub-Copilot-CLI.mp4",
+				"time_estimation": 917
+			},
+			"sort_order": 16,
+			"object_index": 36,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 54695299,
+			"title": "Hooks with GitHub Copilot",
+			"created": "2026-02-06T04:05:48Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 71420575,
+				"asset_type": "Video",
+				"title": "GHCP NEW - hooks update - FINAL.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "GHCP-NEW-hooks-update-FINAL.mp4",
+				"time_estimation": 1006
+			},
+			"sort_order": 15,
+			"object_index": 37,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 71419247,
+					"asset_type": "ExternalLink",
+					"is_external": true,
+					"filename": "GitHub-Copilot-Hooks-docs",
+					"status": 1,
+					"title": "GitHub Copilot Hooks docs",
+					"time_estimation": 0
+				}
+			]
+		},
+		{
+			"_class": "lecture",
+			"id": 54679635,
+			"title": "Extending the postToolUse hook logic with GitHub Copilot CLI",
+			"created": "2026-02-05T01:51:16Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 71142587,
+				"asset_type": "Video",
+				"title": "GHCP HOOKS ADV - FINAL.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "GHCP-HOOKS-ADV-FINAL.mp4",
+				"time_estimation": 1073
+			},
+			"sort_order": 14,
+			"object_index": 38,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 56468791,
+			"title": "Detect insecure code with GitHub Copilot Chat",
+			"created": "2026-06-04T02:30:22Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73627995,
+				"asset_type": "Video",
+				"title": "39 - Detect insecure code with GitHub Copilot Chat.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "39-Detect-insecure-code-with-GitHub-Copilot-Chat.mp4",
+				"time_estimation": 727
+			},
+			"sort_order": 13,
+			"object_index": 39,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 54629557,
+			"title": "Sub agents with GitHub Copilot Chat",
+			"created": "2026-02-02T01:32:13Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 71034713,
+				"asset_type": "Video",
+				"title": "GHCP NEW - subagents - FINAL.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "GHCP-NEW-subagents-FINAL.mp4",
+				"time_estimation": 842
+			},
+			"sort_order": 12,
+			"object_index": 40,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 54963273,
+			"title": "Agent Skills in GitHub Copilot",
+			"created": "2026-02-25T11:13:19Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 71524959,
+				"asset_type": "Video",
+				"title": "test.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "test.mp4",
+				"time_estimation": 903
+			},
+			"sort_order": 11,
+			"object_index": 41,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 71525695,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "prompts.txt",
+					"status": 1,
+					"title": "prompts.txt",
+					"time_estimation": 0
+				},
+				{
+					"_class": "asset",
+					"id": 71525697,
+					"asset_type": "ExternalLink",
+					"is_external": true,
+					"filename": "Agent-Skills-docs",
+					"status": 1,
+					"title": "Agent Skills docs",
+					"time_estimation": 0
+				},
+				{
+					"_class": "asset",
+					"id": 71525703,
+					"asset_type": "ExternalLink",
+					"is_external": true,
+					"filename": "skills.sh",
+					"status": 1,
+					"title": "skills.sh",
+					"time_estimation": 0
+				}
+			]
+		},
+		{
+			"_class": "lecture",
+			"id": 56468801,
+			"title": "When To Use Custom Agents, Custom Prompts, Agent Skills, and Instructions",
+			"created": "2026-06-04T02:32:15Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73627901,
+				"asset_type": "Video",
+				"title": "42 - When To Use Custom Agents, Custom Prompts, Agent Skills, and Instructions.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "42-When-To-Use-Custom-Agents-Custom-Prompts-Agent-Skills-and-Instructions.mp4",
+				"time_estimation": 343
+			},
+			"sort_order": 10,
+			"object_index": 42,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 73627967,
+					"asset_type": "ExternalLink",
+					"is_external": true,
+					"filename": "GitHub-Copilot-When-to-Use-Custom-Agents-Prompts-Skills-and-Instructions-",
+					"status": 1,
+					"title": "GitHub Copilot: When to Use Custom Agents, Prompts, Skills, and Instructions?",
+					"time_estimation": 0
+				}
+			]
+		}
+	]
+}
