@@ -3,6 +3,14 @@
   "exportedAt": "2026-07-19T14:00:00.000Z",
   "activities": [
     {
+      "id": "github-copilot",
+      "title": "GitHub Copilot for Agentic Coding. Use GitHub Copilot AI to generate code, build apps, + more. (GitHub Copilot 2026)",
+      "categoryId": "admin",
+      "notes": "Inbox zero, pick top 3 for the day",
+      "createdAt": "2026-07-18T20:00:00.000Z",
+      "updatedAt": "2026-07-18T20:00:00.000Z"
+    },
+    {
       "id": "the-complete-agentic-ai-engineering-course",
       "title": "Master AI Agents in 30 days: build 8 real-world projects with OpenAI Agents SDK, CrewAI, LangGraph, AutoGen and MCP.",
       "categoryId": "admin",
@@ -11,24 +19,16 @@
       "updatedAt": "2026-07-18T20:00:00.000Z"
     },
     {
-      "id": "gh-300",
-      "title": "GH-300 course",
+      "id": "how-senior-devs-build-with-ai-2026-youtube",
+      "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform",
       "categoryId": "admin",
       "notes": "Inbox zero, pick top 3 for the day",
       "createdAt": "2026-07-18T20:00:00.000Z",
       "updatedAt": "2026-07-18T20:00:00.000Z"
     },
     {
-      "id": "gh-30-1",
-      "title": "GH-300 course 1",
-      "categoryId": "admin",
-      "notes": "Inbox zero, pick top 3 for the day",
-      "createdAt": "2026-07-18T20:00:00.000Z",
-      "updatedAt": "2026-07-18T20:00:00.000Z"
-    },
-    {
-      "id": "gh-30-2",
-      "title": "GH-300 course 1",
+      "id": "docker-and-kubernetes-the-complete-guide",
+      "title": "Build, test, and deploy Docker applications with Kubernetes while learning production-style development workflows",
       "categoryId": "admin",
       "notes": "Inbox zero, pick top 3 for the day",
       "createdAt": "2026-07-18T20:00:00.000Z",
