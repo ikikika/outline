@@ -1,0 +1,25 @@
+{
+	"name": "time-mgmr-be",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Serverless API for time-mgmr (SST v3 + AWS Lambda + DynamoDB)",
+	"scripts": {
+		"dev": "sst dev",
+		"deploy": "sst deploy",
+		"deploy:prod": "sst deploy --stage production",
+		"remove": "sst remove",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@aws-sdk/client-dynamodb": "^3.1090.0",
+		"@aws-sdk/lib-dynamodb": "^3.1090.0",
+		"hono": "^4.12.31",
+		"sst": "^4.17.1"
+	},
+	"devDependencies": {
+		"@types/aws-lambda": "^8.10.162",
+		"@types/node": "^26.1.1",
+		"typescript": "^7.0.2"
+	}
+}

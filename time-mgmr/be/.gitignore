@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# SST
+.sst/
+.open-next/
+
+# Build
+dist/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs / cache
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
