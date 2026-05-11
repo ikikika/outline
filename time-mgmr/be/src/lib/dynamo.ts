@@ -6,7 +6,13 @@ const client = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
 	marshallOptions: { removeUndefinedValues: true },
 });
 
-export const TABLE_NAME = Resource.TimeMgmrTable.name;
+export function getTableName(): string {
+	if (process.env.TABLE_NAME) {
+		return process.env.TABLE_NAME;
+	}
+
+	return Resource.TimeMgmrTable.name;
+}
 
 export function getDocumentClient(): DynamoDBDocumentClient {
 	return client;

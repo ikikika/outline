@@ -69,3 +69,34 @@ export function taskPrefix(): string {
 export function timeEntryPrefix(): string {
 	return 'TIME_ENTRY#';
 }
+
+export function profileSk(): string {
+	return 'PROFILE';
+}
+
+export function credentialsSk(): string {
+	return 'AUTH#CREDENTIALS';
+}
+
+export function refreshSk(tokenId: string): string {
+	return `REFRESH#${tokenId}`;
+}
+
+export function normalizeEmail(email: string): string {
+	return email.trim().toLowerCase();
+}
+
+export function emailGsiKeys(email: string, userId: string): {
+	gsi1pk: string;
+	gsi1sk: string;
+} {
+	const normalized = normalizeEmail(email);
+	return {
+		gsi1pk: `EMAIL#${normalized}`,
+		gsi1sk: `${USER_PREFIX}#${userId}`,
+	};
+}
+
+export function emailGsiPk(email: string): string {
+	return `EMAIL#${normalizeEmail(email)}`;
+}

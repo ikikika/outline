@@ -10,6 +10,15 @@ export default $config({
 		};
 	},
 	async run() {
+		const jwtAccessSecret = new sst.Secret(
+			'JwtAccessSecret',
+			'dev-access-secret-change-me-in-production'
+		);
+		const jwtRefreshSecret = new sst.Secret(
+			'JwtRefreshSecret',
+			'dev-refresh-secret-change-me-in-production'
+		);
+
 		const table = new sst.aws.Dynamo('TimeMgmrTable', {
 			fields: {
 				pk: 'string',
@@ -21,11 +30,18 @@ export default $config({
 			globalIndexes: {
 				Gsi1: { hashKey: 'gsi1pk', rangeKey: 'gsi1sk' },
 			},
+			ttl: 'expireAt',
 		});
 
 		const api = new sst.aws.ApiGatewayV2('Api', {
 			cors: {
-				allowOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+				allowOrigins: [
+					'http://localhost:3000',
+					'http://127.0.0.1:3000',
+					'http://localhost:5173',
+					'http://127.0.0.1:5173',
+					'https://tempo.codeoctagon.com',
+				],
 				allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 				allowHeaders: ['Content-Type', 'Authorization'],
 			},
@@ -33,7 +49,7 @@ export default $config({
 
 		const apiDefaults = {
 			handler: 'src/handlers/api.handler',
-			link: [table],
+			link: [table, jwtAccessSecret, jwtRefreshSecret],
 			timeout: '30 seconds',
 			memory: '512 MB',
 		};

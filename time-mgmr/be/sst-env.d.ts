@@ -10,6 +10,14 @@ declare module "sst" {
       "type": "sst.aws.ApiGatewayV2"
       "url": string
     }
+    "JwtAccessSecret": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "JwtRefreshSecret": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "TimeMgmrTable": {
       "name": string
       "type": "sst.aws.Dynamo"

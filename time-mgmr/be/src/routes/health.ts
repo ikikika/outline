@@ -2,7 +2,7 @@ import type { Hono } from 'hono';
 import { Resource } from 'sst';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 
-import { getDocumentClient, TABLE_NAME } from '../lib/dynamo.js';
+import { getDocumentClient, getTableName } from '../lib/dynamo.js';
 
 export function registerHealthRoutes(app: Hono): void {
 	app.get('/health', (c) =>
@@ -18,11 +18,11 @@ export function registerHealthRoutes(app: Hono): void {
 
 		await client.send(
 			new ScanCommand({
-				TableName: TABLE_NAME,
+				TableName: getTableName(),
 				Limit: 1,
 			})
 		);
 
-		return c.json({ ok: true, table: TABLE_NAME });
+		return c.json({ ok: true, table: getTableName() });
 	});
 }

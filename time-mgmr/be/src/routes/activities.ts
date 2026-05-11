@@ -7,11 +7,10 @@ import {
 	QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 
-import { getDocumentClient, TABLE_NAME } from '../lib/dynamo.js';
+import { getDocumentClient, getTableName } from '../lib/dynamo.js';
 import { activityPrefix, activitySk, userPk } from '../lib/keys.js';
+import { getUserId } from '../middleware/auth.js';
 import type { IActivity, IActivityRecord } from '../types/domain.js';
-
-const DEFAULT_USER_ID = 'default';
 
 function toActivity(record: IActivityRecord): IActivity {
 	return {
@@ -31,11 +30,11 @@ function toActivity(record: IActivityRecord): IActivity {
 export function registerActivityRoutes(app: Hono): void {
 	app.get('/activities', async (c) => {
 		const client = getDocumentClient();
-		const userId = c.req.header('x-user-id') ?? DEFAULT_USER_ID;
+		const userId = getUserId(c);
 
 		const result = await client.send(
 			new QueryCommand({
-				TableName: TABLE_NAME,
+				TableName: getTableName(),
 				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :skPrefix)',
 				ExpressionAttributeValues: {
 					':pk': userPk(userId),
@@ -53,12 +52,12 @@ export function registerActivityRoutes(app: Hono): void {
 
 	app.get('/activities/:id', async (c) => {
 		const client = getDocumentClient();
-		const userId = c.req.header('x-user-id') ?? DEFAULT_USER_ID;
+		const userId = getUserId(c);
 		const activityId = c.req.param('id');
 
 		const result = await client.send(
 			new GetCommand({
-				TableName: TABLE_NAME,
+				TableName: getTableName(),
 				Key: {
 					pk: userPk(userId),
 					sk: activitySk(activityId),
@@ -75,7 +74,7 @@ export function registerActivityRoutes(app: Hono): void {
 
 	app.post('/activities', async (c) => {
 		const client = getDocumentClient();
-		const userId = c.req.header('x-user-id') ?? DEFAULT_USER_ID;
+		const userId = getUserId(c);
 		const body = await c.req.json<Partial<IActivity>>();
 		const now = new Date().toISOString();
 		const id = body.id ?? randomUUID();
@@ -98,7 +97,7 @@ export function registerActivityRoutes(app: Hono): void {
 
 		await client.send(
 			new PutCommand({
-				TableName: TABLE_NAME,
+				TableName: getTableName(),
 				Item: record,
 			})
 		);

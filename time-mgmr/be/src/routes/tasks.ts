@@ -7,16 +7,15 @@ import {
 	QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 
-import { getDocumentClient, TABLE_NAME } from '../lib/dynamo.js';
+import { getDocumentClient, getTableName } from '../lib/dynamo.js';
 import {
 	taskGsiKeys,
 	taskSk,
 	tasksByDateGsi,
 	userPk,
 } from '../lib/keys.js';
+import { getUserId } from '../middleware/auth.js';
 import type { ITask, ITaskRecord } from '../types/domain.js';
-
-const DEFAULT_USER_ID = 'default';
 
 function toTask(record: ITaskRecord): ITask {
 	return {
@@ -38,7 +37,7 @@ function toTask(record: ITaskRecord): ITask {
 export function registerTaskRoutes(app: Hono): void {
 	app.get('/tasks', async (c) => {
 		const client = getDocumentClient();
-		const userId = c.req.header('x-user-id') ?? DEFAULT_USER_ID;
+		const userId = getUserId(c);
 		const date = c.req.query('date');
 
 		if (!date) {
@@ -49,7 +48,7 @@ export function registerTaskRoutes(app: Hono): void {
 
 		const result = await client.send(
 			new QueryCommand({
-				TableName: TABLE_NAME,
+				TableName: getTableName(),
 				IndexName: 'Gsi1',
 				KeyConditionExpression: 'gsi1pk = :gsi1pk',
 				ExpressionAttributeValues: {
@@ -67,12 +66,12 @@ export function registerTaskRoutes(app: Hono): void {
 
 	app.get('/tasks/:id', async (c) => {
 		const client = getDocumentClient();
-		const userId = c.req.header('x-user-id') ?? DEFAULT_USER_ID;
+		const userId = getUserId(c);
 		const taskId = c.req.param('id');
 
 		const result = await client.send(
 			new GetCommand({
-				TableName: TABLE_NAME,
+				TableName: getTableName(),
 				Key: {
 					pk: userPk(userId),
 					sk: taskSk(taskId),
@@ -89,7 +88,7 @@ export function registerTaskRoutes(app: Hono): void {
 
 	app.post('/tasks', async (c) => {
 		const client = getDocumentClient();
-		const userId = c.req.header('x-user-id') ?? DEFAULT_USER_ID;
+		const userId = getUserId(c);
 		const body = await c.req.json<Partial<ITask>>();
 		const now = new Date().toISOString();
 		const id = body.id ?? randomUUID();
@@ -127,7 +126,7 @@ export function registerTaskRoutes(app: Hono): void {
 
 		await client.send(
 			new PutCommand({
-				TableName: TABLE_NAME,
+				TableName: getTableName(),
 				Item: record,
 			})
 		);
