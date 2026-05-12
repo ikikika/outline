@@ -10,7 +10,8 @@
 		"deploy:prod": "sst deploy --stage production",
 		"remove": "sst remove",
 		"typecheck": "tsc --noEmit",
-		"seed:user": "tsx scripts/seed-user.ts"
+		"seed:user": "tsx scripts/seed-user.ts",
+		"seed:data": "tsx scripts/seed-data.ts"
 	},
 	"dependencies": {
 		"@aws-sdk/client-dynamodb": "^3.1090.0",

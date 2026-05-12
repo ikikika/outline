@@ -1,67 +1,43 @@
-import { randomUUID } from 'node:crypto';
-
 import type { Hono } from 'hono';
-import {
-	GetCommand,
-	PutCommand,
-	QueryCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { randomUUID } from 'node:crypto';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
 
 import { getDocumentClient, getTableName } from '../lib/dynamo.js';
+import { parseTaskCreateInput, taskInputToRecord, toTaskResponse } from '../lib/taskMapper.js';
+import { getActivity } from '../repositories/dataRepository.js';
 import {
-	taskGsiKeys,
-	taskSk,
-	tasksByDateGsi,
-	userPk,
-} from '../lib/keys.js';
+	listTasksByDate,
+	listTasksByDateRange,
+	toTask,
+	upsertTask,
+} from '../repositories/dataRepository.js';
+import { taskSk, userPk } from '../lib/keys.js';
 import { getUserId } from '../middleware/auth.js';
-import type { ITask, ITaskRecord } from '../types/domain.js';
-
-function toTask(record: ITaskRecord): ITask {
-	return {
-		id: record.id,
-		activityId: record.activityId,
-		title: record.title,
-		date: record.date,
-		plannedStart: record.plannedStart,
-		plannedEnd: record.plannedEnd,
-		categoryId: record.categoryId,
-		notes: record.notes,
-		color: record.color,
-		status: record.status,
-		createdAt: record.createdAt,
-		updatedAt: record.updatedAt,
-	};
-}
+import type { ITaskRecord } from '../types/domain.js';
 
 export function registerTaskRoutes(app: Hono): void {
 	app.get('/tasks', async (c) => {
-		const client = getDocumentClient();
 		const userId = getUserId(c);
 		const date = c.req.query('date');
+		const from = c.req.query('from');
+		const to = c.req.query('to');
 
-		if (!date) {
-			return c.json({ error: 'Query parameter "date" is required (YYYY-MM-DD)' }, 400);
+		if (date) {
+			const tasks = await listTasksByDate(userId, date);
+			return c.json(tasks);
 		}
 
-		const { gsi1pk } = tasksByDateGsi(userId, date);
+		if (from && to) {
+			const tasks = await listTasksByDateRange(userId, from, to);
+			return c.json(tasks);
+		}
 
-		const result = await client.send(
-			new QueryCommand({
-				TableName: getTableName(),
-				IndexName: 'Gsi1',
-				KeyConditionExpression: 'gsi1pk = :gsi1pk',
-				ExpressionAttributeValues: {
-					':gsi1pk': gsi1pk,
-				},
-			})
+		return c.json(
+			{
+				error: 'Provide either query parameter "date" (YYYY-MM-DD) or both "from" and "to"',
+			},
+			400
 		);
-
-		const tasks = (result.Items ?? [])
-			.filter((item): item is ITaskRecord => item.entityType === 'task')
-			.map(toTask);
-
-		return c.json(tasks);
 	});
 
 	app.get('/tasks/:id', async (c) => {
@@ -83,54 +59,29 @@ export function registerTaskRoutes(app: Hono): void {
 			return c.json({ error: 'Task not found' }, 404);
 		}
 
-		return c.json(toTask(result.Item as ITaskRecord));
+		return c.json(toTaskResponse(result.Item as ITaskRecord));
 	});
 
 	app.post('/tasks', async (c) => {
-		const client = getDocumentClient();
 		const userId = getUserId(c);
-		const body = await c.req.json<Partial<ITask>>();
-		const now = new Date().toISOString();
-		const id = body.id ?? randomUUID();
+		const body: unknown = await c.req.json();
+		const parsed = parseTaskCreateInput(body);
 
-		if (!body.activityId || !body.date || !body.plannedStart || !body.plannedEnd) {
-			return c.json(
-				{
-					error: 'activityId, date, plannedStart, and plannedEnd are required',
-				},
-				400
-			);
+		if ('error' in parsed) {
+			return c.json({ error: parsed.error }, 400);
 		}
 
-		const gsiKeys = taskGsiKeys(userId, body.date, body.plannedStart, id);
-
-		const record: ITaskRecord = {
-			pk: userPk(userId),
-			sk: taskSk(id),
-			entityType: 'task',
-			gsi1pk: gsiKeys.gsi1pk,
-			gsi1sk: gsiKeys.gsi1sk,
-			id,
-			activityId: body.activityId,
-			title: body.title ?? 'Untitled task',
-			date: body.date,
-			plannedStart: body.plannedStart,
-			plannedEnd: body.plannedEnd,
-			categoryId: body.categoryId ?? 'work',
-			notes: body.notes ?? '',
-			color: body.color,
-			status: body.status ?? 'planned',
-			createdAt: now,
-			updatedAt: now,
-		};
-
-		await client.send(
-			new PutCommand({
-				TableName: getTableName(),
-				Item: record,
-			})
+		const activity = await getActivity(userId, parsed.activityId);
+		const fallbackDate = parsed.plannedStart.slice(0, 10);
+		const taskRecord = taskInputToRecord(
+			{ ...parsed, id: parsed.id ?? randomUUID() },
+			activity,
+			fallbackDate
 		);
+		const task = await upsertTask(userId, taskRecord);
 
-		return c.json(toTask(record), 201);
+		return c.json(task, 201);
 	});
 }
+
+export { toTask };

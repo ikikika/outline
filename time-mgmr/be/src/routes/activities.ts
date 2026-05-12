@@ -1,107 +1,91 @@
 import { randomUUID } from 'node:crypto';
 
 import type { Hono } from 'hono';
-import {
-	GetCommand,
-	PutCommand,
-	QueryCommand,
-} from '@aws-sdk/lib-dynamodb';
 
-import { getDocumentClient, getTableName } from '../lib/dynamo.js';
-import { activityPrefix, activitySk, userPk } from '../lib/keys.js';
 import { getUserId } from '../middleware/auth.js';
-import type { IActivity, IActivityRecord } from '../types/domain.js';
+import {
+	getActivity,
+	listActivities,
+	toActivity,
+	upsertActivity,
+} from '../repositories/dataRepository.js';
+import type { IActivityCreateInput } from '../types/domain.js';
 
-function toActivity(record: IActivityRecord): IActivity {
+const ACTIVITY_CATEGORY_IDS = new Set([
+	'work',
+	'deep_work',
+	'admin',
+	'personal',
+	'break',
+]);
+
+function parseActivityCreateInput(body: unknown): IActivityCreateInput | { error: string } {
+	if (!body || typeof body !== 'object') {
+		return { error: 'Request body must be a JSON object' };
+	}
+
+	const input = body as Record<string, unknown>;
+	const id = input.id;
+	const title = input.title;
+	const categoryId = input.categoryId;
+	const notes = input.notes;
+
+	if (id !== undefined && (typeof id !== 'string' || !id.trim())) {
+		return { error: 'id must be a non-empty string when provided' };
+	}
+	if (typeof title !== 'string' || !title.trim()) {
+		return { error: 'title is required' };
+	}
+	if (typeof categoryId !== 'string' || !ACTIVITY_CATEGORY_IDS.has(categoryId)) {
+		return { error: 'categoryId is required (work | deep_work | admin | personal | break)' };
+	}
+	if (typeof notes !== 'string') {
+		return { error: 'notes is required' };
+	}
+	if (input.createdAt !== undefined || input.updatedAt !== undefined) {
+		return { error: 'createdAt and updatedAt are set by the server' };
+	}
+
 	return {
-		id: record.id,
-		title: record.title,
-		categoryId: record.categoryId,
-		notes: record.notes,
-		color: record.color,
-		defaultDurationMinutes: record.defaultDurationMinutes,
-		preferredStart: record.preferredStart,
-		schedule: record.schedule,
-		createdAt: record.createdAt,
-		updatedAt: record.updatedAt,
+		...(typeof id === 'string' && id.trim() ? { id: id.trim() } : {}),
+		title: title.trim(),
+		categoryId: categoryId as IActivityCreateInput['categoryId'],
+		notes,
 	};
 }
 
 export function registerActivityRoutes(app: Hono): void {
 	app.get('/activities', async (c) => {
-		const client = getDocumentClient();
 		const userId = getUserId(c);
-
-		const result = await client.send(
-			new QueryCommand({
-				TableName: getTableName(),
-				KeyConditionExpression: 'pk = :pk AND begins_with(sk, :skPrefix)',
-				ExpressionAttributeValues: {
-					':pk': userPk(userId),
-					':skPrefix': activityPrefix(),
-				},
-			})
-		);
-
-		const activities = (result.Items ?? [])
-			.filter((item): item is IActivityRecord => item.entityType === 'activity')
-			.map(toActivity);
-
+		const activities = await listActivities(userId);
 		return c.json(activities);
 	});
 
 	app.get('/activities/:id', async (c) => {
-		const client = getDocumentClient();
 		const userId = getUserId(c);
 		const activityId = c.req.param('id');
+		const activity = await getActivity(userId, activityId);
 
-		const result = await client.send(
-			new GetCommand({
-				TableName: getTableName(),
-				Key: {
-					pk: userPk(userId),
-					sk: activitySk(activityId),
-				},
-			})
-		);
-
-		if (!result.Item || result.Item.entityType !== 'activity') {
+		if (!activity) {
 			return c.json({ error: 'Activity not found' }, 404);
 		}
 
-		return c.json(toActivity(result.Item as IActivityRecord));
+		return c.json(toActivity(activity));
 	});
 
 	app.post('/activities', async (c) => {
-		const client = getDocumentClient();
 		const userId = getUserId(c);
-		const body = await c.req.json<Partial<IActivity>>();
-		const now = new Date().toISOString();
-		const id = body.id ?? randomUUID();
+		const body = await c.req.json();
+		const parsed = parseActivityCreateInput(body);
 
-		const record: IActivityRecord = {
-			pk: userPk(userId),
-			sk: activitySk(id),
-			entityType: 'activity',
-			id,
-			title: body.title ?? 'Untitled activity',
-			categoryId: body.categoryId ?? 'work',
-			notes: body.notes ?? '',
-			color: body.color,
-			defaultDurationMinutes: body.defaultDurationMinutes ?? 30,
-			preferredStart: body.preferredStart,
-			schedule: body.schedule,
-			createdAt: now,
-			updatedAt: now,
-		};
+		if ('error' in parsed) {
+			return c.json({ error: parsed.error }, 400);
+		}
 
-		await client.send(
-			new PutCommand({
-				TableName: getTableName(),
-				Item: record,
-			})
-		);
-
-		return c.json(toActivity(record), 201);
+		const activity = await upsertActivity(userId, {
+			...parsed,
+			id: parsed.id ?? randomUUID(),
+		});
+		return c.json(activity, 201);
 	});
 }

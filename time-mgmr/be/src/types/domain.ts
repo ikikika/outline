@@ -9,40 +9,46 @@ export type ActivityCategoryId =
 	| 'personal'
 	| 'break';
 
-export interface IActivityScheduleSlot {
-	date: string;
-	plannedStart: string;
-	plannedEnd: string;
-	notes?: string;
-	status?: TaskStatus;
-}
-
 export interface IActivity {
 	id: string;
 	title: string;
 	categoryId: ActivityCategoryId;
 	notes: string;
-	color?: string;
-	defaultDurationMinutes: number;
-	preferredStart?: string;
-	schedule?: IActivityScheduleSlot[];
 	createdAt: string;
 	updatedAt: string;
+}
+
+/** Request body for POST /api/activities — matches fe/public/activities.json entries (without timestamps). */
+export interface IActivityCreateInput {
+	id?: string;
+	title: string;
+	categoryId: ActivityCategoryId;
+	notes: string;
 }
 
 export interface ITask {
 	id: string;
 	activityId: string;
 	title: string;
-	date: string;
 	plannedStart: string;
 	plannedEnd: string;
+	timeEstimationSeconds?: number;
 	categoryId: ActivityCategoryId;
 	notes: string;
-	color?: string;
 	status: TaskStatus;
-	createdAt: string;
-	updatedAt: string;
+}
+
+/** Request body for POST /api/tasks — matches fe/public/tasks.json entries (+ categoryId, notes, status). */
+export interface ITaskCreateInput {
+	id?: string;
+	activityId: string;
+	title: string;
+	plannedStart: string;
+	plannedEnd: string;
+	timeEstimationSeconds?: number;
+	categoryId?: ActivityCategoryId;
+	notes?: string;
+	status?: TaskStatus;
 }
 
 export interface ITimeEntry {
@@ -72,8 +78,21 @@ export interface IDynamoItem {
 export interface IActivityRecord extends IDynamoItem, IActivity {
 	entityType: 'activity';
 }
+export interface ITaskStorageFields {
+	id: string;
+	activityId: string;
+	title: string;
+	date: string;
+	plannedStart: string;
+	plannedEnd: string;
+	categoryId: ActivityCategoryId;
+	notes: string;
+	color?: string;
+	status: TaskStatus;
+	timeEstimationSeconds?: number;
+}
 
-export interface ITaskRecord extends IDynamoItem, ITask {
+export interface ITaskRecord extends IDynamoItem, ITaskStorageFields {
 	entityType: 'task';
 }
 
