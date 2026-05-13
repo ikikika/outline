@@ -6,10 +6,11 @@
  * - Reusability across auth feature components
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { IUser } from '@/core/types/common';
 import type { IAuthCredentials } from '../types';
 import { authService } from '../services/authService';
+import { onSessionExpired } from '../session/authSession';
 
 interface IUseAuthState {
   user: IUser | null;
@@ -73,6 +74,14 @@ export function useAuth() {
       const error = err instanceof Error ? err : new Error(String(err));
       setState({ user: null, isLoading: false, error });
     }
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onSessionExpired(() => {
+      setState({ user: null, isLoading: false, error: null });
+    });
+
+    return unsubscribe;
   }, []);
 
   return {

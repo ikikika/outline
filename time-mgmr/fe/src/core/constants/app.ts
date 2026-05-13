@@ -5,7 +5,8 @@
 export const APP_NAME = 'Tempo';
 export const APP_VERSION = '1.0.0';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+export const API_BASE_URL = rawApiUrl ? `${rawApiUrl}/api` : '';
 export const API_TIMEOUT = 30000; // 30 seconds
 
 export const ROUTES = {
@@ -31,6 +32,7 @@ export const HTTP_STATUS = {
 
 export const LOCAL_STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
+  REFRESH_TOKEN: 'refresh_token',
   USER_PREFERENCES: 'user_preferences',
   THEME: 'theme',
 } as const;

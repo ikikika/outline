@@ -20,6 +20,7 @@ export interface IAuthCredentials {
 
 export interface IAuthResponse {
 	user: IUser;
+	/** Issued for cookie-setting / tooling; not returned in browser JSON responses. */
 	token: string;
 	refreshToken?: string;
 }
@@ -27,6 +28,11 @@ export interface IAuthResponse {
 export interface IRefreshResponse {
 	token: string;
 	refreshToken?: string;
+}
+
+/** Browser login response — tokens are set via HttpOnly cookies only. */
+export interface IAuthLoginResponse {
+	user: IUser;
 }
 
 export interface IUserProfileRecord {

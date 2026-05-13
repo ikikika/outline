@@ -44,6 +44,7 @@ export default $config({
 				],
 				allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 				allowHeaders: ['Content-Type', 'Authorization'],
+				allowCredentials: true,
 			},
 		});
 

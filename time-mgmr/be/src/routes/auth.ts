@@ -1,6 +1,13 @@
 import type { Hono } from 'hono';
 
 import {
+	clearAuthCookies,
+	getAccessTokenFromRequest,
+	getRefreshTokenFromRequest,
+	setAuthCookies,
+} from '../lib/authCookies.js';
+import { verifyAccessToken } from '../lib/jwt.js';
+import {
 	AuthError,
 	getCurrentUser,
 	login,
@@ -8,23 +15,23 @@ import {
 	refreshSession,
 } from '../services/authService.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { verifyAccessToken } from '../lib/jwt.js';
-
-function parseBearerToken(authorization: string | undefined): string | null {
-	if (!authorization?.startsWith('Bearer ')) {
-		return null;
-	}
-
-	const token = authorization.slice('Bearer '.length).trim();
-	return token || null;
-}
 
 export function registerAuthRoutes(app: Hono): void {
 	app.post('/auth/login', async (c) => {
 		try {
 			const credentials = await c.req.json<{ email: string; password: string }>();
 			const response = await login(credentials);
-			return c.json(response);
+
+			if (!response.refreshToken) {
+				throw new AuthError('Failed to issue refresh token', 500);
+			}
+
+			setAuthCookies(c, {
+				accessToken: response.token,
+				refreshToken: response.refreshToken,
+			});
+
+			return c.json({ user: response.user });
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, error.status as 400 | 401);
@@ -47,9 +54,27 @@ export function registerAuthRoutes(app: Hono): void {
 
 	app.post('/auth/refresh', async (c) => {
 		try {
-			const body = await c.req.json<{ refreshToken?: string }>();
-			const response = await refreshSession(body.refreshToken ?? '');
-			return c.json(response);
+			const body = await c.req.json<{ refreshToken?: string }>().catch(() => ({
+				refreshToken: undefined as string | undefined,
+			}));
+			const refreshToken = getRefreshTokenFromRequest(c, body.refreshToken);
+
+			if (!refreshToken) {
+				throw new AuthError('Refresh token is required', 400);
+			}
+
+			const response = await refreshSession(refreshToken);
+
+			if (!response.refreshToken) {
+				throw new AuthError('Failed to issue refresh token', 500);
+			}
+
+			setAuthCookies(c, {
+				accessToken: response.token,
+				refreshToken: response.refreshToken,
+			});
+
+			return c.json({ ok: true });
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, error.status as 400 | 401);
@@ -59,22 +84,27 @@ export function registerAuthRoutes(app: Hono): void {
 	});
 
 	app.post('/auth/logout', async (c) => {
-		const token = parseBearerToken(c.req.header('Authorization'));
-
-		if (!token) {
-			return c.body(null, 204);
-		}
+		const accessToken = getAccessTokenFromRequest(c);
 
 		try {
-			const payload = await verifyAccessToken(token);
 			const body = await c.req.json<{ refreshToken?: string }>().catch(() => ({
-				refreshToken: undefined,
+				refreshToken: undefined as string | undefined,
 			}));
-			await logout(payload.sub, body.refreshToken);
+			const refreshToken = getRefreshTokenFromRequest(c, body.refreshToken);
+
+			if (accessToken) {
+				try {
+					const payload = await verifyAccessToken(accessToken);
+					await logout(payload.sub, refreshToken ?? undefined);
+				} catch {
+					// Logout is idempotent
+				}
+			}
 		} catch {
 			// Logout is idempotent
 		}
 
+		clearAuthCookies(c);
 		return c.body(null, 204);
 	});
 }

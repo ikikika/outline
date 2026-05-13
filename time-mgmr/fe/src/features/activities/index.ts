@@ -30,6 +30,13 @@ export {
   type ManualTimeEntryFormValues,
 } from './schemas';
 
+export {
+  fetchActivities,
+  fetchTasksByDate,
+  fetchTasksByDateRange,
+  createTaskApi,
+  isActivitiesApiEnabled,
+} from './api/activitiesApi';
 export { activityRepository, taskRepository } from './repository/activityRepository';
 export { activityCatalogRepository } from './repository/activityCatalogRepository';
 export { timeEntryRepository } from './repository/timeEntryRepository';

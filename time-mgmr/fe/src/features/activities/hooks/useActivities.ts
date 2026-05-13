@@ -4,11 +4,33 @@ import {
   TEMPLATE_QUERY_KEYS,
   TIME_ENTRY_QUERY_KEYS,
 } from '../constants';
+import {
+  createTaskApi,
+  fetchTasksByDate,
+  fetchTasksByDateRange,
+  isActivitiesApiEnabled,
+} from '../api/activitiesApi';
 import { activityRepository, taskRepository } from '../repository/activityRepository';
 import { timeEntryRepository } from '../repository/timeEntryRepository';
 import { hydrateFromPublicJson, persistTasksJsonSnapshot } from '../repository/jsonBackup';
 import type { ActivityStatus, IActivityInput, TaskStatus } from '../types';
 import { addDays, createId } from '../utils/dateUtils';
+
+async function loadTasksByDate(date: string) {
+  if (isActivitiesApiEnabled()) {
+    return fetchTasksByDate(date);
+  }
+  await hydrateFromPublicJson();
+  return taskRepository.listByDate(date);
+}
+
+async function loadTasksByRange(from: string, to: string) {
+  if (isActivitiesApiEnabled()) {
+    return fetchTasksByDateRange(from, to);
+  }
+  await hydrateFromPublicJson();
+  return taskRepository.listByDateRange(from, to);
+}
 
 async function invalidateActivityQueries(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -19,26 +41,22 @@ async function invalidateActivityQueries(
   if (date) {
     await queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.byDate(date) });
   }
-  await persistTasksJsonSnapshot();
+  if (!isActivitiesApiEnabled()) {
+    await persistTasksJsonSnapshot();
+  }
 }
 
 export function useActivitiesByDate(date: string) {
   return useQuery({
     queryKey: ACTIVITY_QUERY_KEYS.byDate(date),
-    queryFn: async () => {
-      await hydrateFromPublicJson();
-      return taskRepository.listByDate(date);
-    },
+    queryFn: () => loadTasksByDate(date),
   });
 }
 
 export function useActivitiesByRange(from: string, to: string) {
   return useQuery({
     queryKey: ACTIVITY_QUERY_KEYS.byRange(from, to),
-    queryFn: async () => {
-      await hydrateFromPublicJson();
-      return taskRepository.listByDateRange(from, to);
-    },
+    queryFn: () => loadTasksByRange(from, to),
   });
 }
 
@@ -64,7 +82,21 @@ export function useActivityMutations(date: string) {
   const queryClient = useQueryClient();
 
   const create = useMutation({
-    mutationFn: (input: IActivityInput) => activityRepository.create(input),
+    mutationFn: async (input: IActivityInput) => {
+      if (isActivitiesApiEnabled()) {
+        return createTaskApi({
+          activityId: input.activityId ?? `ad-hoc-${createId()}`,
+          title: input.title,
+          date: input.date,
+          plannedStart: input.plannedStart,
+          plannedEnd: input.plannedEnd,
+          categoryId: input.categoryId,
+          notes: input.notes,
+          status: input.status,
+        });
+      }
+      return activityRepository.create(input);
+    },
     onSuccess: async () => {
       await invalidateActivityQueries(queryClient, date);
     },

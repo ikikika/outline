@@ -223,19 +223,30 @@ The frontend appends `/api` automatically in `API_BASE_URL`.
 
 ## Authentication
 
-Protected routes require a Bearer token from login:
+The API uses **HttpOnly cookies** for browser sessions (cross-origin SPA → API Gateway):
 
-```http
-Authorization: Bearer <access_token>
-```
+- `access_token` — JWT, 15 minutes, `HttpOnly; Secure; SameSite=None; Path=/`
+- `refresh_token` — JWT, 7 days, same attributes
+
+The browser stores cookies on the **API host** and sends them automatically when the client uses `credentials: 'include'`. Tokens are **not** returned in JSON login/refresh bodies.
+
+`Authorization: Bearer <access_token>` remains supported as a fallback for non-browser tooling.
+
+CORS must allow credentials (`credentials: true` / `allowCredentials: true`) with an explicit origin allowlist (never `*`).
 
 | Endpoint | Auth |
 |----------|------|
 | `GET /api/health`, `GET /api/health/dynamo` | No |
-| `POST /api/auth/login`, `POST /api/auth/refresh` | No |
-| `POST /api/auth/logout` | Optional Bearer |
-| `GET /api/auth/me` | Yes |
-| All `/api/activities/*` and `/api/tasks/*` | Yes |
+| `POST /api/auth/login`, `POST /api/auth/refresh` | No (sets/rotates cookies) |
+| `POST /api/auth/logout` | Cookie or Bearer (clears cookies) |
+| `GET /api/auth/me` | Cookie or Bearer |
+| All `/api/activities/*` and `/api/tasks/*` | Cookie or Bearer |
+
+**Security notes**
+
+- `SameSite=None` does not block CSRF by itself; mitigation is the CORS allowlist + JSON `Content-Type` (preflight) for mutating calls.
+- XSS cannot read HttpOnly cookies; do not put tokens in localStorage or JSON responses for the SPA.
+- Cookies are tied to the API host; changing the API Gateway URL clears sessions.
 
 ---
 
@@ -287,7 +298,7 @@ Verifies DynamoDB connectivity (scan limit 1).
 }
 ```
 
-**Response `200`**
+**Response `200`** — sets `access_token` and `refresh_token` cookies
 
 ```json
 {
@@ -300,9 +311,7 @@ Verifies DynamoDB connectivity (scan limit 1).
     "themePreference": "system",
     "createdAt": "2026-07-20T12:00:00.000Z",
     "updatedAt": "2026-07-20T12:00:00.000Z"
-  },
-  "token": "eyJhbGciOiJIUzI1NiIs...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+  }
 }
 ```
 
@@ -312,7 +321,7 @@ Verifies DynamoDB connectivity (scan limit 1).
 
 #### `GET /api/auth/me`
 
-**Headers:** `Authorization: Bearer <token>`
+Sends cookies automatically (browser) or `Authorization: Bearer <access_token>`.
 
 **Response `200`** — `IUser` object (same shape as `user` in login response)
 
@@ -320,7 +329,7 @@ Verifies DynamoDB connectivity (scan limit 1).
 
 #### `POST /api/auth/refresh`
 
-**Request body**
+Reads `refresh_token` from the cookie (preferred). Optionally accepts a body for tooling:
 
 ```json
 {
@@ -328,12 +337,11 @@ Verifies DynamoDB connectivity (scan limit 1).
 }
 ```
 
-**Response `200`**
+Rotates both cookies and returns:
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIs...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+  "ok": true
 }
 ```
 
@@ -341,15 +349,7 @@ Verifies DynamoDB connectivity (scan limit 1).
 
 #### `POST /api/auth/logout`
 
-**Headers:** `Authorization: Bearer <token>` (optional)
-
-**Request body** (optional)
-
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
+Revokes the refresh token (from cookie or optional body) and clears auth cookies.
 
 **Response:** `204 No Content`
 
@@ -500,28 +500,37 @@ Replace `{API_URL}` with your API Gateway URL from `sst deploy`.
 # Health
 curl "{API_URL}/api/health"
 
-# Login
-TOKEN=$(curl -s -X POST "{API_URL}/api/auth/login" \
+# Login (stores cookies in jar)
+curl -c cookies.txt -s -X POST "{API_URL}/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","password":"yourpassword"}' \
-  | jq -r '.token')
+  -d '{"email":"you@example.com","password":"yourpassword"}'
 
-# List activities
-curl -H "Authorization: Bearer $TOKEN" "{API_URL}/api/activities"
+# List activities (sends cookies)
+curl -b cookies.txt "{API_URL}/api/activities"
 
 # Tasks for a day
-curl -H "Authorization: Bearer $TOKEN" "{API_URL}/api/tasks?date=2026-07-22"
+curl -b cookies.txt "{API_URL}/api/tasks?date=2026-07-22"
 
 # Tasks for a week
-curl -H "Authorization: Bearer $TOKEN" \
+curl -b cookies.txt \
   "{API_URL}/api/tasks?from=2026-07-21&to=2026-07-27"
+
+# Refresh session (rotates cookies)
+curl -c cookies.txt -b cookies.txt -s -X POST "{API_URL}/api/auth/refresh" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+# Logout
+curl -c cookies.txt -b cookies.txt -s -X POST "{API_URL}/api/auth/logout" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
 
 ---
 
 ## CORS
 
-Allowed origins are configured in `sst.config.ts` and mirrored in `src/handlers/api.ts`:
+Allowed origins are configured in `sst.config.ts` and mirrored in `src/handlers/api.ts`, with **`allowCredentials` / `credentials: true`** so browsers can send cookies:
 
 - `http://localhost:3000`
 - `http://127.0.0.1:3000`
@@ -529,7 +538,7 @@ Allowed origins are configured in `sst.config.ts` and mirrored in `src/handlers/
 - `http://127.0.0.1:5173`
 - `https://tempo.codeoctagon.com`
 
-Add your production frontend origin to both places when deploying to a new domain.
+Add your production frontend origin to both places when deploying to a new domain. Origins must be explicit (not `*`) when credentials are enabled.
 
 ---
 

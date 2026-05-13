@@ -55,6 +55,8 @@ export interface IActivityScheduleSlot {
 export interface ITask {
   id: string;
   activityId: string;
+  /** Source lecture/content id when imported from a catalog. */
+  contentItemId?: string;
   title: string;
   date: string; // YYYY-MM-DD
   plannedStart: string; // HH:mm

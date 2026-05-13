@@ -1,9 +1,15 @@
 import { API_BASE_URL } from '@/core/constants/app';
+import {
+	getAccessToken,
+	notifySessionExpired,
+	refreshSession,
+} from '@/features/auth/session/authSession';
 
 export interface IHttpRequestOptions {
 	includeCredentials?: boolean;
 	accessToken?: string | null;
 	signal?: AbortSignal;
+	auth?: boolean;
 }
 
 export class HttpClientError extends Error {
@@ -20,21 +26,30 @@ export class HttpClientError extends Error {
 	}
 }
 
+function isAuthRefreshUrl(url: string): boolean {
+	return url.includes('/auth/login') || url.includes('/auth/refresh');
+}
+
+function shouldIncludeCredentials(options: IHttpRequestOptions): boolean {
+	return Boolean(options.includeCredentials || options.auth);
+}
+
 function buildRequestInit(
 	init: RequestInit = {},
 	options: IHttpRequestOptions = {}
 ): RequestInit {
 	const headers = new Headers(init.headers ?? {});
 
-	if (options.accessToken) {
-		headers.set('Authorization', `Bearer ${options.accessToken}`);
+	const accessToken = options.auth ? getAccessToken() : options.accessToken;
+	if (accessToken) {
+		headers.set('Authorization', `Bearer ${accessToken}`);
 	}
 
 	return {
 		...init,
 		headers,
 		signal: options.signal ?? init.signal,
-		credentials: options.includeCredentials ? 'include' : init.credentials,
+		credentials: shouldIncludeCredentials(options) ? 'include' : init.credentials,
 	};
 }
 
@@ -52,12 +67,42 @@ async function parseJsonBody<T>(response: Response): Promise<T> {
 	return (await response.json()) as T;
 }
 
+async function fetchWithAuthRetry(
+	url: string,
+	init: RequestInit,
+	options: IHttpRequestOptions,
+	hasRetried: boolean
+): Promise<Response> {
+	const response = await fetch(url, buildRequestInit(init, options));
+
+	if (
+		response.status === 401 &&
+		options.auth &&
+		!hasRetried &&
+		!isAuthRefreshUrl(url)
+	) {
+		try {
+			await refreshSession();
+		} catch {
+			notifySessionExpired();
+			throw new HttpClientError(response);
+		}
+
+		return fetchWithAuthRetry(url, init, options, true);
+	}
+
+	return response;
+}
+
 export async function request(
 	url: string,
 	init: RequestInit = {},
 	options: IHttpRequestOptions = {}
 ): Promise<Response> {
-	const response = await fetch(url, buildRequestInit(init, options));
+	const response = options.auth
+		? await fetchWithAuthRetry(url, init, options, false)
+		: await fetch(url, buildRequestInit(init, options));
+
 	return ensureOk(response);
 }
 
@@ -114,6 +159,21 @@ export async function getJson<T>(
 	options: IHttpRequestOptions = {}
 ): Promise<T> {
 	return requestJson<T>(url, {}, options);
+}
+
+export async function getJsonAuth<T>(
+	url: string,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<T> {
+	return getJson<T>(url, { ...options, auth: true });
+}
+
+export async function postJsonAuth<T>(
+	url: string,
+	body?: unknown,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<T> {
+	return postJson<T>(url, body, { ...options, auth: true });
 }
 
 export const HTTP_BASE_URL = API_BASE_URL;

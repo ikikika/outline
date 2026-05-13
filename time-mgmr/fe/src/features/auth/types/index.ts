@@ -12,7 +12,8 @@ export interface IAuthCredentials {
 
 export interface IAuthResponse {
   user: IUser;
-  token: string;
+  /** Optional — omitted when tokens are set via HttpOnly cookies. */
+  token?: string;
   refreshToken?: string;
 }
 
@@ -21,4 +22,5 @@ export interface IAuthService {
   logout(): Promise<void>;
   refreshToken(): Promise<string>;
   getCurrentUser(): Promise<IUser | null>;
+  getAccessToken(): string | null;
 }

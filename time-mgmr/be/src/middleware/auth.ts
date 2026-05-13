@@ -1,5 +1,6 @@
 import { createMiddleware } from 'hono/factory';
 
+import { getAccessTokenFromRequest } from '../lib/authCookies.js';
 import { verifyAccessToken } from '../lib/jwt.js';
 
 export type AuthVariables = {
@@ -10,13 +11,7 @@ export type AuthVariables = {
 
 export const authMiddleware = createMiddleware<{ Variables: AuthVariables }>(
 	async (c, next) => {
-		const authorization = c.req.header('Authorization');
-
-		if (!authorization?.startsWith('Bearer ')) {
-			return c.json({ error: 'Unauthorized' }, 401);
-		}
-
-		const token = authorization.slice('Bearer '.length).trim();
+		const token = getAccessTokenFromRequest(c);
 
 		if (!token) {
 			return c.json({ error: 'Unauthorized' }, 401);

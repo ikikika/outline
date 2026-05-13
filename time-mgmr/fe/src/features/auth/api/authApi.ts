@@ -1,11 +1,12 @@
 import { API_BASE_URL } from '@/core/constants/app';
 import type { IApiError } from '@/core/types/common';
+import type { IUser } from '@/core/types/common';
 import {
-  getJson,
-  HttpClientError,
-  post,
-  postJson,
-  type IHttpRequestOptions,
+	getJson,
+	HttpClientError,
+	post,
+	postJson,
+	type IHttpRequestOptions,
 } from '@/services/httpClient';
 import type { IAuthCredentials, IAuthResponse } from '../types';
 
@@ -13,56 +14,87 @@ const AUTH_BASE_URL = `${API_BASE_URL}/auth`;
 
 export type IAuthApiRequestOptions = IHttpRequestOptions;
 
-interface IRefreshResponse {
-  token: string;
-  refreshToken?: string;
+export function mapAuthError(error: unknown): Error {
+	if (error instanceof HttpClientError) {
+		const apiError: IApiError = {
+			code: String(error.status),
+			message: error.statusText || error.message,
+		};
+		return new Error(apiError.message);
+	}
+
+	return error instanceof Error ? error : new Error(String(error));
 }
 
-export function mapAuthError(error: unknown): Error {
-  if (error instanceof HttpClientError) {
-    const apiError: IApiError = {
-      code: String(error.status),
-      message: error.statusText || error.message,
-    };
-    return new Error(apiError.message);
-  }
+export function normalizeUser(raw: unknown): IUser | null {
+	if (!raw || typeof raw !== 'object') {
+		return null;
+	}
 
-  return error instanceof Error ? error : new Error(String(error));
+	const user = raw as Record<string, unknown>;
+
+	if (typeof user.id !== 'string' || typeof user.email !== 'string') {
+		return null;
+	}
+
+	return {
+		id: user.id,
+		name: String(user.name ?? user.displayName ?? user.email),
+		displayName:
+			typeof user.displayName === 'string' ? user.displayName : undefined,
+		email: user.email,
+		role: (user.role as IUser['role']) ?? 'user',
+		avatar: typeof user.avatar === 'string' ? user.avatar : undefined,
+		themePreference: user.themePreference as IUser['themePreference'],
+		createdAt: new Date(String(user.createdAt ?? Date.now())),
+		updatedAt: new Date(String(user.updatedAt ?? Date.now())),
+	};
 }
 
 export async function loginRequest(
-  credentials: IAuthCredentials,
-  options: IAuthApiRequestOptions = {}
+	credentials: IAuthCredentials,
+	options: IAuthApiRequestOptions = {}
 ): Promise<IAuthResponse> {
-  return postJson<IAuthResponse>(`${AUTH_BASE_URL}/login`, credentials, options);
+	const response = await postJson<Omit<IAuthResponse, 'user'> & { user: unknown }>(
+		`${AUTH_BASE_URL}/login`,
+		credentials,
+		options
+	);
+
+	const user = normalizeUser(response.user);
+	if (!user) {
+		throw new Error('Invalid login response');
+	}
+
+	return {
+		user,
+		token: typeof response.token === 'string' ? response.token : undefined,
+		refreshToken:
+			typeof response.refreshToken === 'string' ? response.refreshToken : undefined,
+	};
 }
 
 export async function logoutRequest(
-  options: IAuthApiRequestOptions = {}
+	options: IAuthApiRequestOptions & { refreshToken?: string | null } = {}
 ): Promise<void> {
-  await post(`${AUTH_BASE_URL}/logout`, undefined, options);
+	const { refreshToken, ...requestOptions } = options;
+	const body = refreshToken ? { refreshToken } : undefined;
+	await post(`${AUTH_BASE_URL}/logout`, body, requestOptions);
 }
 
-export async function refreshTokenRequest(
-  refreshToken?: string,
-  options: IAuthApiRequestOptions = {}
-): Promise<IRefreshResponse> {
-  return postJson<IRefreshResponse>(
-    `${AUTH_BASE_URL}/refresh`,
-    refreshToken ? { refreshToken } : undefined,
-    options
-  );
-}
+export { refreshTokenRequest } from './authRefreshApi';
+export type { IRefreshResponse } from './authRefreshApi';
 
 export async function getCurrentUserRequest(
-  options: IAuthApiRequestOptions = {}
-): Promise<IAuthResponse['user'] | null> {
-  try {
-    return await getJson<IAuthResponse['user']>(`${AUTH_BASE_URL}/me`, options);
-  } catch (error) {
-    if (error instanceof HttpClientError && error.status === 401) {
-      return null;
-    }
-    throw error;
-  }
+	options: IAuthApiRequestOptions = {}
+): Promise<IUser | null> {
+	try {
+		const raw = await getJson<unknown>(`${AUTH_BASE_URL}/me`, options);
+		return normalizeUser(raw);
+	} catch (error) {
+		if (error instanceof HttpClientError && error.status === 401) {
+			return null;
+		}
+		throw error;
+	}
 }
