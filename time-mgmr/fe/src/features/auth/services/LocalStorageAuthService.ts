@@ -31,6 +31,7 @@ export class LocalStorageAuthService implements IAuthService {
 					email: credentials.email,
 					role: 'user',
 					themePreference: 'dark',
+					timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 					createdAt: new Date('2024-01-01T00:00:00Z'),
 					updatedAt: new Date(),
 				},

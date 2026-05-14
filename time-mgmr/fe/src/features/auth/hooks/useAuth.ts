@@ -1,14 +1,7 @@
-/**
- * useAuth Hook
- * Demonstrates:
- * - Custom hook for feature-specific logic
- * - Encapsulation of auth state
- * - Reusability across auth feature components
- */
-
 import { useCallback, useEffect, useState } from 'react';
 import type { IUser } from '@/core/types/common';
 import type { IAuthCredentials } from '../types';
+import { ensureProfileTimeZone } from '../api/authApi';
 import { authService } from '../services/authService';
 import { onSessionExpired } from '../session/authSession';
 
@@ -34,12 +27,13 @@ export function useAuth() {
 
     try {
       const response = await authService.login(credentials);
+      const user = await ensureProfileTimeZone(response.user);
       setState({
-        user: response.user,
+        user,
         isLoading: false,
         error: null,
       });
-      return response.user;
+      return user;
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setState({ user: null, isLoading: false, error });
@@ -64,9 +58,10 @@ export function useAuth() {
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      const user = await authService.getCurrentUser();
+      const current = await authService.getCurrentUser();
+      const user = current ? await ensureProfileTimeZone(current) : null;
       setState({
-        user: user ?? null,
+        user,
         isLoading: false,
         error: null,
       });

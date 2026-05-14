@@ -13,6 +13,7 @@ import {
 	login,
 	logout,
 	refreshSession,
+	updateCurrentUser,
 } from '../services/authService.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -47,6 +48,30 @@ export function registerAuthRoutes(app: Hono): void {
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, 401);
+			}
+			throw error;
+		}
+	});
+
+	app.patch('/auth/me', authMiddleware, async (c) => {
+		try {
+			const body = await c.req.json<{ timeZone?: string; themePreference?: string }>();
+			const user = await updateCurrentUser(c.get('userId'), {
+				...(typeof body.timeZone === 'string' ? { timeZone: body.timeZone } : {}),
+				...(typeof body.themePreference === 'string'
+					? {
+							themePreference: body.themePreference as
+								| 'light'
+								| 'dark'
+								| 'velvet'
+								| 'system',
+						}
+					: {}),
+			});
+			return c.json(user);
+		} catch (error) {
+			if (error instanceof AuthError) {
+				return c.json({ error: error.message }, error.status as 400 | 401);
 			}
 			throw error;
 		}

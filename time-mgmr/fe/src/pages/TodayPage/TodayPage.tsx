@@ -27,12 +27,17 @@ export const TodayPage: React.FC = () => {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const week = weekDateKeys(selectedDate);
-  const { activities, entries } = useDayReport(selectedDate);
+  const { activities, entries, isLoading: dayLoading, error: dayError } = useDayReport(selectedDate);
   const weekActivitiesQuery = useActivitiesByRange(week[0], week[week.length - 1]);
   const weekActivities = weekActivitiesQuery.data ?? [];
   const { data: runningEntry = null } = useRunningTimer();
   const { update, remove, setStatus } = useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
+
+  const isLoading =
+    dayLoading || (timetableView === 'week' && weekActivitiesQuery.isLoading);
+  const loadError =
+    dayError ?? (timetableView === 'week' ? weekActivitiesQuery.error : null);
 
   const busy =
     update.isPending ||
@@ -118,6 +123,12 @@ export const TodayPage: React.FC = () => {
     <MainLayout>
       <div className={styles.today}>
         {actionError && <div className={styles.error}>{actionError}</div>}
+        {loadError && (
+          <div className={styles.error}>
+            {loadError instanceof Error ? loadError.message : 'Failed to load tasks from API.'}
+          </div>
+        )}
+        {isLoading && !loadError ? <div className={styles.loading}>Loading timetable…</div> : null}
 
         {timetableView === 'week' ? (
           <WeekTimetable

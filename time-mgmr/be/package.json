@@ -17,6 +17,8 @@
 		"@aws-sdk/client-dynamodb": "^3.1090.0",
 		"@aws-sdk/lib-dynamodb": "^3.1090.0",
 		"bcryptjs": "^3.0.3",
+		"date-fns": "^4.4.0",
+		"date-fns-tz": "^3.2.0",
 		"hono": "^4.12.31",
 		"jose": "^6.2.3",
 		"sst": "^4.17.1"

@@ -133,6 +133,24 @@ export async function postJson<T>(
 	);
 }
 
+export async function patchJson<T>(
+	url: string,
+	body?: unknown,
+	options: IHttpRequestOptions = {}
+): Promise<T> {
+	return requestJson<T>(
+		url,
+		{
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: body === undefined ? undefined : JSON.stringify(body),
+		},
+		options
+	);
+}
+
 export async function post(
 	url: string,
 	body?: unknown,
@@ -174,6 +192,14 @@ export async function postJsonAuth<T>(
 	options: Omit<IHttpRequestOptions, 'auth'> = {}
 ): Promise<T> {
 	return postJson<T>(url, body, { ...options, auth: true });
+}
+
+export async function patchJsonAuth<T>(
+	url: string,
+	body?: unknown,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<T> {
+	return patchJson<T>(url, body, { ...options, auth: true });
 }
 
 export const HTTP_BASE_URL = API_BASE_URL;

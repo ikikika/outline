@@ -51,6 +51,8 @@ export interface IUser extends IEntity, INameable {
   role: UserRole;
   avatar?: string;
   themePreference?: ThemePreference;
+  /** IANA timezone id, e.g. Asia/Singapore */
+  timeZone?: string;
 }
 
 export type UserRole = 'admin' | 'user' | 'guest';

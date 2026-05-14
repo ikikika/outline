@@ -150,11 +150,21 @@ export async function listTasksByDate(userId: string, date: string): Promise<ITa
 		);
 }
 
+/**
+ * List tasks whose plannedStart falls in [from, to).
+ * When from/to are ISO instants, queries UTC calendar GSI partitions that
+ * cover the range, then filters by plannedStart.
+ * When from/to are YYYY-MM-DD, enumerates those calendar date partitions (legacy).
+ */
 export async function listTasksByDateRange(
 	userId: string,
 	from: string,
 	to: string
 ): Promise<ITask[]> {
+	if (from.includes('T') || to.includes('T')) {
+		return listTasksByInstantRange(userId, from, to);
+	}
+
 	const dates = enumerateDates(from, to);
 	const tasks: ITask[] = [];
 
@@ -167,6 +177,55 @@ export async function listTasksByDateRange(
 		(a, b) =>
 			a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title)
 	);
+}
+
+async function listTasksByInstantRange(
+	userId: string,
+	fromIso: string,
+	toIso: string
+): Promise<ITask[]> {
+	const dates = utcCalendarDatesCovering(fromIso, toIso);
+	const tasks: ITask[] = [];
+
+	for (const date of dates) {
+		const dayTasks = await listTasksByDate(userId, date);
+		tasks.push(...dayTasks);
+	}
+
+	return tasks
+		.filter((task) => task.plannedStart >= fromIso && task.plannedStart < toIso)
+		.sort(
+			(a, b) =>
+				a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title)
+		);
+}
+
+function utcCalendarDatesCovering(fromIso: string, toIso: string): string[] {
+	const from = new Date(fromIso);
+	const toExclusive = new Date(toIso);
+	if (Number.isNaN(from.getTime()) || Number.isNaN(toExclusive.getTime())) {
+		return [];
+	}
+
+	const lastInclusive = new Date(toExclusive.getTime() - 1);
+	const dates: string[] = [];
+	const cursor = new Date(
+		Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate())
+	);
+	const end = new Date(
+		Date.UTC(
+			lastInclusive.getUTCFullYear(),
+			lastInclusive.getUTCMonth(),
+			lastInclusive.getUTCDate()
+		)
+	);
+
+	while (cursor <= end) {
+		dates.push(cursor.toISOString().slice(0, 10));
+		cursor.setUTCDate(cursor.getUTCDate() + 1);
+	}
+
+	return dates;
 }
 
 function enumerateDates(from: string, to: string): string[] {

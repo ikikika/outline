@@ -34,7 +34,8 @@ export function registerTaskRoutes(app: Hono): void {
 
 		return c.json(
 			{
-				error: 'Provide either query parameter "date" (YYYY-MM-DD) or both "from" and "to"',
+				error:
+					'Provide either query parameter "date" (YYYY-MM-DD) or both "from" and "to" (YYYY-MM-DD or ISO UTC instants)',
 			},
 			400
 		);

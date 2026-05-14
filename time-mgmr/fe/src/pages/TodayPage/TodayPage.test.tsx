@@ -56,7 +56,7 @@ vi.mock('@/features/activities', () => ({
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;
   },
-  useActivitiesByRange: () => ({ data: mockActivities }),
+  useActivitiesByRange: () => ({ data: mockActivities, isLoading: false, error: null }),
   useActivityMutations: () => ({
     update: { isPending: false, mutateAsync: vi.fn() },
     remove: { isPending: false, mutateAsync: vi.fn() },
@@ -80,6 +80,7 @@ vi.mock('@/features/reports', () => ({
       completionRate: 0.75,
     },
     isLoading: false,
+    error: null,
     activities: mockActivities,
     entries: [],
   }),

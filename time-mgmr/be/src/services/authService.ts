@@ -7,6 +7,7 @@ import {
 	getUserProfile,
 	saveRefreshToken,
 	toUser,
+	updateUserProfile,
 } from '../repositories/userRepository.js';
 import {
 	signAccessToken,
@@ -14,11 +15,13 @@ import {
 	verifyRefreshToken,
 } from '../lib/jwt.js';
 import { verifyPassword } from '../lib/password.js';
+import { isValidTimeZone } from '../lib/timezone.js';
 import type {
 	IAuthCredentials,
 	IAuthResponse,
 	IRefreshResponse,
 	IUser,
+	ThemePreference,
 } from '../types/auth.js';
 
 export class AuthError extends Error {
@@ -150,6 +153,21 @@ export async function logout(
 		}
 	} catch {
 		// Ignore invalid refresh tokens on logout
+	}
+}
+
+export async function updateCurrentUser(
+	userId: string,
+	patch: { timeZone?: string; themePreference?: ThemePreference }
+): Promise<IUser> {
+	if (patch.timeZone !== undefined && !isValidTimeZone(patch.timeZone)) {
+		throw new AuthError('timeZone must be a valid IANA timezone id', 400);
+	}
+
+	try {
+		return await updateUserProfile(userId, patch);
+	} catch {
+		throw new AuthError('User not found', 401);
 	}
 }
 

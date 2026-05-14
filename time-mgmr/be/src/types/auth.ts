@@ -9,6 +9,8 @@ export interface IUser {
 	role: UserRole;
 	avatar?: string;
 	themePreference?: ThemePreference;
+	/** IANA timezone id, e.g. Asia/Singapore */
+	timeZone?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -48,6 +50,7 @@ export interface IUserProfileRecord {
 	role: UserRole;
 	avatar?: string;
 	themePreference?: ThemePreference;
+	timeZone?: string;
 	createdAt: string;
 	updatedAt: string;
 }

@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthContext } from '@/app/providers/auth/useAuthContext';
+import { getBrowserTimeZone } from '@/core/utils/timeZone/timeZone';
 import {
   ACTIVITY_QUERY_KEYS,
   TEMPLATE_QUERY_KEYS,
@@ -8,28 +10,27 @@ import {
   createTaskApi,
   fetchTasksByDate,
   fetchTasksByDateRange,
-  isActivitiesApiEnabled,
+  requireApiBaseUrl,
 } from '../api/activitiesApi';
-import { activityRepository, taskRepository } from '../repository/activityRepository';
+import { activityRepository } from '../repository/activityRepository';
 import { timeEntryRepository } from '../repository/timeEntryRepository';
-import { hydrateFromPublicJson, persistTasksJsonSnapshot } from '../repository/jsonBackup';
+import { persistTasksJsonSnapshot } from '../repository/jsonBackup';
 import type { ActivityStatus, IActivityInput, TaskStatus } from '../types';
 import { addDays, createId } from '../utils/dateUtils';
 
-async function loadTasksByDate(date: string) {
-  if (isActivitiesApiEnabled()) {
-    return fetchTasksByDate(date);
-  }
-  await hydrateFromPublicJson();
-  return taskRepository.listByDate(date);
+function useResolvedTimeZone(): string {
+  const { user } = useAuthContext();
+  return user?.timeZone ?? getBrowserTimeZone();
 }
 
-async function loadTasksByRange(from: string, to: string) {
-  if (isActivitiesApiEnabled()) {
-    return fetchTasksByDateRange(from, to);
-  }
-  await hydrateFromPublicJson();
-  return taskRepository.listByDateRange(from, to);
+async function loadTasksByDate(date: string, timeZone: string) {
+  requireApiBaseUrl();
+  return fetchTasksByDate(date, timeZone);
+}
+
+async function loadTasksByRange(from: string, to: string, timeZone: string) {
+  requireApiBaseUrl();
+  return fetchTasksByDateRange(from, to, timeZone);
 }
 
 async function invalidateActivityQueries(
@@ -41,22 +42,21 @@ async function invalidateActivityQueries(
   if (date) {
     await queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.byDate(date) });
   }
-  if (!isActivitiesApiEnabled()) {
-    await persistTasksJsonSnapshot();
-  }
 }
 
 export function useActivitiesByDate(date: string) {
+  const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: ACTIVITY_QUERY_KEYS.byDate(date),
-    queryFn: () => loadTasksByDate(date),
+    queryKey: [...ACTIVITY_QUERY_KEYS.byDate(date), timeZone],
+    queryFn: () => loadTasksByDate(date, timeZone),
   });
 }
 
 export function useActivitiesByRange(from: string, to: string) {
+  const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: ACTIVITY_QUERY_KEYS.byRange(from, to),
-    queryFn: () => loadTasksByRange(from, to),
+    queryKey: [...ACTIVITY_QUERY_KEYS.byRange(from, to), timeZone],
+    queryFn: () => loadTasksByRange(from, to, timeZone),
   });
 }
 
@@ -80,11 +80,12 @@ export function useRunningTimer() {
 
 export function useActivityMutations(date: string) {
   const queryClient = useQueryClient();
+  const timeZone = useResolvedTimeZone();
 
   const create = useMutation({
     mutationFn: async (input: IActivityInput) => {
-      if (isActivitiesApiEnabled()) {
-        return createTaskApi({
+      return createTaskApi(
+        {
           activityId: input.activityId ?? `ad-hoc-${createId()}`,
           title: input.title,
           date: input.date,
@@ -93,9 +94,9 @@ export function useActivityMutations(date: string) {
           categoryId: input.categoryId,
           notes: input.notes,
           status: input.status,
-        });
-      }
-      return activityRepository.create(input);
+        },
+        timeZone
+      );
     },
     onSuccess: async () => {
       await invalidateActivityQueries(queryClient, date);

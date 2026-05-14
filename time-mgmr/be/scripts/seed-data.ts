@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { normalizeImportedTask } from '../src/lib/normalizeTask.js';
+import { wallTimeLabeledZToUtc } from '../src/lib/timezone.js';
 import type { TaskUpsertInput } from '../src/repositories/dataRepository.js';
 import { upsertActivity, upsertTasks } from '../src/repositories/dataRepository.js';
 import { findUserByEmail } from '../src/repositories/userRepository.js';
@@ -48,12 +49,38 @@ function loadJson<T>(relativePath: string): T {
 	return JSON.parse(readFileSync(path, 'utf8')) as T;
 }
 
+/**
+ * tasks.json times are true UTC ISO instants. If seeding an older export that
+ * still has wall times labeled Z, set MIGRATE_WALL_Z=1 and optionally
+ * SOURCE_TIMEZONE (default: user profile TZ or Asia/Singapore).
+ */
+function migrateTaskTimesIfNeeded(
+	rawTask: Record<string, unknown>,
+	sourceTimeZone: string
+): Record<string, unknown> {
+	if (process.env.MIGRATE_WALL_Z !== '1') {
+		return rawTask;
+	}
+
+	const next = { ...rawTask };
+	if (typeof next.plannedStart === 'string') {
+		next.plannedStart = wallTimeLabeledZToUtc(next.plannedStart, sourceTimeZone);
+	}
+	if (typeof next.plannedEnd === 'string') {
+		next.plannedEnd = wallTimeLabeledZToUtc(next.plannedEnd, sourceTimeZone);
+	}
+	return next;
+}
+
 async function main(): Promise<void> {
 	const email = process.argv[2];
 	const fallbackDate = process.argv[3] ?? '2026-07-21';
 
 	if (!email) {
-		console.error('Usage: npm run seed:data -- <email> [fallbackDate]');
+		console.error(
+			'Usage: npm run seed:data -- <email> [fallbackDate]\n' +
+				'Optional: MIGRATE_WALL_Z=1 SOURCE_TIMEZONE=Asia/Singapore for legacy wall+Z exports'
+		);
 		process.exit(1);
 	}
 
@@ -66,10 +93,20 @@ async function main(): Promise<void> {
 	}
 
 	const userId = user.id;
+	const sourceTimeZone =
+		process.env.SOURCE_TIMEZONE?.trim() ||
+		user.timeZone?.trim() ||
+		'Asia/Singapore';
+
 	const activitiesFile = loadJson<IActivitiesJsonFile>('../fe/public/activities.json');
 	const tasksFile = loadJson<ITasksJsonFile>('../fe/public/tasks.json');
 
 	console.log(`Seeding data for ${email} (${userId})...`);
+	if (process.env.MIGRATE_WALL_Z === '1') {
+		console.log(
+			`MIGRATE_WALL_Z=1: interpreting wall times labeled Z as ${sourceTimeZone} → UTC`
+		);
+	}
 
 	const activities: IActivity[] = [];
 	for (const activity of activitiesFile.activities) {
@@ -95,7 +132,8 @@ async function main(): Promise<void> {
 			continue;
 		}
 
-		tasks.push(normalizeImportedTask(rawTask, activity, fallbackDate));
+		const migrated = migrateTaskTimesIfNeeded(rawTask, sourceTimeZone);
+		tasks.push(normalizeImportedTask(migrated, activity, fallbackDate));
 	}
 
 	if (tasks.length > 0) {

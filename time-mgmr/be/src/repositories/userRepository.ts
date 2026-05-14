@@ -35,6 +35,7 @@ function toUser(record: IUserProfileRecord): IUser {
 		role: record.role,
 		avatar: record.avatar,
 		themePreference: record.themePreference,
+		timeZone: record.timeZone,
 		createdAt: record.createdAt,
 		updatedAt: record.updatedAt,
 	};
@@ -161,6 +162,36 @@ export async function createUser(input: {
 		new PutCommand({
 			TableName: getTableName(),
 			Item: credentials,
+		})
+	);
+
+	return toUser(profile);
+}
+
+export async function updateUserProfile(
+	userId: string,
+	patch: { timeZone?: string; themePreference?: IUser['themePreference'] }
+): Promise<IUser> {
+	const existing = await getUserProfile(userId);
+	if (!existing) {
+		throw new Error('User not found');
+	}
+
+	const now = new Date().toISOString();
+	const profile: IUserProfileRecord = {
+		...existing,
+		...(patch.timeZone !== undefined ? { timeZone: patch.timeZone } : {}),
+		...(patch.themePreference !== undefined
+			? { themePreference: patch.themePreference }
+			: {}),
+		updatedAt: now,
+	};
+
+	const client = getDocumentClient();
+	await client.send(
+		new PutCommand({
+			TableName: getTableName(),
+			Item: profile,
 		})
 	);
 
