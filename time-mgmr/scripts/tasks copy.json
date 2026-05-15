@@ -1,0 +1,2648 @@
+[
+  {
+    "id": "56468647",
+    "activityId": "github-copilot",
+    "title": "GitHub Copilot CLI",
+    "plannedStart": "2026-07-21T01:00:00.000Z",
+    "plannedEnd": "2026-07-21T01:22:56.000Z",
+    "timeEstimationSeconds": 917,
+    "sortOrder": 0
+  },
+  {
+    "id": "54695299",
+    "activityId": "github-copilot",
+    "title": "Hooks with GitHub Copilot",
+    "plannedStart": "2026-07-21T01:22:56.000Z",
+    "plannedEnd": "2026-07-21T01:48:05.000Z",
+    "timeEstimationSeconds": 1006,
+    "sortOrder": 1
+  },
+  {
+    "id": "54679635",
+    "activityId": "github-copilot",
+    "title": "Extending the postToolUse hook logic with GitHub Copilot CLI",
+    "plannedStart": "2026-07-21T01:53:05.000Z",
+    "plannedEnd": "2026-07-21T02:19:55.000Z",
+    "timeEstimationSeconds": 1073,
+    "sortOrder": 2
+  },
+  {
+    "id": "56468791",
+    "activityId": "github-copilot",
+    "title": "Detect insecure code with GitHub Copilot Chat",
+    "plannedStart": "2026-07-21T02:24:55.000Z",
+    "plannedEnd": "2026-07-21T02:43:06.000Z",
+    "timeEstimationSeconds": 727,
+    "sortOrder": 3
+  },
+  {
+    "id": "54629557",
+    "activityId": "github-copilot",
+    "title": "Sub agents with GitHub Copilot Chat",
+    "plannedStart": "2026-07-21T02:43:06.000Z",
+    "plannedEnd": "2026-07-21T03:04:09.000Z",
+    "timeEstimationSeconds": 842,
+    "sortOrder": 4
+  },
+  {
+    "id": "54963273",
+    "activityId": "github-copilot",
+    "title": "Agent Skills in GitHub Copilot",
+    "plannedStart": "2026-07-21T03:09:09.000Z",
+    "plannedEnd": "2026-07-21T03:31:44.000Z",
+    "timeEstimationSeconds": 903,
+    "sortOrder": 5
+  },
+  {
+    "id": "56468801",
+    "activityId": "github-copilot",
+    "title": "When To Use Custom Agents, Custom Prompts, Agent Skills, and Instructions",
+    "plannedStart": "2026-07-21T03:31:44.000Z",
+    "plannedEnd": "2026-07-21T03:40:19.000Z",
+    "timeEstimationSeconds": 343,
+    "sortOrder": 6
+  },
+  {
+    "id": "89ehfj9hfw-p1",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (1/11)",
+    "plannedStart": "2026-07-21T05:00:00.000Z",
+    "plannedEnd": "2026-07-21T05:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 0
+  },
+  {
+    "id": "89ehfj9hfw-p2",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (2/11)",
+    "plannedStart": "2026-07-21T05:30:00.000Z",
+    "plannedEnd": "2026-07-21T05:55:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 1
+  },
+  {
+    "id": "89ehfj9hfw-p3",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (3/11)",
+    "plannedStart": "2026-07-21T06:00:00.000Z",
+    "plannedEnd": "2026-07-21T06:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 2
+  },
+  {
+    "id": "89ehfj9hfw-p4",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (4/11)",
+    "plannedStart": "2026-07-21T06:30:00.000Z",
+    "plannedEnd": "2026-07-21T06:55:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 3
+  },
+  {
+    "id": "89ehfj9hfw-p5",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (5/11)",
+    "plannedStart": "2026-07-21T07:10:00.000Z",
+    "plannedEnd": "2026-07-21T07:35:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 4
+  },
+  {
+    "id": "89ehfj9hfw-p6",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (6/11)",
+    "plannedStart": "2026-07-21T07:40:00.000Z",
+    "plannedEnd": "2026-07-21T08:05:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 5
+  },
+  {
+    "id": "89ehfj9hfw-p7",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (7/11)",
+    "plannedStart": "2026-07-21T08:10:00.000Z",
+    "plannedEnd": "2026-07-21T08:35:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 6
+  },
+  {
+    "id": "89ehfj9hfw-p8",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (8/11)",
+    "plannedStart": "2026-07-22T01:00:00.000Z",
+    "plannedEnd": "2026-07-22T01:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 7
+  },
+  {
+    "id": "89ehfj9hfw-p9",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (9/11)",
+    "plannedStart": "2026-07-22T01:30:00.000Z",
+    "plannedEnd": "2026-07-22T01:55:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 8
+  },
+  {
+    "id": "89ehfj9hfw-p10",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (10/11)",
+    "plannedStart": "2026-07-22T02:00:00.000Z",
+    "plannedEnd": "2026-07-22T02:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 9
+  },
+  {
+    "id": "89ehfj9hfw-p11",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (11/11)",
+    "plannedStart": "2026-07-22T02:30:00.000Z",
+    "plannedEnd": "2026-07-22T02:44:00.000Z",
+    "timeEstimationSeconds": 560,
+    "sortOrder": 10
+  },
+  {
+    "id": "49739779",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Build Your First Autonomous AI Agent with n8n (No-Code Demo)",
+    "plannedStart": "2026-07-22T02:44:00.000Z",
+    "plannedEnd": "2026-07-22T03:05:45.000Z",
+    "timeEstimationSeconds": 870,
+    "sortOrder": 0
+  },
+  {
+    "id": "49770319",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Course Roadmap: 6 Weeks, 8 Projects in Agentic AI Engineering",
+    "plannedStart": "2026-07-22T03:20:45.000Z",
+    "plannedEnd": "2026-07-22T03:40:42.000Z",
+    "timeEstimationSeconds": 798,
+    "sortOrder": 1
+  },
+  {
+    "id": "56543285",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Your Path to Becoming a Proficient AI Engineer",
+    "plannedStart": "2026-07-22T03:40:42.000Z",
+    "plannedEnd": "2026-07-22T03:46:15.000Z",
+    "timeEstimationSeconds": 222,
+    "sortOrder": 2
+  },
+  {
+    "id": "49770323",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Environment Setup Overview: UV, API Keys, Costs and GitHub Repo",
+    "plannedStart": "2026-07-22T05:00:00.000Z",
+    "plannedEnd": "2026-07-22T05:21:38.000Z",
+    "timeEstimationSeconds": 865,
+    "sortOrder": 3
+  },
+  {
+    "id": "49770331",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Windows Setup: Install Cursor, Git, Clone the Repo and Run UV",
+    "plannedStart": "2026-07-22T05:21:38.000Z",
+    "plannedEnd": "2026-07-22T05:46:08.000Z",
+    "timeEstimationSeconds": 980,
+    "sortOrder": 4
+  },
+  {
+    "id": "56710915",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-22T05:51:08.000Z",
+    "plannedEnd": "2026-07-22T05:54:20.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 5
+  },
+  {
+    "id": "49770355",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Mac Setup: Install Cursor, Git, Clone the Repo and Run UV",
+    "plannedStart": "2026-07-22T05:54:20.000Z",
+    "plannedEnd": "2026-07-22T06:24:05.000Z",
+    "timeEstimationSeconds": 1190,
+    "sortOrder": 6
+  },
+  {
+    "id": "49770893",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Set Up Your OpenAI API Key and .env File for the First Lab",
+    "plannedStart": "2026-07-22T06:29:05.000Z",
+    "plannedEnd": "2026-07-22T06:57:13.000Z",
+    "timeEstimationSeconds": 1125,
+    "sortOrder": 7
+  },
+  {
+    "id": "49770895",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Your First OpenAI API Call and Chaining LLM Calls in Python",
+    "plannedStart": "2026-07-22T07:12:13.000Z",
+    "plannedEnd": "2026-07-22T07:32:57.000Z",
+    "timeEstimationSeconds": 829,
+    "sortOrder": 8
+  },
+  {
+    "id": "49770897",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - What Is an AI Agent? Definitions, Workflows vs Agents Explained",
+    "plannedStart": "2026-07-22T07:32:57.000Z",
+    "plannedEnd": "2026-07-22T07:50:18.000Z",
+    "timeEstimationSeconds": 694,
+    "sortOrder": 9
+  },
+  {
+    "id": "49770901",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Agentic AI Design Patterns: Chaining, Routing, Orchestrator",
+    "plannedStart": "2026-07-22T07:55:18.000Z",
+    "plannedEnd": "2026-07-22T08:08:11.000Z",
+    "timeEstimationSeconds": 515,
+    "sortOrder": 10
+  },
+  {
+    "id": "49770903",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Agentic AI Risks, Guardrails, Evals and Traps to Avoid",
+    "plannedStart": "2026-07-22T08:08:11.000Z",
+    "plannedEnd": "2026-07-22T08:33:10.000Z",
+    "timeEstimationSeconds": 999,
+    "sortOrder": 11
+  },
+  {
+    "id": "56710917",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-22T08:38:10.000Z",
+    "plannedEnd": "2026-07-22T08:41:22.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 12
+  },
+  {
+    "id": "49771139",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - LLM Providers Compared: OpenAI, Claude, Gemini, Ollama, Groq",
+    "plannedStart": "2026-07-22T08:41:22.000Z",
+    "plannedEnd": "2026-07-22T08:57:40.000Z",
+    "timeEstimationSeconds": 652,
+    "sortOrder": 13
+  },
+  {
+    "id": "49771145",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Set Up Multiple LLM API Keys and Generate a Question to Ask",
+    "plannedStart": "2026-07-23T01:00:00.000Z",
+    "plannedEnd": "2026-07-23T01:12:39.000Z",
+    "timeEstimationSeconds": 506,
+    "sortOrder": 14
+  },
+  {
+    "id": "49771147",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Call 8 LLMs with the OpenAI-Compatible API: GPT, Claude, Gemini",
+    "plannedStart": "2026-07-23T01:12:39.000Z",
+    "plannedEnd": "2026-07-23T01:28:27.000Z",
+    "timeEstimationSeconds": 632,
+    "sortOrder": 15
+  },
+  {
+    "id": "49771149",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Install Ollama and Run Local LLMs: Llama, GPT-OSS and Gemma",
+    "plannedStart": "2026-07-23T01:33:27.000Z",
+    "plannedEnd": "2026-07-23T01:49:05.000Z",
+    "timeEstimationSeconds": 625,
+    "sortOrder": 16
+  },
+  {
+    "id": "49771155",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - LLM as a Judge: Rank Multiple LLMs with an Orchestration Flow",
+    "plannedStart": "2026-07-23T01:49:05.000Z",
+    "plannedEnd": "2026-07-23T02:04:05.000Z",
+    "timeEstimationSeconds": 600,
+    "sortOrder": 17
+  },
+  {
+    "id": "49771159",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - The Agent Landscape: Frameworks, Runtimes, Tools and Builders",
+    "plannedStart": "2026-07-23T02:09:05.000Z",
+    "plannedEnd": "2026-07-23T02:32:40.000Z",
+    "timeEstimationSeconds": 943,
+    "sortOrder": 18
+  },
+  {
+    "id": "49771189",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - How Tool Calling Works: The Truth Behind AI Agent Autonomy",
+    "plannedStart": "2026-07-23T02:32:40.000Z",
+    "plannedEnd": "2026-07-23T02:46:03.000Z",
+    "timeEstimationSeconds": 535,
+    "sortOrder": 19
+  },
+  {
+    "id": "49771193",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Start the Digital Twin: Read a PDF and Master System Prompts",
+    "plannedStart": "2026-07-23T02:51:03.000Z",
+    "plannedEnd": "2026-07-23T03:12:08.000Z",
+    "timeEstimationSeconds": 843,
+    "sortOrder": 20
+  },
+  {
+    "id": "49771203",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build a Chat UI with Gradio and Define Your First Agent Tool",
+    "plannedStart": "2026-07-23T03:12:08.000Z",
+    "plannedEnd": "2026-07-23T03:36:31.000Z",
+    "timeEstimationSeconds": 975,
+    "sortOrder": 21
+  },
+  {
+    "id": "49771205",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build the Agent Loop From Scratch: Tool Calling with a While Loop",
+    "plannedStart": "2026-07-23T05:00:00.000Z",
+    "plannedEnd": "2026-07-23T05:24:20.000Z",
+    "timeEstimationSeconds": 973,
+    "sortOrder": 22
+  },
+  {
+    "id": "49771207",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Context Engineering for AI Agents: Memory, Tools and RAG",
+    "plannedStart": "2026-07-23T05:24:20.000Z",
+    "plannedEnd": "2026-07-23T05:40:17.000Z",
+    "timeEstimationSeconds": 638,
+    "sortOrder": 23
+  },
+  {
+    "id": "49771327",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Add Tools to Your Digital Twin Agent with Pushover Notifications",
+    "plannedStart": "2026-07-23T05:45:17.000Z",
+    "plannedEnd": "2026-07-23T05:59:01.000Z",
+    "timeEstimationSeconds": 549,
+    "sortOrder": 24
+  },
+  {
+    "id": "56710919",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-23T05:59:01.000Z",
+    "plannedEnd": "2026-07-23T06:01:25.000Z",
+    "timeEstimationSeconds": 96,
+    "sortOrder": 25
+  },
+  {
+    "id": "49771329",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Handle Multiple Tool Calls in Python with the globals Trick",
+    "plannedStart": "2026-07-23T06:01:25.000Z",
+    "plannedEnd": "2026-07-23T06:07:33.000Z",
+    "timeEstimationSeconds": 245,
+    "sortOrder": 26
+  },
+  {
+    "id": "49771331",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Build the Digital Twin Agent Loop and Test It Live in Gradio",
+    "plannedStart": "2026-07-23T06:07:33.000Z",
+    "plannedEnd": "2026-07-23T06:15:30.000Z",
+    "timeEstimationSeconds": 318,
+    "sortOrder": 27
+  },
+  {
+    "id": "49771335",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Refactor the Digital Twin Agent into Python Modules and Run It",
+    "plannedStart": "2026-07-23T06:20:30.000Z",
+    "plannedEnd": "2026-07-23T06:35:05.000Z",
+    "timeEstimationSeconds": 583,
+    "sortOrder": 28
+  },
+  {
+    "id": "49771337",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Deploy Your Digital Twin AI Agent to Hugging Face Spaces",
+    "plannedStart": "2026-07-23T06:35:05.000Z",
+    "plannedEnd": "2026-07-23T06:58:58.000Z",
+    "timeEstimationSeconds": 955,
+    "sortOrder": 29
+  },
+  {
+    "id": "54173707",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Build a Visible Agent Loop with Checklist Tools Like Claude Code",
+    "plannedStart": "2026-07-23T07:03:58.000Z",
+    "plannedEnd": "2026-07-23T07:23:39.000Z",
+    "timeEstimationSeconds": 787,
+    "sortOrder": 30
+  },
+  {
+    "id": "49820287",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - OpenAI Agents SDK Intro and Async Python (asyncio) Explained",
+    "plannedStart": "2026-07-23T07:23:39.000Z",
+    "plannedEnd": "2026-07-23T07:44:39.000Z",
+    "timeEstimationSeconds": 840,
+    "sortOrder": 31
+  },
+  {
+    "id": "49820365",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - OpenAI Agents SDK Core Concepts: Agent, Trace and Runner.run",
+    "plannedStart": "2026-07-23T07:59:39.000Z",
+    "plannedEnd": "2026-07-23T08:20:17.000Z",
+    "timeEstimationSeconds": 825,
+    "sortOrder": 32
+  },
+  {
+    "id": "49820381",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Build Your First Agent with OpenAI Agents SDK: Runner and Tracing",
+    "plannedStart": "2026-07-23T08:20:17.000Z",
+    "plannedEnd": "2026-07-23T08:40:35.000Z",
+    "timeEstimationSeconds": 812,
+    "sortOrder": 33
+  },
+  {
+    "id": "49820399",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Add Tools to an Agent with the function_tool Decorator",
+    "plannedStart": "2026-07-24T01:00:00.000Z",
+    "plannedEnd": "2026-07-24T01:16:18.000Z",
+    "timeEstimationSeconds": 652,
+    "sortOrder": 34
+  },
+  {
+    "id": "56710921",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-24T01:16:18.000Z",
+    "plannedEnd": "2026-07-24T01:18:42.000Z",
+    "timeEstimationSeconds": 96,
+    "sortOrder": 35
+  },
+  {
+    "id": "49820407",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Adding Memory to Agents with Sessions and SQLiteSession",
+    "plannedStart": "2026-07-24T01:18:42.000Z",
+    "plannedEnd": "2026-07-24T01:34:56.000Z",
+    "timeEstimationSeconds": 649,
+    "sortOrder": 36
+  },
+  {
+    "id": "49820431",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Build a Multi-Agent Sales Team and Orchestrate Agents Three Ways",
+    "plannedStart": "2026-07-24T01:39:56.000Z",
+    "plannedEnd": "2026-07-24T01:44:52.000Z",
+    "timeEstimationSeconds": 197,
+    "sortOrder": 37
+  },
+  {
+    "id": "49820441",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Set Up Email Sending Tools for Your AI Sales Agents",
+    "plannedStart": "2026-07-24T01:44:52.000Z",
+    "plannedEnd": "2026-07-24T01:58:31.000Z",
+    "timeEstimationSeconds": 546,
+    "sortOrder": 38
+  },
+  {
+    "id": "49820447",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Agent Orchestration by Code vs by LLM in the OpenAI Agents SDK",
+    "plannedStart": "2026-07-24T01:58:31.000Z",
+    "plannedEnd": "2026-07-24T02:09:21.000Z",
+    "timeEstimationSeconds": 433,
+    "sortOrder": 39
+  },
+  {
+    "id": "49820467",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Orchestrate Multiple Sales Agents by Code with asyncio.gather",
+    "plannedStart": "2026-07-24T02:14:21.000Z",
+    "plannedEnd": "2026-07-24T02:32:39.000Z",
+    "timeEstimationSeconds": 732,
+    "sortOrder": 40
+  },
+  {
+    "id": "49820479",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Orchestrate Agents as Tools with a Sales Manager Agent",
+    "plannedStart": "2026-07-24T02:32:39.000Z",
+    "plannedEnd": "2026-07-24T02:43:59.000Z",
+    "timeEstimationSeconds": 453,
+    "sortOrder": 41
+  },
+  {
+    "id": "49820485",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Orchestrate Agents with Handoffs in the OpenAI Agents SDK",
+    "plannedStart": "2026-07-24T02:48:59.000Z",
+    "plannedEnd": "2026-07-24T03:04:41.000Z",
+    "timeEstimationSeconds": 628,
+    "sortOrder": 42
+  },
+  {
+    "id": "49820713",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Use Any LLM with the OpenAI Agents SDK: Gemini, Groq and More",
+    "plannedStart": "2026-07-24T03:04:41.000Z",
+    "plannedEnd": "2026-07-24T03:28:50.000Z",
+    "timeEstimationSeconds": 966,
+    "sortOrder": 43
+  },
+  {
+    "id": "49820721",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Structured Outputs with Pydantic in the OpenAI Agents SDK",
+    "plannedStart": "2026-07-24T05:00:00.000Z",
+    "plannedEnd": "2026-07-24T05:23:50.000Z",
+    "timeEstimationSeconds": 953,
+    "sortOrder": 44
+  },
+  {
+    "id": "56710923",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-24T05:23:50.000Z",
+    "plannedEnd": "2026-07-24T05:27:02.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 45
+  },
+  {
+    "id": "49820725",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Build Guardrails for AI Agents Plus Sandboxes and MCP",
+    "plannedStart": "2026-07-24T05:32:02.000Z",
+    "plannedEnd": "2026-07-24T06:03:22.000Z",
+    "timeEstimationSeconds": 1253,
+    "sortOrder": 46
+  },
+  {
+    "id": "49820791",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Plan a Deep Research AI Agent with the OpenAI Agents SDK",
+    "plannedStart": "2026-07-24T06:08:22.000Z",
+    "plannedEnd": "2026-07-24T06:16:28.000Z",
+    "timeEstimationSeconds": 324,
+    "sortOrder": 47
+  },
+  {
+    "id": "49820797",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build a Web Search Agent with OpenAI Agents SDK Hosted Tools",
+    "plannedStart": "2026-07-24T06:16:28.000Z",
+    "plannedEnd": "2026-07-24T06:29:10.000Z",
+    "timeEstimationSeconds": 508,
+    "sortOrder": 48
+  },
+  {
+    "id": "49820803",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build Planner, Writer and Email Agents with Structured Outputs",
+    "plannedStart": "2026-07-24T06:29:10.000Z",
+    "plannedEnd": "2026-07-24T06:41:34.000Z",
+    "timeEstimationSeconds": 496,
+    "sortOrder": 49
+  },
+  {
+    "id": "49820805",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Run the Full Deep Research Agent Orchestrated by Code",
+    "plannedStart": "2026-07-24T06:46:34.000Z",
+    "plannedEnd": "2026-07-24T07:07:13.000Z",
+    "timeEstimationSeconds": 826,
+    "sortOrder": 50
+  },
+  {
+    "id": "49820807",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Turn Your Deep Research Agent into Python Modules for Deploy",
+    "plannedStart": "2026-07-24T07:07:13.000Z",
+    "plannedEnd": "2026-07-24T07:21:24.000Z",
+    "timeEstimationSeconds": 567,
+    "sortOrder": 51
+  },
+  {
+    "id": "49820809",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Build a Gradio UI for Your Deep Research AI Agent",
+    "plannedStart": "2026-07-24T07:36:24.000Z",
+    "plannedEnd": "2026-07-24T07:49:38.000Z",
+    "timeEstimationSeconds": 529,
+    "sortOrder": 52
+  },
+  {
+    "id": "49820815",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Deploy Your Deep Research Gradio App to Hugging Face Spaces",
+    "plannedStart": "2026-07-24T07:49:38.000Z",
+    "plannedEnd": "2026-07-24T08:03:58.000Z",
+    "timeEstimationSeconds": 573,
+    "sortOrder": 53
+  },
+  {
+    "id": "49821121",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Intro to CrewAI: Crews, Flows, and the Open Source Framework",
+    "plannedStart": "2026-07-24T08:08:58.000Z",
+    "plannedEnd": "2026-07-24T08:18:04.000Z",
+    "timeEstimationSeconds": 364,
+    "sortOrder": 54
+  },
+  {
+    "id": "49821125",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - CrewAI Core Concepts: Agents, Tasks, Crews, and YAML Files",
+    "plannedStart": "2026-07-24T08:18:04.000Z",
+    "plannedEnd": "2026-07-24T08:33:52.000Z",
+    "timeEstimationSeconds": 632,
+    "sortOrder": 55
+  },
+  {
+    "id": "49821129",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Installing CrewAI with uv tool and Setting Up Skills",
+    "plannedStart": "2026-07-24T08:33:52.000Z",
+    "plannedEnd": "2026-07-24T08:47:18.000Z",
+    "timeEstimationSeconds": 537,
+    "sortOrder": 56
+  },
+  {
+    "id": "56710925",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-24T08:52:18.000Z",
+    "plannedEnd": "2026-07-24T08:55:30.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 57
+  },
+  {
+    "id": "49821133",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Build Your First Crew: crewai create crew and crewai run",
+    "plannedStart": "2026-07-27T01:00:00.000Z",
+    "plannedEnd": "2026-07-27T01:21:47.000Z",
+    "timeEstimationSeconds": 871,
+    "sortOrder": 58
+  },
+  {
+    "id": "49821137",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Build a CrewAI Debate Crew: Define Agents and Tasks in YAML",
+    "plannedStart": "2026-07-27T01:21:47.000Z",
+    "plannedEnd": "2026-07-27T01:32:13.000Z",
+    "timeEstimationSeconds": 417,
+    "sortOrder": 59
+  },
+  {
+    "id": "49821139",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Wire Up crew.py and main.py to Run a CrewAI Debate",
+    "plannedStart": "2026-07-27T01:37:13.000Z",
+    "plannedEnd": "2026-07-27T01:54:06.000Z",
+    "timeEstimationSeconds": 675,
+    "sortOrder": 60
+  },
+  {
+    "id": "49821161",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - The 5 Steps to Build Any CrewAI Project with Tools and Context",
+    "plannedStart": "2026-07-27T01:54:06.000Z",
+    "plannedEnd": "2026-07-27T02:07:08.000Z",
+    "timeEstimationSeconds": 521,
+    "sortOrder": 61
+  },
+  {
+    "id": "49821169",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Build a Financial Researcher Crew with YAML, Context, and Tools",
+    "plannedStart": "2026-07-27T02:12:08.000Z",
+    "plannedEnd": "2026-07-27T02:30:50.000Z",
+    "timeEstimationSeconds": 748,
+    "sortOrder": 62
+  },
+  {
+    "id": "49821175",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Add the Serper Tool to a CrewAI Financial Researcher and Run It",
+    "plannedStart": "2026-07-27T02:30:50.000Z",
+    "plannedEnd": "2026-07-27T02:46:20.000Z",
+    "timeEstimationSeconds": 620,
+    "sortOrder": 63
+  },
+  {
+    "id": "49821179",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Stock Picker Crew: Structured Outputs, Custom Tools, Memory",
+    "plannedStart": "2026-07-27T02:51:20.000Z",
+    "plannedEnd": "2026-07-27T03:02:13.000Z",
+    "timeEstimationSeconds": 435,
+    "sortOrder": 64
+  },
+  {
+    "id": "49821185",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Define Pydantic Structured Outputs for the Stock Picker Crew",
+    "plannedStart": "2026-07-27T03:02:13.000Z",
+    "plannedEnd": "2026-07-27T03:20:57.000Z",
+    "timeEstimationSeconds": 749,
+    "sortOrder": 65
+  },
+  {
+    "id": "49821193",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Custom Tools, Memory, and Hierarchical Process in CrewAI",
+    "plannedStart": "2026-07-27T05:00:00.000Z",
+    "plannedEnd": "2026-07-27T05:26:32.000Z",
+    "timeEstimationSeconds": 1061,
+    "sortOrder": 66
+  },
+  {
+    "id": "49821197",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build a CrewAI Coding Agent: Intro and Installing Docker",
+    "plannedStart": "2026-07-27T05:31:32.000Z",
+    "plannedEnd": "2026-07-27T05:42:35.000Z",
+    "timeEstimationSeconds": 442,
+    "sortOrder": 67
+  },
+  {
+    "id": "56710927",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-27T05:42:35.000Z",
+    "plannedEnd": "2026-07-27T05:45:47.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 68
+  },
+  {
+    "id": "49821201",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build Custom Sandbox Tools for a CrewAI Coding Agent",
+    "plannedStart": "2026-07-27T05:45:47.000Z",
+    "plannedEnd": "2026-07-27T05:59:47.000Z",
+    "timeEstimationSeconds": 560,
+    "sortOrder": 69
+  },
+  {
+    "id": "49821207",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Run Python in a Docker Sandbox with a CrewAI Coding Agent",
+    "plannedStart": "2026-07-27T06:04:47.000Z",
+    "plannedEnd": "2026-07-27T06:17:28.000Z",
+    "timeEstimationSeconds": 507,
+    "sortOrder": 70
+  },
+  {
+    "id": "49821233",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Build a CrewAI Engineering Team: Define the Four AI Agents",
+    "plannedStart": "2026-07-27T06:17:28.000Z",
+    "plannedEnd": "2026-07-27T06:30:27.000Z",
+    "timeEstimationSeconds": 519,
+    "sortOrder": 71
+  },
+  {
+    "id": "49821237",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Wire Up Engineering Team Tasks and crew.py with Context7 MCP",
+    "plannedStart": "2026-07-27T06:35:27.000Z",
+    "plannedEnd": "2026-07-27T06:49:12.000Z",
+    "timeEstimationSeconds": 550,
+    "sortOrder": 72
+  },
+  {
+    "id": "49821243",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Build UV Sandbox Tools and Set Requirements for the AI Team",
+    "plannedStart": "2026-07-27T06:49:12.000Z",
+    "plannedEnd": "2026-07-27T07:05:44.000Z",
+    "timeEstimationSeconds": 661,
+    "sortOrder": 73
+  },
+  {
+    "id": "49821253",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Run the CrewAI Engineering Team with Multiple LLM Models",
+    "plannedStart": "2026-07-27T07:20:44.000Z",
+    "plannedEnd": "2026-07-27T07:47:20.000Z",
+    "timeEstimationSeconds": 1064,
+    "sortOrder": 74
+  },
+  {
+    "id": "49821315",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - LangChain Ecosystem Explained: The Four Layers for Building AI Agents",
+    "plannedStart": "2026-07-27T07:52:20.000Z",
+    "plannedEnd": "2026-07-27T08:13:38.000Z",
+    "timeEstimationSeconds": 852,
+    "sortOrder": 75
+  },
+  {
+    "id": "49821319",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - LangChain Core Basics: ChatOpenAI, Invoke, Stream and the Tool Decorator",
+    "plannedStart": "2026-07-27T08:13:38.000Z",
+    "plannedEnd": "2026-07-27T08:27:35.000Z",
+    "timeEstimationSeconds": 558,
+    "sortOrder": 76
+  },
+  {
+    "id": "49821325",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Bind Tools and Structured Outputs: Your First LangChain AI Agent",
+    "plannedStart": "2026-07-27T08:32:35.000Z",
+    "plannedEnd": "2026-07-27T08:43:40.000Z",
+    "timeEstimationSeconds": 443,
+    "sortOrder": 77
+  },
+  {
+    "id": "49821329",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - LangGraph Explained: Graphs, State, Nodes, Edges and Reducers",
+    "plannedStart": "2026-07-28T01:00:00.000Z",
+    "plannedEnd": "2026-07-28T01:19:29.000Z",
+    "timeEstimationSeconds": 779,
+    "sortOrder": 78
+  },
+  {
+    "id": "49821333",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Build Your First LangGraph Graph: Nodes, Edges and Tool Calling",
+    "plannedStart": "2026-07-28T01:19:29.000Z",
+    "plannedEnd": "2026-07-28T01:45:34.000Z",
+    "timeEstimationSeconds": 1043,
+    "sortOrder": 79
+  },
+  {
+    "id": "49821335",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - LangSmith, Supersteps and Checkpointers for LangGraph Agents",
+    "plannedStart": "2026-07-28T01:50:34.000Z",
+    "plannedEnd": "2026-07-28T02:09:03.000Z",
+    "timeEstimationSeconds": 739,
+    "sortOrder": 80
+  },
+  {
+    "id": "56710929",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-28T02:09:03.000Z",
+    "plannedEnd": "2026-07-28T02:12:15.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 81
+  },
+  {
+    "id": "49821339",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - LangGraph Memory and Time Travel: MemorySaver, SQLite and Replay",
+    "plannedStart": "2026-07-28T02:12:15.000Z",
+    "plannedEnd": "2026-07-28T02:30:27.000Z",
+    "timeEstimationSeconds": 728,
+    "sortOrder": 82
+  },
+  {
+    "id": "49821341",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Intro to LangChain create_agent: The Easy Way to Build AI Agents",
+    "plannedStart": "2026-07-28T02:35:27.000Z",
+    "plannedEnd": "2026-07-28T02:41:48.000Z",
+    "timeEstimationSeconds": 254,
+    "sortOrder": 83
+  },
+  {
+    "id": "49821343",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Build a Simple Agent with LangChain create_agent and Tools",
+    "plannedStart": "2026-07-28T02:41:48.000Z",
+    "plannedEnd": "2026-07-28T02:50:05.000Z",
+    "timeEstimationSeconds": 331,
+    "sortOrder": 84
+  },
+  {
+    "id": "49821349",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Agent Memory, Structured Outputs and Middleware in LangChain",
+    "plannedStart": "2026-07-28T02:50:05.000Z",
+    "plannedEnd": "2026-07-28T02:59:16.000Z",
+    "timeEstimationSeconds": 367,
+    "sortOrder": 85
+  },
+  {
+    "id": "49821351",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Browser Automation with Node and Playwright for AI Agents",
+    "plannedStart": "2026-07-28T02:59:16.000Z",
+    "plannedEnd": "2026-07-28T03:06:28.000Z",
+    "timeEstimationSeconds": 288,
+    "sortOrder": 86
+  },
+  {
+    "id": "49821359",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Build a Web Research Agent with create_agent and Playwright MCP",
+    "plannedStart": "2026-07-28T03:11:28.000Z",
+    "plannedEnd": "2026-07-28T03:25:07.000Z",
+    "timeEstimationSeconds": 546,
+    "sortOrder": 87
+  },
+  {
+    "id": "49821363",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Deep Agents Overview: The Agent Harness for Long-Running AI Tasks",
+    "plannedStart": "2026-07-28T03:25:07.000Z",
+    "plannedEnd": "2026-07-28T03:30:22.000Z",
+    "timeEstimationSeconds": 210,
+    "sortOrder": 88
+  },
+  {
+    "id": "49821367",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Deep Agents Skills Explained: SKILL.md and Progressive Disclosure",
+    "plannedStart": "2026-07-28T03:30:22.000Z",
+    "plannedEnd": "2026-07-28T03:41:36.000Z",
+    "timeEstimationSeconds": 449,
+    "sortOrder": 89
+  },
+  {
+    "id": "49821381",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build Your First Deep Agent with a File System and To-Do Tools",
+    "plannedStart": "2026-07-28T05:00:00.000Z",
+    "plannedEnd": "2026-07-28T05:09:53.000Z",
+    "timeEstimationSeconds": 395,
+    "sortOrder": 90
+  },
+  {
+    "id": "49821391",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Deep Agents Sub-Agents: Delegation and the Task Tool Explained",
+    "plannedStart": "2026-07-28T05:09:53.000Z",
+    "plannedEnd": "2026-07-28T05:20:29.000Z",
+    "timeEstimationSeconds": 424,
+    "sortOrder": 91
+  },
+  {
+    "id": "56710931",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-28T05:20:29.000Z",
+    "plannedEnd": "2026-07-28T05:23:41.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 92
+  },
+  {
+    "id": "49821409",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Add Skills to Deep Agents: Build a PowerPoint with SKILL.md",
+    "plannedStart": "2026-07-28T05:23:41.000Z",
+    "plannedEnd": "2026-07-28T05:32:49.000Z",
+    "timeEstimationSeconds": 365,
+    "sortOrder": 93
+  },
+  {
+    "id": "49821415",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Intro to the Sidekick: An Autonomous AI Coworker with create_agent",
+    "plannedStart": "2026-07-28T05:37:49.000Z",
+    "plannedEnd": "2026-07-28T05:43:43.000Z",
+    "timeEstimationSeconds": 236,
+    "sortOrder": 94
+  },
+  {
+    "id": "49821423",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Sidekick Setup: Tools, Middleware and Evaluator with create_agent",
+    "plannedStart": "2026-07-28T05:43:43.000Z",
+    "plannedEnd": "2026-07-28T05:50:39.000Z",
+    "timeEstimationSeconds": 277,
+    "sortOrder": 95
+  },
+  {
+    "id": "49821429",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Human in the Loop with LangChain create_agent: Approve and Reject",
+    "plannedStart": "2026-07-28T05:50:39.000Z",
+    "plannedEnd": "2026-07-28T05:58:57.000Z",
+    "timeEstimationSeconds": 332,
+    "sortOrder": 96
+  },
+  {
+    "id": "49821435",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Inside the Sidekick Module: create_agent, Middleware and Evaluator",
+    "plannedStart": "2026-07-28T05:58:57.000Z",
+    "plannedEnd": "2026-07-28T06:10:02.000Z",
+    "timeEstimationSeconds": 443,
+    "sortOrder": 97
+  },
+  {
+    "id": "49821439",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Run the Sidekick: An Autonomous AI Agent on Real-World Tasks",
+    "plannedStart": "2026-07-28T06:15:02.000Z",
+    "plannedEnd": "2026-07-28T06:24:49.000Z",
+    "timeEstimationSeconds": 391,
+    "sortOrder": 98
+  },
+  {
+    "id": "49821451",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Build a Gradio UI for the Sidekick AI Agent and Finish the Project",
+    "plannedStart": "2026-07-28T06:24:49.000Z",
+    "plannedEnd": "2026-07-28T06:35:55.000Z",
+    "timeEstimationSeconds": 444,
+    "sortOrder": 99
+  },
+  {
+    "id": "49821563",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Intro to Google ADK and the Agent Development Kit",
+    "plannedStart": "2026-07-28T06:35:55.000Z",
+    "plannedEnd": "2026-07-28T06:46:12.000Z",
+    "timeEstimationSeconds": 411,
+    "sortOrder": 100
+  },
+  {
+    "id": "49821583",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Build Your First Google ADK Agent and Add Tools",
+    "plannedStart": "2026-07-28T06:51:12.000Z",
+    "plannedEnd": "2026-07-28T07:04:00.000Z",
+    "timeEstimationSeconds": 512,
+    "sortOrder": 101
+  },
+  {
+    "id": "49821589",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - ADK Agent Loop with MCP Tools and the ADK Web Dashboard",
+    "plannedStart": "2026-07-28T07:04:00.000Z",
+    "plannedEnd": "2026-07-28T07:20:11.000Z",
+    "timeEstimationSeconds": 647,
+    "sortOrder": 102
+  },
+  {
+    "id": "56710933",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-28T07:35:11.000Z",
+    "plannedEnd": "2026-07-28T07:38:23.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 103
+  },
+  {
+    "id": "49821595",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - The A2A Protocol: Agent Cards and a Live Agent2Agent Demo",
+    "plannedStart": "2026-07-28T07:38:23.000Z",
+    "plannedEnd": "2026-07-28T07:54:13.000Z",
+    "timeEstimationSeconds": 633,
+    "sortOrder": 104
+  },
+  {
+    "id": "49821599",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Build AI Agents with Strands Agents from AWS and Bedrock",
+    "plannedStart": "2026-07-28T07:54:13.000Z",
+    "plannedEnd": "2026-07-28T08:07:46.000Z",
+    "timeEstimationSeconds": 542,
+    "sortOrder": 105
+  },
+  {
+    "id": "49821605",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Build AI Agents with Pydantic AI and Structured Outputs",
+    "plannedStart": "2026-07-28T08:12:46.000Z",
+    "plannedEnd": "2026-07-28T08:25:19.000Z",
+    "timeEstimationSeconds": 502,
+    "sortOrder": 106
+  },
+  {
+    "id": "49821613",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Run a Pydantic AI Agent in Python and Wrap Up Strands",
+    "plannedStart": "2026-07-28T08:25:19.000Z",
+    "plannedEnd": "2026-07-28T08:28:22.000Z",
+    "timeEstimationSeconds": 122,
+    "sortOrder": 107
+  },
+  {
+    "id": "49821621",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Intro to the Microsoft Agent Framework, AutoGen and Semantic Kernel",
+    "plannedStart": "2026-07-28T08:28:22.000Z",
+    "plannedEnd": "2026-07-28T08:35:15.000Z",
+    "timeEstimationSeconds": 275,
+    "sortOrder": 108
+  },
+  {
+    "id": "49821623",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Build an AI Agent with the Microsoft Agent Framework Lab",
+    "plannedStart": "2026-07-28T08:35:15.000Z",
+    "plannedEnd": "2026-07-28T08:43:59.000Z",
+    "timeEstimationSeconds": 349,
+    "sortOrder": 109
+  },
+  {
+    "id": "49821629",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Intro to Agno: The Fast, Lightweight AI Agent Framework",
+    "plannedStart": "2026-07-28T08:48:59.000Z",
+    "plannedEnd": "2026-07-28T08:52:47.000Z",
+    "timeEstimationSeconds": 152,
+    "sortOrder": 110
+  },
+  {
+    "id": "56710935",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-28T08:52:47.000Z",
+    "plannedEnd": "2026-07-28T08:55:59.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 111
+  },
+  {
+    "id": "49821631",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Build an AI Agent with Agno: Tools, MCP and the Agent Loop",
+    "plannedStart": "2026-07-29T01:00:00.000Z",
+    "plannedEnd": "2026-07-29T01:09:59.000Z",
+    "timeEstimationSeconds": 399,
+    "sortOrder": 112
+  },
+  {
+    "id": "49821633",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Intro to Mastra: The TypeScript-Native AI Agent Framework",
+    "plannedStart": "2026-07-29T01:09:59.000Z",
+    "plannedEnd": "2026-07-29T01:13:53.000Z",
+    "timeEstimationSeconds": 156,
+    "sortOrder": 113
+  },
+  {
+    "id": "49821641",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Build AI Agents in TypeScript with Mastra: Tools and MCP",
+    "plannedStart": "2026-07-29T01:13:53.000Z",
+    "plannedEnd": "2026-07-29T01:27:04.000Z",
+    "timeEstimationSeconds": 527,
+    "sortOrder": 114
+  },
+  {
+    "id": "49821645",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Run the Mastra Agent Loop and Explore Mastra Studio",
+    "plannedStart": "2026-07-29T01:32:04.000Z",
+    "plannedEnd": "2026-07-29T01:38:45.000Z",
+    "timeEstimationSeconds": 267,
+    "sortOrder": 115
+  },
+  {
+    "id": "49821651",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - The Agent Loop Project: Multi-Framework Agent Architecture",
+    "plannedStart": "2026-07-29T01:38:45.000Z",
+    "plannedEnd": "2026-07-29T01:55:23.000Z",
+    "timeEstimationSeconds": 665,
+    "sortOrder": 116
+  },
+  {
+    "id": "49821665",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Inside the Agent Loop: Orchestrator, QA and CSS Agents",
+    "plannedStart": "2026-07-29T01:55:23.000Z",
+    "plannedEnd": "2026-07-29T02:07:31.000Z",
+    "timeEstimationSeconds": 485,
+    "sortOrder": 117
+  },
+  {
+    "id": "49821669",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Run the Multi-Agent Loop: Six Frameworks Build in Parallel",
+    "plannedStart": "2026-07-29T02:12:31.000Z",
+    "plannedEnd": "2026-07-29T02:28:10.000Z",
+    "timeEstimationSeconds": 626,
+    "sortOrder": 118
+  },
+  {
+    "id": "50767541",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Welcome to MCP Week: Agent Frameworks and the Agent Harness",
+    "plannedStart": "2026-07-29T02:28:10.000Z",
+    "plannedEnd": "2026-07-29T02:42:24.000Z",
+    "timeEstimationSeconds": 569,
+    "sortOrder": 119
+  },
+  {
+    "id": "50767593",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - What Is MCP? Host, Client and Server Architecture Explained",
+    "plannedStart": "2026-07-29T02:47:24.000Z",
+    "plannedEnd": "2026-07-29T03:06:36.000Z",
+    "timeEstimationSeconds": 768,
+    "sortOrder": 120
+  },
+  {
+    "id": "50767597",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - How MCP Works: Local vs Remote Servers and Calling Tools",
+    "plannedStart": "2026-07-29T03:06:36.000Z",
+    "plannedEnd": "2026-07-29T03:20:50.000Z",
+    "timeEstimationSeconds": 569,
+    "sortOrder": 121
+  },
+  {
+    "id": "56710939",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-29T03:35:50.000Z",
+    "plannedEnd": "2026-07-29T03:39:02.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 122
+  },
+  {
+    "id": "50767605",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Exploring Node-Based MCP Servers & Tool AccessDay 1 - MCP Transport Mech",
+    "plannedStart": "2026-07-29T03:39:02.000Z",
+    "plannedEnd": "2026-07-29T03:55:11.000Z",
+    "timeEstimationSeconds": 646,
+    "sortOrder": 123
+  },
+  {
+    "id": "50767611",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - First MCP Lab: Connecting Fetch, Playwright and Filesystem",
+    "plannedStart": "2026-07-29T05:00:00.000Z",
+    "plannedEnd": "2026-07-29T05:16:03.000Z",
+    "timeEstimationSeconds": 642,
+    "sortOrder": 124
+  },
+  {
+    "id": "50767615",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Build a Web-Browsing AI Agent with MCP Servers and Traces",
+    "plannedStart": "2026-07-29T05:16:03.000Z",
+    "plannedEnd": "2026-07-29T05:34:14.000Z",
+    "timeEstimationSeconds": 727,
+    "sortOrder": 125
+  },
+  {
+    "id": "50767625",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - MCP Recap: Core Concepts Before Building Your Own MCP Server",
+    "plannedStart": "2026-07-29T05:39:14.000Z",
+    "plannedEnd": "2026-07-29T05:50:08.000Z",
+    "timeEstimationSeconds": 436,
+    "sortOrder": 126
+  },
+  {
+    "id": "50767635",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Why Build Your Own MCP Server (and When You Shouldn't)",
+    "plannedStart": "2026-07-29T05:50:08.000Z",
+    "plannedEnd": "2026-07-29T05:55:52.000Z",
+    "timeEstimationSeconds": 229,
+    "sortOrder": 127
+  },
+  {
+    "id": "50767643",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - MCP Marketplaces and Building an MCP Server with FastMCP",
+    "plannedStart": "2026-07-29T05:55:52.000Z",
+    "plannedEnd": "2026-07-29T06:10:15.000Z",
+    "timeEstimationSeconds": 575,
+    "sortOrder": 128
+  },
+  {
+    "id": "50767649",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 2 - Run and Call Your Own MCP Server from an AI Agent",
+    "plannedStart": "2026-07-29T06:15:15.000Z",
+    "plannedEnd": "2026-07-29T06:22:27.000Z",
+    "timeEstimationSeconds": 288,
+    "sortOrder": 129
+  },
+  {
+    "id": "50767765",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Context Engineering for AI Agents with MCP Servers",
+    "plannedStart": "2026-07-29T06:22:27.000Z",
+    "plannedEnd": "2026-07-29T06:37:32.000Z",
+    "timeEstimationSeconds": 603,
+    "sortOrder": 130
+  },
+  {
+    "id": "50767775",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Long-Term Memory and Web Search MCP Servers for AI Agents",
+    "plannedStart": "2026-07-29T06:37:32.000Z",
+    "plannedEnd": "2026-07-29T06:51:35.000Z",
+    "timeEstimationSeconds": 562,
+    "sortOrder": 131
+  },
+  {
+    "id": "56710941",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Upgrade to the AI Engineer Agentic Track",
+    "plannedStart": "2026-07-29T06:56:35.000Z",
+    "plannedEnd": "2026-07-29T06:59:47.000Z",
+    "timeEstimationSeconds": 128,
+    "sortOrder": 132
+  },
+  {
+    "id": "50767791",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Agentic RAG with the Qdrant MCP Server for AI Agents",
+    "plannedStart": "2026-07-29T06:59:47.000Z",
+    "plannedEnd": "2026-07-29T07:09:23.000Z",
+    "timeEstimationSeconds": 384,
+    "sortOrder": 133
+  },
+  {
+    "id": "50768267",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 3 - Market Data MCP Server and Progressive Disclosure of Tools",
+    "plannedStart": "2026-07-29T07:09:23.000Z",
+    "plannedEnd": "2026-07-29T07:25:02.000Z",
+    "timeEstimationSeconds": 626,
+    "sortOrder": 134
+  },
+  {
+    "id": "50768309",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Capstone Kickoff: Build an Autonomous AI Trading Floor",
+    "plannedStart": "2026-07-29T07:40:02.000Z",
+    "plannedEnd": "2026-07-29T07:46:26.000Z",
+    "timeEstimationSeconds": 256,
+    "sortOrder": 135
+  },
+  {
+    "id": "50768327",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Trading Floor Architecture: Trader and Researcher AI Agents",
+    "plannedStart": "2026-07-29T07:46:26.000Z",
+    "plannedEnd": "2026-07-29T08:00:35.000Z",
+    "timeEstimationSeconds": 566,
+    "sortOrder": 136
+  },
+  {
+    "id": "50768337",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Wiring Up MCP Servers and the Researcher-as-Tool Pattern",
+    "plannedStart": "2026-07-29T08:00:35.000Z",
+    "plannedEnd": "2026-07-29T08:16:47.000Z",
+    "timeEstimationSeconds": 648,
+    "sortOrder": 137
+  },
+  {
+    "id": "50768351",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Orchestrate the Trading Floor and Launch the Gradio Dashboard",
+    "plannedStart": "2026-07-29T08:21:47.000Z",
+    "plannedEnd": "2026-07-29T08:34:31.000Z",
+    "timeEstimationSeconds": 509,
+    "sortOrder": 138
+  },
+  {
+    "id": "50768373",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Add Observability, Evaluation and Feedback to AI Traders",
+    "plannedStart": "2026-07-29T08:34:31.000Z",
+    "plannedEnd": "2026-07-29T08:48:16.000Z",
+    "timeEstimationSeconds": 550,
+    "sortOrder": 139
+  },
+  {
+    "id": "50768387",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Ship the Trading App: FastAPI Backend and React Front End",
+    "plannedStart": "2026-07-30T01:00:00.000Z",
+    "plannedEnd": "2026-07-30T01:16:17.000Z",
+    "timeEstimationSeconds": 651,
+    "sortOrder": 140
+  },
+  {
+    "id": "50769781",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Inspecting Traces and Your Capstone Trading Floor Challenge",
+    "plannedStart": "2026-07-30T01:16:17.000Z",
+    "plannedEnd": "2026-07-30T01:20:29.000Z",
+    "timeEstimationSeconds": 168,
+    "sortOrder": 141
+  },
+  {
+    "id": "50769785",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Choosing an Agent Framework and 10 Things That Really Matter",
+    "plannedStart": "2026-07-30T01:20:29.000Z",
+    "plannedEnd": "2026-07-30T01:34:11.000Z",
+    "timeEstimationSeconds": 548,
+    "sortOrder": 142
+  },
+  {
+    "id": "50769797",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Course Wrap-Up: Your Agentic AI Engineering Journey",
+    "plannedStart": "2026-07-30T01:39:11.000Z",
+    "plannedEnd": "2026-07-30T01:44:13.000Z",
+    "timeEstimationSeconds": 201,
+    "sortOrder": 143
+  },
+  {
+    "id": "56469947",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Bonus Lecture - Your Exclusive Links",
+    "plannedStart": "2026-07-30T01:44:13.000Z",
+    "plannedEnd": "2026-07-30T01:48:16.000Z",
+    "timeEstimationSeconds": 162,
+    "sortOrder": 144
+  },
+  {
+    "id": "11482928",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Mapping Existing Knowledge",
+    "plannedStart": "2026-07-30T01:48:16.000Z",
+    "plannedEnd": "2026-07-30T01:59:42.000Z",
+    "timeEstimationSeconds": 457,
+    "sortOrder": 0
+  },
+  {
+    "id": "19125114",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Quick Note to Prevent an Error",
+    "plannedStart": "2026-07-30T01:59:42.000Z",
+    "plannedEnd": "2026-07-30T02:00:38.000Z",
+    "timeEstimationSeconds": 37,
+    "sortOrder": 1
+  },
+  {
+    "id": "11482930",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Adding Configuration Files",
+    "plannedStart": "2026-07-30T02:00:38.000Z",
+    "plannedEnd": "2026-07-30T02:10:55.000Z",
+    "timeEstimationSeconds": 411,
+    "sortOrder": 2
+  },
+  {
+    "id": "11482932",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Object Types and API Versions",
+    "plannedStart": "2026-07-30T02:15:55.000Z",
+    "plannedEnd": "2026-07-30T02:26:18.000Z",
+    "timeEstimationSeconds": 415,
+    "sortOrder": 3
+  },
+  {
+    "id": "11482934",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Running Containers in Pods",
+    "plannedStart": "2026-07-30T02:26:18.000Z",
+    "plannedEnd": "2026-07-30T02:40:15.000Z",
+    "timeEstimationSeconds": 558,
+    "sortOrder": 4
+  },
+  {
+    "id": "11482938",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Service Config Files in Depth",
+    "plannedStart": "2026-07-30T02:40:15.000Z",
+    "plannedEnd": "2026-07-30T03:00:41.000Z",
+    "timeEstimationSeconds": 817,
+    "sortOrder": 5
+  },
+  {
+    "id": "41990270",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Connecting to Running Containers",
+    "plannedStart": "2026-07-30T03:05:41.000Z",
+    "plannedEnd": "2026-07-30T03:21:17.000Z",
+    "timeEstimationSeconds": 624,
+    "sortOrder": 6
+  },
+  {
+    "id": "11482942",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The Entire Deployment Flow",
+    "plannedStart": "2026-07-30T03:21:17.000Z",
+    "plannedEnd": "2026-07-30T03:40:50.000Z",
+    "timeEstimationSeconds": 782,
+    "sortOrder": 7
+  },
+  {
+    "id": "11482946",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Imperative vs Declarative Deployments",
+    "plannedStart": "2026-07-30T05:00:00.000Z",
+    "plannedEnd": "2026-07-30T05:20:24.000Z",
+    "timeEstimationSeconds": 816,
+    "sortOrder": 8
+  },
+  {
+    "id": "11482954",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Updating Existing Objects",
+    "plannedStart": "2026-07-30T05:20:24.000Z",
+    "plannedEnd": "2026-07-30T05:29:39.000Z",
+    "timeEstimationSeconds": 370,
+    "sortOrder": 9
+  },
+  {
+    "id": "11482956",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Declarative Updates in Action",
+    "plannedStart": "2026-07-30T05:34:39.000Z",
+    "plannedEnd": "2026-07-30T05:45:15.000Z",
+    "timeEstimationSeconds": 424,
+    "sortOrder": 10
+  },
+  {
+    "id": "11482958",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Limitations in Config Updates",
+    "plannedStart": "2026-07-30T05:45:15.000Z",
+    "plannedEnd": "2026-07-30T05:49:38.000Z",
+    "timeEstimationSeconds": 175,
+    "sortOrder": 11
+  },
+  {
+    "id": "11482960",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Running Containers with Deployments",
+    "plannedStart": "2026-07-30T05:49:38.000Z",
+    "plannedEnd": "2026-07-30T05:58:43.000Z",
+    "timeEstimationSeconds": 363,
+    "sortOrder": 12
+  },
+  {
+    "id": "19125388",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Quick Note to Prevent an Error",
+    "plannedStart": "2026-07-30T05:58:43.000Z",
+    "plannedEnd": "2026-07-30T05:58:57.000Z",
+    "timeEstimationSeconds": 9,
+    "sortOrder": 13
+  },
+  {
+    "id": "11482964",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Deployment Configuration Files",
+    "plannedStart": "2026-07-30T05:58:57.000Z",
+    "plannedEnd": "2026-07-30T06:03:54.000Z",
+    "timeEstimationSeconds": 198,
+    "sortOrder": 14
+  },
+  {
+    "id": "11482966",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Walking Through the Deployment Config",
+    "plannedStart": "2026-07-30T06:08:54.000Z",
+    "plannedEnd": "2026-07-30T06:15:29.000Z",
+    "timeEstimationSeconds": 263,
+    "sortOrder": 15
+  },
+  {
+    "id": "11482968",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Applying a Deployment",
+    "plannedStart": "2026-07-30T06:15:29.000Z",
+    "plannedEnd": "2026-07-30T06:25:02.000Z",
+    "timeEstimationSeconds": 382,
+    "sortOrder": 16
+  },
+  {
+    "id": "11482970",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Why Use Services?",
+    "plannedStart": "2026-07-30T06:25:02.000Z",
+    "plannedEnd": "2026-07-30T06:33:01.000Z",
+    "timeEstimationSeconds": 319,
+    "sortOrder": 17
+  },
+  {
+    "id": "11482974",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Scaling and Changing Deployments",
+    "plannedStart": "2026-07-30T06:33:01.000Z",
+    "plannedEnd": "2026-07-30T06:42:48.000Z",
+    "timeEstimationSeconds": 391,
+    "sortOrder": 18
+  },
+  {
+    "id": "11482978",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Updating Deployment Images",
+    "plannedStart": "2026-07-30T06:47:48.000Z",
+    "plannedEnd": "2026-07-30T06:53:44.000Z",
+    "timeEstimationSeconds": 237,
+    "sortOrder": 19
+  },
+  {
+    "id": "11482980",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Rebuilding the Client Image",
+    "plannedStart": "2026-07-30T06:53:44.000Z",
+    "plannedEnd": "2026-07-30T06:58:13.000Z",
+    "timeEstimationSeconds": 179,
+    "sortOrder": 20
+  },
+  {
+    "id": "11482982",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Triggering Deployment Updates",
+    "plannedStart": "2026-07-30T06:58:13.000Z",
+    "plannedEnd": "2026-07-30T07:16:49.000Z",
+    "timeEstimationSeconds": 744,
+    "sortOrder": 21
+  },
+  {
+    "id": "11482984",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Imperatively Updating a Deployment's Image",
+    "plannedStart": "2026-07-30T07:31:49.000Z",
+    "plannedEnd": "2026-07-30T07:42:55.000Z",
+    "timeEstimationSeconds": 444,
+    "sortOrder": 22
+  },
+  {
+    "id": "22875417",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Reminder for Docker Desktop's Kubernetes Users",
+    "plannedStart": "2026-07-30T07:42:55.000Z",
+    "plannedEnd": "2026-07-30T07:43:13.000Z",
+    "timeEstimationSeconds": 12,
+    "sortOrder": 23
+  },
+  {
+    "id": "11500786",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Multiple Docker Installations",
+    "plannedStart": "2026-07-30T07:43:13.000Z",
+    "plannedEnd": "2026-07-30T07:51:39.000Z",
+    "timeEstimationSeconds": 337,
+    "sortOrder": 24
+  },
+  {
+    "id": "11500788",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Reconfiguring Docker CLI",
+    "plannedStart": "2026-07-30T07:51:39.000Z",
+    "plannedEnd": "2026-07-30T08:00:35.000Z",
+    "timeEstimationSeconds": 357,
+    "sortOrder": 25
+  },
+  {
+    "id": "11500790",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Why Mess with Docker in the Node?",
+    "plannedStart": "2026-07-30T08:05:35.000Z",
+    "plannedEnd": "2026-07-30T08:13:13.000Z",
+    "timeEstimationSeconds": 305,
+    "sortOrder": 26
+  },
+  {
+    "id": "11500808",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The Path to Production",
+    "plannedStart": "2026-07-30T08:13:13.000Z",
+    "plannedEnd": "2026-07-30T08:21:01.000Z",
+    "timeEstimationSeconds": 312,
+    "sortOrder": 27
+  },
+  {
+    "id": "11500810",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Checkpoint Files",
+    "plannedStart": "2026-07-30T08:21:01.000Z",
+    "plannedEnd": "2026-07-30T08:22:04.000Z",
+    "timeEstimationSeconds": 42,
+    "sortOrder": 28
+  },
+  {
+    "id": "11500814",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "A Quick Checkpoint",
+    "plannedStart": "2026-07-30T08:22:04.000Z",
+    "plannedEnd": "2026-07-30T08:28:57.000Z",
+    "timeEstimationSeconds": 275,
+    "sortOrder": 29
+  },
+  {
+    "id": "11500816",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Recreating the Deployment",
+    "plannedStart": "2026-07-30T08:28:57.000Z",
+    "plannedEnd": "2026-07-30T08:37:11.000Z",
+    "timeEstimationSeconds": 329,
+    "sortOrder": 30
+  },
+  {
+    "id": "11500820",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "NodePort vs ClusterIP Services",
+    "plannedStart": "2026-07-30T08:42:11.000Z",
+    "plannedEnd": "2026-07-30T08:47:43.000Z",
+    "timeEstimationSeconds": 221,
+    "sortOrder": 31
+  },
+  {
+    "id": "11500824",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The ClusterIP Config",
+    "plannedStart": "2026-07-30T08:47:43.000Z",
+    "plannedEnd": "2026-07-30T08:53:31.000Z",
+    "timeEstimationSeconds": 232,
+    "sortOrder": 32
+  },
+  {
+    "id": "11500828",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Applying Multiple Files with Kubectl",
+    "plannedStart": "2026-07-30T08:53:31.000Z",
+    "plannedEnd": "2026-07-30T08:59:58.000Z",
+    "timeEstimationSeconds": 258,
+    "sortOrder": 33
+  },
+  {
+    "id": "11514726",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Express API Deployment Config",
+    "plannedStart": "2026-07-31T01:00:00.000Z",
+    "plannedEnd": "2026-07-31T01:09:03.000Z",
+    "timeEstimationSeconds": 362,
+    "sortOrder": 34
+  },
+  {
+    "id": "11514728",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Cluster IP for the Express API",
+    "plannedStart": "2026-07-31T01:09:03.000Z",
+    "plannedEnd": "2026-07-31T01:13:45.000Z",
+    "timeEstimationSeconds": 188,
+    "sortOrder": 35
+  },
+  {
+    "id": "11514730",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Combining Config Into Single Files",
+    "plannedStart": "2026-07-31T01:13:45.000Z",
+    "plannedEnd": "2026-07-31T01:22:44.000Z",
+    "timeEstimationSeconds": 359,
+    "sortOrder": 36
+  },
+  {
+    "id": "11514734",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The Worker Deployment",
+    "plannedStart": "2026-07-31T01:22:44.000Z",
+    "plannedEnd": "2026-07-31T01:29:38.000Z",
+    "timeEstimationSeconds": 276,
+    "sortOrder": 37
+  },
+  {
+    "id": "11514736",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Reapplying a Batch of Config Files",
+    "plannedStart": "2026-07-31T01:34:38.000Z",
+    "plannedEnd": "2026-07-31T01:41:55.000Z",
+    "timeEstimationSeconds": 291,
+    "sortOrder": 38
+  },
+  {
+    "id": "11514740",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Creating and Applying Redis Config",
+    "plannedStart": "2026-07-31T01:41:55.000Z",
+    "plannedEnd": "2026-07-31T01:53:04.000Z",
+    "timeEstimationSeconds": 446,
+    "sortOrder": 39
+  },
+  {
+    "id": "19399692",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Important Note about Expected Postgres Error",
+    "plannedStart": "2026-07-31T01:53:04.000Z",
+    "plannedEnd": "2026-07-31T01:54:33.000Z",
+    "timeEstimationSeconds": 59,
+    "sortOrder": 40
+  },
+  {
+    "id": "11514744",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Last Set of Boring Config!",
+    "plannedStart": "2026-07-31T01:54:33.000Z",
+    "plannedEnd": "2026-07-31T02:03:54.000Z",
+    "timeEstimationSeconds": 374,
+    "sortOrder": 41
+  },
+  {
+    "id": "11514746",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The Need for Volumes with Databases",
+    "plannedStart": "2026-07-31T02:08:54.000Z",
+    "plannedEnd": "2026-07-31T02:19:51.000Z",
+    "timeEstimationSeconds": 438,
+    "sortOrder": 42
+  },
+  {
+    "id": "11514748",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Kubernetes Volumes",
+    "plannedStart": "2026-07-31T02:19:51.000Z",
+    "plannedEnd": "2026-07-31T02:27:47.000Z",
+    "timeEstimationSeconds": 317,
+    "sortOrder": 43
+  },
+  {
+    "id": "11582308",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Volumes vs Persistent Volumes",
+    "plannedStart": "2026-07-31T02:27:47.000Z",
+    "plannedEnd": "2026-07-31T02:32:16.000Z",
+    "timeEstimationSeconds": 179,
+    "sortOrder": 44
+  },
+  {
+    "id": "11582334",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Persistent Volumes vs Persistent Volume Claims",
+    "plannedStart": "2026-07-31T02:32:16.000Z",
+    "plannedEnd": "2026-07-31T02:46:18.000Z",
+    "timeEstimationSeconds": 561,
+    "sortOrder": 45
+  },
+  {
+    "id": "11582310",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Claim Config Files",
+    "plannedStart": "2026-07-31T02:51:18.000Z",
+    "plannedEnd": "2026-07-31T02:55:42.000Z",
+    "timeEstimationSeconds": 176,
+    "sortOrder": 46
+  },
+  {
+    "id": "11582312",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Persistent Volume Access Modes",
+    "plannedStart": "2026-07-31T02:55:42.000Z",
+    "plannedEnd": "2026-07-31T03:00:59.000Z",
+    "timeEstimationSeconds": 211,
+    "sortOrder": 47
+  },
+  {
+    "id": "11582314",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Where Does Kubernetes Allocate Persistent Volumes?",
+    "plannedStart": "2026-07-31T03:00:59.000Z",
+    "plannedEnd": "2026-07-31T03:12:32.000Z",
+    "timeEstimationSeconds": 462,
+    "sortOrder": 48
+  },
+  {
+    "id": "52982499",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Designating a PVC in a Pod Template",
+    "plannedStart": "2026-07-31T03:12:32.000Z",
+    "plannedEnd": "2026-07-31T03:21:46.000Z",
+    "timeEstimationSeconds": 369,
+    "sortOrder": 49
+  },
+  {
+    "id": "11582320",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Applying a PVC",
+    "plannedStart": "2026-07-31T03:36:46.000Z",
+    "plannedEnd": "2026-07-31T03:40:19.000Z",
+    "timeEstimationSeconds": 142,
+    "sortOrder": 50
+  },
+  {
+    "id": "11582322",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Defining Environment Variables",
+    "plannedStart": "2026-07-31T03:40:19.000Z",
+    "plannedEnd": "2026-07-31T03:46:31.000Z",
+    "timeEstimationSeconds": 248,
+    "sortOrder": 51
+  },
+  {
+    "id": "11582324",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Adding Environment Variables to Config",
+    "plannedStart": "2026-07-31T03:46:31.000Z",
+    "plannedEnd": "2026-07-31T03:55:07.000Z",
+    "timeEstimationSeconds": 344,
+    "sortOrder": 52
+  },
+  {
+    "id": "11582326",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Creating an Encoded Secret",
+    "plannedStart": "2026-07-31T05:00:00.000Z",
+    "plannedEnd": "2026-07-31T05:14:08.000Z",
+    "timeEstimationSeconds": 565,
+    "sortOrder": 53
+  },
+  {
+    "id": "18122883",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Postgres Environment Variable Fix",
+    "plannedStart": "2026-07-31T05:14:08.000Z",
+    "plannedEnd": "2026-07-31T05:14:29.000Z",
+    "timeEstimationSeconds": 14,
+    "sortOrder": 54
+  },
+  {
+    "id": "11582328",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Passing Secrets as Environment Variables",
+    "plannedStart": "2026-07-31T05:14:29.000Z",
+    "plannedEnd": "2026-07-31T05:23:19.000Z",
+    "timeEstimationSeconds": 353,
+    "sortOrder": 55
+  },
+  {
+    "id": "11582330",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Environment Variables as Strings",
+    "plannedStart": "2026-07-31T05:23:19.000Z",
+    "plannedEnd": "2026-07-31T05:26:45.000Z",
+    "timeEstimationSeconds": 137,
+    "sortOrder": 56
+  },
+  {
+    "id": "11582340",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Load Balancer Services",
+    "plannedStart": "2026-07-31T05:31:45.000Z",
+    "plannedEnd": "2026-07-31T05:38:06.000Z",
+    "timeEstimationSeconds": 254,
+    "sortOrder": 57
+  },
+  {
+    "id": "11582342",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "A Quick Note on Ingresses",
+    "plannedStart": "2026-07-31T05:38:06.000Z",
+    "plannedEnd": "2026-07-31T05:43:24.000Z",
+    "timeEstimationSeconds": 212,
+    "sortOrder": 58
+  },
+  {
+    "id": "11582344",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "One Other Quick Note!",
+    "plannedStart": "2026-07-31T05:43:24.000Z",
+    "plannedEnd": "2026-07-31T05:45:50.000Z",
+    "timeEstimationSeconds": 97,
+    "sortOrder": 59
+  },
+  {
+    "id": "11582346",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Behind the Scenes of Ingress",
+    "plannedStart": "2026-07-31T05:45:50.000Z",
+    "plannedEnd": "2026-07-31T05:53:46.000Z",
+    "timeEstimationSeconds": 317,
+    "sortOrder": 60
+  },
+  {
+    "id": "11582348",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "More Behind the Scenes of Ingress",
+    "plannedStart": "2026-07-31T05:53:46.000Z",
+    "plannedEnd": "2026-07-31T06:03:42.000Z",
+    "timeEstimationSeconds": 397,
+    "sortOrder": 61
+  },
+  {
+    "id": "11639804",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Optional Reading on Ingress Nginx",
+    "plannedStart": "2026-07-31T06:08:42.000Z",
+    "plannedEnd": "2026-07-31T06:08:56.000Z",
+    "timeEstimationSeconds": 9,
+    "sortOrder": 62
+  },
+  {
+    "id": "21475302",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Docker Driver  and Ingress - IMPORTANT",
+    "plannedStart": "2026-07-31T06:08:56.000Z",
+    "plannedEnd": "2026-07-31T06:09:52.000Z",
+    "timeEstimationSeconds": 37,
+    "sortOrder": 63
+  },
+  {
+    "id": "42750686",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Setting Up Ingress Locally with Docker Desktop",
+    "plannedStart": "2026-07-31T06:09:52.000Z",
+    "plannedEnd": "2026-07-31T06:10:18.000Z",
+    "timeEstimationSeconds": 17,
+    "sortOrder": 64
+  },
+  {
+    "id": "42750318",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Setting  Up Ingress Locally with Minikube",
+    "plannedStart": "2026-07-31T06:10:18.000Z",
+    "plannedEnd": "2026-07-31T06:13:27.000Z",
+    "timeEstimationSeconds": 126,
+    "sortOrder": 65
+  },
+  {
+    "id": "14520632",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Ingress API Update + \"this.state.seenIndexes.map...\" + 404 errors",
+    "plannedStart": "2026-07-31T06:13:27.000Z",
+    "plannedEnd": "2026-07-31T06:14:45.000Z",
+    "timeEstimationSeconds": 52,
+    "sortOrder": 66
+  },
+  {
+    "id": "11582352",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Creating the Ingress Configuration",
+    "plannedStart": "2026-07-31T06:14:45.000Z",
+    "plannedEnd": "2026-07-31T06:25:15.000Z",
+    "timeEstimationSeconds": 420,
+    "sortOrder": 67
+  },
+  {
+    "id": "41990902",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Testing Ingress Locally",
+    "plannedStart": "2026-07-31T06:25:15.000Z",
+    "plannedEnd": "2026-07-31T06:29:30.000Z",
+    "timeEstimationSeconds": 170,
+    "sortOrder": 68
+  },
+  {
+    "id": "11628194",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The Deployment Process",
+    "plannedStart": "2026-07-31T06:29:30.000Z",
+    "plannedEnd": "2026-07-31T06:38:14.000Z",
+    "timeEstimationSeconds": 349,
+    "sortOrder": 69
+  },
+  {
+    "id": "11628196",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Google Cloud vs AWS for Kubernetes",
+    "plannedStart": "2026-07-31T06:43:14.000Z",
+    "plannedEnd": "2026-07-31T06:50:34.000Z",
+    "timeEstimationSeconds": 293,
+    "sortOrder": 70
+  },
+  {
+    "id": "11628200",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Creating a Git Repo",
+    "plannedStart": "2026-07-31T06:50:34.000Z",
+    "plannedEnd": "2026-07-31T06:56:33.000Z",
+    "timeEstimationSeconds": 239,
+    "sortOrder": 71
+  },
+  {
+    "id": "11628202",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Linking the Github Repo to Travis",
+    "plannedStart": "2026-07-31T06:56:33.000Z",
+    "plannedEnd": "2026-07-31T06:58:56.000Z",
+    "timeEstimationSeconds": 95,
+    "sortOrder": 72
+  },
+  {
+    "id": "12084242",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Free Google Cloud Trial and Credits",
+    "plannedStart": "2026-07-31T06:58:56.000Z",
+    "plannedEnd": "2026-07-31T06:59:22.000Z",
+    "timeEstimationSeconds": 17,
+    "sortOrder": 73
+  },
+  {
+    "id": "11628204",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Creating a Google Cloud Project",
+    "plannedStart": "2026-07-31T06:59:22.000Z",
+    "plannedEnd": "2026-07-31T07:02:21.000Z",
+    "timeEstimationSeconds": 119,
+    "sortOrder": 74
+  },
+  {
+    "id": "11628206",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Linking a Billing Account",
+    "plannedStart": "2026-07-31T07:02:21.000Z",
+    "plannedEnd": "2026-07-31T07:05:38.000Z",
+    "timeEstimationSeconds": 131,
+    "sortOrder": 75
+  },
+  {
+    "id": "52432781",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "GKE Creation Steps Using Autopilot",
+    "plannedStart": "2026-07-31T07:05:38.000Z",
+    "plannedEnd": "2026-07-31T07:07:44.000Z",
+    "timeEstimationSeconds": 84,
+    "sortOrder": 76
+  },
+  {
+    "id": "11628314",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Kubernetes Dashboard on Google Cloud",
+    "plannedStart": "2026-07-31T07:07:44.000Z",
+    "plannedEnd": "2026-07-31T07:14:34.000Z",
+    "timeEstimationSeconds": 273,
+    "sortOrder": 77
+  },
+  {
+    "id": "11628214",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Travis Deployment Overview",
+    "plannedStart": "2026-07-31T07:29:34.000Z",
+    "plannedEnd": "2026-07-31T07:37:10.000Z",
+    "timeEstimationSeconds": 304,
+    "sortOrder": 78
+  },
+  {
+    "id": "50723123",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Installing the Google Cloud SDK",
+    "plannedStart": "2026-07-31T07:37:10.000Z",
+    "plannedEnd": "2026-07-31T07:45:46.000Z",
+    "timeEstimationSeconds": 344,
+    "sortOrder": 79
+  },
+  {
+    "id": "25408376",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Updated Service Account steps for new GCP UI",
+    "plannedStart": "2026-07-31T07:45:46.000Z",
+    "plannedEnd": "2026-07-31T07:47:00.000Z",
+    "timeEstimationSeconds": 49,
+    "sortOrder": 80
+  },
+  {
+    "id": "11628218",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Generating a Service Account",
+    "plannedStart": "2026-07-31T07:47:00.000Z",
+    "plannedEnd": "2026-07-31T07:55:14.000Z",
+    "timeEstimationSeconds": 329,
+    "sortOrder": 81
+  },
+  {
+    "id": "18296716",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Ruby Version Fix",
+    "plannedStart": "2026-07-31T08:00:14.000Z",
+    "plannedEnd": "2026-07-31T08:00:40.000Z",
+    "timeEstimationSeconds": 17,
+    "sortOrder": 82
+  },
+  {
+    "id": "11628220",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Running Travis CLI in a Container",
+    "plannedStart": "2026-07-31T08:00:40.000Z",
+    "plannedEnd": "2026-07-31T08:14:36.000Z",
+    "timeEstimationSeconds": 557,
+    "sortOrder": 83
+  },
+  {
+    "id": "17886124",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Travis Login Issues, \"iv undefined\" or \"repository not known\"",
+    "plannedStart": "2026-07-31T08:14:36.000Z",
+    "plannedEnd": "2026-07-31T08:15:57.000Z",
+    "timeEstimationSeconds": 54,
+    "sortOrder": 84
+  },
+  {
+    "id": "11628228",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Encrypting a Service Account File",
+    "plannedStart": "2026-07-31T08:15:57.000Z",
+    "plannedEnd": "2026-07-31T08:27:48.000Z",
+    "timeEstimationSeconds": 474,
+    "sortOrder": 85
+  },
+  {
+    "id": "52448957",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "More Google Cloud CLI Config",
+    "plannedStart": "2026-07-31T08:32:48.000Z",
+    "plannedEnd": "2026-07-31T08:39:47.000Z",
+    "timeEstimationSeconds": 279,
+    "sortOrder": 86
+  },
+  {
+    "id": "50725299",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Running Tests with Travis",
+    "plannedStart": "2026-07-31T08:39:47.000Z",
+    "plannedEnd": "2026-07-31T08:49:14.000Z",
+    "timeEstimationSeconds": 378,
+    "sortOrder": 87
+  },
+  {
+    "id": "11628234",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Custom Deployment Providers",
+    "plannedStart": "2026-07-31T08:49:14.000Z",
+    "plannedEnd": "2026-07-31T08:54:58.000Z",
+    "timeEstimationSeconds": 229,
+    "sortOrder": 88
+  },
+  {
+    "id": "11628252",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Unique Deployment Images",
+    "plannedStart": "2026-08-03T01:00:00.000Z",
+    "plannedEnd": "2026-08-03T01:12:50.000Z",
+    "timeEstimationSeconds": 513,
+    "sortOrder": 89
+  },
+  {
+    "id": "11628236",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Unique Tags for Built Images",
+    "plannedStart": "2026-08-03T01:12:50.000Z",
+    "plannedEnd": "2026-08-03T01:24:31.000Z",
+    "timeEstimationSeconds": 467,
+    "sortOrder": 90
+  },
+  {
+    "id": "11628262",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Updating the Deployment Script",
+    "plannedStart": "2026-08-03T01:24:31.000Z",
+    "plannedEnd": "2026-08-03T01:36:16.000Z",
+    "timeEstimationSeconds": 470,
+    "sortOrder": 91
+  },
+  {
+    "id": "52449043",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Configuring the GCloud CLI on Cloud Console",
+    "plannedStart": "2026-08-03T01:41:16.000Z",
+    "plannedEnd": "2026-08-03T01:49:37.000Z",
+    "timeEstimationSeconds": 334,
+    "sortOrder": 92
+  },
+  {
+    "id": "11628268",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Creating a Secret on Google Cloud",
+    "plannedStart": "2026-08-03T01:49:37.000Z",
+    "plannedEnd": "2026-08-03T01:53:13.000Z",
+    "timeEstimationSeconds": 144,
+    "sortOrder": 93
+  },
+  {
+    "id": "40954462",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Helm Setup",
+    "plannedStart": "2026-08-03T01:53:13.000Z",
+    "plannedEnd": "2026-08-03T02:02:34.000Z",
+    "timeEstimationSeconds": 374,
+    "sortOrder": 94
+  },
+  {
+    "id": "40955164",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Important - Updated Ingress Installation with Helm",
+    "plannedStart": "2026-08-03T02:02:34.000Z",
+    "plannedEnd": "2026-08-03T02:02:58.000Z",
+    "timeEstimationSeconds": 16,
+    "sortOrder": 95
+  },
+  {
+    "id": "40956610",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Ingress-Nginx with Helm",
+    "plannedStart": "2026-08-03T02:02:58.000Z",
+    "plannedEnd": "2026-08-03T02:05:52.000Z",
+    "timeEstimationSeconds": 116,
+    "sortOrder": 96
+  },
+  {
+    "id": "40954804",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The Result of Ingress-Nginx",
+    "plannedStart": "2026-08-03T02:05:52.000Z",
+    "plannedEnd": "2026-08-03T02:11:33.000Z",
+    "timeEstimationSeconds": 227,
+    "sortOrder": 97
+  },
+  {
+    "id": "11628286",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Finally - Deployment!",
+    "plannedStart": "2026-08-03T02:16:33.000Z",
+    "plannedEnd": "2026-08-03T02:21:48.000Z",
+    "timeEstimationSeconds": 210,
+    "sortOrder": 98
+  },
+  {
+    "id": "11628290",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Did I Really Type That?",
+    "plannedStart": "2026-08-03T02:21:48.000Z",
+    "plannedEnd": "2026-08-03T02:22:56.000Z",
+    "timeEstimationSeconds": 45,
+    "sortOrder": 99
+  },
+  {
+    "id": "11628292",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Verifying Deployment",
+    "plannedStart": "2026-08-03T02:22:56.000Z",
+    "plannedEnd": "2026-08-03T02:30:56.000Z",
+    "timeEstimationSeconds": 320,
+    "sortOrder": 100
+  },
+  {
+    "id": "11628294",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "A Workflow for Changing in Prod",
+    "plannedStart": "2026-08-03T02:30:56.000Z",
+    "plannedEnd": "2026-08-03T02:37:40.000Z",
+    "timeEstimationSeconds": 269,
+    "sortOrder": 101
+  },
+  {
+    "id": "11628296",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Merging a PR for Deployment",
+    "plannedStart": "2026-08-03T02:37:40.000Z",
+    "plannedEnd": "2026-08-03T02:39:12.000Z",
+    "timeEstimationSeconds": 61,
+    "sortOrder": 102
+  },
+  {
+    "id": "11628302",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "That's It!  What's Next?",
+    "plannedStart": "2026-08-03T02:39:12.000Z",
+    "plannedEnd": "2026-08-03T02:41:38.000Z",
+    "timeEstimationSeconds": 97,
+    "sortOrder": 103
+  },
+  {
+    "id": "25408280",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Completed Code For Google Cloud Deployment",
+    "plannedStart": "2026-08-03T02:46:38.000Z",
+    "plannedEnd": "2026-08-03T02:46:43.000Z",
+    "timeEstimationSeconds": 3,
+    "sortOrder": 104
+  },
+  {
+    "id": "11628340",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "HTTPS Setup Overview",
+    "plannedStart": "2026-08-03T02:46:43.000Z",
+    "plannedEnd": "2026-08-03T02:55:06.000Z",
+    "timeEstimationSeconds": 335,
+    "sortOrder": 105
+  },
+  {
+    "id": "11628344",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Domain Purchase",
+    "plannedStart": "2026-08-03T02:55:06.000Z",
+    "plannedEnd": "2026-08-03T02:58:32.000Z",
+    "timeEstimationSeconds": 137,
+    "sortOrder": 106
+  },
+  {
+    "id": "11628346",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Domain Name Setup",
+    "plannedStart": "2026-08-03T02:58:32.000Z",
+    "plannedEnd": "2026-08-03T03:03:47.000Z",
+    "timeEstimationSeconds": 210,
+    "sortOrder": 107
+  },
+  {
+    "id": "25482916",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Required Updates for Cert Manager Install",
+    "plannedStart": "2026-08-03T03:03:47.000Z",
+    "plannedEnd": "2026-08-03T03:04:25.000Z",
+    "timeEstimationSeconds": 25,
+    "sortOrder": 108
+  },
+  {
+    "id": "11628348",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Cert Manager Install",
+    "plannedStart": "2026-08-03T03:04:25.000Z",
+    "plannedEnd": "2026-08-03T03:07:21.000Z",
+    "timeEstimationSeconds": 117,
+    "sortOrder": 109
+  },
+  {
+    "id": "11628352",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "How to Wire Up Cert Manager",
+    "plannedStart": "2026-08-03T03:07:21.000Z",
+    "plannedEnd": "2026-08-03T03:16:18.000Z",
+    "timeEstimationSeconds": 358,
+    "sortOrder": 110
+  },
+  {
+    "id": "25482794",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Required Update for Issuer",
+    "plannedStart": "2026-08-03T03:31:18.000Z",
+    "plannedEnd": "2026-08-03T03:31:38.000Z",
+    "timeEstimationSeconds": 13,
+    "sortOrder": 111
+  },
+  {
+    "id": "11628354",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Issuer Config File",
+    "plannedStart": "2026-08-03T03:31:38.000Z",
+    "plannedEnd": "2026-08-03T03:39:19.000Z",
+    "timeEstimationSeconds": 307,
+    "sortOrder": 112
+  },
+  {
+    "id": "25482936",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Required Update for the Certificate",
+    "plannedStart": "2026-08-03T03:39:19.000Z",
+    "plannedEnd": "2026-08-03T03:39:45.000Z",
+    "timeEstimationSeconds": 17,
+    "sortOrder": 113
+  },
+  {
+    "id": "11628356",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Certificate Config File",
+    "plannedStart": "2026-08-03T03:39:45.000Z",
+    "plannedEnd": "2026-08-03T03:47:42.000Z",
+    "timeEstimationSeconds": 318,
+    "sortOrder": 114
+  },
+  {
+    "id": "11628360",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Deploying Changes",
+    "plannedStart": "2026-08-03T03:47:42.000Z",
+    "plannedEnd": "2026-08-03T03:52:35.000Z",
+    "timeEstimationSeconds": 195,
+    "sortOrder": 115
+  },
+  {
+    "id": "25483088",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "No Resources Found?",
+    "plannedStart": "2026-08-03T03:52:35.000Z",
+    "plannedEnd": "2026-08-03T03:52:53.000Z",
+    "timeEstimationSeconds": 12,
+    "sortOrder": 116
+  },
+  {
+    "id": "11628362",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Verifying the Certificate",
+    "plannedStart": "2026-08-03T03:52:53.000Z",
+    "plannedEnd": "2026-08-03T03:58:44.000Z",
+    "timeEstimationSeconds": 234,
+    "sortOrder": 117
+  },
+  {
+    "id": "25483166",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Required Update for the HTTPS Ingress",
+    "plannedStart": "2026-08-03T05:00:00.000Z",
+    "plannedEnd": "2026-08-03T05:00:06.000Z",
+    "timeEstimationSeconds": 4,
+    "sortOrder": 118
+  },
+  {
+    "id": "11628364",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Ingress Config for HTTPS",
+    "plannedStart": "2026-08-03T05:00:06.000Z",
+    "plannedEnd": "2026-08-03T05:10:20.000Z",
+    "timeEstimationSeconds": 409,
+    "sortOrder": 119
+  },
+  {
+    "id": "11628366",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "It Worked!",
+    "plannedStart": "2026-08-03T05:10:20.000Z",
+    "plannedEnd": "2026-08-03T05:14:37.000Z",
+    "timeEstimationSeconds": 171,
+    "sortOrder": 120
+  },
+  {
+    "id": "11684242",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Google Cloud Cleanup",
+    "plannedStart": "2026-08-03T05:14:37.000Z",
+    "plannedEnd": "2026-08-03T05:15:07.000Z",
+    "timeEstimationSeconds": 20,
+    "sortOrder": 121
+  },
+  {
+    "id": "11684298",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Local Environment Cleanup",
+    "plannedStart": "2026-08-03T05:15:07.000Z",
+    "plannedEnd": "2026-08-03T05:16:04.000Z",
+    "timeEstimationSeconds": 38,
+    "sortOrder": 122
+  },
+  {
+    "id": "15271340",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Awkward Local Development",
+    "plannedStart": "2026-08-03T05:16:04.000Z",
+    "plannedEnd": "2026-08-03T05:21:55.000Z",
+    "timeEstimationSeconds": 234,
+    "sortOrder": 123
+  },
+  {
+    "id": "15271344",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Installing Skaffold",
+    "plannedStart": "2026-08-03T05:21:55.000Z",
+    "plannedEnd": "2026-08-03T05:24:54.000Z",
+    "timeEstimationSeconds": 119,
+    "sortOrder": 124
+  },
+  {
+    "id": "15271346",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "The Skaffold Config File",
+    "plannedStart": "2026-08-03T05:24:54.000Z",
+    "plannedEnd": "2026-08-03T05:34:59.000Z",
+    "timeEstimationSeconds": 403,
+    "sortOrder": 125
+  },
+  {
+    "id": "45818207",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Skaffold Sync Update and Example Source Code",
+    "plannedStart": "2026-08-03T05:39:59.000Z",
+    "plannedEnd": "2026-08-03T05:42:50.000Z",
+    "timeEstimationSeconds": 114,
+    "sortOrder": 126
+  },
+  {
+    "id": "15271348",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Live Sync Changes",
+    "plannedStart": "2026-08-03T05:42:50.000Z",
+    "plannedEnd": "2026-08-03T05:50:23.000Z",
+    "timeEstimationSeconds": 302,
+    "sortOrder": 127
+  },
+  {
+    "id": "15271350",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Automatic Shutdown",
+    "plannedStart": "2026-08-03T05:50:23.000Z",
+    "plannedEnd": "2026-08-03T05:58:02.000Z",
+    "timeEstimationSeconds": 306,
+    "sortOrder": 128
+  },
+  {
+    "id": "15271356",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Testing Live Sync with the API Server",
+    "plannedStart": "2026-08-03T05:58:02.000Z",
+    "plannedEnd": "2026-08-03T06:06:16.000Z",
+    "timeEstimationSeconds": 329,
+    "sortOrder": 129
+  },
+  {
+    "id": "16727404",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Bonus!",
+    "plannedStart": "2026-08-03T06:11:16.000Z",
+    "plannedEnd": "2026-08-03T06:12:06.000Z",
+    "timeEstimationSeconds": 33,
+    "sortOrder": 130
+  }
+]

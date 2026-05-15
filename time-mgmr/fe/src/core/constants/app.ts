@@ -12,7 +12,7 @@ export const API_TIMEOUT = 30000; // 30 seconds
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
-  TODAY: '/today',
+  TIMETABLE: '/timetable',
   REPORT: '/report',
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',

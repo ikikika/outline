@@ -18,8 +18,13 @@ interface IActivitiesJsonFile {
 	>;
 }
 
-interface ITasksJsonFile {
-	tasks: Array<Record<string, unknown>>;
+type TasksJsonFile =
+	| Array<Record<string, unknown>>
+	| { tasks: Array<Record<string, unknown>> };
+
+function loadTasks(relativePath: string): Array<Record<string, unknown>> {
+	const data = loadJson<TasksJsonFile>(relativePath);
+	return Array.isArray(data) ? data : data.tasks;
 }
 
 function resolveTableName(): string {
@@ -98,8 +103,8 @@ async function main(): Promise<void> {
 		user.timeZone?.trim() ||
 		'Asia/Singapore';
 
-	const activitiesFile = loadJson<IActivitiesJsonFile>('../fe/public/activities.json');
-	const tasksFile = loadJson<ITasksJsonFile>('../fe/public/tasks.json');
+	const activitiesFile = loadJson<IActivitiesJsonFile>('../scripts/activities.json');
+	const rawTasks = loadTasks('../scripts/tasks.json');
 
 	console.log(`Seeding data for ${email} (${userId})...`);
 	if (process.env.MIGRATE_WALL_Z === '1') {
@@ -109,12 +114,14 @@ async function main(): Promise<void> {
 	}
 
 	const activities: IActivity[] = [];
-	for (const activity of activitiesFile.activities) {
+	for (const [index, activity] of activitiesFile.activities.entries()) {
 		const saved = await upsertActivity(userId, {
 			id: activity.id,
 			title: activity.title,
 			categoryId: activity.categoryId,
 			notes: activity.notes ?? '',
+			sortOrder:
+				typeof activity.sortOrder === 'number' ? activity.sortOrder : index,
 		});
 		activities.push(saved);
 	}
@@ -123,8 +130,9 @@ async function main(): Promise<void> {
 
 	const activityById = new Map(activities.map((activity) => [activity.id, activity]));
 	const tasks: TaskUpsertInput[] = [];
+	const nextSortByActivity = new Map<string, number>();
 
-	for (const rawTask of tasksFile.tasks) {
+	for (const rawTask of rawTasks) {
 		const activityId = String(rawTask.activityId ?? '');
 		const activity = activityById.get(activityId);
 		if (!activity) {
@@ -133,7 +141,11 @@ async function main(): Promise<void> {
 		}
 
 		const migrated = migrateTaskTimesIfNeeded(rawTask, sourceTimeZone);
-		tasks.push(normalizeImportedTask(migrated, activity, fallbackDate));
+		const fallbackSortOrder = nextSortByActivity.get(activityId) ?? 0;
+		nextSortByActivity.set(activityId, fallbackSortOrder + 1);
+		tasks.push(
+			normalizeImportedTask(migrated, activity, fallbackDate, fallbackSortOrder)
+		);
 	}
 
 	if (tasks.length > 0) {

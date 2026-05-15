@@ -3,12 +3,21 @@ import { randomUUID } from 'node:crypto';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
 
 import { getDocumentClient, getTableName } from '../lib/dynamo.js';
-import { parseTaskCreateInput, taskInputToRecord, toTaskResponse } from '../lib/taskMapper.js';
+import {
+	parseTaskCreateInput,
+	parseTaskPatchInput,
+	taskInputToRecord,
+	toTaskResponse,
+} from '../lib/taskMapper.js';
 import { getActivity } from '../repositories/dataRepository.js';
 import {
+	listAllTasks,
+	listTasksByActivityId,
 	listTasksByDate,
 	listTasksByDateRange,
+	nextTaskSortOrder,
 	toTask,
+	updateTask,
 	upsertTask,
 } from '../repositories/dataRepository.js';
 import { taskSk, userPk } from '../lib/keys.js';
@@ -21,6 +30,7 @@ export function registerTaskRoutes(app: Hono): void {
 		const date = c.req.query('date');
 		const from = c.req.query('from');
 		const to = c.req.query('to');
+		const activityId = c.req.query('activityId');
 
 		if (date) {
 			const tasks = await listTasksByDate(userId, date);
@@ -32,10 +42,20 @@ export function registerTaskRoutes(app: Hono): void {
 			return c.json(tasks);
 		}
 
+		if (activityId) {
+			const tasks = await listTasksByActivityId(userId, activityId);
+			return c.json(tasks);
+		}
+
+		if (!date && !from && !to && !activityId) {
+			const tasks = await listAllTasks(userId);
+			return c.json(tasks);
+		}
+
 		return c.json(
 			{
 				error:
-					'Provide either query parameter "date" (YYYY-MM-DD) or both "from" and "to" (YYYY-MM-DD or ISO UTC instants)',
+					'Provide query parameter "date", both "from" and "to", "activityId", or omit all for the full catalog list',
 			},
 			400
 		);
@@ -74,14 +94,41 @@ export function registerTaskRoutes(app: Hono): void {
 
 		const activity = await getActivity(userId, parsed.activityId);
 		const fallbackDate = parsed.plannedStart.slice(0, 10);
+		const sortOrder =
+			parsed.sortOrder ?? (await nextTaskSortOrder(userId, parsed.activityId));
 		const taskRecord = taskInputToRecord(
-			{ ...parsed, id: parsed.id ?? randomUUID() },
+			{ ...parsed, id: parsed.id ?? randomUUID(), sortOrder },
 			activity,
 			fallbackDate
 		);
 		const task = await upsertTask(userId, taskRecord);
 
 		return c.json(task, 201);
+	});
+
+	app.patch('/tasks/:id', async (c) => {
+		const userId = getUserId(c);
+		const taskId = c.req.param('id');
+		const body: unknown = await c.req.json();
+		const parsed = parseTaskPatchInput(body);
+
+		if ('error' in parsed) {
+			return c.json({ error: parsed.error }, 400);
+		}
+
+		if (parsed.activityId) {
+			const activity = await getActivity(userId, parsed.activityId);
+			if (!activity) {
+				return c.json({ error: 'Activity not found' }, 404);
+			}
+		}
+
+		const task = await updateTask(userId, taskId, parsed);
+		if (!task) {
+			return c.json({ error: 'Task not found' }, 404);
+		}
+
+		return c.json(task);
 	});
 }
 

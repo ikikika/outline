@@ -8,7 +8,8 @@
       "categoryId": "admin",
       "notes": "Inbox zero, pick top 3 for the day",
       "createdAt": "2026-07-18T20:00:00.000Z",
-      "updatedAt": "2026-07-18T20:00:00.000Z"
+      "updatedAt": "2026-07-18T20:00:00.000Z",
+      "sortOrder": 0
     },
     {
       "id": "the-complete-agentic-ai-engineering-course",
@@ -16,7 +17,8 @@
       "categoryId": "admin",
       "notes": "Inbox zero, pick top 3 for the day",
       "createdAt": "2026-07-18T20:00:00.000Z",
-      "updatedAt": "2026-07-18T20:00:00.000Z"
+      "updatedAt": "2026-07-18T20:00:00.000Z",
+      "sortOrder": 1
     },
     {
       "id": "how-senior-devs-build-with-ai-2026-youtube",
@@ -24,7 +26,8 @@
       "categoryId": "admin",
       "notes": "Inbox zero, pick top 3 for the day",
       "createdAt": "2026-07-18T20:00:00.000Z",
-      "updatedAt": "2026-07-18T20:00:00.000Z"
+      "updatedAt": "2026-07-18T20:00:00.000Z",
+      "sortOrder": 2
     },
     {
       "id": "docker-and-kubernetes-the-complete-guide",
@@ -32,7 +35,8 @@
       "categoryId": "admin",
       "notes": "Inbox zero, pick top 3 for the day",
       "createdAt": "2026-07-18T20:00:00.000Z",
-      "updatedAt": "2026-07-18T20:00:00.000Z"
+      "updatedAt": "2026-07-18T20:00:00.000Z",
+      "sortOrder": 3
     }
   ]
 }

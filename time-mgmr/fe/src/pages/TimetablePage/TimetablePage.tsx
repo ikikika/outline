@@ -17,9 +17,9 @@ import { DayTimetable } from './components/DayTimetable/DayTimetable';
 import { TaskDetailModal } from './components/TaskDetailModal/TaskDetailModal';
 import { TimetableHeader, type TimetableView } from './components/TimetableHeader/TimetableHeader';
 import { WeekTimetable } from './components/WeekTimetable/WeekTimetable';
-import styles from './TodayPage.module.scss';
+import styles from './TimetablePage.module.scss';
 
-export const TodayPage: React.FC = () => {
+export const TimetablePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [timetableView, setTimetableView] = useState<TimetableView>('day');
   const [detailTask, setDetailTask] = useState<ITask | null>(null);
@@ -121,7 +121,7 @@ export const TodayPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className={styles.today}>
+      <div className={styles.timetable}>
         {actionError && <div className={styles.error}>{actionError}</div>}
         {loadError && (
           <div className={styles.error}>
@@ -206,4 +206,4 @@ export const TodayPage: React.FC = () => {
   );
 };
 
-export default TodayPage;
+export default TimetablePage;

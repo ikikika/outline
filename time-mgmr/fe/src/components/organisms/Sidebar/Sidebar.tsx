@@ -26,7 +26,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav className="sidebar__nav" aria-label="Main navigation" onClick={isMobile ? close : undefined}>
-        <NavItem label="Today" path={ROUTES.TODAY} icon={<CalendarDays size={18} />} />
+        <NavItem label="Timetable" path={ROUTES.TIMETABLE} icon={<CalendarDays size={18} />} />
         <NavItem label="Report" path={ROUTES.REPORT} icon={<ChartColumn size={18} />} />
         <NavItem label="Profile" path={ROUTES.PROFILE} icon={<UserRound size={18} />} />
       </nav>

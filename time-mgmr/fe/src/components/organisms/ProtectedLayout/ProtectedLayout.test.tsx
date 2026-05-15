@@ -64,15 +64,15 @@ function renderLayout() {
   });
 
   return render(
-    <MemoryRouter initialEntries={['/today']}>
+    <MemoryRouter initialEntries={['/timetable']}>
       <Routes>
         <Route element={<ProtectedLayout />}>
           <Route
-            path="/today"
+            path="/timetable"
             element={
               <>
                 <Header />
-                <div>Today content</div>
+                <div>Timetable content</div>
               </>
             }
           />

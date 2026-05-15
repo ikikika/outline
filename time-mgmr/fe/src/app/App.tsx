@@ -18,8 +18,8 @@ const LandingPage = lazy(() =>
 const LoginPage = lazy(() =>
   import('@/pages/LoginPage/LoginPage').then((m) => ({ default: m.LoginPage }))
 );
-const TodayPage = lazy(() =>
-  import('@/pages/TodayPage/TodayPage').then((m) => ({ default: m.TodayPage }))
+const TimetablePage = lazy(() =>
+  import('@/pages/TimetablePage/TimetablePage').then((m) => ({ default: m.TimetablePage }))
 );
 const ReportPage = lazy(() =>
   import('@/pages/ReportPage/ReportPage').then((m) => ({ default: m.ReportPage }))
@@ -43,12 +43,16 @@ const router = createBrowserRouter([
     element: <ProtectedRoute />,
     children: [
       {
-        path: ROUTES.TODAY,
+        path: ROUTES.TIMETABLE,
         element: (
           <Suspense fallback={<Loading />}>
-            <TodayPage />
+            <TimetablePage />
           </Suspense>
         ),
+      },
+      {
+        path: '/today',
+        element: <Navigate to={ROUTES.TIMETABLE} replace />,
       },
       {
         path: ROUTES.REPORT,
@@ -60,7 +64,7 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.DASHBOARD,
-        element: <Navigate to={ROUTES.TODAY} replace />,
+        element: <Navigate to={ROUTES.TIMETABLE} replace />,
       },
       {
         path: ROUTES.PROFILE,

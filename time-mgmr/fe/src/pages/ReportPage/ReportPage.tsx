@@ -231,7 +231,7 @@ export const ReportPage: React.FC = () => {
 
         {!isLoading && report && report.plannedMinutes === 0 && report.actualMinutes === 0 && (
           <div className={styles.empty}>
-            Nothing to report yet. Plan activities on Today and log actual time.
+            Nothing to report yet. Plan activities on Timetable and log actual time.
           </div>
         )}
       </div>

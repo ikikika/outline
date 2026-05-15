@@ -16,6 +16,7 @@ export interface IApiTask {
   categoryId: ActivityCategoryId;
   notes: string;
   status: TaskStatus;
+  sortOrder?: number;
 }
 
 export function apiTaskToTimetableTask(
@@ -38,6 +39,7 @@ export function apiTaskToTimetableTask(
     categoryId: task.categoryId,
     notes: task.notes ?? '',
     status: task.status ?? 'planned',
+    sortOrder: task.sortOrder,
     createdAt: now,
     updatedAt: now,
   };

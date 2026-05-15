@@ -1,0 +1,236 @@
+[
+  {
+    "id": "56468647",
+    "activityId": "github-copilot",
+    "title": "GitHub Copilot CLI",
+    "plannedStart": "2026-07-21T01:00:00.000Z",
+    "plannedEnd": "2026-07-21T01:22:56.000Z",
+    "timeEstimationSeconds": 917,
+    "sortOrder": 0
+  },
+  {
+    "id": "54695299",
+    "activityId": "github-copilot",
+    "title": "Hooks with GitHub Copilot",
+    "plannedStart": "2026-07-21T01:22:56.000Z",
+    "plannedEnd": "2026-07-21T01:48:05.000Z",
+    "timeEstimationSeconds": 1006,
+    "sortOrder": 1
+  },
+  {
+    "id": "89ehfj9hfw-p1",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (1/11)",
+    "plannedStart": "2026-07-21T05:00:00.000Z",
+    "plannedEnd": "2026-07-21T05:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 0
+  },
+  {
+    "id": "89ehfj9hfw-p2",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (2/11)",
+    "plannedStart": "2026-07-21T05:30:00.000Z",
+    "plannedEnd": "2026-07-21T05:55:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 1
+  },
+  {
+    "id": "89ehfj9hfw-p3",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (3/11)",
+    "plannedStart": "2026-07-21T06:00:00.000Z",
+    "plannedEnd": "2026-07-21T06:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 2
+  },
+  {
+    "id": "89ehfj9hfw-p4",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (4/11)",
+    "plannedStart": "2026-07-21T06:30:00.000Z",
+    "plannedEnd": "2026-07-21T06:55:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 3
+  },
+  {
+    "id": "89ehfj9hfw-p5",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (5/11)",
+    "plannedStart": "2026-07-21T07:10:00.000Z",
+    "plannedEnd": "2026-07-21T07:35:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 4
+  },
+  {
+    "id": "89ehfj9hfw-p6",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (6/11)",
+    "plannedStart": "2026-07-21T07:40:00.000Z",
+    "plannedEnd": "2026-07-21T08:05:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 5
+  },
+  {
+    "id": "89ehfj9hfw-p7",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (7/11)",
+    "plannedStart": "2026-07-21T08:10:00.000Z",
+    "plannedEnd": "2026-07-21T08:35:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 6
+  },
+  {
+    "id": "89ehfj9hfw-p8",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (8/11)",
+    "plannedStart": "2026-07-22T01:00:00.000Z",
+    "plannedEnd": "2026-07-22T01:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 7
+  },
+  {
+    "id": "89ehfj9hfw-p9",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (9/11)",
+    "plannedStart": "2026-07-22T01:30:00.000Z",
+    "plannedEnd": "2026-07-22T01:55:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 8
+  },
+  {
+    "id": "89ehfj9hfw-p10",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (10/11)",
+    "plannedStart": "2026-07-22T02:00:00.000Z",
+    "plannedEnd": "2026-07-22T02:25:00.000Z",
+    "timeEstimationSeconds": 1000,
+    "sortOrder": 9
+  },
+  {
+    "id": "89ehfj9hfw-p11",
+    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (11/11)",
+    "plannedStart": "2026-07-22T02:30:00.000Z",
+    "plannedEnd": "2026-07-22T02:44:00.000Z",
+    "timeEstimationSeconds": 560,
+    "sortOrder": 10
+  },
+  {
+    "id": "49739779",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Build Your First Autonomous AI Agent with n8n (No-Code Demo)",
+    "plannedStart": "2026-07-22T02:44:00.000Z",
+    "plannedEnd": "2026-07-22T03:05:45.000Z",
+    "timeEstimationSeconds": 870,
+    "sortOrder": 0
+  },
+  {
+    "id": "49770319",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 1 - Course Roadmap: 6 Weeks, 8 Projects in Agentic AI Engineering",
+    "plannedStart": "2026-07-22T03:20:45.000Z",
+    "plannedEnd": "2026-07-22T03:40:42.000Z",
+    "timeEstimationSeconds": 798,
+    "sortOrder": 1
+  },
+  {
+    "id": "56543285",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Your Path to Becoming a Proficient AI Engineer",
+    "plannedStart": "2026-07-22T03:40:42.000Z",
+    "plannedEnd": "2026-07-22T03:46:15.000Z",
+    "timeEstimationSeconds": 222,
+    "sortOrder": 2
+  },
+  {
+    "id": "50768351",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 4 - Orchestrate the Trading Floor and Launch the Gradio Dashboard",
+    "plannedStart": "2026-07-29T08:21:47.000Z",
+    "plannedEnd": "2026-07-29T08:34:31.000Z",
+    "timeEstimationSeconds": 509,
+    "sortOrder": 138
+  },
+  {
+    "id": "50768373",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Add Observability, Evaluation and Feedback to AI Traders",
+    "plannedStart": "2026-07-29T08:34:31.000Z",
+    "plannedEnd": "2026-07-29T08:48:16.000Z",
+    "timeEstimationSeconds": 550,
+    "sortOrder": 139
+  },
+  {
+    "id": "50768387",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Ship the Trading App: FastAPI Backend and React Front End",
+    "plannedStart": "2026-07-30T01:00:00.000Z",
+    "plannedEnd": "2026-07-30T01:16:17.000Z",
+    "timeEstimationSeconds": 651,
+    "sortOrder": 140
+  },
+  {
+    "id": "50769781",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Inspecting Traces and Your Capstone Trading Floor Challenge",
+    "plannedStart": "2026-07-30T01:16:17.000Z",
+    "plannedEnd": "2026-07-30T01:20:29.000Z",
+    "timeEstimationSeconds": 168,
+    "sortOrder": 141
+  },
+  {
+    "id": "50769785",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Choosing an Agent Framework and 10 Things That Really Matter",
+    "plannedStart": "2026-07-30T01:20:29.000Z",
+    "plannedEnd": "2026-07-30T01:34:11.000Z",
+    "timeEstimationSeconds": 548,
+    "sortOrder": 142
+  },
+  {
+    "id": "50769797",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Day 5 - Course Wrap-Up: Your Agentic AI Engineering Journey",
+    "plannedStart": "2026-07-30T01:39:11.000Z",
+    "plannedEnd": "2026-07-30T01:44:13.000Z",
+    "timeEstimationSeconds": 201,
+    "sortOrder": 143
+  },
+  {
+    "id": "56469947",
+    "activityId": "the-complete-agentic-ai-engineering-course",
+    "title": "Bonus Lecture - Your Exclusive Links",
+    "plannedStart": "2026-07-30T01:44:13.000Z",
+    "plannedEnd": "2026-07-30T01:48:16.000Z",
+    "timeEstimationSeconds": 162,
+    "sortOrder": 144
+  },
+  {
+    "id": "11482928",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Mapping Existing Knowledge",
+    "plannedStart": "2026-07-30T01:48:16.000Z",
+    "plannedEnd": "2026-07-30T01:59:42.000Z",
+    "timeEstimationSeconds": 457,
+    "sortOrder": 0
+  },
+  {
+    "id": "19125114",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Quick Note to Prevent an Error",
+    "plannedStart": "2026-07-30T01:59:42.000Z",
+    "plannedEnd": "2026-07-30T02:00:38.000Z",
+    "timeEstimationSeconds": 37,
+    "sortOrder": 1
+  },
+  {
+    "id": "11482930",
+    "activityId": "docker-and-kubernetes-the-complete-guide",
+    "title": "Adding Configuration Files",
+    "plannedStart": "2026-07-30T02:00:38.000Z",
+    "plannedEnd": "2026-07-30T02:10:55.000Z",
+    "timeEstimationSeconds": 411,
+    "sortOrder": 2
+  }
+]

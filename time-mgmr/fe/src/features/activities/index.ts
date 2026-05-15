@@ -32,11 +32,18 @@ export {
 
 export {
   fetchActivities,
+  fetchCatalogTasks,
+  fetchTasksByActivityId,
   fetchTasksByDate,
   fetchTasksByDateRange,
   createTaskApi,
+  patchActivityApi,
+  patchTaskApi,
   isActivitiesApiEnabled,
+  type IActivityPatch,
+  type ITaskPatch,
 } from './api/activitiesApi';
+export type { IApiTask } from './api/mapApiTask';
 export { activityRepository, taskRepository } from './repository/activityRepository';
 export { activityCatalogRepository } from './repository/activityCatalogRepository';
 export { timeEntryRepository } from './repository/timeEntryRepository';

@@ -16,7 +16,7 @@ export const LandingPage: React.FC = () => {
               Sign In
             </Button>
           </Link>
-          <Link to={ROUTES.TODAY}>
+          <Link to={ROUTES.TIMETABLE}>
             <Button variant="default" size="sm">
               Get Started
             </Button>
@@ -37,9 +37,9 @@ export const LandingPage: React.FC = () => {
             and see how effectively you use your hours.
           </p>
           <div className={styles.heroActions}>
-            <Link to={ROUTES.TODAY}>
+            <Link to={ROUTES.TIMETABLE}>
               <Button variant="default" size="lg">
-                Open Today
+                Open Timetable
               </Button>
             </Link>
             <Link to={ROUTES.LOGIN}>
@@ -84,9 +84,9 @@ export const LandingPage: React.FC = () => {
       <section className={styles.cta}>
         <h2 className={styles.ctaTitle}>Ready to reclaim your day?</h2>
         <p className={styles.ctaSubtitle}>
-          Jump into Today, plan a few blocks, and start the timer.
+          Jump into the Timetable, plan a few blocks, and start the timer.
         </p>
-        <Link to={ROUTES.TODAY}>
+        <Link to={ROUTES.TIMETABLE}>
           <Button variant="default" size="lg">
             Start planning
           </Button>

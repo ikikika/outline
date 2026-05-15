@@ -28,6 +28,8 @@ export interface IActivity {
   title: string;
   categoryId: ActivityCategoryId;
   notes: string;
+  /** Catalog priority — lower values appear first. */
+  sortOrder?: number;
   /** Optional color override for timetable blocks. */
   color?: string;
   /** Used when splitting into a task without an explicit schedule slot. */
@@ -66,6 +68,8 @@ export interface ITask {
   /** Optional color override for timetable blocks. */
   color?: string;
   status: TaskStatus;
+  /** Priority within the parent activity — lower values appear first. */
+  sortOrder?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -79,6 +83,7 @@ export interface ITaskInput {
   categoryId: ActivityCategoryId;
   notes?: string;
   status?: TaskStatus;
+  sortOrder?: number;
 }
 
 /** @deprecated Use ITaskInput — kept for form compatibility during transition */

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import TodayPage from './TodayPage';
+import TimetablePage from './TimetablePage';
 
 const mockActivities = [
   {
@@ -90,9 +90,9 @@ vi.mock('./components/ActivityForm/ActivityForm', () => ({
   ActivityForm: () => <div data-testid="activity-form" />,
 }));
 
-describe('TodayPage', () => {
+describe('TimetablePage', () => {
   it('renders timetable blocks', () => {
-    render(<TodayPage />);
+    render(<TimetablePage />);
 
     expect(screen.getByLabelText('Day timetable')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '2026-07-19' })).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('TodayPage', () => {
   it('switches to week timetable view', async () => {
     const { userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    render(<TodayPage />);
+    render(<TimetablePage />);
 
     await user.click(screen.getByRole('button', { name: 'Week' }));
     expect(screen.getByLabelText('Week timetable')).toBeInTheDocument();

@@ -5,6 +5,7 @@ import {
 	activityPrefix,
 	activitySk,
 	taskGsiKeys,
+	taskPrefix,
 	taskSk,
 	tasksByDateGsi,
 	userPk,
@@ -14,13 +15,26 @@ import { toTaskResponse } from '../lib/taskMapper.js';
 import type {
 	IActivity,
 	IActivityCreateInput,
+	IActivityPatchInput,
 	IActivityRecord,
 	ITask,
+	ITaskPatchInput,
 	ITaskRecord,
 	ITaskStorageFields,
 } from '../types/domain.js';
 
 export type TaskUpsertInput = ITaskStorageFields;
+
+function resolveSortOrder(value: unknown): number {
+	return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function compareBySortOrder(
+	a: { sortOrder: number; title: string },
+	b: { sortOrder: number; title: string }
+): number {
+	return a.sortOrder - b.sortOrder || a.title.localeCompare(b.title);
+}
 
 export function toTask(record: ITaskRecord): ITask {
 	return toTaskResponse(record);
@@ -73,6 +87,7 @@ export function toActivity(record: IActivityRecord): IActivity {
 		title: record.title,
 		categoryId: record.categoryId,
 		notes: record.notes,
+		sortOrder: resolveSortOrder(record.sortOrder),
 		createdAt: record.createdAt,
 		updatedAt: record.updatedAt,
 	};
@@ -93,7 +108,16 @@ export async function listActivities(userId: string): Promise<IActivity[]> {
 
 	return (result.Items ?? [])
 		.filter((item): item is IActivityRecord => item.entityType === 'activity')
-		.map(toActivity);
+		.map(toActivity)
+		.sort(compareBySortOrder);
+}
+
+export async function nextActivitySortOrder(userId: string): Promise<number> {
+	const activities = await listActivities(userId);
+	if (activities.length === 0) {
+		return 0;
+	}
+	return Math.max(...activities.map((activity) => activity.sortOrder)) + 1;
 }
 
 export async function upsertActivity(
@@ -103,6 +127,9 @@ export async function upsertActivity(
 	const client = getDocumentClient();
 	const now = new Date().toISOString();
 	const existing = await getActivity(userId, activity.id);
+	const sortOrder =
+		activity.sortOrder ??
+		(existing ? resolveSortOrder(existing.sortOrder) : await nextActivitySortOrder(userId));
 
 	const record: IActivityRecord = {
 		pk: userPk(userId),
@@ -112,10 +139,46 @@ export async function upsertActivity(
 		title: activity.title,
 		categoryId: activity.categoryId,
 		notes: activity.notes,
+		sortOrder,
 		createdAt: existing?.createdAt ?? now,
 		updatedAt: now,
 	};
 
+	await client.send(
+		new PutCommand({
+			TableName: getTableName(),
+			Item: record,
+		})
+	);
+
+	return toActivity(record);
+}
+
+export async function updateActivity(
+	userId: string,
+	activityId: string,
+	patch: IActivityPatchInput
+): Promise<IActivity | null> {
+	const existing = await getActivity(userId, activityId);
+	if (!existing) {
+		return null;
+	}
+
+	const now = new Date().toISOString();
+	const record: IActivityRecord = {
+		...existing,
+		...(patch.title !== undefined ? { title: patch.title } : {}),
+		...(patch.categoryId !== undefined ? { categoryId: patch.categoryId } : {}),
+		...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+		...(patch.sortOrder !== undefined ? { sortOrder: patch.sortOrder } : {}),
+		sortOrder:
+			patch.sortOrder !== undefined
+				? patch.sortOrder
+				: resolveSortOrder(existing.sortOrder),
+		updatedAt: now,
+	};
+
+	const client = getDocumentClient();
 	await client.send(
 		new PutCommand({
 			TableName: getTableName(),
@@ -241,6 +304,56 @@ function enumerateDates(from: string, to: string): string[] {
 	return dates;
 }
 
+function compareCatalogTasks(a: ITask, b: ITask): number {
+	return (
+		a.activityId.localeCompare(b.activityId) ||
+		a.sortOrder - b.sortOrder ||
+		a.title.localeCompare(b.title)
+	);
+}
+
+export async function listAllTasks(userId: string): Promise<ITask[]> {
+	const client = getDocumentClient();
+	const result = await client.send(
+		new QueryCommand({
+			TableName: getTableName(),
+			KeyConditionExpression: 'pk = :pk AND begins_with(sk, :skPrefix)',
+			ExpressionAttributeValues: {
+				':pk': userPk(userId),
+				':skPrefix': taskPrefix(),
+			},
+		})
+	);
+
+	return (result.Items ?? [])
+		.filter((item): item is ITaskRecord => item.entityType === 'task')
+		.map(toTaskResponse)
+		.sort(compareCatalogTasks);
+}
+
+export async function listTasksByActivityId(
+	userId: string,
+	activityId: string
+): Promise<ITask[]> {
+	const tasks = await listAllTasks(userId);
+	return tasks
+		.filter((task) => task.activityId === activityId)
+		.sort(
+			(a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title)
+		);
+}
+
+export async function nextTaskSortOrder(
+	userId: string,
+	activityId: string
+): Promise<number> {
+	const tasks = await listTasksByActivityId(userId, activityId);
+	if (tasks.length === 0) {
+		return 0;
+	}
+	return Math.max(...tasks.map((task) => task.sortOrder)) + 1;
+}
+
 export async function upsertTask(
 	userId: string,
 	task: TaskUpsertInput
@@ -256,6 +369,9 @@ export async function upsertTask(
 		? task.plannedEnd
 		: toIsoDateTime(task.plannedEnd, date);
 	const gsiKeys = taskGsiKeys(userId, date, plannedStart, task.id);
+	const sortOrder =
+		task.sortOrder ??
+		(existing ? resolveSortOrder(existing.sortOrder) : await nextTaskSortOrder(userId, task.activityId));
 
 	const record: ITaskRecord = {
 		pk: userPk(userId),
@@ -274,6 +390,7 @@ export async function upsertTask(
 		color: task.color,
 		status: task.status,
 		timeEstimationSeconds: task.timeEstimationSeconds,
+		sortOrder,
 		createdAt: existing?.createdAt ?? now,
 		updatedAt: now,
 	};
@@ -286,6 +403,45 @@ export async function upsertTask(
 	);
 
 	return toTaskResponse(record);
+}
+
+export async function updateTask(
+	userId: string,
+	taskId: string,
+	patch: ITaskPatchInput
+): Promise<ITask | null> {
+	const existing = await getTask(userId, taskId);
+	if (!existing) {
+		return null;
+	}
+
+	const activityId = patch.activityId ?? existing.activityId;
+	const plannedStart = patch.plannedStart ?? existing.plannedStart;
+	const plannedEnd = patch.plannedEnd ?? existing.plannedEnd;
+	const date = toDateOnly(plannedStart, existing.date);
+	const sortOrder =
+		patch.sortOrder ??
+		(patch.activityId && patch.activityId !== existing.activityId
+			? await nextTaskSortOrder(userId, activityId)
+			: resolveSortOrder(existing.sortOrder));
+
+	return upsertTask(userId, {
+		id: existing.id,
+		activityId,
+		title: patch.title ?? existing.title,
+		date,
+		plannedStart,
+		plannedEnd,
+		categoryId: patch.categoryId ?? existing.categoryId,
+		notes: patch.notes ?? existing.notes,
+		color: existing.color,
+		status: patch.status ?? existing.status,
+		timeEstimationSeconds:
+			patch.timeEstimationSeconds !== undefined
+				? patch.timeEstimationSeconds
+				: existing.timeEstimationSeconds,
+		sortOrder,
+	});
 }
 
 export async function upsertTasks(userId: string, tasks: TaskUpsertInput[]): Promise<ITask[]> {
