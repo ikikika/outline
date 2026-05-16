@@ -37,11 +37,13 @@ export {
   fetchTasksByDate,
   fetchTasksByDateRange,
   createTaskApi,
+  updateTaskApi,
   patchActivityApi,
   patchTaskApi,
   isActivitiesApiEnabled,
   type IActivityPatch,
   type ITaskPatch,
+  type ITimetableTaskPatch,
 } from './api/activitiesApi';
 export type { IApiTask } from './api/mapApiTask';
 export { activityRepository, taskRepository } from './repository/activityRepository';

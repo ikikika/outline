@@ -10,13 +10,31 @@ import {
   createTaskApi,
   fetchTasksByDate,
   fetchTasksByDateRange,
+  patchTaskApi,
   requireApiBaseUrl,
+  updateTaskApi,
 } from '../api/activitiesApi';
+import { apiTaskToTimetableTask } from '../api/mapApiTask';
 import { activityRepository } from '../repository/activityRepository';
 import { timeEntryRepository } from '../repository/timeEntryRepository';
 import { persistTasksJsonSnapshot } from '../repository/jsonBackup';
-import type { ActivityStatus, IActivityInput, TaskStatus } from '../types';
+import type { ActivityStatus, IActivityInput, ITask, TaskStatus } from '../types';
 import { addDays, createId } from '../utils/dateUtils';
+
+function findTaskInCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  id: string
+): ITask | undefined {
+  const queries = queryClient.getQueriesData<ITask[]>({
+    queryKey: ACTIVITY_QUERY_KEYS.all,
+  });
+  for (const [, tasks] of queries) {
+    if (!Array.isArray(tasks)) continue;
+    const found = tasks.find((task) => task.id === id);
+    if (found) return found;
+  }
+  return undefined;
+}
 
 function useResolvedTimeZone(): string {
   const { user } = useAuthContext();
@@ -104,8 +122,27 @@ export function useActivityMutations(date: string) {
   });
 
   const update = useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<IActivityInput> }) =>
-      activityRepository.update(id, patch),
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: Partial<IActivityInput>;
+    }) => {
+      const existing = findTaskInCache(queryClient, id);
+      return updateTaskApi(
+        id,
+        patch,
+        timeZone,
+        existing
+          ? {
+              date: existing.date,
+              plannedStart: existing.plannedStart,
+              plannedEnd: existing.plannedEnd,
+            }
+          : { date, plannedStart: '09:00', plannedEnd: '10:00' }
+      );
+    },
     onSuccess: async () => {
       await invalidateActivityQueries(queryClient, date);
     },
@@ -122,8 +159,17 @@ export function useActivityMutations(date: string) {
   });
 
   const setStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: ActivityStatus | TaskStatus }) =>
-      activityRepository.update(id, { status }),
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: ActivityStatus | TaskStatus;
+    }) => {
+      const existing = findTaskInCache(queryClient, id);
+      const updated = await patchTaskApi(id, { status });
+      return apiTaskToTimetableTask(updated, existing?.date ?? date, timeZone);
+    },
     onSuccess: async () => {
       await invalidateActivityQueries(queryClient, date);
     },

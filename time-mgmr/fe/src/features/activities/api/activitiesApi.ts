@@ -132,3 +132,64 @@ export async function createTaskApi(
   });
   return apiTaskToTimetableTask(created, input.date, timeZone);
 }
+
+/** Timetable-shaped patch: wall-clock HH:mm times are converted to UTC ISO. */
+export type ITimetableTaskPatch = Partial<
+  Pick<
+    ITask,
+    | 'activityId'
+    | 'title'
+    | 'date'
+    | 'plannedStart'
+    | 'plannedEnd'
+    | 'categoryId'
+    | 'notes'
+    | 'status'
+    | 'sortOrder'
+  >
+>;
+
+export async function updateTaskApi(
+  id: string,
+  patch: ITimetableTaskPatch,
+  timeZone: string,
+  fallback?: Pick<ITask, 'date' | 'plannedStart' | 'plannedEnd'>
+): Promise<ITask> {
+  requireApiBaseUrl();
+
+  const date = patch.date ?? fallback?.date;
+  const plannedStart = patch.plannedStart ?? fallback?.plannedStart;
+  const plannedEnd = patch.plannedEnd ?? fallback?.plannedEnd;
+
+  const apiPatch: ITaskPatch = {};
+
+  if (patch.activityId !== undefined) apiPatch.activityId = patch.activityId;
+  if (patch.title !== undefined) apiPatch.title = patch.title;
+  if (patch.categoryId !== undefined) apiPatch.categoryId = patch.categoryId;
+  if (patch.notes !== undefined) apiPatch.notes = patch.notes;
+  if (patch.status !== undefined) apiPatch.status = patch.status;
+  if (patch.sortOrder !== undefined) apiPatch.sortOrder = patch.sortOrder;
+
+  const timesChanging =
+    patch.plannedStart !== undefined ||
+    patch.plannedEnd !== undefined ||
+    patch.date !== undefined;
+
+  if (timesChanging) {
+    if (!date || !plannedStart || !plannedEnd) {
+      throw new Error(
+        'date, plannedStart, and plannedEnd are required when rescheduling a task'
+      );
+    }
+    const times = timetableTimesToIso(date, plannedStart, plannedEnd, timeZone);
+    apiPatch.plannedStart = times.plannedStart;
+    apiPatch.plannedEnd = times.plannedEnd;
+  }
+
+  if (Object.keys(apiPatch).length === 0) {
+    throw new Error('At least one field is required to update a task');
+  }
+
+  const updated = await patchTaskApi(id, apiPatch);
+  return apiTaskToTimetableTask(updated, date ?? fallback?.date ?? '', timeZone);
+}
