@@ -8,7 +8,6 @@ import {
   STORE_TIME_ENTRIES,
 } from './indexedDbStore';
 import { createId, minutesBetween } from '../utils/dateUtils';
-import { taskRepository } from './activityRepository';
 
 export interface ITimeEntryRepository {
   listByTask(taskId: string): Promise<ITimeEntry[]>;
@@ -73,9 +72,9 @@ export const timeEntryRepository: ITimeEntryRepository = {
     if (running.length > 0) {
       throw new Error('Stop the current timer before starting another.');
     }
-    const task = await taskRepository.getById(taskId);
-    if (!task) throw new Error('Task not found.');
 
+    // Tasks are API-backed; this store only persists local timer entries.
+    // Callers update task status via the API after a successful start.
     const stamp = nowIso();
     const entry: ITimeEntry = {
       id: createId(),
@@ -88,9 +87,6 @@ export const timeEntryRepository: ITimeEntryRepository = {
       updatedAt: stamp,
     };
     await idbPut(STORE_TIME_ENTRIES, entry);
-    if (task.status === 'planned' || task.status === 'skipped') {
-      await taskRepository.update(taskId, { status: 'in_progress' });
-    }
     return entry;
   },
 
@@ -115,9 +111,7 @@ export const timeEntryRepository: ITimeEntryRepository = {
   },
 
   async addManual(input) {
-    const task = await taskRepository.getById(input.taskId);
-    if (!task) throw new Error('Task not found.');
-
+    // Tasks are API-backed; manual entries are stored locally by taskId.
     const stamp = nowIso();
     const end = input.startAt ? new Date(input.startAt) : new Date();
     if (input.startAt) {

@@ -39,10 +39,12 @@ interface WeekTimetableProps {
 interface DragState {
   id: string;
   date: string;
-  duration: number;
+  mode: 'move' | 'resize-start' | 'resize-end';
   offsetY: number;
   previewStart: number;
+  previewEnd: number;
   originStart: number;
+  originEnd: number;
   originClientY: number;
   moved: boolean;
 }
@@ -119,14 +121,15 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     for (const day of days) {
       const dayActivities = activitiesByDate.get(day) ?? [];
       const intervals = dayActivities.map((activity) => {
-        const duration = plannedDurationMinutes(activity.plannedStart, activity.plannedEnd);
         const isDragging = drag?.id === activity.id;
         const start =
           isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
+        const end =
+          isDragging && drag ? drag.previewEnd : timeToMinutes(activity.plannedEnd);
         return {
           id: activity.id,
           start,
-          end: visualOverlapEnd(start, duration, MIN_BLOCK_HEIGHT_PX, PX_PER_MINUTE),
+          end: visualOverlapEnd(start, end - start, MIN_BLOCK_HEIGHT_PX, PX_PER_MINUTE),
         };
       });
       layouts.set(day, assignOverlapColumns(intervals));
@@ -195,15 +198,17 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   );
 
   const handlePointerDown = (
-    event: React.PointerEvent<HTMLDivElement>,
-    activity: ITask
+    event: React.PointerEvent<HTMLElement>,
+    activity: ITask,
+    mode: DragState['mode'] = 'move'
   ) => {
     if (disabled || event.button !== 0) return;
     event.preventDefault();
+    if (mode !== 'move') event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
 
     const start = timeToMinutes(activity.plannedStart);
-    const duration = plannedDurationMinutes(activity.plannedStart, activity.plannedEnd);
+    const end = timeToMinutes(activity.plannedEnd);
     const track = dayTrackRefs.current.get(activity.date);
     if (!track) return;
     const rect = track.getBoundingClientRect();
@@ -213,10 +218,12 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     setDrag({
       id: activity.id,
       date: activity.date,
-      duration,
+      mode,
       offsetY,
       previewStart: start,
+      previewEnd: end,
       originStart: start,
+      originEnd: end,
       originClientY: event.clientY,
       moved: false,
     });
@@ -230,11 +237,47 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       return;
     }
 
+    if (drag.mode === 'resize-start') {
+      const nextStart = Math.max(
+        dayStartMinutes,
+        Math.min(
+          drag.originEnd - SNAP_MINUTES,
+          snapMinutes(
+            drag.originStart + (event.clientY - drag.originClientY) / PX_PER_MINUTE,
+            SNAP_MINUTES
+          )
+        )
+      );
+      setDrag({ ...drag, previewStart: nextStart, moved: true });
+      return;
+    }
+
+    if (drag.mode === 'resize-end') {
+      const nextEnd = Math.max(
+        drag.originStart + SNAP_MINUTES,
+        Math.min(
+          dayEndMinutes,
+          snapMinutes(
+            drag.originEnd + (event.clientY - drag.originClientY) / PX_PER_MINUTE,
+            SNAP_MINUTES
+          )
+        )
+      );
+      setDrag({ ...drag, previewEnd: nextEnd, moved: true });
+      return;
+    }
+
+    const duration = drag.originEnd - drag.originStart;
     const nextStart = clampStart(
       clientYToStartMinutes(event.clientY, drag.offsetY, drag.date),
-      drag.duration
+      duration
     );
-    setDrag({ ...drag, previewStart: nextStart, moved: true });
+    setDrag({
+      ...drag,
+      previewStart: nextStart,
+      previewEnd: nextStart + duration,
+      moved: true,
+    });
   };
 
   const handlePointerUp = () => {
@@ -243,7 +286,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     const activity = activities.find((item) => item.id === id);
     const didDrag = drag.moved;
     const nextStart = drag.previewStart;
-    const duration = drag.duration;
+    const nextEnd = drag.previewEnd;
     setDrag(null);
 
     if (!didDrag) {
@@ -251,7 +294,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       return;
     }
 
-    onReschedule(id, minutesToTime(nextStart), minutesToTime(nextStart + duration));
+    onReschedule(id, minutesToTime(nextStart), minutesToTime(nextEnd));
   };
 
   const setDayTrackRef = (date: string, node: HTMLDivElement | null) => {
@@ -326,8 +369,9 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                   );
                   const isDragging = drag?.id === activity.id;
                   const start = isDragging && drag ? drag.previewStart : baseStart;
+                  const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
                   const top = (start - dayStartMinutes) * PX_PER_MINUTE;
-                  const height = Math.max(duration * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX);
+                  const height = Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX);
                   const placement = layout?.get(activity.id) ?? { column: 0, columnCount: 1 };
                   const { left, width } = overlapColumnStyle(placement, 2);
 
@@ -344,7 +388,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                       }}
                       role="button"
                       tabIndex={0}
-                      aria-label={`${activity.title}, ${minutesToTime(start)} to ${minutesToTime(start + duration)}`}
+                      aria-label={`${activity.title}, ${minutesToTime(start)} to ${minutesToTime(end)}`}
                       onPointerDown={(e) => handlePointerDown(e, activity)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -353,10 +397,20 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                         }
                       }}
                     >
+                      <div
+                        className={`${styles.resizeHandle} ${styles.resizeHandleTop}`}
+                        aria-label={`Change start time for ${activity.title}`}
+                        onPointerDown={(e) => handlePointerDown(e, activity, 'resize-start')}
+                      />
                       <p className={styles.blockTitle}>{activity.title}</p>
                       <p className={styles.blockMeta}>
-                        {minutesToTime(start)}–{minutesToTime(start + duration)}
+                        {minutesToTime(start)}–{minutesToTime(end)}
                       </p>
+                      <div
+                        className={`${styles.resizeHandle} ${styles.resizeHandleBottom}`}
+                        aria-label={`Change end time for ${activity.title}`}
+                        onPointerDown={(e) => handlePointerDown(e, activity, 'resize-end')}
+                      />
                     </div>
                   );
                 })}

@@ -187,7 +187,14 @@ export function useTimeEntryMutations(date: string) {
   };
 
   const startTimer = useMutation({
-    mutationFn: (taskId: string) => timeEntryRepository.startTimer(taskId),
+    mutationFn: async (taskId: string) => {
+      const entry = await timeEntryRepository.startTimer(taskId);
+      const existing = findTaskInCache(queryClient, taskId);
+      if (existing && (existing.status === 'planned' || existing.status === 'skipped')) {
+        await patchTaskApi(taskId, { status: 'in_progress' });
+      }
+      return entry;
+    },
     onSuccess: refresh,
   });
 
