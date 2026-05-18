@@ -99,8 +99,8 @@
 
 .resizeHandle {
   position: absolute;
-  left: 0;
   right: 0;
+  width: 18px;
   height: 10px;
   z-index: 1;
   cursor: ns-resize;
@@ -110,13 +110,12 @@
 .resizeHandle::after {
   content: '';
   position: absolute;
-  left: 50%;
-  width: 2rem;
+  right: 3px;
+  width: 10px;
   height: 2px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.75);
   opacity: 0;
-  transform: translateX(-50%);
   transition: opacity 120ms ease;
 }
 

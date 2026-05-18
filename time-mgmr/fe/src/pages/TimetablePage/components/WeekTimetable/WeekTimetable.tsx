@@ -30,7 +30,12 @@ interface WeekTimetableProps {
   activities: ITask[];
   selectedDate: string;
   onSelectDate?: (date: string) => void;
-  onReschedule: (id: string, plannedStart: string, plannedEnd: string) => void;
+  onReschedule: (
+    id: string,
+    plannedStart: string,
+    plannedEnd: string,
+    date?: string
+  ) => void;
   onSelect?: (activity: ITask) => void;
   disabled?: boolean;
   toolbar?: React.ReactNode;
@@ -38,13 +43,15 @@ interface WeekTimetableProps {
 
 interface DragState {
   id: string;
-  date: string;
+  originDate: string;
+  previewDate: string;
   mode: 'move' | 'resize-start' | 'resize-end';
   offsetY: number;
   previewStart: number;
   previewEnd: number;
   originStart: number;
   originEnd: number;
+  originClientX: number;
   originClientY: number;
   moved: boolean;
 }
@@ -197,6 +204,29 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     [dayStartMinutes]
   );
 
+  const clientXToDate = useCallback(
+    (clientX: number, fallbackDate: string) => {
+      let nearestDate = fallbackDate;
+      let nearestDistance = Infinity;
+
+      for (const day of days) {
+        const track = dayTrackRefs.current.get(day);
+        if (!track) continue;
+        const rect = track.getBoundingClientRect();
+        if (clientX >= rect.left && clientX <= rect.right) return day;
+
+        const distance = Math.abs(clientX - (rect.left + rect.right) / 2);
+        if (distance < nearestDistance) {
+          nearestDate = day;
+          nearestDistance = distance;
+        }
+      }
+
+      return nearestDate;
+    },
+    [days]
+  );
+
   const handlePointerDown = (
     event: React.PointerEvent<HTMLElement>,
     activity: ITask,
@@ -217,13 +247,15 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
 
     setDrag({
       id: activity.id,
-      date: activity.date,
+      originDate: activity.date,
+      previewDate: activity.date,
       mode,
       offsetY,
       previewStart: start,
       previewEnd: end,
       originStart: start,
       originEnd: end,
+      originClientX: event.clientX,
       originClientY: event.clientY,
       moved: false,
     });
@@ -232,7 +264,10 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!drag) return;
 
-    const distance = Math.abs(event.clientY - drag.originClientY);
+    const distance = Math.hypot(
+      event.clientX - drag.originClientX,
+      event.clientY - drag.originClientY
+    );
     if (!drag.moved && distance < DRAG_THRESHOLD_PX) {
       return;
     }
@@ -268,12 +303,14 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     }
 
     const duration = drag.originEnd - drag.originStart;
+    const previewDate = clientXToDate(event.clientX, drag.previewDate);
     const nextStart = clampStart(
-      clientYToStartMinutes(event.clientY, drag.offsetY, drag.date),
+      clientYToStartMinutes(event.clientY, drag.offsetY, previewDate),
       duration
     );
     setDrag({
       ...drag,
+      previewDate,
       previewStart: nextStart,
       previewEnd: nextStart + duration,
       moved: true,
@@ -287,6 +324,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     const didDrag = drag.moved;
     const nextStart = drag.previewStart;
     const nextEnd = drag.previewEnd;
+    const nextDate = drag.previewDate;
     setDrag(null);
 
     if (!didDrag) {
@@ -294,7 +332,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       return;
     }
 
-    onReschedule(id, minutesToTime(nextStart), minutesToTime(nextEnd));
+    onReschedule(id, minutesToTime(nextStart), minutesToTime(nextEnd), nextDate);
   };
 
   const setDayTrackRef = (date: string, node: HTMLDivElement | null) => {
@@ -370,6 +408,16 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                   const isDragging = drag?.id === activity.id;
                   const start = isDragging && drag ? drag.previewStart : baseStart;
                   const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
+                  const sourceTrack = dayTrackRefs.current.get(activity.date);
+                  const targetTrack =
+                    isDragging && drag
+                      ? dayTrackRefs.current.get(drag.previewDate)
+                      : undefined;
+                  const dragOffsetX =
+                    sourceTrack && targetTrack
+                      ? targetTrack.getBoundingClientRect().left -
+                        sourceTrack.getBoundingClientRect().left
+                      : 0;
                   const top = (start - dayStartMinutes) * PX_PER_MINUTE;
                   const height = Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX);
                   const placement = layout?.get(activity.id) ?? { column: 0, columnCount: 1 };
@@ -385,6 +433,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                         left,
                         width,
                         background: activity.color ?? getTaskBlockColor(activity.activityId),
+                        transform: dragOffsetX ? `translateX(${dragOffsetX}px)` : undefined,
                       }}
                       role="button"
                       tabIndex={0}

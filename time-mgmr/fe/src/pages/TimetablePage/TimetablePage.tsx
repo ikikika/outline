@@ -139,8 +139,13 @@ export const TimetablePage: React.FC = () => {
             disabled={busy}
             toolbar={toolbar}
             onSelect={openDetails}
-            onReschedule={(id, plannedStart, plannedEnd) =>
-              runAction(() => update.mutateAsync({ id, patch: { plannedStart, plannedEnd } }))
+            onReschedule={(id, plannedStart, plannedEnd, date) =>
+              runAction(() =>
+                update.mutateAsync({
+                  id,
+                  patch: { plannedStart, plannedEnd, ...(date ? { date } : {}) },
+                })
+              )
             }
           />
         ) : (
