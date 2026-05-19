@@ -52,14 +52,28 @@ export function formatClock(totalSeconds: number): string {
   return `${m}:${ss}`;
 }
 
+export function formatSessionTimestamp(timestamp: string): string {
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+export function sessionDurationSeconds(entry: ITimeEntry, nowMs: number): number {
+  if (entry.source === 'manual' && entry.durationMinutes != null) {
+    return entry.durationMinutes * 60;
+  }
+
+  const startMs = new Date(entry.startAt).getTime();
+  const endMs = entry.endAt ? new Date(entry.endAt).getTime() : nowMs;
+  return Math.max(0, Math.floor((endMs - startMs) / 1000));
+}
+
 export function elapsedSecondsForEntries(entries: ITimeEntry[], nowMs: number): number {
-  return entries.reduce((sum, entry) => {
-    if (entry.durationMinutes != null) return sum + entry.durationMinutes * 60;
-    if (entry.endAt === null) {
-      return sum + Math.max(0, (nowMs - new Date(entry.startAt).getTime()) / 1000);
-    }
-    return sum;
-  }, 0);
+  return entries.reduce((sum, entry) => sum + sessionDurationSeconds(entry, nowMs), 0);
 }
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
@@ -134,6 +148,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const elapsedSeconds = useMemo(
     () => Math.floor(elapsedSecondsForEntries(entries, nowMs)),
     [entries, nowMs]
+  );
+  const sessionEntries = useMemo(
+    () => [...entries].sort((a, b) => b.startAt.localeCompare(a.startAt)),
+    [entries]
   );
   const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
 
@@ -289,19 +307,35 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           ) : null}
         </dl>
 
-        {entries.length > 0 ? (
-          <ul className={styles.entries}>
-            {entries.map((entry) => (
-              <li key={entry.id}>
-                {entry.source} ·{' '}
-                {entry.durationMinutes != null
-                  ? formatMinutes(entry.durationMinutes)
-                  : 'in progress'}
-                {entries.length > 1 ? ` · ${new Date(entry.startAt).toLocaleTimeString()}` : ''}
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        <section className={styles.sessionLog} aria-labelledby="work-session-log-title">
+          <div className={styles.sessionLogHeader}>
+            <h3 id="work-session-log-title">Work sessions</h3>
+            <span>{sessionEntries.length}</span>
+          </div>
+          {sessionEntries.length > 0 ? (
+            <ul className={styles.entries}>
+              {sessionEntries.map((entry) => (
+                <li key={entry.id} className={styles.sessionEntry}>
+                  <div className={styles.sessionPeriod}>
+                    <time dateTime={entry.startAt}>{formatSessionTimestamp(entry.startAt)}</time>
+                    <span aria-hidden="true">–</span>
+                    {entry.endAt ? (
+                      <time dateTime={entry.endAt}>{formatSessionTimestamp(entry.endAt)}</time>
+                    ) : (
+                      <span className={styles.sessionActive}>In progress</span>
+                    )}
+                  </div>
+                  <div className={styles.sessionSummary}>
+                    <span className={styles.sessionSource}>{entry.source}</span>
+                    <span>{formatClock(sessionDurationSeconds(entry, nowMs))}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.sessionEmpty}>No work sessions recorded yet.</p>
+          )}
+        </section>
 
         <div className={styles.actions}>
           {isRunningHere && runningEntry ? (

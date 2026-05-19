@@ -63,6 +63,7 @@ vi.mock('@/features/activities', () => ({
     setStatus: { isPending: false, mutateAsync: vi.fn() },
   }),
   useRunningTimer: () => ({ data: null }),
+  useTimeEntriesByTask: () => ({ data: [] }),
   useTimeEntryMutations: () => ({
     startTimer: { isPending: false, mutateAsync: vi.fn() },
     stopTimer: { isPending: false, mutateAsync: vi.fn() },

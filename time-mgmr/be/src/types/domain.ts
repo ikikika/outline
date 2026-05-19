@@ -78,15 +78,32 @@ export interface ITaskPatchInput {
 	sortOrder?: number;
 }
 
+export type TimeEntrySource = 'timer' | 'manual';
+
 export interface ITimeEntry {
 	id: string;
 	taskId: string;
 	startAt: string;
 	endAt: string | null;
 	durationMinutes: number | null;
-	source: 'timer' | 'manual';
+	source: TimeEntrySource;
 	createdAt: string;
 	updatedAt: string;
+}
+
+/** Request body for POST /api/time-entries */
+export interface ITimeEntryCreateInput {
+	taskId: string;
+	source?: TimeEntrySource;
+	/** Optional ISO start; defaults to now for timer, or now - duration for manual. */
+	startAt?: string;
+	/** Required when source is manual. */
+	durationMinutes?: number;
+}
+
+/** Partial update for PATCH /api/time-entries/:id (typically stop a timer). */
+export interface ITimeEntryPatchInput {
+	endAt?: string;
 }
 
 export type EntityType = 'activity' | 'task' | 'time_entry';

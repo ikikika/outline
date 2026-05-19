@@ -202,4 +202,11 @@ export async function patchJsonAuth<T>(
 	return patchJson<T>(url, body, { ...options, auth: true });
 }
 
+export async function deleteJsonAuth(
+	url: string,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<void> {
+	await request(url, { method: 'DELETE' }, { ...options, auth: true });
+}
+
 export const HTTP_BASE_URL = API_BASE_URL;

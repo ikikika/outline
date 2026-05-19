@@ -79,9 +79,18 @@ export function useActivitiesByRange(from: string, to: string) {
 }
 
 export function useTimeEntriesByRange(from: string, to: string) {
+  const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: TIME_ENTRY_QUERY_KEYS.byRange(from, to),
-    queryFn: () => timeEntryRepository.listByDateRange(from, to),
+    queryKey: [...TIME_ENTRY_QUERY_KEYS.byRange(from, to), timeZone],
+    queryFn: () => timeEntryRepository.listByDateRange(from, to, timeZone),
+  });
+}
+
+export function useTimeEntriesByTask(taskId: string | null) {
+  return useQuery({
+    queryKey: TIME_ENTRY_QUERY_KEYS.byTask(taskId ?? ''),
+    queryFn: () => (taskId ? timeEntryRepository.listByTask(taskId) : Promise.resolve([])),
+    enabled: Boolean(taskId),
   });
 }
 
@@ -92,7 +101,7 @@ export function useRunningTimer() {
       const running = await timeEntryRepository.listRunning();
       return running[0] ?? null;
     },
-    refetchInterval: 1000,
+    refetchOnWindowFocus: true,
   });
 }
 

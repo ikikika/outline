@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   elapsedSecondsForEntries,
   formatClock,
+  sessionDurationSeconds,
   TaskDetailModal,
 } from './TaskDetailModal';
 import type { ITask, ITimeEntry } from '@/features/activities';
@@ -94,6 +95,45 @@ describe('elapsedSecondsForEntries', () => {
       },
     ];
     expect(elapsedSecondsForEntries(entries, now)).toBe(30 * 60 + 90);
+  });
+});
+
+describe('work session log', () => {
+  it('shows recorded start and stop times with the precise duration', () => {
+    const entry: ITimeEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: '2026-07-19T09:00:30.000Z',
+      durationMinutes: 1,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:30.000Z',
+    };
+
+    render(<TaskDetailModal {...baseProps} entries={[entry]} />);
+
+    expect(screen.getByRole('heading', { name: 'Work sessions' })).toBeInTheDocument();
+    expect(document.querySelectorAll('time')).toHaveLength(2);
+    expect(screen.getByText('0:30')).toBeInTheDocument();
+    expect(sessionDurationSeconds(entry, Date.now())).toBe(30);
+  });
+
+  it('shows an active session as in progress', () => {
+    const entry: ITimeEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: new Date().toISOString(),
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    render(<TaskDetailModal {...baseProps} entries={[entry]} runningEntry={entry} />);
+
+    expect(screen.getByText('In progress')).toBeInTheDocument();
   });
 });
 

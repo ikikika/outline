@@ -1,17 +1,22 @@
 import type { IManualTimeEntryInput, ITimeEntry } from '../types';
 import {
-  idbDelete,
-  idbGetAll,
-  idbGetById,
-  idbGetByIndex,
-  idbPut,
-  STORE_TIME_ENTRIES,
-} from './indexedDbStore';
-import { createId, minutesBetween } from '../utils/dateUtils';
+  createTimeEntryApi,
+  deleteTimeEntryApi,
+  fetchRunningTimeEntries,
+  fetchTimeEntryById,
+  fetchTimeEntriesByRange,
+  fetchTimeEntriesByTask,
+  patchTimeEntryApi,
+} from '../api/timeEntriesApi';
+import {
+  getBrowserTimeZone,
+  localDateRangeToUtcRange,
+} from '@/core/utils/timeZone/timeZone';
+import { HttpClientError } from '@/services/httpClient';
 
 export interface ITimeEntryRepository {
   listByTask(taskId: string): Promise<ITimeEntry[]>;
-  listByDateRange(from: string, to: string): Promise<ITimeEntry[]>;
+  listByDateRange(from: string, to: string, timeZone?: string): Promise<ITimeEntry[]>;
   listRunning(): Promise<ITimeEntry[]>;
   getById(id: string): Promise<ITimeEntry | undefined>;
   startTimer(taskId: string): Promise<ITimeEntry>;
@@ -26,84 +31,55 @@ export interface ITimeEntryRepository {
   removeByActivity(activityId: string): Promise<void>;
 }
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
+function resolveRange(
+  from: string,
+  to: string,
+  timeZone?: string
+): { fromIso: string; toIso: string } {
+  if (from.includes('T') || to.includes('T')) {
+    return { fromIso: from, toIso: to };
+  }
 
-function entryDateKey(entry: ITimeEntry): string {
-  const d = new Date(entry.startAt);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const zone = timeZone ?? getBrowserTimeZone();
+  const { from: fromIso, to: toIso } = localDateRangeToUtcRange(from, to, zone);
+  return { fromIso, toIso };
 }
 
 export const timeEntryRepository: ITimeEntryRepository = {
   async listByTask(taskId) {
-    const rows = await idbGetByIndex<ITimeEntry>(STORE_TIME_ENTRIES, 'taskId', taskId);
-    return rows.sort((a, b) => a.startAt.localeCompare(b.startAt));
+    return fetchTimeEntriesByTask(taskId);
   },
 
   async listByActivity(activityId) {
     return this.listByTask(activityId);
   },
 
-  async listByDateRange(from, to) {
-    const all = await idbGetAll<ITimeEntry>(STORE_TIME_ENTRIES);
-    return all
-      .filter((e) => {
-        const key = entryDateKey(e);
-        return key >= from && key <= to;
-      })
-      .sort((a, b) => a.startAt.localeCompare(b.startAt));
+  async listByDateRange(from, to, timeZone) {
+    const { fromIso, toIso } = resolveRange(from, to, timeZone);
+    return fetchTimeEntriesByRange(fromIso, toIso);
   },
 
   async listRunning() {
-    const all = await idbGetAll<ITimeEntry>(STORE_TIME_ENTRIES);
-    return all.filter((e) => e.endAt === null);
+    return fetchRunningTimeEntries();
   },
 
   async getById(id) {
-    return idbGetById<ITimeEntry>(STORE_TIME_ENTRIES, id);
+    try {
+      return await fetchTimeEntryById(id);
+    } catch (error) {
+      if (error instanceof HttpClientError && error.status === 404) {
+        return undefined;
+      }
+      throw error;
+    }
   },
 
   async startTimer(taskId) {
-    const running = await this.listRunning();
-    if (running.length > 0) {
-      throw new Error('Stop the current timer before starting another.');
-    }
-
-    // Tasks are API-backed; this store only persists local timer entries.
-    // Callers update task status via the API after a successful start.
-    const stamp = nowIso();
-    const entry: ITimeEntry = {
-      id: createId(),
-      taskId,
-      startAt: stamp,
-      endAt: null,
-      durationMinutes: null,
-      source: 'timer',
-      createdAt: stamp,
-      updatedAt: stamp,
-    };
-    await idbPut(STORE_TIME_ENTRIES, entry);
-    return entry;
+    return createTimeEntryApi({ taskId, source: 'timer' });
   },
 
   async stopTimer(entryId) {
-    const entry = await idbGetById<ITimeEntry>(STORE_TIME_ENTRIES, entryId);
-    if (!entry) throw new Error('Time entry not found.');
-    if (entry.endAt) return entry;
-
-    const endAt = nowIso();
-    const updated: ITimeEntry = {
-      ...entry,
-      endAt,
-      durationMinutes: minutesBetween(entry.startAt, endAt),
-      updatedAt: endAt,
-    };
-    await idbPut(STORE_TIME_ENTRIES, updated);
-    return updated;
+    return patchTimeEntryApi(entryId, { endAt: new Date().toISOString() });
   },
 
   async pauseTimer(entryId) {
@@ -111,37 +87,21 @@ export const timeEntryRepository: ITimeEntryRepository = {
   },
 
   async addManual(input) {
-    // Tasks are API-backed; manual entries are stored locally by taskId.
-    const stamp = nowIso();
-    const end = input.startAt ? new Date(input.startAt) : new Date();
-    if (input.startAt) {
-      end.setMinutes(end.getMinutes() + input.durationMinutes);
-    }
-    const start = input.startAt
-      ? new Date(input.startAt)
-      : new Date(Date.now() - input.durationMinutes * 60000);
-
-    const entry: ITimeEntry = {
-      id: createId(),
+    return createTimeEntryApi({
       taskId: input.taskId,
-      startAt: start.toISOString(),
-      endAt: end.toISOString(),
-      durationMinutes: input.durationMinutes,
       source: 'manual',
-      createdAt: stamp,
-      updatedAt: stamp,
-    };
-    await idbPut(STORE_TIME_ENTRIES, entry);
-    return entry;
+      durationMinutes: input.durationMinutes,
+      ...(input.startAt ? { startAt: input.startAt } : {}),
+    });
   },
 
   async remove(id) {
-    await idbDelete(STORE_TIME_ENTRIES, id);
+    await deleteTimeEntryApi(id);
   },
 
   async removeByTask(taskId) {
     const entries = await this.listByTask(taskId);
-    await Promise.all(entries.map((e) => idbDelete(STORE_TIME_ENTRIES, e.id)));
+    await Promise.all(entries.map((entry) => deleteTimeEntryApi(entry.id)));
   },
 
   async removeByActivity(activityId) {

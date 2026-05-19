@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/layouts';
 import {
   formatDisplayDate,
@@ -6,6 +6,7 @@ import {
   useActivitiesByRange,
   useActivityMutations,
   useRunningTimer,
+  useTimeEntriesByTask,
   useTimeEntryMutations,
   weekDateKeys,
   type ActivityFormValues,
@@ -27,10 +28,11 @@ export const TimetablePage: React.FC = () => {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const week = weekDateKeys(selectedDate);
-  const { activities, entries, isLoading: dayLoading, error: dayError } = useDayReport(selectedDate);
+  const { activities, isLoading: dayLoading, error: dayError } = useDayReport(selectedDate);
   const weekActivitiesQuery = useActivitiesByRange(week[0], week[week.length - 1]);
   const weekActivities = weekActivitiesQuery.data ?? [];
   const { data: runningEntry = null } = useRunningTimer();
+  const { data: detailEntries = [] } = useTimeEntriesByTask(detailTask?.id ?? null);
   const { update, remove, setStatus } = useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
@@ -46,11 +48,6 @@ export const TimetablePage: React.FC = () => {
     startTimer.isPending ||
     stopTimer.isPending ||
     addManual.isPending;
-
-  const detailEntries = useMemo(() => {
-    if (!detailTask) return [];
-    return entries.filter((entry) => entry.taskId === detailTask.id);
-  }, [detailTask, entries]);
 
   useEffect(() => {
     if (!detailTask) return;

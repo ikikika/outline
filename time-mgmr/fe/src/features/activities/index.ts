@@ -45,6 +45,17 @@ export {
   type ITaskPatch,
   type ITimetableTaskPatch,
 } from './api/activitiesApi';
+export {
+  fetchTimeEntriesByTask,
+  fetchTimeEntryById,
+  fetchTimeEntriesByRange,
+  fetchRunningTimeEntries,
+  createTimeEntryApi,
+  patchTimeEntryApi,
+  deleteTimeEntryApi,
+  type ITimeEntryCreateBody,
+  type ITimeEntryPatchBody,
+} from './api/timeEntriesApi';
 export type { IApiTask } from './api/mapApiTask';
 export { activityRepository, taskRepository } from './repository/activityRepository';
 export { activityCatalogRepository } from './repository/activityCatalogRepository';
@@ -54,6 +65,7 @@ export {
   useActivitiesByDate,
   useActivitiesByRange,
   useTimeEntriesByRange,
+  useTimeEntriesByTask,
   useRunningTimer,
   useActivityMutations,
   useTimeEntryMutations,

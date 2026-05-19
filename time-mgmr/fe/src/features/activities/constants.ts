@@ -24,6 +24,7 @@ export const ACTIVITY_QUERY_KEYS = {
 export const TIME_ENTRY_QUERY_KEYS = {
   all: ['time-entries'] as const,
   byActivity: (activityId: string) => ['time-entries', 'activity', activityId] as const,
+  byTask: (taskId: string) => ['time-entries', 'task', taskId] as const,
   byDate: (date: string) => ['time-entries', 'date', date] as const,
   byRange: (from: string, to: string) => ['time-entries', 'range', from, to] as const,
   running: ['time-entries', 'running'] as const,

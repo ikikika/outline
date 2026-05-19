@@ -10,6 +10,7 @@
 		"deploy:prod": "sst deploy --stage production",
 		"remove": "sst remove",
 		"typecheck": "tsc --noEmit",
+		"test": "tsx --test src/**/*.test.ts",
 		"seed:user": "tsx scripts/seed-user.ts",
 		"seed:data": "tsx scripts/seed-data.ts"
 	},
