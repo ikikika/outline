@@ -71,6 +71,21 @@ export async function fetchTasksByActivityId(
   return getJsonAuth<IApiTask[]>(url);
 }
 
+export async function fetchTaskById(
+  id: string,
+  timeZone: string
+): Promise<ITask> {
+  requireApiBaseUrl();
+  const task = await getJsonAuth<IApiTask>(
+    `${TASKS_BASE_URL}/${encodeURIComponent(id)}`
+  );
+  return apiTaskToTimetableTask(
+    task,
+    task.plannedStart.slice(0, 10),
+    timeZone
+  );
+}
+
 export async function patchTaskApi(
   id: string,
   patch: ITaskPatch

@@ -34,6 +34,7 @@ export {
   fetchActivities,
   fetchCatalogTasks,
   fetchTasksByActivityId,
+  fetchTaskById,
   fetchTasksByDate,
   fetchTasksByDateRange,
   createTaskApi,
@@ -64,6 +65,7 @@ export { timeEntryRepository } from './repository/timeEntryRepository';
 export {
   useActivitiesByDate,
   useActivitiesByRange,
+  useTaskById,
   useTimeEntriesByRange,
   useTimeEntriesByTask,
   useRunningTimer,

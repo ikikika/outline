@@ -6,6 +6,7 @@ import {
   useActivitiesByRange,
   useActivityMutations,
   useRunningTimer,
+  useTaskById,
   useTimeEntriesByTask,
   useTimeEntryMutations,
   weekDateKeys,
@@ -32,6 +33,8 @@ export const TimetablePage: React.FC = () => {
   const weekActivitiesQuery = useActivitiesByRange(week[0], week[week.length - 1]);
   const weekActivities = weekActivitiesQuery.data ?? [];
   const { data: runningEntry = null } = useRunningTimer();
+  const runningTaskQuery = useTaskById(runningEntry?.taskId ?? null);
+  const runningTask = runningTaskQuery.data ?? null;
   const { data: detailEntries = [] } = useTimeEntriesByTask(detailTask?.id ?? null);
   const { update, remove, setStatus } = useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
@@ -53,8 +56,10 @@ export const TimetablePage: React.FC = () => {
     if (!detailTask) return;
     const next =
       activities.find((task) => task.id === detailTask.id) ??
-      weekActivities.find((task) => task.id === detailTask.id);
+      weekActivities.find((task) => task.id === detailTask.id) ??
+      (runningTask?.id === detailTask.id ? runningTask : undefined);
     if (!next) {
+      if (dayLoading) return;
       setDetailTask(null);
       return;
     }
@@ -68,7 +73,7 @@ export const TimetablePage: React.FC = () => {
     ) {
       setDetailTask(next);
     }
-  }, [activities, weekActivities, detailTask]);
+  }, [activities, weekActivities, runningTask, detailTask, dayLoading]);
 
   const openDetails = (item: ITask) => {
     setSelectedDate(item.date);
@@ -119,6 +124,33 @@ export const TimetablePage: React.FC = () => {
   return (
     <MainLayout>
       <div className={styles.timetable}>
+        {runningEntry && detailTask?.id !== runningEntry.taskId ? (
+          <aside className={styles.runningNotice} aria-live="polite">
+            <div className={styles.runningNoticeText}>
+              <strong>Timer still running</strong>
+              <span>
+                {runningTask
+                  ? `${runningTask.title} started at ${new Date(
+                      runningEntry.startAt
+                    ).toLocaleTimeString([], {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}.`
+                  : 'Loading the active task…'}
+              </span>
+            </div>
+            <button
+              type="button"
+              className={styles.runningNoticeAction}
+              disabled={!runningTask || runningTaskQuery.isPending}
+              onClick={() => {
+                if (runningTask) openDetails(runningTask);
+              }}
+            >
+              Open task
+            </button>
+          </aside>
+        ) : null}
         {actionError && <div className={styles.error}>{actionError}</div>}
         {loadError && (
           <div className={styles.error}>

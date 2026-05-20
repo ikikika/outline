@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TimetablePage from './TimetablePage';
 
 const mockActivities = [
@@ -18,6 +18,17 @@ const mockActivities = [
     updatedAt: '2026-07-19T00:00:00.000Z',
   },
 ];
+
+let mockRunningEntry: {
+  id: string;
+  taskId: string;
+  startAt: string;
+  endAt: null;
+  durationMinutes: null;
+  source: 'timer';
+  createdAt: string;
+  updatedAt: string;
+} | null = null;
 
 vi.mock('@/layouts', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -57,12 +68,16 @@ vi.mock('@/features/activities', () => ({
     return h * 60 + m;
   },
   useActivitiesByRange: () => ({ data: mockActivities, isLoading: false, error: null }),
+  useTaskById: () => ({
+    data: mockRunningEntry ? mockActivities[0] : undefined,
+    isPending: false,
+  }),
   useActivityMutations: () => ({
     update: { isPending: false, mutateAsync: vi.fn() },
     remove: { isPending: false, mutateAsync: vi.fn() },
     setStatus: { isPending: false, mutateAsync: vi.fn() },
   }),
-  useRunningTimer: () => ({ data: null }),
+  useRunningTimer: () => ({ data: mockRunningEntry }),
   useTimeEntriesByTask: () => ({ data: [] }),
   useTimeEntryMutations: () => ({
     startTimer: { isPending: false, mutateAsync: vi.fn() },
@@ -91,7 +106,17 @@ vi.mock('./components/ActivityForm/ActivityForm', () => ({
   ActivityForm: () => <div data-testid="activity-form" />,
 }));
 
+vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
+  TaskDetailModal: ({ task }: { task: { title: string } }) => (
+    <div data-testid="task-detail-modal">{task.title}</div>
+  ),
+}));
+
 describe('TimetablePage', () => {
+  beforeEach(() => {
+    mockRunningEntry = null;
+  });
+
   it('renders timetable blocks', () => {
     render(<TimetablePage />);
 
@@ -107,5 +132,29 @@ describe('TimetablePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Week' }));
     expect(screen.getByLabelText('Week timetable')).toBeInTheDocument();
+  });
+
+  it('shows a running-session notice and opens its task modal', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    mockRunningEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    render(<TimetablePage />);
+
+    expect(screen.getByText('Timer still running')).toBeInTheDocument();
+    expect(screen.getByText(/Deep work started at/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open task' }));
+
+    expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Deep work');
   });
 });

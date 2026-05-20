@@ -8,6 +8,7 @@ import {
 } from '../constants';
 import {
   createTaskApi,
+  fetchTaskById,
   fetchTasksByDate,
   fetchTasksByDateRange,
   patchTaskApi,
@@ -75,6 +76,15 @@ export function useActivitiesByRange(from: string, to: string) {
   return useQuery({
     queryKey: [...ACTIVITY_QUERY_KEYS.byRange(from, to), timeZone],
     queryFn: () => loadTasksByRange(from, to, timeZone),
+  });
+}
+
+export function useTaskById(taskId: string | null) {
+  const timeZone = useResolvedTimeZone();
+  return useQuery({
+    queryKey: [...ACTIVITY_QUERY_KEYS.one(taskId ?? ''), timeZone],
+    queryFn: () => fetchTaskById(taskId!, timeZone),
+    enabled: Boolean(taskId),
   });
 }
 
