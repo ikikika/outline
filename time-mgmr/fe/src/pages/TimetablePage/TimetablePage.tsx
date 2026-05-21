@@ -5,6 +5,7 @@ import {
   todayKey,
   useActivitiesByRange,
   useActivityMutations,
+  useActivityById,
   useRunningTimer,
   useTaskById,
   useTimeEntriesByTask,
@@ -35,6 +36,9 @@ export const TimetablePage: React.FC = () => {
   const { data: runningEntry = null } = useRunningTimer();
   const runningTaskQuery = useTaskById(runningEntry?.taskId ?? null);
   const runningTask = runningTaskQuery.data ?? null;
+  const { data: detailActivity = null } = useActivityById(
+    detailTask?.activityId ?? null
+  );
   const { data: detailEntries = [] } = useTimeEntriesByTask(detailTask?.id ?? null);
   const { update, remove, setStatus } = useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
@@ -193,6 +197,7 @@ export const TimetablePage: React.FC = () => {
         {detailTask && !editing ? (
           <TaskDetailModal
             task={detailTask}
+            activityTitle={detailActivity?.title}
             entries={detailEntries}
             runningEntry={runningEntry}
             busy={busy}

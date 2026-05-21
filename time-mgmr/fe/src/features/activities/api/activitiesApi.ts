@@ -50,6 +50,13 @@ export async function fetchActivities(): Promise<IActivity[]> {
   return getJsonAuth<IActivity[]>(ACTIVITIES_BASE_URL);
 }
 
+export async function fetchActivityById(id: string): Promise<IActivity> {
+  requireApiBaseUrl();
+  return getJsonAuth<IActivity>(
+    `${ACTIVITIES_BASE_URL}/${encodeURIComponent(id)}`
+  );
+}
+
 export async function patchActivityApi(
   id: string,
   patch: IActivityPatch

@@ -21,6 +21,7 @@ import styles from './TaskDetailModal.module.scss';
 
 interface TaskDetailModalProps {
   task: ITask;
+  activityTitle?: string;
   entries: ITimeEntry[];
   runningEntry: ITimeEntry | null;
   busy?: boolean;
@@ -78,6 +79,7 @@ export function elapsedSecondsForEntries(entries: ITimeEntry[], nowMs: number): 
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   task,
+  activityTitle,
   entries,
   runningEntry,
   busy = false,
@@ -279,6 +281,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         </div>
 
         <dl className={styles.details}>
+          {activityTitle ? (
+            <div className={styles.row}>
+              <dt>Activity</dt>
+              <dd className={styles.value}>{activityTitle}</dd>
+            </div>
+          ) : null}
           <div className={styles.row}>
             <dt>Date</dt>
             <dd className={styles.value}>{formatDisplayDate(task.date)}</dd>

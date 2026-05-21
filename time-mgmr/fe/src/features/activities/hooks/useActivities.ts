@@ -8,6 +8,7 @@ import {
 } from '../constants';
 import {
   createTaskApi,
+  fetchActivityById,
   fetchTaskById,
   fetchTasksByDate,
   fetchTasksByDateRange,
@@ -76,6 +77,14 @@ export function useActivitiesByRange(from: string, to: string) {
   return useQuery({
     queryKey: [...ACTIVITY_QUERY_KEYS.byRange(from, to), timeZone],
     queryFn: () => loadTasksByRange(from, to, timeZone),
+  });
+}
+
+export function useActivityById(activityId: string | null) {
+  return useQuery({
+    queryKey: ['activity-catalog', 'id', activityId ?? ''],
+    queryFn: () => fetchActivityById(activityId!),
+    enabled: Boolean(activityId),
   });
 }
 

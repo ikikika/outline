@@ -68,6 +68,9 @@ vi.mock('@/features/activities', () => ({
     return h * 60 + m;
   },
   useActivitiesByRange: () => ({ data: mockActivities, isLoading: false, error: null }),
+  useActivityById: () => ({
+    data: { id: 'activity-1', title: 'AI course' },
+  }),
   useTaskById: () => ({
     data: mockRunningEntry ? mockActivities[0] : undefined,
     isPending: false,
@@ -107,8 +110,16 @@ vi.mock('./components/ActivityForm/ActivityForm', () => ({
 }));
 
 vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
-  TaskDetailModal: ({ task }: { task: { title: string } }) => (
-    <div data-testid="task-detail-modal">{task.title}</div>
+  TaskDetailModal: ({
+    task,
+    activityTitle,
+  }: {
+    task: { title: string };
+    activityTitle?: string;
+  }) => (
+    <div data-testid="task-detail-modal">
+      {activityTitle} · {task.title}
+    </div>
   ),
 }));
 

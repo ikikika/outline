@@ -32,6 +32,7 @@ export {
 
 export {
   fetchActivities,
+  fetchActivityById,
   fetchCatalogTasks,
   fetchTasksByActivityId,
   fetchTaskById,
@@ -65,6 +66,7 @@ export { timeEntryRepository } from './repository/timeEntryRepository';
 export {
   useActivitiesByDate,
   useActivitiesByRange,
+  useActivityById,
   useTaskById,
   useTimeEntriesByRange,
   useTimeEntriesByTask,

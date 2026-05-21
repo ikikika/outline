@@ -47,6 +47,7 @@ const task: ITask = {
 
 const baseProps = {
   task,
+  activityTitle: 'Agentic AI course',
   entries: [] as ITimeEntry[],
   runningEntry: null as ITimeEntry | null,
   onClose: vi.fn(),
@@ -138,6 +139,13 @@ describe('work session log', () => {
 });
 
 describe('TaskDetailModal focus mode', () => {
+  it('shows the parent activity title in task details', () => {
+    render(<TaskDetailModal {...baseProps} />);
+
+    expect(screen.getByText('Activity')).toBeInTheDocument();
+    expect(screen.getByText('Agentic AI course')).toBeInTheDocument();
+  });
+
   it('expands to full screen with a Start button and times', async () => {
     const user = userEvent.setup();
     render(<TaskDetailModal {...baseProps} />);
