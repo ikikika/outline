@@ -368,14 +368,25 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           >
             Log time
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={() => onStatus(task.id, 'done')}
-          >
-            Done
-          </Button>
+          {task.status === 'done' ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => onStatus(task.id, 'in_progress')}
+            >
+              Mark in progress
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => onStatus(task.id, 'done')}
+            >
+              Done
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"

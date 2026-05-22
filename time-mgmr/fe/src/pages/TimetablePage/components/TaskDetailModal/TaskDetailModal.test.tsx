@@ -138,6 +138,27 @@ describe('work session log', () => {
   });
 });
 
+describe('completed task actions', () => {
+  it('replaces Done with an action that restores in-progress status', async () => {
+    const user = userEvent.setup();
+    const onStatus = vi.fn();
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        task={{ ...task, status: 'done' }}
+        onStatus={onStatus}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Mark in progress' }));
+
+    expect(onStatus).toHaveBeenCalledWith('task-1', 'in_progress');
+  });
+});
+
 describe('TaskDetailModal focus mode', () => {
   it('shows the parent activity title in task details', () => {
     render(<TaskDetailModal {...baseProps} />);
