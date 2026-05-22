@@ -181,7 +181,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     activity: ITask,
     mode: DragState['mode'] = 'move'
   ) => {
-    if (disabled || event.button !== 0) return;
+    if (disabled || activity.status === 'done' || event.button !== 0) return;
     event.preventDefault();
     if (mode !== 'move') event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -337,18 +337,29 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
               return (
                 <div
                   key={activity.id}
-                  className={`${styles.block} ${isDragging ? styles.blockDragging : ''}`}
+                  className={`${styles.block} ${
+                    activity.status === 'done' ? styles.blockLocked : ''
+                  } ${isDragging ? styles.blockDragging : ''}`}
                   style={{
                     top,
                     height,
                     left,
                     width,
-                    background: activity.color ?? getTaskBlockColor(activity.activityId),
+                    background: getTaskBlockColor(
+                      activity.activityId,
+                      activity.status,
+                      activity.color
+                    ),
                   }}
                   role="button"
                   tabIndex={0}
                   aria-label={`${activity.title}, ${minutesToTime(start)} to ${minutesToTime(end)}`}
                   onPointerDown={(e) => handlePointerDown(e, activity)}
+                  onClick={
+                    activity.status === 'done'
+                      ? () => onSelect?.(activity)
+                      : undefined
+                  }
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
@@ -356,20 +367,24 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                     }
                   }}
                 >
-                  <div
-                    className={`${styles.resizeHandle} ${styles.resizeHandleTop}`}
-                    aria-label={`Change start time for ${activity.title}`}
-                    onPointerDown={(e) => handlePointerDown(e, activity, 'resize-start')}
-                  />
+                  {activity.status !== 'done' ? (
+                    <div
+                      className={`${styles.resizeHandle} ${styles.resizeHandleTop}`}
+                      aria-label={`Change start time for ${activity.title}`}
+                      onPointerDown={(e) => handlePointerDown(e, activity, 'resize-start')}
+                    />
+                  ) : null}
                   <p className={styles.blockTitle}>{activity.title}</p>
                   <p className={styles.blockMeta}>
                     {minutesToTime(start)}–{minutesToTime(end)}
                   </p>
-                  <div
-                    className={`${styles.resizeHandle} ${styles.resizeHandleBottom}`}
-                    aria-label={`Change end time for ${activity.title}`}
-                    onPointerDown={(e) => handlePointerDown(e, activity, 'resize-end')}
-                  />
+                  {activity.status !== 'done' ? (
+                    <div
+                      className={`${styles.resizeHandle} ${styles.resizeHandleBottom}`}
+                      aria-label={`Change end time for ${activity.title}`}
+                      onPointerDown={(e) => handlePointerDown(e, activity, 'resize-end')}
+                    />
+                  ) : null}
                 </div>
               );
             })}

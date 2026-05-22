@@ -91,6 +91,11 @@
   cursor: grabbing;
 }
 
+.blockLocked,
+.blockLocked:active {
+  cursor: pointer;
+}
+
 .blockDragging {
   opacity: 0.85;
   z-index: 5;

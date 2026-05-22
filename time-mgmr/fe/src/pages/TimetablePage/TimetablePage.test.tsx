@@ -113,12 +113,17 @@ vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
   TaskDetailModal: ({
     task,
     activityTitle,
+    onStatus,
   }: {
-    task: { title: string };
+    task: { id: string; title: string };
     activityTitle?: string;
+    onStatus: (id: string, status: 'done') => void;
   }) => (
     <div data-testid="task-detail-modal">
       {activityTitle} · {task.title}
+      <button type="button" onClick={() => onStatus(task.id, 'done')}>
+        Done
+      </button>
     </div>
   ),
 }));
@@ -167,5 +172,26 @@ describe('TimetablePage', () => {
     await user.click(screen.getByRole('button', { name: 'Open task' }));
 
     expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Deep work');
+  });
+
+  it('closes the task modal after marking the task done', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    mockRunningEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+    render(<TimetablePage />);
+
+    await user.click(screen.getByRole('button', { name: 'Open task' }));
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(screen.queryByTestId('task-detail-modal')).not.toBeInTheDocument();
   });
 });

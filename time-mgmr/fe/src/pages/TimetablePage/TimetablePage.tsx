@@ -209,7 +209,14 @@ export const TimetablePage: React.FC = () => {
                 setDetailTask(null);
               })
             }
-            onStatus={(id, status) => runAction(() => setStatus.mutateAsync({ id, status }))}
+            onStatus={(id, status) =>
+              runAction(async () => {
+                await setStatus.mutateAsync({ id, status });
+                if (status === 'done') {
+                  setDetailTask(null);
+                }
+              })
+            }
             onStart={(id) => runAction(() => startTimer.mutateAsync(id))}
             onStop={(id) => runAction(() => stopTimer.mutateAsync(id))}
             onLogManual={(id, minutes) =>
