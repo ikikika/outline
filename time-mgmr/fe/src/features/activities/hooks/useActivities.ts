@@ -203,7 +203,38 @@ export function useActivityMutations(date: string) {
     },
   });
 
-  return { create, update, remove, setStatus };
+  const complete = useMutation({
+    mutationFn: async ({
+      id,
+      firstStartAt,
+      lastEndAt,
+    }: {
+      id: string;
+      firstStartAt?: string;
+      lastEndAt?: string;
+    }) => {
+      const existing = findTaskInCache(queryClient, id);
+      const updated = await patchTaskApi(id, {
+        status: 'done',
+        ...(firstStartAt && lastEndAt
+          ? {
+              plannedStart: firstStartAt,
+              plannedEnd: lastEndAt,
+            }
+          : {}),
+      });
+      return apiTaskToTimetableTask(
+        updated,
+        existing?.date ?? date,
+        timeZone
+      );
+    },
+    onSuccess: async () => {
+      await invalidateActivityQueries(queryClient, date);
+    },
+  });
+
+  return { create, update, remove, setStatus, complete };
 }
 
 export function useTimeEntryMutations(date: string) {

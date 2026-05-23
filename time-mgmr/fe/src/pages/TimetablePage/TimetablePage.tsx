@@ -40,7 +40,7 @@ export const TimetablePage: React.FC = () => {
     detailTask?.activityId ?? null
   );
   const { data: detailEntries = [] } = useTimeEntriesByTask(detailTask?.id ?? null);
-  const { update, remove, setStatus } = useActivityMutations(selectedDate);
+  const { update, remove, setStatus, complete } = useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
   const isLoading =
@@ -52,6 +52,7 @@ export const TimetablePage: React.FC = () => {
     update.isPending ||
     remove.isPending ||
     setStatus.isPending ||
+    complete.isPending ||
     startTimer.isPending ||
     stopTimer.isPending ||
     addManual.isPending;
@@ -211,10 +212,42 @@ export const TimetablePage: React.FC = () => {
             }
             onStatus={(id, status) =>
               runAction(async () => {
-                await setStatus.mutateAsync({ id, status });
                 if (status === 'done') {
+                  let workEntries = detailEntries;
+
+                  if (runningEntry?.taskId === id) {
+                    const stoppedEntry = await stopTimer.mutateAsync(runningEntry.id);
+                    const alreadyListed = workEntries.some(
+                      (entry) => entry.id === stoppedEntry.id
+                    );
+                    workEntries = alreadyListed
+                      ? workEntries.map((entry) =>
+                          entry.id === stoppedEntry.id ? stoppedEntry : entry
+                        )
+                      : [...workEntries, stoppedEntry];
+                  }
+
+                  const completedEntries = workEntries.filter(
+                    (entry) => entry.endAt !== null
+                  );
+                  const firstStartAt = completedEntries
+                    .map((entry) => entry.startAt)
+                    .sort()[0];
+                  const lastEndAt = completedEntries
+                    .map((entry) => entry.endAt!)
+                    .sort()
+                    .at(-1);
+
+                  await complete.mutateAsync({
+                    id,
+                    firstStartAt,
+                    lastEndAt,
+                  });
                   setDetailTask(null);
+                  return;
                 }
+
+                await setStatus.mutateAsync({ id, status });
               })
             }
             onStart={(id) => runAction(() => startTimer.mutateAsync(id))}

@@ -29,6 +29,14 @@ let mockRunningEntry: {
   createdAt: string;
   updatedAt: string;
 } | null = null;
+const mockCompleteMutation = vi.fn();
+const mockStopTimerMutation = vi.fn(async (entryId: string) => ({
+  ...mockRunningEntry!,
+  id: entryId,
+  endAt: '2026-07-19T10:00:00.000Z',
+  durationMinutes: 60,
+  updatedAt: '2026-07-19T10:00:00.000Z',
+}));
 
 vi.mock('@/layouts', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -79,12 +87,15 @@ vi.mock('@/features/activities', () => ({
     update: { isPending: false, mutateAsync: vi.fn() },
     remove: { isPending: false, mutateAsync: vi.fn() },
     setStatus: { isPending: false, mutateAsync: vi.fn() },
+    complete: { isPending: false, mutateAsync: mockCompleteMutation },
   }),
   useRunningTimer: () => ({ data: mockRunningEntry }),
-  useTimeEntriesByTask: () => ({ data: [] }),
+  useTimeEntriesByTask: () => ({
+    data: mockRunningEntry ? [mockRunningEntry] : [],
+  }),
   useTimeEntryMutations: () => ({
     startTimer: { isPending: false, mutateAsync: vi.fn() },
-    stopTimer: { isPending: false, mutateAsync: vi.fn() },
+    stopTimer: { isPending: false, mutateAsync: mockStopTimerMutation },
     pauseTimer: { isPending: false, mutateAsync: vi.fn() },
     addManual: { isPending: false, mutateAsync: vi.fn() },
   }),
@@ -131,6 +142,8 @@ vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
 describe('TimetablePage', () => {
   beforeEach(() => {
     mockRunningEntry = null;
+    mockCompleteMutation.mockClear();
+    mockStopTimerMutation.mockClear();
   });
 
   it('renders timetable blocks', () => {
@@ -193,5 +206,11 @@ describe('TimetablePage', () => {
     await user.click(screen.getByRole('button', { name: 'Done' }));
 
     expect(screen.queryByTestId('task-detail-modal')).not.toBeInTheDocument();
+    expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
+    expect(mockCompleteMutation).toHaveBeenCalledWith({
+      id: 'task-1',
+      firstStartAt: '2026-07-19T09:00:00.000Z',
+      lastEndAt: '2026-07-19T10:00:00.000Z',
+    });
   });
 });
