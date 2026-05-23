@@ -9,7 +9,6 @@ import {
   formatMinutes,
   formatSignedMinutes,
   manualTimeEntrySchema,
-  plannedDurationMinutes,
   type ITask,
   type ITimeEntry,
   type ManualTimeEntryFormValues,
@@ -102,7 +101,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const metrics = buildActivityMetrics(task, entries);
   const isRunningHere = runningEntry?.taskId === task.id;
   const accent = getTaskBlockColor(task.activityId);
-  const plannedSeconds = plannedDurationMinutes(task.plannedStart, task.plannedEnd) * 60;
+  const plannedSeconds = Math.max(0, task.timeEstimationSeconds ?? 0);
 
   const {
     register,

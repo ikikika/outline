@@ -1,6 +1,5 @@
 import { ON_TARGET_TOLERANCE, CATEGORY_MAP } from '@/features/activities/constants';
 import type { ActivityCategoryId, ITask, ITimeEntry } from '@/features/activities/types';
-import { plannedDurationMinutes } from '@/features/activities/utils/dateUtils';
 
 export type VarianceKind = 'over' | 'under' | 'on_target' | 'untracked';
 
@@ -83,7 +82,7 @@ export function buildActivityMetrics(
   entries: ITimeEntry[],
   now = new Date()
 ): IActivityMetrics {
-  const plannedMinutes = plannedDurationMinutes(task.plannedStart, task.plannedEnd);
+  const plannedMinutes = Math.max(0, task.timeEstimationSeconds ?? 0) / 60;
   const actualMinutes = completedActualMinutes(entries, now);
   const varianceMinutes = actualMinutes - plannedMinutes;
   const accuracyRatio =

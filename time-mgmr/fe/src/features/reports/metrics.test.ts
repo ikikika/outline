@@ -13,6 +13,7 @@ const baseTask = (overrides: Partial<ITask> = {}): ITask => ({
   date: '2026-07-19',
   plannedStart: '09:00',
   plannedEnd: '11:00',
+  timeEstimationSeconds: 120 * 60,
   categoryId: 'deep_work',
   notes: '',
   status: 'done',
@@ -60,6 +61,17 @@ describe('buildActivityMetrics', () => {
     expect(metrics.entryCount).toBe(2);
     expect(metrics.varianceKind).toBe('on_target');
   });
+
+  it('uses timeEstimationSeconds instead of the scheduled block duration', () => {
+    const metrics = buildActivityMetrics(
+      baseTask({ timeEstimationSeconds: 60 * 60 }),
+      [entry({ durationMinutes: 90 })]
+    );
+
+    expect(metrics.plannedMinutes).toBe(60);
+    expect(metrics.varianceMinutes).toBe(30);
+    expect(metrics.varianceKind).toBe('over');
+  });
 });
 
 describe('buildDayReport', () => {
@@ -72,6 +84,7 @@ describe('buildDayReport', () => {
         title: 'Email',
         plannedStart: '11:00',
         plannedEnd: '11:30',
+        timeEstimationSeconds: 30 * 60,
         categoryId: 'admin',
         status: 'planned',
       }),

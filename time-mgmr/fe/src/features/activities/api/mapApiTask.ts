@@ -36,6 +36,7 @@ export function apiTaskToTimetableTask(
     date,
     plannedStart: startParts.time || '09:00',
     plannedEnd: endParts.time || '10:00',
+    timeEstimationSeconds: task.timeEstimationSeconds,
     categoryId: task.categoryId,
     notes: task.notes ?? '',
     status: task.status ?? 'planned',

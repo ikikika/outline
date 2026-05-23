@@ -24,6 +24,7 @@ describe('mapApiTask', () => {
       date: '2026-07-22',
       plannedStart: '10:44',
       plannedEnd: '11:05',
+      timeEstimationSeconds: 870,
       categoryId: 'admin',
       status: 'planned',
     });

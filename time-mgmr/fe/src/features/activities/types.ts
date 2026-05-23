@@ -63,6 +63,8 @@ export interface ITask {
   date: string; // YYYY-MM-DD
   plannedStart: string; // HH:mm
   plannedEnd: string; // HH:mm
+  /** Expected effort used for remaining time and variance calculations. */
+  timeEstimationSeconds?: number;
   categoryId: ActivityCategoryId;
   notes: string;
   /** Optional color override for timetable blocks. */

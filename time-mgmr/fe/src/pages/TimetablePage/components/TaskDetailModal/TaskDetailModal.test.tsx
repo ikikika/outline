@@ -38,6 +38,7 @@ const task: ITask = {
   date: '2026-07-19',
   plannedStart: '09:00',
   plannedEnd: '11:00',
+  timeEstimationSeconds: 120 * 60,
   categoryId: 'deep_work',
   notes: '',
   status: 'planned',
@@ -178,6 +179,20 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByText('Elapsed')).toBeInTheDocument();
     expect(screen.getByText('Remaining')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeInTheDocument();
+  });
+
+  it('calculates remaining time from timeEstimationSeconds', async () => {
+    const user = userEvent.setup();
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        task={{ ...task, timeEstimationSeconds: 45 * 60 }}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+
+    expect(screen.getByText('45:00')).toBeInTheDocument();
   });
 
   it('exits focus mode back to the detail modal', async () => {
