@@ -37,6 +37,15 @@
       "createdAt": "2026-07-18T20:00:00.000Z",
       "updatedAt": "2026-07-18T20:00:00.000Z",
       "sortOrder": 3
+    },
+    {
+      "id": "pomodoro-breaks",
+      "title": "Pomodoro Break",
+      "categoryId": "break",
+      "notes": "Planned short and long Pomodoro breaks",
+      "createdAt": "2026-07-21T00:00:00.000Z",
+      "updatedAt": "2026-07-21T00:00:00.000Z",
+      "sortOrder": 4
     }
   ]
 }

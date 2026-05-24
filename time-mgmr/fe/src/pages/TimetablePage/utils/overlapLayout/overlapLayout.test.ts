@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   assignOverlapColumns,
+  computeColumnNextStart,
   overlapColumnStyle,
-  visualOverlapEnd,
 } from './overlapLayout';
 
 describe('assignOverlapColumns', () => {
@@ -42,37 +42,40 @@ describe('assignOverlapColumns', () => {
     expect(layout.get('c')).toEqual({ column: 0, columnCount: 1 });
   });
 
-  it('columns short abutting blocks when min height makes them visually overlap', () => {
-    const pxPerMinute = 1.2;
-    const minHeightPx = 28;
-    const aStart = 540;
-    const aDuration = 21; // shorter than min visual height (~23.3m)
-    const bStart = 561; // starts when a ends in raw time
+  it('keeps abutting blocks in a single column (sequential, not concurrent)', () => {
+    // A short break that ends exactly when the next task starts is sequential,
+    // so it must not be pushed into a second column.
     const layout = assignOverlapColumns([
-      {
-        id: 'a',
-        start: aStart,
-        end: visualOverlapEnd(aStart, aDuration, minHeightPx, pxPerMinute),
-      },
-      {
-        id: 'b',
-        start: bStart,
-        end: visualOverlapEnd(bStart, 20, minHeightPx, pxPerMinute),
-      },
+      { id: 'break', start: 588, end: 593 },
+      { id: 'task', start: 593, end: 618 },
     ]);
-    expect(layout.get('a')?.columnCount).toBe(2);
-    expect(layout.get('b')?.columnCount).toBe(2);
-    expect(layout.get('a')?.column).not.toBe(layout.get('b')?.column);
+    expect(layout.get('break')).toEqual({ column: 0, columnCount: 1 });
+    expect(layout.get('task')).toEqual({ column: 0, columnCount: 1 });
   });
 });
 
-describe('visualOverlapEnd', () => {
-  it('uses planned duration when taller than the min block height', () => {
-    expect(visualOverlapEnd(100, 60, 28, 1.2)).toBe(160);
+describe('computeColumnNextStart', () => {
+  it('returns the next block start within the same column', () => {
+    const items = [
+      { id: 'break', start: 588, end: 593 },
+      { id: 'task', start: 593, end: 618 },
+    ];
+    const layout = assignOverlapColumns(items);
+    const nextStart = computeColumnNextStart(items, layout);
+    expect(nextStart.get('break')).toBe(593);
+    expect(nextStart.get('task')).toBe(Infinity);
   });
 
-  it('extends end to the min rendered height in minutes', () => {
-    expect(visualOverlapEnd(100, 5, 28, 1.2)).toBeCloseTo(100 + 28 / 1.2);
+  it('caps only against same-column neighbors, not concurrent columns', () => {
+    const items = [
+      { id: 'a', start: 60, end: 180 },
+      { id: 'b', start: 90, end: 150 },
+    ];
+    const layout = assignOverlapColumns(items);
+    const nextStart = computeColumnNextStart(items, layout);
+    // a and b are in different columns, so neither caps the other.
+    expect(nextStart.get('a')).toBe(Infinity);
+    expect(nextStart.get('b')).toBe(Infinity);
   });
 });
 

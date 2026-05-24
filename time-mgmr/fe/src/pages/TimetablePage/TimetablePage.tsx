@@ -7,6 +7,8 @@ import {
   useActivityMutations,
   useActivityById,
   useRunningTimer,
+  useResolvedTimeZone,
+  useTaskCatalog,
   useTaskById,
   useTimeEntriesByTask,
   useTimeEntryMutations,
@@ -17,9 +19,11 @@ import {
 import { useDayReport } from '@/features/reports';
 import { ActivityForm } from './components/ActivityForm/ActivityForm';
 import { DayTimetable } from './components/DayTimetable/DayTimetable';
+import { PomodoroBreakPrompt } from './components/PomodoroBreakPrompt/PomodoroBreakPrompt';
 import { TaskDetailModal } from './components/TaskDetailModal/TaskDetailModal';
 import { TimetableHeader, type TimetableView } from './components/TimetableHeader/TimetableHeader';
 import { WeekTimetable } from './components/WeekTimetable/WeekTimetable';
+import { usePomodoroReminder } from './hooks/usePomodoroReminder/usePomodoroReminder';
 import styles from './TimetablePage.module.scss';
 
 export const TimetablePage: React.FC = () => {
@@ -36,6 +40,14 @@ export const TimetablePage: React.FC = () => {
   const { data: runningEntry = null } = useRunningTimer();
   const runningTaskQuery = useTaskById(runningEntry?.taskId ?? null);
   const runningTask = runningTaskQuery.data ?? null;
+  const timeZone = useResolvedTimeZone();
+  const taskCatalogQuery = useTaskCatalog(Boolean(runningEntry));
+  const pomodoroReminder = usePomodoroReminder({
+    runningTask,
+    runningEntry,
+    tasks: taskCatalogQuery.data ?? [],
+    timeZone,
+  });
   const { data: detailActivity = null } = useActivityById(
     detailTask?.activityId ?? null
   );
@@ -155,6 +167,24 @@ export const TimetablePage: React.FC = () => {
               Open task
             </button>
           </aside>
+        ) : null}
+        {pomodoroReminder.shouldPrompt &&
+        runningTask &&
+        runningEntry &&
+        pomodoroReminder.breakTask ? (
+          <PomodoroBreakPrompt
+            focusTitle={runningTask.title}
+            breakTitle={pomodoroReminder.breakTask.title}
+            isOpening={stopTimer.isPending}
+            onContinueWorking={pomodoroReminder.dismiss}
+            onOpenBreak={() =>
+              runAction(async () => {
+                await stopTimer.mutateAsync(runningEntry.id);
+                pomodoroReminder.dismiss();
+                openDetails(pomodoroReminder.breakTask!);
+              })
+            }
+          />
         ) : null}
         {actionError && <div className={styles.error}>{actionError}</div>}
         {loadError && (

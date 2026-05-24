@@ -68,17 +68,38 @@ export function assignOverlapColumns(
 }
 
 /**
- * End minute used for overlap packing when blocks have a min rendered height.
- * Keeps column layout in sync with what the user actually sees stacked on the track.
+ * For each block, the start minute of the next block sharing its column.
+ * Used to cap a block's rendered height so the min-height clamp never makes a
+ * short block visually overlap the sequential block that follows it.
+ * Blocks with no following column neighbor map to Infinity.
  */
-export function visualOverlapEnd(
-  start: number,
-  durationMinutes: number,
-  minHeightPx: number,
-  pxPerMinute: number
-): number {
-  const visualDuration = Math.max(durationMinutes, minHeightPx / pxPerMinute);
-  return start + visualDuration;
+export function computeColumnNextStart(
+  items: ITimeInterval[],
+  layout: Map<string, IOverlapPlacement>
+): Map<string, number> {
+  const byColumn = new Map<number, ITimeInterval[]>();
+  for (const item of items) {
+    const column = layout.get(item.id)?.column ?? 0;
+    const bucket = byColumn.get(column);
+    if (bucket) {
+      bucket.push(item);
+    } else {
+      byColumn.set(column, [item]);
+    }
+  }
+
+  const nextStart = new Map<string, number>();
+  for (const bucket of byColumn.values()) {
+    const sorted = [...bucket].sort(
+      (a, b) => a.start - b.start || a.id.localeCompare(b.id)
+    );
+    for (let i = 0; i < sorted.length; i += 1) {
+      const following = sorted[i + 1];
+      nextStart.set(sorted[i].id, following ? following.start : Infinity);
+    }
+  }
+
+  return nextStart;
 }
 
 /** CSS left/width for a placed column (percent of track, with small gutters). */

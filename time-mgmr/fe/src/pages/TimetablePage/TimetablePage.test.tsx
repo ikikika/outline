@@ -17,6 +17,20 @@ const mockActivities = [
     createdAt: '2026-07-19T00:00:00.000Z',
     updatedAt: '2026-07-19T00:00:00.000Z',
   },
+  {
+    id: 'break-1',
+    activityId: 'pomodoro-breaks',
+    title: 'Short Break',
+    date: '2026-07-19',
+    plannedStart: '11:00',
+    plannedEnd: '11:05',
+    timeEstimationSeconds: 300,
+    categoryId: 'break' as const,
+    notes: '',
+    status: 'planned' as const,
+    createdAt: '2026-07-19T00:00:00.000Z',
+    updatedAt: '2026-07-19T00:00:00.000Z',
+  },
 ];
 
 let mockRunningEntry: {
@@ -30,6 +44,8 @@ let mockRunningEntry: {
   updatedAt: string;
 } | null = null;
 const mockCompleteMutation = vi.fn();
+const mockDismissReminder = vi.fn();
+let mockShouldPrompt = false;
 const mockStopTimerMutation = vi.fn(async (entryId: string) => ({
   ...mockRunningEntry!,
   id: entryId,
@@ -63,6 +79,7 @@ vi.mock('@/features/activities', () => ({
   weekDateKeys: (date: string) => [date],
   CATEGORY_MAP: {
     deep_work: { id: 'deep_work', label: 'Deep work', color: '#7c3aed' },
+    break: { id: 'break', label: 'Break', color: '#22c55e' },
   },
   minutesToTime: (m: number) => {
     const h = Math.floor(m / 60);
@@ -83,6 +100,8 @@ vi.mock('@/features/activities', () => ({
     data: mockRunningEntry ? mockActivities[0] : undefined,
     isPending: false,
   }),
+  useResolvedTimeZone: () => 'UTC',
+  useTaskCatalog: () => ({ data: mockActivities }),
   useActivityMutations: () => ({
     update: { isPending: false, mutateAsync: vi.fn() },
     remove: { isPending: false, mutateAsync: vi.fn() },
@@ -98,6 +117,14 @@ vi.mock('@/features/activities', () => ({
     stopTimer: { isPending: false, mutateAsync: mockStopTimerMutation },
     pauseTimer: { isPending: false, mutateAsync: vi.fn() },
     addManual: { isPending: false, mutateAsync: vi.fn() },
+  }),
+}));
+
+vi.mock('./hooks/usePomodoroReminder/usePomodoroReminder', () => ({
+  usePomodoroReminder: () => ({
+    breakTask: mockShouldPrompt ? mockActivities[1] : null,
+    shouldPrompt: mockShouldPrompt,
+    dismiss: mockDismissReminder,
   }),
 }));
 
@@ -142,7 +169,9 @@ vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
 describe('TimetablePage', () => {
   beforeEach(() => {
     mockRunningEntry = null;
+    mockShouldPrompt = false;
     mockCompleteMutation.mockClear();
+    mockDismissReminder.mockClear();
     mockStopTimerMutation.mockClear();
   });
 
@@ -212,5 +241,31 @@ describe('TimetablePage', () => {
       firstStartAt: '2026-07-19T09:00:00.000Z',
       lastEndAt: '2026-07-19T10:00:00.000Z',
     });
+  });
+
+  it('stops only the focus session and opens the planned break', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    mockRunningEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+    mockShouldPrompt = true;
+    render(<TimetablePage />);
+
+    await user.click(screen.getByRole('button', { name: 'Open break' }));
+
+    expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
+    expect(mockCompleteMutation).not.toHaveBeenCalled();
+    expect(mockDismissReminder).toHaveBeenCalled();
+    expect(screen.getByTestId('task-detail-modal')).toHaveTextContent(
+      'Short Break'
+    );
   });
 });

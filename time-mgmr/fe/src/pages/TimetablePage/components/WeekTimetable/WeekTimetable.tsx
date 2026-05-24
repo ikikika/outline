@@ -10,8 +10,8 @@ import {
 } from '@/features/activities';
 import {
   assignOverlapColumns,
+  computeColumnNextStart,
   overlapColumnStyle,
-  visualOverlapEnd,
 } from '../../utils/overlapLayout/overlapLayout';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './WeekTimetable.module.scss';
@@ -19,7 +19,8 @@ import styles from './WeekTimetable.module.scss';
 const DAY_START_HOUR = 0;
 const DAY_END_HOUR = 24;
 const PX_PER_MINUTE = 1.2;
-const MIN_BLOCK_HEIGHT_PX = 22;
+const MIN_BLOCK_HEIGHT_PX = 14;
+const COMPACT_BLOCK_HEIGHT_PX = 28;
 const SNAP_MINUTES = 15;
 /** Ignore pointer jitter below this before treating a gesture as a drag. */
 const DRAG_THRESHOLD_PX = 8;
@@ -123,8 +124,9 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     return map;
   }, [activities, days, dayStartMinutes, dayEndMinutes]);
 
-  const layoutsByDate = useMemo(() => {
+  const { layoutsByDate, nextStartByDate } = useMemo(() => {
     const layouts = new Map<string, ReturnType<typeof assignOverlapColumns>>();
+    const nextStarts = new Map<string, Map<string, number>>();
     for (const day of days) {
       const dayActivities = activitiesByDate.get(day) ?? [];
       const intervals = dayActivities.map((activity) => {
@@ -133,15 +135,13 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
           isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
         const end =
           isDragging && drag ? drag.previewEnd : timeToMinutes(activity.plannedEnd);
-        return {
-          id: activity.id,
-          start,
-          end: visualOverlapEnd(start, end - start, MIN_BLOCK_HEIGHT_PX, PX_PER_MINUTE),
-        };
+        return { id: activity.id, start, end };
       });
-      layouts.set(day, assignOverlapColumns(intervals));
+      const layout = assignOverlapColumns(intervals);
+      layouts.set(day, layout);
+      nextStarts.set(day, computeColumnNextStart(intervals, layout));
     }
-    return layouts;
+    return { layoutsByDate: layouts, nextStartByDate: nextStarts };
   }, [days, activitiesByDate, drag]);
 
   const earliestBlockTop = useMemo(() => {
@@ -377,6 +377,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
           {days.map((day) => {
             const dayActivities = activitiesByDate.get(day) ?? [];
             const layout = layoutsByDate.get(day);
+            const columnNextStart = nextStartByDate.get(day);
             const isTodayColumn = day === today;
 
             return (
@@ -419,7 +420,13 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                         sourceTrack.getBoundingClientRect().left
                       : 0;
                   const top = (start - dayStartMinutes) * PX_PER_MINUTE;
-                  const height = Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX);
+                  const nextStart = columnNextStart?.get(activity.id) ?? Infinity;
+                  const gapToNextPx = (nextStart - start) * PX_PER_MINUTE;
+                  const height = Math.min(
+                    Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX),
+                    gapToNextPx
+                  );
+                  const isCompact = height < COMPACT_BLOCK_HEIGHT_PX;
                   const placement = layout?.get(activity.id) ?? { column: 0, columnCount: 1 };
                   const { left, width } = overlapColumnStyle(placement, 2);
 
@@ -428,7 +435,9 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                       key={activity.id}
                       className={`${styles.block} ${
                         activity.status === 'done' ? styles.blockLocked : ''
-                      } ${isDragging ? styles.blockDragging : ''}`}
+                      } ${isCompact ? styles.blockCompact : ''} ${
+                        isDragging ? styles.blockDragging : ''
+                      }`}
                       style={{
                         top,
                         height,
@@ -457,7 +466,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                         }
                       }}
                     >
-                      {activity.status !== 'done' ? (
+                      {!isCompact && activity.status !== 'done' ? (
                         <div
                           className={`${styles.resizeHandle} ${styles.resizeHandleTop}`}
                           aria-label={`Change start time for ${activity.title}`}
@@ -468,7 +477,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                       <p className={styles.blockMeta}>
                         {minutesToTime(start)}–{minutesToTime(end)}
                       </p>
-                      {activity.status !== 'done' ? (
+                      {!isCompact && activity.status !== 'done' ? (
                         <div
                           className={`${styles.resizeHandle} ${styles.resizeHandleBottom}`}
                           aria-label={`Change end time for ${activity.title}`}

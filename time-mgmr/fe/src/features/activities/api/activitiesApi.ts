@@ -70,6 +70,15 @@ export async function fetchCatalogTasks(): Promise<IApiTask[]> {
   return getJsonAuth<IApiTask[]>(TASKS_BASE_URL);
 }
 
+export async function fetchTimetableTaskCatalog(
+  timeZone: string
+): Promise<ITask[]> {
+  const tasks = await fetchCatalogTasks();
+  return tasks.map((task) =>
+    apiTaskToTimetableTask(task, task.plannedStart.slice(0, 10), timeZone)
+  );
+}
+
 export async function fetchTasksByActivityId(
   activityId: string
 ): Promise<IApiTask[]> {

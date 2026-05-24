@@ -9,8 +9,8 @@ import {
 } from '@/features/activities';
 import {
   assignOverlapColumns,
+  computeColumnNextStart,
   overlapColumnStyle,
-  visualOverlapEnd,
 } from '../../utils/overlapLayout/overlapLayout';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './DayTimetable.module.scss';
@@ -18,7 +18,8 @@ import styles from './DayTimetable.module.scss';
 const DAY_START_HOUR = 0;
 const DAY_END_HOUR = 24;
 const PX_PER_MINUTE = 1.2;
-const MIN_BLOCK_HEIGHT_PX = 28;
+const MIN_BLOCK_HEIGHT_PX = 16;
+const COMPACT_BLOCK_HEIGHT_PX = 28;
 const SNAP_MINUTES = 15;
 /** Ignore pointer jitter below this before treating a gesture as a drag. */
 const DRAG_THRESHOLD_PX = 8;
@@ -140,20 +141,20 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     return () => window.cancelAnimationFrame(frame);
   }, [date, isToday, showNowLine, nowTop, earliestBlockTop]);
 
-  const overlapLayout = useMemo(() => {
+  const { overlapLayout, columnNextStart } = useMemo(() => {
     const intervals = visibleActivities.map((activity) => {
       const isDragging = drag?.id === activity.id;
       const start =
         isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
       const end =
         isDragging && drag ? drag.previewEnd : timeToMinutes(activity.plannedEnd);
-      return {
-        id: activity.id,
-        start,
-        end: visualOverlapEnd(start, end - start, MIN_BLOCK_HEIGHT_PX, PX_PER_MINUTE),
-      };
+      return { id: activity.id, start, end };
     });
-    return assignOverlapColumns(intervals);
+    const layout = assignOverlapColumns(intervals);
+    return {
+      overlapLayout: layout,
+      columnNextStart: computeColumnNextStart(intervals, layout),
+    };
   }, [visibleActivities, drag]);
 
   const clientYToStartMinutes = useCallback(
@@ -327,7 +328,13 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
               const start = isDragging && drag ? drag.previewStart : baseStart;
               const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
               const top = (start - dayStartMinutes) * PX_PER_MINUTE;
-              const height = Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX);
+              const nextStart = columnNextStart.get(activity.id) ?? Infinity;
+              const gapToNextPx = (nextStart - start) * PX_PER_MINUTE;
+              const height = Math.min(
+                Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX),
+                gapToNextPx
+              );
+              const isCompact = height < COMPACT_BLOCK_HEIGHT_PX;
               const placement = overlapLayout.get(activity.id) ?? {
                 column: 0,
                 columnCount: 1,
@@ -339,7 +346,9 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                   key={activity.id}
                   className={`${styles.block} ${
                     activity.status === 'done' ? styles.blockLocked : ''
-                  } ${isDragging ? styles.blockDragging : ''}`}
+                  } ${isCompact ? styles.blockCompact : ''} ${
+                    isDragging ? styles.blockDragging : ''
+                  }`}
                   style={{
                     top,
                     height,
@@ -367,7 +376,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                     }
                   }}
                 >
-                  {activity.status !== 'done' ? (
+                  {!isCompact && activity.status !== 'done' ? (
                     <div
                       className={`${styles.resizeHandle} ${styles.resizeHandleTop}`}
                       aria-label={`Change start time for ${activity.title}`}
@@ -378,7 +387,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                   <p className={styles.blockMeta}>
                     {minutesToTime(start)}–{minutesToTime(end)}
                   </p>
-                  {activity.status !== 'done' ? (
+                  {!isCompact && activity.status !== 'done' ? (
                     <div
                       className={`${styles.resizeHandle} ${styles.resizeHandleBottom}`}
                       aria-label={`Change end time for ${activity.title}`}

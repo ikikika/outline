@@ -91,6 +91,21 @@
   cursor: grabbing;
 }
 
+.blockCompact {
+  display: flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+}
+
+.blockCompact .blockTitle {
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+.blockCompact .blockMeta {
+  display: none;
+}
+
 .blockLocked,
 .blockLocked:active {
   cursor: pointer;

@@ -10,6 +10,7 @@ import {
   createTaskApi,
   fetchActivityById,
   fetchTaskById,
+  fetchTimetableTaskCatalog,
   fetchTasksByDate,
   fetchTasksByDateRange,
   patchTaskApi,
@@ -38,7 +39,7 @@ function findTaskInCache(
   return undefined;
 }
 
-function useResolvedTimeZone(): string {
+export function useResolvedTimeZone(): string {
   const { user } = useAuthContext();
   return user?.timeZone ?? getBrowserTimeZone();
 }
@@ -85,6 +86,15 @@ export function useActivityById(activityId: string | null) {
     queryKey: ['activity-catalog', 'id', activityId ?? ''],
     queryFn: () => fetchActivityById(activityId!),
     enabled: Boolean(activityId),
+  });
+}
+
+export function useTaskCatalog(enabled = true) {
+  const timeZone = useResolvedTimeZone();
+  return useQuery({
+    queryKey: [...ACTIVITY_QUERY_KEYS.catalog, timeZone],
+    queryFn: () => fetchTimetableTaskCatalog(timeZone),
+    enabled,
   });
 }
 

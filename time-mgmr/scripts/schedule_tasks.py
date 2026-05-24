@@ -25,6 +25,7 @@ from typing import Any
 FOCUS_TARGET_SECONDS = 25 * 60
 SHORT_BREAK_SECONDS = 5 * 60
 LONG_BREAK_SECONDS = 15 * 60
+POMODORO_BREAK_ACTIVITY_ID = "pomodoro-breaks"
 
 DAY_START = (9, 0)
 LUNCH_START = (12, 0)
@@ -203,25 +204,39 @@ class Scheduler:
             else:
                 self.pending_break = SHORT_BREAK_SECONDS
 
-    def place(self, duration: int) -> tuple[datetime, datetime]:
+    def _place_pending_break(self) -> tuple[datetime, datetime] | None:
+        if self.pending_break <= 0:
+            return None
+
+        break_start = self.cursor
+        break_end = break_start + timedelta(seconds=self.pending_break)
+        self.pending_break = 0
+
+        # Lunch/end-of-day already provides a longer natural break.
+        lunch_start = at_time(break_start.date(), LUNCH_START)
+        lunch_end = at_time(break_start.date(), LUNCH_END)
+        if lunch_start <= break_start < lunch_end:
+            return None
+        if break_end > slot_end(break_start):
+            return None
+
+        self.cursor = break_end
+        return break_start, break_end
+
+    def place(
+        self, duration: int
+    ) -> tuple[datetime, datetime, tuple[datetime, datetime] | None]:
         """Place a contiguous segment that must fit inside one work window."""
         while True:
             self._normalize_cursor()
 
-            candidate_start = self.cursor + timedelta(seconds=self.pending_break)
-            probe = candidate_start
+            probe = self.cursor
             d = self.cursor.date()
             lunch_start = at_time(d, LUNCH_START)
             day_end = at_time(d, DAY_END)
 
             if lunch_start <= probe < at_time(d, LUNCH_END) or probe >= day_end:
                 self.cursor = probe
-                self._move_to_next_window()
-                continue
-
-            # Break must not cross lunch boundary
-            if self.cursor < lunch_start <= probe:
-                self.cursor = lunch_start
                 self._move_to_next_window()
                 continue
 
@@ -233,7 +248,7 @@ class Scheduler:
                 self.cursor = end
                 self.pending_break = 0
                 self._complete_focus_if_needed(duration)
-                return start, end
+                return start, end, self._place_pending_break()
 
             # Does not fit in remaining window — move on, drop pending break
             self.cursor = window_limit
@@ -243,6 +258,23 @@ class Scheduler:
 def estimation_for_chunk(chunk_seconds: int) -> int:
     """Inverse of duration = round_half_up(est * 1.5)."""
     return round_half_up(chunk_seconds / 1.5)
+
+
+def make_break_task(placement: tuple[datetime, datetime]) -> dict[str, Any]:
+    start, end = placement
+    duration = int((end - start).total_seconds())
+    title = "Long Break" if duration == LONG_BREAK_SECONDS else "Short Break"
+    timestamp_id = start.strftime("%Y%m%dT%H%M%S")
+    return {
+        "id": f"pomodoro-break-{timestamp_id}",
+        "activityId": POMODORO_BREAK_ACTIVITY_ID,
+        "title": title,
+        "plannedStart": format_iso(start),
+        "plannedEnd": format_iso(end),
+        "timeEstimationSeconds": duration,
+        "status": "planned",
+        "sortOrder": int(start.timestamp()),
+    }
 
 
 def schedule_task(
@@ -263,28 +295,33 @@ def schedule_task(
 
     # Normal lectures: never interrupt (may push the focus block past 25 min)
     if not should_split:
-        start, end = scheduler.place(duration)
+        start, end, break_placement = scheduler.place(duration)
         updated = dict(task)
         updated["id"] = task_id
         updated["title"] = title
         updated["plannedStart"] = format_iso(start)
         updated["plannedEnd"] = format_iso(end)
         updated["timeEstimationSeconds"] = est
-        return [updated]
+        scheduled = [updated]
+        if break_placement:
+            scheduled.append(make_break_task(break_placement))
+        return scheduled
 
     # Split long / oversized lectures at focus-block boundaries
     remaining = duration
     chunk_sizes: list[int] = []
-    placements: list[tuple[datetime, datetime]] = []
+    placements: list[
+        tuple[datetime, datetime, tuple[datetime, datetime] | None]
+    ] = []
 
     while remaining > 0:
         room = FOCUS_TARGET_SECONDS - scheduler.focus_accumulated
         if room <= 0:
             room = FOCUS_TARGET_SECONDS
         chunk = min(remaining, room)
-        start, end = scheduler.place(chunk)
+        start, end, break_placement = scheduler.place(chunk)
         chunk_sizes.append(chunk)
-        placements.append((start, end))
+        placements.append((start, end, break_placement))
         remaining -= chunk
 
     total_parts = len(placements)
@@ -300,7 +337,9 @@ def schedule_task(
             allocated += part_est
 
     parts: list[dict[str, Any]] = []
-    for i, ((start, end), part_est) in enumerate(zip(placements, estimations), start=1):
+    for i, ((start, end, break_placement), part_est) in enumerate(
+        zip(placements, estimations), start=1
+    ):
         part = dict(task)
         part["id"] = f"{task_id}-p{i}"
         part["title"] = f"{title} ({i}/{total_parts})"
@@ -308,6 +347,8 @@ def schedule_task(
         part["plannedEnd"] = format_iso(end)
         part["timeEstimationSeconds"] = part_est
         parts.append(part)
+        if break_placement:
+            parts.append(make_break_task(break_placement))
     return parts
 
 
@@ -318,7 +359,12 @@ def schedule_tasks(
 ) -> list[dict[str, Any]]:
     scheduler = Scheduler(start_date)
     scheduled: list[dict[str, Any]] = []
-    for task in collapse_split_tasks(tasks):
+    focus_tasks = [
+        task
+        for task in tasks
+        if str(task.get("activityId") or "") != POMODORO_BREAK_ACTIVITY_ID
+    ]
+    for task in collapse_split_tasks(focus_tasks):
         scheduled.extend(schedule_task(scheduler, task))
     return scheduled
 
@@ -353,16 +399,21 @@ def main() -> None:
     start_date = date.fromisoformat(args.start_date)
 
     payload = json.loads(input_path.read_text(encoding="utf-8"))
-    tasks = payload.get("tasks")
+    tasks = payload if isinstance(payload, list) else payload.get("tasks")
     if not isinstance(tasks, list):
-        raise SystemExit("tasks.json must contain a top-level 'tasks' array")
+        raise SystemExit("tasks.json must be an array or contain a top-level 'tasks' array")
 
     scheduled = schedule_tasks(tasks, start_date=start_date)
-    payload["tasks"] = scheduled
-    payload["exportedAt"] = format_iso(datetime.now(timezone.utc))
+    output_payload: Any
+    if isinstance(payload, list):
+        output_payload = scheduled
+    else:
+        payload["tasks"] = scheduled
+        payload["exportedAt"] = format_iso(datetime.now(timezone.utc))
+        output_payload = payload
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(output_payload, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 
