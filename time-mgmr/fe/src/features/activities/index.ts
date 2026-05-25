@@ -83,6 +83,15 @@ export {
   useSaveDayAsTemplate,
 } from './hooks/useActivities';
 
+export {
+  useActivityCatalog,
+  useReorderActivities,
+  useReorderTasks,
+  type IActivityWithTasks,
+} from './hooks/useActivityCatalog';
+
+export { sortBySortOrder } from './utils/sortBySortOrder/sortBySortOrder';
+
 export { useJsonBackup } from './hooks/useJsonBackup';
 
 export {

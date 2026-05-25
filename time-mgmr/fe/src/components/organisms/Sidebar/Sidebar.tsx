@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, ChartColumn, LogOut, PanelLeftClose, UserRound } from 'lucide-react';
+import { CalendarDays, ChartColumn, ListOrdered, LogOut, PanelLeftClose, UserRound } from 'lucide-react';
 import { ROUTES } from '@/app/routes/routes';
 import { APP_NAME } from '@/core/constants/app';
 import { NavItem } from '@/components/atoms/NavItem/NavItem';
@@ -27,6 +27,7 @@ export const Sidebar: React.FC = () => {
 
       <nav className="sidebar__nav" aria-label="Main navigation" onClick={isMobile ? close : undefined}>
         <NavItem label="Timetable" path={ROUTES.TIMETABLE} icon={<CalendarDays size={18} />} />
+        <NavItem label="Activities" path={ROUTES.ACTIVITIES} icon={<ListOrdered size={18} />} />
         <NavItem label="Report" path={ROUTES.REPORT} icon={<ChartColumn size={18} />} />
         <NavItem label="Profile" path={ROUTES.PROFILE} icon={<UserRound size={18} />} />
       </nav>

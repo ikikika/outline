@@ -21,6 +21,9 @@ const LoginPage = lazy(() =>
 const TimetablePage = lazy(() =>
   import('@/pages/TimetablePage/TimetablePage').then((m) => ({ default: m.TimetablePage }))
 );
+const ActivitiesPage = lazy(() =>
+  import('@/pages/ActivitiesPage/ActivitiesPage').then((m) => ({ default: m.ActivitiesPage }))
+);
 const ReportPage = lazy(() =>
   import('@/pages/ReportPage/ReportPage').then((m) => ({ default: m.ReportPage }))
 );
@@ -53,6 +56,14 @@ const router = createBrowserRouter([
       {
         path: '/today',
         element: <Navigate to={ROUTES.TIMETABLE} replace />,
+      },
+      {
+        path: ROUTES.ACTIVITIES,
+        element: (
+          <Suspense fallback={<Loading />}>
+            <ActivitiesPage />
+          </Suspense>
+        ),
       },
       {
         path: ROUTES.REPORT,

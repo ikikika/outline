@@ -17,6 +17,7 @@ export const CATEGORY_MAP: Record<ActivityCategoryId, IActivityCategory> =
 export const ACTIVITY_QUERY_KEYS = {
   all: ['activities'] as const,
   catalog: ['activities', 'catalog'] as const,
+  catalogList: ['activities', 'catalog-list'] as const,
   byDate: (date: string) => ['activities', 'date', date] as const,
   byRange: (from: string, to: string) => ['activities', 'range', from, to] as const,
   one: (id: string) => ['activities', 'id', id] as const,
