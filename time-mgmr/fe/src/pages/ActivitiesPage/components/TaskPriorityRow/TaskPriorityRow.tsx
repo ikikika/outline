@@ -21,6 +21,8 @@ function formatEstimation(seconds?: number): string | null {
 
 function statusLabel(status: string): string {
   switch (status) {
+    case 'unplanned':
+      return 'Unplanned';
     case 'in_progress':
       return 'In progress';
     case 'done':

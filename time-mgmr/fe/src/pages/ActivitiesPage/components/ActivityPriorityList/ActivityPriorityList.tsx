@@ -14,7 +14,10 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable';
-import type { IActivityWithTasks } from '@/features/activities';
+import type {
+  ICatalogTaskCreateInput,
+  IActivityWithTasks,
+} from '@/features/activities';
 import { ActivityPriorityRow } from '../ActivityPriorityRow/ActivityPriorityRow';
 
 interface ActivityPriorityListProps {
@@ -22,6 +25,10 @@ interface ActivityPriorityListProps {
   disabled?: boolean;
   onReorderActivities: (orderedIds: string[]) => void;
   onReorderTasks: (activityId: string, orderedTaskIds: string[]) => void;
+  onAddTask: (
+    activity: IActivityWithTasks,
+    input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
+  ) => Promise<void>;
 }
 
 export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
@@ -29,6 +36,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
   disabled = false,
   onReorderActivities,
   onReorderTasks,
+  onAddTask,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -113,6 +121,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
             expanded={expandedIds.has(activity.id)}
             onToggle={() => toggleExpand(activity.id)}
             disabled={disabled}
+            onAddTask={(input) => onAddTask(activity, input)}
           />
         ))}
       </SortableContext>

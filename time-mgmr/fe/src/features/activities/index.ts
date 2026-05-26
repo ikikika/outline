@@ -39,12 +39,16 @@ export {
   fetchTaskById,
   fetchTasksByDate,
   fetchTasksByDateRange,
+  createActivityApi,
+  createCatalogTaskApi,
   createTaskApi,
   updateTaskApi,
   patchActivityApi,
   patchTaskApi,
   isActivitiesApiEnabled,
   type IActivityPatch,
+  type IActivityCreateInput,
+  type ICatalogTaskCreateInput,
   type ITaskPatch,
   type ITimetableTaskPatch,
 } from './api/activitiesApi';
@@ -85,6 +89,8 @@ export {
 
 export {
   useActivityCatalog,
+  useCreateActivity,
+  useCreateCatalogTask,
   useReorderActivities,
   useReorderTasks,
   type IActivityWithTasks,

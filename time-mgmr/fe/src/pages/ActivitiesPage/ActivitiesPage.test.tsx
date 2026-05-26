@@ -21,7 +21,7 @@ const mockActivities = [
         plannedEnd: '2026-07-21T01:25:00.000Z',
         categoryId: 'deep_work' as const,
         notes: '',
-        status: 'planned' as const,
+        status: 'unplanned' as const,
         sortOrder: 0,
       },
       {
@@ -51,6 +51,16 @@ const mockActivities = [
 
 const mockReorderActivities = { mutate: vi.fn(), isPending: false, error: null };
 const mockReorderTasks = { mutate: vi.fn(), isPending: false, error: null };
+const mockCreateActivity = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  isPending: false,
+  error: null,
+};
+const mockCreateTask = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  isPending: false,
+  error: null,
+};
 
 vi.mock('@/layouts', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => (
@@ -64,8 +74,17 @@ vi.mock('@/features/activities', () => ({
     isLoading: false,
     error: null,
   }),
+  useCreateActivity: () => mockCreateActivity,
+  useCreateCatalogTask: () => mockCreateTask,
   useReorderActivities: () => mockReorderActivities,
   useReorderTasks: () => mockReorderTasks,
+  ACTIVITY_CATEGORIES: [
+    { id: 'work', label: 'Work', color: '#2563eb' },
+    { id: 'deep_work', label: 'Deep work', color: '#7c3aed' },
+    { id: 'admin', label: 'Admin', color: '#64748b' },
+    { id: 'personal', label: 'Personal', color: '#059669' },
+    { id: 'break', label: 'Break', color: '#d97706' },
+  ],
   CATEGORY_MAP: {
     deep_work: { id: 'deep_work', label: 'Deep work', color: '#7c3aed' },
     admin: { id: 'admin', label: 'Admin', color: '#64748b' },
@@ -77,6 +96,8 @@ describe('ActivitiesPage', () => {
   beforeEach(() => {
     mockReorderActivities.mutate.mockClear();
     mockReorderTasks.mutate.mockClear();
+    mockCreateActivity.mutateAsync.mockClear();
+    mockCreateTask.mutateAsync.mockClear();
   });
 
   it('renders activity rows sorted by priority', () => {
@@ -98,6 +119,7 @@ describe('ActivitiesPage', () => {
 
     expect(screen.getByText('Lesson 1')).toBeInTheDocument();
     expect(screen.getByText('Lesson 2')).toBeInTheDocument();
+    expect(screen.getByText('Unplanned')).toBeInTheDocument();
     expect(screen.getByText('In progress')).toBeInTheDocument();
   });
 
@@ -119,6 +141,40 @@ describe('ActivitiesPage', () => {
     render(<ActivitiesPage />);
 
     await user.click(screen.getByText('Admin Tasks'));
-    expect(screen.getByText('No tasks')).toBeInTheDocument();
+    expect(screen.getByText('No tasks yet')).toBeInTheDocument();
+  });
+
+  it('adds a new activity', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.type(screen.getByLabelText('Activity title'), 'Exercise');
+    await user.selectOptions(screen.getByLabelText('Category'), 'personal');
+    await user.click(screen.getByRole('button', { name: 'Add activity' }));
+
+    expect(mockCreateActivity.mutateAsync).toHaveBeenCalledWith({
+      title: 'Exercise',
+      categoryId: 'personal',
+    });
+  });
+
+  it('adds a task to an expanded activity', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(screen.getByText('Admin Tasks'));
+    await user.type(screen.getByLabelText('Task title'), 'Review inbox');
+    await user.clear(screen.getByLabelText('Minutes'));
+    await user.type(screen.getByLabelText('Minutes'), '15');
+    await user.click(screen.getByRole('button', { name: 'Add task' }));
+
+    expect(mockCreateTask.mutateAsync).toHaveBeenCalledWith({
+      activityId: 'act-2',
+      title: 'Review inbox',
+      categoryId: 'admin',
+      timeEstimationSeconds: 900,
+    });
   });
 });

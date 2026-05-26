@@ -5,16 +5,95 @@ vi.mock('@/core/constants/app', () => ({
 }));
 
 const patchJsonAuth = vi.fn();
+const postJsonAuth = vi.fn();
+const getJsonAuth = vi.fn();
 
 vi.mock('@/services/httpClient', () => ({
-  getJsonAuth: vi.fn(),
-  postJsonAuth: vi.fn(),
+  getJsonAuth: (...args: unknown[]) => getJsonAuth(...args),
+  postJsonAuth: (...args: unknown[]) => postJsonAuth(...args),
   patchJsonAuth: (...args: unknown[]) => patchJsonAuth(...args),
 }));
 
-describe('updateTaskApi', () => {
+describe('activitiesApi', () => {
   beforeEach(() => {
     patchJsonAuth.mockReset();
+    postJsonAuth.mockReset();
+    getJsonAuth.mockReset();
+  });
+
+  it('POSTs a new catalog activity', async () => {
+    postJsonAuth.mockResolvedValue({ id: 'activity-1' });
+    const { createActivityApi } = await import('./activitiesApi');
+
+    await createActivityApi({
+      title: ' Exercise ',
+      categoryId: 'personal',
+    });
+
+    expect(postJsonAuth).toHaveBeenCalledWith(
+      'http://api.test/api/activities',
+      {
+        title: 'Exercise',
+        categoryId: 'personal',
+        notes: '',
+      }
+    );
+  });
+
+  it('POSTs a catalog task with its estimated duration', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-21T10:00:00.000Z'));
+    postJsonAuth.mockResolvedValue({ id: 'task-1' });
+    const { createCatalogTaskApi } = await import('./activitiesApi');
+
+    await createCatalogTaskApi({
+      activityId: 'activity-1',
+      title: ' Lesson 1 ',
+      categoryId: 'deep_work',
+      timeEstimationSeconds: 900,
+    });
+
+    expect(postJsonAuth).toHaveBeenCalledWith('http://api.test/api/tasks', {
+      activityId: 'activity-1',
+      title: 'Lesson 1',
+      plannedStart: '2026-07-21T10:00:00.000Z',
+      plannedEnd: '2026-07-21T10:15:00.000Z',
+      timeEstimationSeconds: 900,
+      categoryId: 'deep_work',
+      notes: '',
+      status: 'unplanned',
+    });
+    vi.useRealTimers();
+  });
+
+  it('excludes unplanned tasks from calendar date results', async () => {
+    getJsonAuth.mockResolvedValue([
+      {
+        id: 'unplanned-task',
+        activityId: 'activity-1',
+        title: 'Backlog task',
+        plannedStart: '2026-07-21T10:00:00.000Z',
+        plannedEnd: '2026-07-21T10:15:00.000Z',
+        categoryId: 'work',
+        notes: '',
+        status: 'unplanned',
+      },
+      {
+        id: 'planned-task',
+        activityId: 'activity-1',
+        title: 'Calendar task',
+        plannedStart: '2026-07-21T11:00:00.000Z',
+        plannedEnd: '2026-07-21T11:15:00.000Z',
+        categoryId: 'work',
+        notes: '',
+        status: 'planned',
+      },
+    ]);
+    const { fetchTasksByDate } = await import('./activitiesApi');
+
+    const tasks = await fetchTasksByDate('2026-07-21', 'UTC');
+
+    expect(tasks.map((task) => task.id)).toEqual(['planned-task']);
   });
 
   it('converts HH:mm reschedule times to UTC ISO and PATCHes the task', async () => {

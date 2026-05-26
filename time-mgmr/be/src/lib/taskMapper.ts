@@ -18,7 +18,13 @@ const TASK_CATEGORY_IDS = new Set<string>([
 	'break',
 ]);
 
-const TASK_STATUSES = new Set<string>(['planned', 'in_progress', 'done', 'skipped']);
+const TASK_STATUSES = new Set<string>([
+	'unplanned',
+	'planned',
+	'in_progress',
+	'done',
+	'skipped',
+]);
 
 function parseOptionalSortOrder(
 	value: unknown
@@ -79,7 +85,9 @@ export function parseTaskCreateInput(body: unknown): ITaskCreateInput | { error:
 		return { error: 'notes must be a string when provided' };
 	}
 	if (status !== undefined && (typeof status !== 'string' || !TASK_STATUSES.has(status))) {
-		return { error: 'status must be planned | in_progress | done | skipped' };
+		return {
+			error: 'status must be unplanned | planned | in_progress | done | skipped',
+		};
 	}
 	if (
 		timeEstimationSeconds !== undefined &&
@@ -151,7 +159,9 @@ export function parseTaskPatchInput(body: unknown): ITaskPatchInput | { error: s
 	}
 	if (input.status !== undefined) {
 		if (typeof input.status !== 'string' || !TASK_STATUSES.has(input.status)) {
-			return { error: 'status must be planned | in_progress | done | skipped' };
+			return {
+				error: 'status must be unplanned | planned | in_progress | done | skipped',
+			};
 		}
 		patch.status = input.status as TaskStatus;
 	}

@@ -1,10 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACTIVITY_QUERY_KEYS } from '../constants';
 import {
+  createActivityApi,
+  createCatalogTaskApi,
   fetchActivities,
   fetchCatalogTasks,
   patchActivityApi,
   patchTaskApi,
+  type IActivityCreateInput,
+  type ICatalogTaskCreateInput,
 } from '../api/activitiesApi';
 import type { IActivity } from '../types';
 import type { IApiTask } from '../api/mapApiTask';
@@ -43,6 +47,31 @@ export function useActivityCatalog() {
           tasks: (tasksByActivity.get(activity.id) ?? []).sort(sortBySortOrder),
         }));
     },
+  });
+}
+
+export function useCreateActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: IActivityCreateInput) => createActivityApi(input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.catalogList,
+      }),
+  });
+}
+
+export function useCreateCatalogTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ICatalogTaskCreateInput) =>
+      createCatalogTaskApi(input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.catalogList,
+      }),
   });
 }
 

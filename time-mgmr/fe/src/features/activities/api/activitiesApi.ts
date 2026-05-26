@@ -4,7 +4,12 @@ import {
   localDayToUtcRange,
 } from '@/core/utils/timeZone/timeZone';
 import { getJsonAuth, patchJsonAuth, postJsonAuth } from '@/services/httpClient';
-import type { IActivity, ITask } from '../types';
+import type {
+  ActivityCategoryId,
+  IActivity,
+  ITask,
+  TaskStatus,
+} from '../types';
 import {
   apiTaskToTimetableTask,
   timetableTimesToIso,
@@ -33,6 +38,21 @@ export type ITaskPatch = Partial<
   >
 >;
 
+export interface IActivityCreateInput {
+  title: string;
+  categoryId: ActivityCategoryId;
+  notes?: string;
+}
+
+export interface ICatalogTaskCreateInput {
+  activityId: string;
+  title: string;
+  categoryId: ActivityCategoryId;
+  timeEstimationSeconds?: number;
+  notes?: string;
+  status?: TaskStatus;
+}
+
 export function isActivitiesApiEnabled(): boolean {
   return Boolean(API_BASE_URL);
 }
@@ -55,6 +75,17 @@ export async function fetchActivityById(id: string): Promise<IActivity> {
   return getJsonAuth<IActivity>(
     `${ACTIVITIES_BASE_URL}/${encodeURIComponent(id)}`
   );
+}
+
+export async function createActivityApi(
+  input: IActivityCreateInput
+): Promise<IActivity> {
+  requireApiBaseUrl();
+  return postJsonAuth<IActivity>(ACTIVITIES_BASE_URL, {
+    title: input.title.trim(),
+    categoryId: input.categoryId,
+    notes: input.notes ?? '',
+  });
 }
 
 export async function patchActivityApi(
@@ -85,6 +116,26 @@ export async function fetchTasksByActivityId(
   requireApiBaseUrl();
   const url = `${TASKS_BASE_URL}?activityId=${encodeURIComponent(activityId)}`;
   return getJsonAuth<IApiTask[]>(url);
+}
+
+export async function createCatalogTaskApi(
+  input: ICatalogTaskCreateInput
+): Promise<IApiTask> {
+  requireApiBaseUrl();
+  const plannedStart = new Date();
+  const durationSeconds = input.timeEstimationSeconds ?? 25 * 60;
+  const plannedEnd = new Date(plannedStart.getTime() + durationSeconds * 1000);
+
+  return postJsonAuth<IApiTask>(TASKS_BASE_URL, {
+    activityId: input.activityId,
+    title: input.title.trim(),
+    plannedStart: plannedStart.toISOString(),
+    plannedEnd: plannedEnd.toISOString(),
+    timeEstimationSeconds: durationSeconds,
+    categoryId: input.categoryId,
+    notes: input.notes ?? '',
+    status: input.status ?? 'unplanned',
+  });
 }
 
 export async function fetchTaskById(
@@ -121,7 +172,9 @@ export async function fetchTasksByDate(
   const { from, to } = localDayToUtcRange(date, timeZone);
   const url = `${TASKS_BASE_URL}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
   const tasks = await getJsonAuth<IApiTask[]>(url);
-  return tasks.map((task) => apiTaskToTimetableTask(task, date, timeZone));
+  return tasks
+    .filter((task) => task.status !== 'unplanned')
+    .map((task) => apiTaskToTimetableTask(task, date, timeZone));
 }
 
 export async function fetchTasksByDateRange(
@@ -133,9 +186,9 @@ export async function fetchTasksByDateRange(
   const { from, to } = localDateRangeToUtcRange(fromDate, toDate, timeZone);
   const url = `${TASKS_BASE_URL}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
   const tasks = await getJsonAuth<IApiTask[]>(url);
-  return tasks.map((task) =>
-    apiTaskToTimetableTask(task, fromDate, timeZone)
-  );
+  return tasks
+    .filter((task) => task.status !== 'unplanned')
+    .map((task) => apiTaskToTimetableTask(task, fromDate, timeZone));
 }
 
 export async function createTaskApi(

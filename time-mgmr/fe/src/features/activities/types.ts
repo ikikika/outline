@@ -4,7 +4,12 @@
  * - Task = scheduled timetable block derived from an activity
  */
 
-export type TaskStatus = 'planned' | 'in_progress' | 'done' | 'skipped';
+export type TaskStatus =
+  | 'unplanned'
+  | 'planned'
+  | 'in_progress'
+  | 'done'
+  | 'skipped';
 
 /** @deprecated Use TaskStatus */
 export type ActivityStatus = TaskStatus;

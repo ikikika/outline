@@ -2,7 +2,12 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronRight, GripVertical } from 'lucide-react';
-import { CATEGORY_MAP, type IActivityWithTasks } from '@/features/activities';
+import {
+  CATEGORY_MAP,
+  type ICatalogTaskCreateInput,
+  type IActivityWithTasks,
+} from '@/features/activities';
+import { AddTaskForm } from '../AddTaskForm/AddTaskForm';
 import { TaskPriorityList } from '../TaskPriorityList/TaskPriorityList';
 import styles from '../../ActivitiesPage.module.scss';
 
@@ -10,6 +15,9 @@ interface ActivityPriorityRowProps {
   activity: IActivityWithTasks;
   expanded: boolean;
   onToggle: () => void;
+  onAddTask: (
+    input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
+  ) => Promise<void>;
   disabled?: boolean;
 }
 
@@ -17,6 +25,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   activity,
   expanded,
   onToggle,
+  onAddTask,
   disabled = false,
 }) => {
   const {
@@ -94,8 +103,13 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
           {taskCount > 0 ? (
             <TaskPriorityList tasks={activity.tasks} disabled={disabled} />
           ) : (
-            <p className={styles.empty}>No tasks</p>
+            <p className={styles.emptyTasks}>No tasks yet</p>
           )}
+          <AddTaskForm
+            activityId={activity.id}
+            disabled={disabled}
+            onAdd={onAddTask}
+          />
         </div>
       ) : null}
     </div>

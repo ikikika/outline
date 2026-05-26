@@ -1,6 +1,11 @@
 /** Domain types aligned with the time-mgmr frontend (`fe/src/features/activities/types.ts`). */
 
-export type TaskStatus = 'planned' | 'in_progress' | 'done' | 'skipped';
+export type TaskStatus =
+	| 'unplanned'
+	| 'planned'
+	| 'in_progress'
+	| 'done'
+	| 'skipped';
 
 export type ActivityCategoryId =
 	| 'work'

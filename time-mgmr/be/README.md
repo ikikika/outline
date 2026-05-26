@@ -442,7 +442,7 @@ Allowed fields: `title`, `categoryId`, `notes`, `sortOrder`.
 
 Tasks match the shape in `scripts/tasks.json`.  
 `plannedStart` and `plannedEnd` are ISO datetimes (e.g. `2026-07-22T10:44:00.000Z`).  
-`status` values: `planned` | `in_progress` | `done` | `skipped`  
+`status` values: `unplanned` | `planned` | `in_progress` | `done` | `skipped`  
 `sortOrder` is catalog priority within an activity (Timetable day/range views still sort by `plannedStart`).
 
 #### `GET /api/tasks?date=YYYY-MM-DD`
