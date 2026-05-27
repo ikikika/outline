@@ -11,6 +11,8 @@ import {
 } from '../lib/taskMapper.js';
 import { getActivity } from '../repositories/dataRepository.js';
 import {
+	deleteTask,
+	getTask,
 	listAllTasks,
 	listTasksByActivityId,
 	listTasksByDate,
@@ -20,6 +22,7 @@ import {
 	updateTask,
 	upsertTask,
 } from '../repositories/dataRepository.js';
+import { deleteTimeEntriesByTask } from '../repositories/timeEntryRepository.js';
 import { taskSk, userPk } from '../lib/keys.js';
 import { getUserId } from '../middleware/auth.js';
 import type { ITaskRecord } from '../types/domain.js';
@@ -104,6 +107,19 @@ export function registerTaskRoutes(app: Hono): void {
 		const task = await upsertTask(userId, taskRecord);
 
 		return c.json(task, 201);
+	});
+
+	app.delete('/tasks/:id', async (c) => {
+		const userId = getUserId(c);
+		const taskId = c.req.param('id');
+		const existing = await getTask(userId, taskId);
+		if (!existing) {
+			return c.json({ error: 'Task not found' }, 404);
+		}
+
+		await deleteTimeEntriesByTask(userId, taskId);
+		await deleteTask(userId, taskId);
+		return c.body(null, 204);
 	});
 
 	app.patch('/tasks/:id', async (c) => {

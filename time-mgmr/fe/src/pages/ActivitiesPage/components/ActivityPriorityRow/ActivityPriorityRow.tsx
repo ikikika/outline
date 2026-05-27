@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronRight, GripVertical } from 'lucide-react';
+import { ChevronRight, GripVertical, Trash2 } from 'lucide-react';
 import {
   CATEGORY_MAP,
   type ICatalogTaskCreateInput,
@@ -18,6 +18,8 @@ interface ActivityPriorityRowProps {
   onAddTask: (
     input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
   ) => Promise<void>;
+  onDeleteActivity: () => void;
+  onDeleteTask: (task: IActivityWithTasks['tasks'][number]) => void;
   disabled?: boolean;
 }
 
@@ -26,6 +28,8 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   expanded,
   onToggle,
   onAddTask,
+  onDeleteActivity,
+  onDeleteTask,
   disabled = false,
 }) => {
   const {
@@ -96,12 +100,29 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
         <span className={styles.taskCount}>
           {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
         </span>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label={`Delete activity ${activity.title}`}
+          disabled={disabled}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDeleteActivity();
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <Trash2 size={15} aria-hidden />
+        </button>
       </div>
 
       {expanded ? (
         <div id={panelId} role="region" aria-label={`Tasks for ${activity.title}`}>
           {taskCount > 0 ? (
-            <TaskPriorityList tasks={activity.tasks} disabled={disabled} />
+            <TaskPriorityList
+              tasks={activity.tasks}
+              disabled={disabled}
+              onDeleteTask={onDeleteTask}
+            />
           ) : (
             <p className={styles.emptyTasks}>No tasks yet</p>
           )}

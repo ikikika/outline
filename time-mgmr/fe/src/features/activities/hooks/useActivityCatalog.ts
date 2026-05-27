@@ -3,6 +3,8 @@ import { ACTIVITY_QUERY_KEYS } from '../constants';
 import {
   createActivityApi,
   createCatalogTaskApi,
+  deleteActivityApi,
+  deleteTaskApi,
   fetchActivities,
   fetchCatalogTasks,
   patchActivityApi,
@@ -71,6 +73,30 @@ export function useCreateCatalogTask() {
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: ACTIVITY_QUERY_KEYS.catalogList,
+      }),
+  });
+}
+
+export function useDeleteActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteActivityApi(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.all,
+      }),
+  });
+}
+
+export function useDeleteCatalogTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteTaskApi(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.all,
       }),
   });
 }

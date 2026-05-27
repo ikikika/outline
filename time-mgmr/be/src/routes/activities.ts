@@ -4,12 +4,16 @@ import type { Hono } from 'hono';
 
 import { getUserId } from '../middleware/auth.js';
 import {
+	deleteActivity,
+	deleteTask,
 	getActivity,
 	listActivities,
+	listTasksByActivityId,
 	toActivity,
 	updateActivity,
 	upsertActivity,
 } from '../repositories/dataRepository.js';
+import { deleteTimeEntriesByTask } from '../repositories/timeEntryRepository.js';
 import type { IActivityCreateInput, IActivityPatchInput } from '../types/domain.js';
 
 const ACTIVITY_CATEGORY_IDS = new Set([
@@ -155,6 +159,23 @@ export function registerActivityRoutes(app: Hono): void {
 			id: parsed.id ?? randomUUID(),
 		});
 		return c.json(activity, 201);
+	});
+
+	app.delete('/activities/:id', async (c) => {
+		const userId = getUserId(c);
+		const activityId = c.req.param('id');
+		const existing = await getActivity(userId, activityId);
+		if (!existing) {
+			return c.json({ error: 'Activity not found' }, 404);
+		}
+
+		const tasks = await listTasksByActivityId(userId, activityId);
+		for (const task of tasks) {
+			await deleteTimeEntriesByTask(userId, task.id);
+			await deleteTask(userId, task.id);
+		}
+		await deleteActivity(userId, activityId);
+		return c.body(null, 204);
 	});
 
 	app.patch('/activities/:id', async (c) => {

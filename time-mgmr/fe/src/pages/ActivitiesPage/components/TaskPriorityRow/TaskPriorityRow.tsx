@@ -1,13 +1,14 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Trash2 } from 'lucide-react';
 import type { IApiTask } from '@/features/activities';
 import styles from '../../ActivitiesPage.module.scss';
 
 interface TaskPriorityRowProps {
   task: IApiTask;
   disabled?: boolean;
+  onDelete: () => void;
 }
 
 function formatEstimation(seconds?: number): string | null {
@@ -37,6 +38,7 @@ function statusLabel(status: string): string {
 export const TaskPriorityRow: React.FC<TaskPriorityRowProps> = ({
   task,
   disabled = false,
+  onDelete,
 }) => {
   const {
     attributes,
@@ -78,6 +80,15 @@ export const TaskPriorityRow: React.FC<TaskPriorityRowProps> = ({
       <span className={`${styles.statusChip} ${statusClass}`}>
         {statusLabel(task.status)}
       </span>
+      <button
+        type="button"
+        className={styles.iconButton}
+        aria-label={`Delete task ${task.title}`}
+        disabled={disabled}
+        onClick={onDelete}
+      >
+        <Trash2 size={14} aria-hidden />
+      </button>
     </div>
   );
 };

@@ -3,7 +3,12 @@ import {
   localDateRangeToUtcRange,
   localDayToUtcRange,
 } from '@/core/utils/timeZone/timeZone';
-import { getJsonAuth, patchJsonAuth, postJsonAuth } from '@/services/httpClient';
+import {
+  deleteJsonAuth,
+  getJsonAuth,
+  patchJsonAuth,
+  postJsonAuth,
+} from '@/services/httpClient';
 import type {
   ActivityCategoryId,
   IActivity,
@@ -88,6 +93,11 @@ export async function createActivityApi(
   });
 }
 
+export async function deleteActivityApi(id: string): Promise<void> {
+  requireApiBaseUrl();
+  await deleteJsonAuth(`${ACTIVITIES_BASE_URL}/${encodeURIComponent(id)}`);
+}
+
 export async function patchActivityApi(
   id: string,
   patch: IActivityPatch
@@ -136,6 +146,11 @@ export async function createCatalogTaskApi(
     notes: input.notes ?? '',
     status: input.status ?? 'unplanned',
   });
+}
+
+export async function deleteTaskApi(id: string): Promise<void> {
+  requireApiBaseUrl();
+  await deleteJsonAuth(`${TASKS_BASE_URL}/${encodeURIComponent(id)}`);
 }
 
 export async function fetchTaskById(

@@ -7,9 +7,11 @@ vi.mock('@/core/constants/app', () => ({
 const patchJsonAuth = vi.fn();
 const postJsonAuth = vi.fn();
 const getJsonAuth = vi.fn();
+const deleteJsonAuth = vi.fn();
 
 vi.mock('@/services/httpClient', () => ({
   getJsonAuth: (...args: unknown[]) => getJsonAuth(...args),
+  deleteJsonAuth: (...args: unknown[]) => deleteJsonAuth(...args),
   postJsonAuth: (...args: unknown[]) => postJsonAuth(...args),
   patchJsonAuth: (...args: unknown[]) => patchJsonAuth(...args),
 }));
@@ -19,6 +21,7 @@ describe('activitiesApi', () => {
     patchJsonAuth.mockReset();
     postJsonAuth.mockReset();
     getJsonAuth.mockReset();
+    deleteJsonAuth.mockReset();
   });
 
   it('POSTs a new catalog activity', async () => {
@@ -94,6 +97,22 @@ describe('activitiesApi', () => {
     const tasks = await fetchTasksByDate('2026-07-21', 'UTC');
 
     expect(tasks.map((task) => task.id)).toEqual(['planned-task']);
+  });
+
+  it('DELETEs activities and tasks by id', async () => {
+    const { deleteActivityApi, deleteTaskApi } = await import('./activitiesApi');
+
+    await deleteActivityApi('activity/1');
+    await deleteTaskApi('task/1');
+
+    expect(deleteJsonAuth).toHaveBeenNthCalledWith(
+      1,
+      'http://api.test/api/activities/activity%2F1'
+    );
+    expect(deleteJsonAuth).toHaveBeenNthCalledWith(
+      2,
+      'http://api.test/api/tasks/task%2F1'
+    );
   });
 
   it('converts HH:mm reschedule times to UTC ISO and PATCHes the task', async () => {

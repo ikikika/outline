@@ -1,4 +1,9 @@
-import { GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import {
+	DeleteCommand,
+	GetCommand,
+	PutCommand,
+	QueryCommand,
+} from '@aws-sdk/lib-dynamodb';
 
 import { getDocumentClient, getTableName } from '../lib/dynamo.js';
 import {
@@ -79,6 +84,50 @@ export async function getTask(userId: string, taskId: string): Promise<ITaskReco
 	}
 
 	return result.Item as ITaskRecord;
+}
+
+export async function deleteActivity(
+	userId: string,
+	activityId: string
+): Promise<boolean> {
+	const existing = await getActivity(userId, activityId);
+	if (!existing) {
+		return false;
+	}
+
+	const client = getDocumentClient();
+	await client.send(
+		new DeleteCommand({
+			TableName: getTableName(),
+			Key: {
+				pk: userPk(userId),
+				sk: activitySk(activityId),
+			},
+		})
+	);
+	return true;
+}
+
+export async function deleteTask(
+	userId: string,
+	taskId: string
+): Promise<boolean> {
+	const existing = await getTask(userId, taskId);
+	if (!existing) {
+		return false;
+	}
+
+	const client = getDocumentClient();
+	await client.send(
+		new DeleteCommand({
+			TableName: getTableName(),
+			Key: {
+				pk: userPk(userId),
+				sk: taskSk(taskId),
+			},
+		})
+	);
+	return true;
 }
 
 export function toActivity(record: IActivityRecord): IActivity {

@@ -61,6 +61,16 @@ const mockCreateTask = {
   isPending: false,
   error: null,
 };
+const mockDeleteActivity = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  isPending: false,
+  error: null,
+};
+const mockDeleteTask = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  isPending: false,
+  error: null,
+};
 
 vi.mock('@/layouts', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => (
@@ -76,6 +86,8 @@ vi.mock('@/features/activities', () => ({
   }),
   useCreateActivity: () => mockCreateActivity,
   useCreateCatalogTask: () => mockCreateTask,
+  useDeleteActivity: () => mockDeleteActivity,
+  useDeleteCatalogTask: () => mockDeleteTask,
   useReorderActivities: () => mockReorderActivities,
   useReorderTasks: () => mockReorderTasks,
   ACTIVITY_CATEGORIES: [
@@ -98,6 +110,8 @@ describe('ActivitiesPage', () => {
     mockReorderTasks.mutate.mockClear();
     mockCreateActivity.mutateAsync.mockClear();
     mockCreateTask.mutateAsync.mockClear();
+    mockDeleteActivity.mutateAsync.mockClear();
+    mockDeleteTask.mutateAsync.mockClear();
   });
 
   it('renders activity rows sorted by priority', () => {
@@ -176,5 +190,49 @@ describe('ActivitiesPage', () => {
       categoryId: 'admin',
       timeEstimationSeconds: 900,
     });
+  });
+
+  it('confirms before deleting an activity and its tasks', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete activity Deep Learning' })
+    );
+
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Delete “Deep Learning” and its 2 tasks/)
+    ).toBeInTheDocument();
+    expect(mockDeleteActivity.mutateAsync).not.toHaveBeenCalled();
+
+    await user.click(
+      screen.getByRole('button', { name: /^Delete activity$/ })
+    );
+
+    expect(mockDeleteActivity.mutateAsync).toHaveBeenCalledWith('act-1');
+  });
+
+  it('can cancel or confirm task deletion', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(screen.getByText('Deep Learning'));
+    await user.click(
+      screen.getByRole('button', { name: 'Delete task Lesson 1' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockDeleteTask.mutateAsync).not.toHaveBeenCalled();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Delete task Lesson 1' })
+    );
+    await user.click(
+      screen.getByRole('button', { name: /^Delete task$/ })
+    );
+
+    expect(mockDeleteTask.mutateAsync).toHaveBeenCalledWith('task-1');
   });
 });

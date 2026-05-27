@@ -438,6 +438,15 @@ Allowed fields: `title`, `categoryId`, `notes`, `sortOrder`.
 
 ---
 
+#### `DELETE /api/activities/:id`
+
+Deletes the activity, all of its tasks, and their time entries.
+
+**Response `204`** — deleted  
+**Response `404`** — `{ "error": "Activity not found" }`
+
+---
+
 ### Tasks (timetable)
 
 Tasks match the shape in `scripts/tasks.json`.  
@@ -551,6 +560,15 @@ When reparenting without an explicit `sortOrder`, the task is appended at the en
 
 **Response `200`** — updated task  
 **Response `404`** — `{ "error": "Task not found" }` or `{ "error": "Activity not found" }` when reparenting to a missing activity
+
+---
+
+#### `DELETE /api/tasks/:id`
+
+Deletes the task and all of its time entries.
+
+**Response `204`** — deleted  
+**Response `404`** — `{ "error": "Task not found" }`
 
 ---
 
