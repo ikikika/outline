@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { manualScheduleSchema } from '@/features/activities/schemas';
 import ActivitiesPage from './ActivitiesPage';
 
 const mockActivities = [
@@ -71,6 +72,12 @@ const mockDeleteTask = {
   isPending: false,
   error: null,
 };
+const mockScheduleTask = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  reset: vi.fn(),
+  isPending: false,
+  error: null,
+};
 
 vi.mock('@/layouts', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => (
@@ -88,8 +95,11 @@ vi.mock('@/features/activities', () => ({
   useCreateCatalogTask: () => mockCreateTask,
   useDeleteActivity: () => mockDeleteActivity,
   useDeleteCatalogTask: () => mockDeleteTask,
+  useScheduleCatalogTask: () => mockScheduleTask,
   useReorderActivities: () => mockReorderActivities,
   useReorderTasks: () => mockReorderTasks,
+  todayKey: () => '2026-07-21',
+  manualScheduleSchema,
   ACTIVITY_CATEGORIES: [
     { id: 'work', label: 'Work', color: '#2563eb' },
     { id: 'deep_work', label: 'Deep work', color: '#7c3aed' },
@@ -112,6 +122,8 @@ describe('ActivitiesPage', () => {
     mockCreateTask.mutateAsync.mockClear();
     mockDeleteActivity.mutateAsync.mockClear();
     mockDeleteTask.mutateAsync.mockClear();
+    mockScheduleTask.mutateAsync.mockClear();
+    mockScheduleTask.reset.mockClear();
   });
 
   it('renders activity rows sorted by priority', () => {
@@ -234,5 +246,34 @@ describe('ActivitiesPage', () => {
     );
 
     expect(mockDeleteTask.mutateAsync).toHaveBeenCalledWith('task-1');
+  });
+
+  it('manually schedules an unplanned task', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(screen.getByText('Deep Learning'));
+    await user.click(screen.getByRole('button', { name: 'Schedule' }));
+
+    expect(screen.getByRole('dialog')).toHaveTextContent('Schedule Lesson 1');
+    await user.clear(screen.getByLabelText('Date'));
+    await user.type(screen.getByLabelText('Date'), '2026-07-22');
+    await user.clear(screen.getByLabelText('Start time'));
+    await user.type(screen.getByLabelText('Start time'), '10:00');
+    await user.clear(screen.getByLabelText('End time'));
+    await user.type(screen.getByLabelText('End time'), '10:30');
+    await user.click(
+      screen.getByRole('button', { name: 'Add to timetable' })
+    );
+
+    expect(mockScheduleTask.mutateAsync).toHaveBeenCalledWith({
+      id: 'task-1',
+      schedule: {
+        date: '2026-07-22',
+        plannedStart: '10:00',
+        plannedEnd: '10:30',
+      },
+    });
   });
 });

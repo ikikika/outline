@@ -8,10 +8,14 @@ import {
   useDeleteCatalogTask,
   useReorderActivities,
   useReorderTasks,
+  useScheduleCatalogTask,
+  todayKey,
+  type IApiTask,
 } from '@/features/activities';
 import { AddActivityForm } from './components/AddActivityForm/AddActivityForm';
 import { ActivityPriorityList } from './components/ActivityPriorityList/ActivityPriorityList';
 import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
+import { ManualScheduleModal } from './components/ManualScheduleModal/ManualScheduleModal';
 import styles from './ActivitiesPage.module.scss';
 
 type DeleteTarget =
@@ -21,11 +25,13 @@ type DeleteTarget =
 
 export const ActivitiesPage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [scheduleTarget, setScheduleTarget] = useState<IApiTask | null>(null);
   const { data: activities, isLoading, error } = useActivityCatalog();
   const createActivity = useCreateActivity();
   const createTask = useCreateCatalogTask();
   const deleteActivity = useDeleteActivity();
   const deleteTask = useDeleteCatalogTask();
+  const scheduleTask = useScheduleCatalogTask();
   const reorderActivities = useReorderActivities();
   const reorderTasks = useReorderTasks();
 
@@ -34,6 +40,7 @@ export const ActivitiesPage: React.FC = () => {
     createTask.isPending ||
     deleteActivity.isPending ||
     deleteTask.isPending ||
+    scheduleTask.isPending ||
     reorderActivities.isPending ||
     reorderTasks.isPending;
   const mutationError =
@@ -41,6 +48,7 @@ export const ActivitiesPage: React.FC = () => {
     createTask.error ??
     deleteActivity.error ??
     deleteTask.error ??
+    scheduleTask.error ??
     reorderActivities.error ??
     reorderTasks.error;
 
@@ -114,6 +122,10 @@ export const ActivitiesPage: React.FC = () => {
                 taskCount: activity.tasks.length,
               })
             }
+            onScheduleTask={(task) => {
+              scheduleTask.reset();
+              setScheduleTarget(task);
+            }}
             onDeleteTask={(task) =>
               setDeleteTarget({
                 kind: 'task',
@@ -140,6 +152,35 @@ export const ActivitiesPage: React.FC = () => {
           busy={deleteActivity.isPending || deleteTask.isPending}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={() => void handleDelete()}
+        />
+      ) : null}
+      {scheduleTarget ? (
+        <ManualScheduleModal
+          task={scheduleTarget}
+          defaultDate={todayKey()}
+          busy={scheduleTask.isPending}
+          error={
+            scheduleTask.error instanceof Error
+              ? scheduleTask.error.message
+              : scheduleTask.error
+                ? 'Failed to schedule task.'
+                : null
+          }
+          onCancel={() => {
+            scheduleTask.reset();
+            setScheduleTarget(null);
+          }}
+          onSubmit={async (schedule) => {
+            try {
+              await scheduleTask.mutateAsync({
+                id: scheduleTarget.id,
+                schedule,
+              });
+              setScheduleTarget(null);
+            } catch {
+              // Mutation errors are presented above the list.
+            }
+          }}
         />
       ) : null}
     </MainLayout>

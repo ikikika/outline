@@ -12,6 +12,7 @@ export const activityCategorySchema = z.enum([
 ]);
 
 export const activityStatusSchema = z.enum([
+  'unplanned',
   'planned',
   'in_progress',
   'done',
@@ -41,6 +42,20 @@ export const activityFormSchema = z
     path: ['plannedEnd'],
   });
 
+export const manualScheduleSchema = z
+  .object({
+    date: z.string().regex(datePattern, 'Enter a valid date.'),
+    plannedStart: z.string().regex(timePattern, 'Use HH:mm format.'),
+    plannedEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
+  })
+  .refine(
+    (data) => timeToMinutes(data.plannedEnd) > timeToMinutes(data.plannedStart),
+    {
+      message: 'End time must be after start time.',
+      path: ['plannedEnd'],
+    }
+  );
+
 export const manualTimeEntrySchema = z.object({
   durationMinutes: z
     .number()
@@ -50,4 +65,5 @@ export const manualTimeEntrySchema = z.object({
 });
 
 export type ActivityFormValues = z.infer<typeof activityFormSchema>;
+export type ManualScheduleValues = z.infer<typeof manualScheduleSchema>;
 export type ManualTimeEntryFormValues = z.infer<typeof manualTimeEntrySchema>;

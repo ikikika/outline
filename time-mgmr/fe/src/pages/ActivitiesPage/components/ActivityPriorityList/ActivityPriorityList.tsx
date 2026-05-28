@@ -30,6 +30,7 @@ interface ActivityPriorityListProps {
     input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
   ) => Promise<void>;
   onDeleteActivity: (activity: IActivityWithTasks) => void;
+  onScheduleTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onDeleteTask: (task: IActivityWithTasks['tasks'][number]) => void;
 }
 
@@ -40,6 +41,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
   onReorderTasks,
   onAddTask,
   onDeleteActivity,
+  onScheduleTask,
   onDeleteTask,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -127,6 +129,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
             disabled={disabled}
             onAddTask={(input) => onAddTask(activity, input)}
             onDeleteActivity={() => onDeleteActivity(activity)}
+            onScheduleTask={onScheduleTask}
             onDeleteTask={onDeleteTask}
           />
         ))}

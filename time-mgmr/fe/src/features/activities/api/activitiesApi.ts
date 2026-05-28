@@ -58,6 +58,12 @@ export interface ICatalogTaskCreateInput {
   status?: TaskStatus;
 }
 
+export interface IManualScheduleInput {
+  date: string;
+  plannedStart: string;
+  plannedEnd: string;
+}
+
 export function isActivitiesApiEnabled(): boolean {
   return Boolean(API_BASE_URL);
 }
@@ -151,6 +157,24 @@ export async function createCatalogTaskApi(
 export async function deleteTaskApi(id: string): Promise<void> {
   requireApiBaseUrl();
   await deleteJsonAuth(`${TASKS_BASE_URL}/${encodeURIComponent(id)}`);
+}
+
+export async function scheduleTaskApi(
+  id: string,
+  input: IManualScheduleInput,
+  timeZone: string
+): Promise<IApiTask> {
+  requireApiBaseUrl();
+  const times = timetableTimesToIso(
+    input.date,
+    input.plannedStart,
+    input.plannedEnd,
+    timeZone
+  );
+  return patchTaskApi(id, {
+    ...times,
+    status: 'planned',
+  });
 }
 
 export async function fetchTaskById(

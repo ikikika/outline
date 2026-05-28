@@ -9,12 +9,15 @@ import {
   fetchCatalogTasks,
   patchActivityApi,
   patchTaskApi,
+  scheduleTaskApi,
   type IActivityCreateInput,
   type ICatalogTaskCreateInput,
+  type IManualScheduleInput,
 } from '../api/activitiesApi';
 import type { IActivity } from '../types';
 import type { IApiTask } from '../api/mapApiTask';
 import { sortBySortOrder } from '../utils/sortBySortOrder/sortBySortOrder';
+import { useResolvedTimeZone } from './useActivities';
 
 const POMODORO_BREAK_ACTIVITY_ID = 'pomodoro-breaks';
 
@@ -94,6 +97,25 @@ export function useDeleteCatalogTask() {
 
   return useMutation({
     mutationFn: (id: string) => deleteTaskApi(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.all,
+      }),
+  });
+}
+
+export function useScheduleCatalogTask() {
+  const queryClient = useQueryClient();
+  const timeZone = useResolvedTimeZone();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      schedule,
+    }: {
+      id: string;
+      schedule: IManualScheduleInput;
+    }) => scheduleTaskApi(id, schedule, timeZone),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: ACTIVITY_QUERY_KEYS.all,

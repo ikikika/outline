@@ -115,6 +115,30 @@ describe('activitiesApi', () => {
     );
   });
 
+  it('schedules a catalog task and marks it planned', async () => {
+    patchJsonAuth.mockResolvedValue({ id: 'task-1' });
+    const { scheduleTaskApi } = await import('./activitiesApi');
+
+    await scheduleTaskApi(
+      'task-1',
+      {
+        date: '2026-07-22',
+        plannedStart: '09:00',
+        plannedEnd: '09:25',
+      },
+      'Asia/Singapore'
+    );
+
+    expect(patchJsonAuth).toHaveBeenCalledWith(
+      'http://api.test/api/tasks/task-1',
+      {
+        plannedStart: '2026-07-22T01:00:00.000Z',
+        plannedEnd: '2026-07-22T01:25:00.000Z',
+        status: 'planned',
+      }
+    );
+  });
+
   it('converts HH:mm reschedule times to UTC ISO and PATCHes the task', async () => {
     patchJsonAuth.mockResolvedValue({
       id: 'task-1',

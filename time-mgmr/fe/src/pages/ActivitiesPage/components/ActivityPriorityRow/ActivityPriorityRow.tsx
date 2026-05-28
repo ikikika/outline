@@ -19,6 +19,7 @@ interface ActivityPriorityRowProps {
     input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
   ) => Promise<void>;
   onDeleteActivity: () => void;
+  onScheduleTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onDeleteTask: (task: IActivityWithTasks['tasks'][number]) => void;
   disabled?: boolean;
 }
@@ -29,6 +30,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   onToggle,
   onAddTask,
   onDeleteActivity,
+  onScheduleTask,
   onDeleteTask,
   disabled = false,
 }) => {
@@ -121,6 +123,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
             <TaskPriorityList
               tasks={activity.tasks}
               disabled={disabled}
+              onScheduleTask={onScheduleTask}
               onDeleteTask={onDeleteTask}
             />
           ) : (
