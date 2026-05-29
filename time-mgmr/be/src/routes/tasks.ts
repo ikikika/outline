@@ -15,14 +15,13 @@ import {
 	getTask,
 	listAllTasks,
 	listTasksByActivityId,
-	listTasksByDate,
-	listTasksByDateRange,
 	nextTaskSortOrder,
 	toTask,
 	updateTask,
 	upsertTask,
 } from '../repositories/dataRepository.js';
 import { deleteTimeEntriesByTask } from '../repositories/timeEntryRepository.js';
+import { deleteScheduleBlocksByTask } from '../repositories/scheduleBlockRepository.js';
 import { taskSk, userPk } from '../lib/keys.js';
 import { getUserId } from '../middleware/auth.js';
 import type { ITaskRecord } from '../types/domain.js';
@@ -36,13 +35,17 @@ export function registerTaskRoutes(app: Hono): void {
 		const activityId = c.req.query('activityId');
 
 		if (date) {
-			const tasks = await listTasksByDate(userId, date);
-			return c.json(tasks);
+			return c.json(
+				{ error: 'Task scheduling queries moved to /api/schedule-blocks' },
+				410
+			);
 		}
 
 		if (from && to) {
-			const tasks = await listTasksByDateRange(userId, from, to);
-			return c.json(tasks);
+			return c.json(
+				{ error: 'Task scheduling queries moved to /api/schedule-blocks' },
+				410
+			);
 		}
 
 		if (activityId) {
@@ -96,13 +99,11 @@ export function registerTaskRoutes(app: Hono): void {
 		}
 
 		const activity = await getActivity(userId, parsed.activityId);
-		const fallbackDate = parsed.plannedStart.slice(0, 10);
 		const sortOrder =
 			parsed.sortOrder ?? (await nextTaskSortOrder(userId, parsed.activityId));
 		const taskRecord = taskInputToRecord(
 			{ ...parsed, id: parsed.id ?? randomUUID(), sortOrder },
-			activity,
-			fallbackDate
+			activity
 		);
 		const task = await upsertTask(userId, taskRecord);
 
@@ -118,6 +119,7 @@ export function registerTaskRoutes(app: Hono): void {
 		}
 
 		await deleteTimeEntriesByTask(userId, taskId);
+		await deleteScheduleBlocksByTask(userId, taskId);
 		await deleteTask(userId, taskId);
 		return c.body(null, 204);
 	});

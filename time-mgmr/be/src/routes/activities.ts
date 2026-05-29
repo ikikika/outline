@@ -14,6 +14,7 @@ import {
 	upsertActivity,
 } from '../repositories/dataRepository.js';
 import { deleteTimeEntriesByTask } from '../repositories/timeEntryRepository.js';
+import { deleteScheduleBlocksByTask } from '../repositories/scheduleBlockRepository.js';
 import type { IActivityCreateInput, IActivityPatchInput } from '../types/domain.js';
 
 const ACTIVITY_CATEGORY_IDS = new Set([
@@ -172,6 +173,7 @@ export function registerActivityRoutes(app: Hono): void {
 		const tasks = await listTasksByActivityId(userId, activityId);
 		for (const task of tasks) {
 			await deleteTimeEntriesByTask(userId, task.id);
+			await deleteScheduleBlocksByTask(userId, task.id);
 			await deleteTask(userId, task.id);
 		}
 		await deleteActivity(userId, activityId);

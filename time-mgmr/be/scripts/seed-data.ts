@@ -5,8 +5,13 @@ import { normalizeImportedTask } from '../src/lib/normalizeTask.js';
 import { wallTimeLabeledZToUtc } from '../src/lib/timezone.js';
 import type { TaskUpsertInput } from '../src/repositories/dataRepository.js';
 import { upsertActivity, upsertTasks } from '../src/repositories/dataRepository.js';
+import { upsertScheduleBlock } from '../src/repositories/scheduleBlockRepository.js';
 import { findUserByEmail } from '../src/repositories/userRepository.js';
-import type { IActivity } from '../src/types/domain.js';
+import type {
+	IActivity,
+	IScheduleBlockCreateInput,
+	ScheduleBlockType,
+} from '../src/types/domain.js';
 
 interface IActivitiesJsonFile {
 	activities: Array<
@@ -77,13 +82,48 @@ function migrateTaskTimesIfNeeded(
 	return next;
 }
 
+function blockTypeForTask(rawTask: Record<string, unknown>): ScheduleBlockType {
+	const title = String(rawTask.title ?? '').toLowerCase();
+	if (title.includes('long break')) return 'long_break';
+	if (title.includes('short break') || title === 'break') return 'short_break';
+	return 'focus';
+}
+
+function scheduleBlockFromTask(
+	rawTask: Record<string, unknown>,
+	taskId: string
+): (IScheduleBlockCreateInput & { id: string }) | null {
+	const plannedStart = rawTask.plannedStart;
+	const plannedEnd = rawTask.plannedEnd;
+	if (typeof plannedStart !== 'string' || typeof plannedEnd !== 'string') {
+		return null;
+	}
+
+	const start = new Date(plannedStart);
+	const end = new Date(plannedEnd);
+	if (
+		Number.isNaN(start.getTime()) ||
+		Number.isNaN(end.getTime()) ||
+		end <= start
+	) {
+		throw new Error(`Invalid schedule for seeded task ${taskId}`);
+	}
+
+	return {
+		id: `task-${taskId}`,
+		taskId,
+		blockType: blockTypeForTask(rawTask),
+		plannedStart: start.toISOString(),
+		plannedEnd: end.toISOString(),
+	};
+}
+
 async function main(): Promise<void> {
 	const email = process.argv[2];
-	const fallbackDate = process.argv[3] ?? '2026-07-21';
 
 	if (!email) {
 		console.error(
-			'Usage: npm run seed:data -- <email> [fallbackDate]\n' +
+			'Usage: npm run seed:data -- <email>\n' +
 				'Optional: MIGRATE_WALL_Z=1 SOURCE_TIMEZONE=Asia/Singapore for legacy wall+Z exports'
 		);
 		process.exit(1);
@@ -130,6 +170,7 @@ async function main(): Promise<void> {
 
 	const activityById = new Map(activities.map((activity) => [activity.id, activity]));
 	const tasks: TaskUpsertInput[] = [];
+	const scheduleBlocks: Array<IScheduleBlockCreateInput & { id: string }> = [];
 	const nextSortByActivity = new Map<string, number>();
 
 	for (const rawTask of rawTasks) {
@@ -143,15 +184,27 @@ async function main(): Promise<void> {
 		const migrated = migrateTaskTimesIfNeeded(rawTask, sourceTimeZone);
 		const fallbackSortOrder = nextSortByActivity.get(activityId) ?? 0;
 		nextSortByActivity.set(activityId, fallbackSortOrder + 1);
-		tasks.push(
-			normalizeImportedTask(migrated, activity, fallbackDate, fallbackSortOrder)
+		const task = normalizeImportedTask(
+			migrated,
+			activity,
+			fallbackSortOrder
 		);
+		const block = scheduleBlockFromTask(migrated, task.id);
+		tasks.push({
+			...task,
+			status: block ? task.status : 'unplanned',
+		});
+		if (block) scheduleBlocks.push(block);
 	}
 
 	if (tasks.length > 0) {
 		await upsertTasks(userId, tasks);
 		console.log(`Upserted ${tasks.length} tasks from tasks.json`);
 	}
+	for (const block of scheduleBlocks) {
+		await upsertScheduleBlock(userId, block);
+	}
+	console.log(`Upserted ${scheduleBlocks.length} schedule blocks from tasks.json`);
 
 	console.log('Seed complete.');
 }

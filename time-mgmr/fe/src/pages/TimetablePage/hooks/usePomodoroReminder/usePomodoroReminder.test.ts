@@ -1,14 +1,16 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ITask, ITimeEntry } from '@/features/activities';
+import type { ITimetableBlock, ITimeEntry } from '@/features/activities';
 import {
   findFollowingPomodoroBreak,
   usePomodoroReminder,
 } from './usePomodoroReminder';
 
-function task(overrides: Partial<ITask> = {}): ITask {
+function block(overrides: Partial<ITimetableBlock> = {}): ITimetableBlock {
   return {
     id: 'focus-1',
+    taskId: 'task-focus-1',
+    blockType: 'focus',
     activityId: 'focus-activity',
     title: 'Focus',
     date: '2026-07-21',
@@ -25,7 +27,7 @@ function task(overrides: Partial<ITask> = {}): ITask {
 
 const runningEntry: ITimeEntry = {
   id: 'entry-1',
-  taskId: 'focus-1',
+  taskId: 'task-focus-1',
   startAt: '2026-07-21T09:00:00.000Z',
   endAt: null,
   durationMinutes: null,
@@ -46,14 +48,17 @@ describe('Pomodoro break reminder', () => {
   });
 
   it('selects only an immediately following planned break', () => {
-    const focus = task();
-    const laterFocus = task({
+    const focus = block();
+    const laterFocus = block({
       id: 'focus-2',
+      taskId: 'task-focus-2',
       plannedStart: '09:25',
       plannedEnd: '09:50',
     });
-    const breakTask = task({
+    const breakBlock = block({
       id: 'break-1',
+      taskId: undefined,
+      blockType: 'short_break',
       activityId: 'pomodoro-breaks',
       title: 'Short Break',
       plannedStart: '09:50',
@@ -63,17 +68,19 @@ describe('Pomodoro break reminder', () => {
     });
 
     expect(
-      findFollowingPomodoroBreak(focus, [breakTask, laterFocus, focus])
+      findFollowingPomodoroBreak(focus, [breakBlock, laterFocus, focus])
     ).toBeNull();
     expect(
-      findFollowingPomodoroBreak(laterFocus, [breakTask, laterFocus, focus])
-    ).toEqual(breakTask);
+      findFollowingPomodoroBreak(laterFocus, [breakBlock, laterFocus, focus])
+    ).toEqual(breakBlock);
   });
 
-  it('prompts once when the running focus task reaches its planned end', () => {
-    const focus = task();
-    const breakTask = task({
+  it('prompts once when the running focus block reaches its planned end', () => {
+    const focus = block();
+    const breakBlock = block({
       id: 'break-1',
+      taskId: undefined,
+      blockType: 'short_break',
       activityId: 'pomodoro-breaks',
       title: 'Short Break',
       plannedStart: '09:25',
@@ -82,9 +89,9 @@ describe('Pomodoro break reminder', () => {
       status: 'planned',
     });
     const options = {
-      runningTask: focus,
+      runningBlock: focus,
       runningEntry,
-      tasks: [focus, breakTask],
+      blocks: [focus, breakBlock],
       timeZone: 'UTC',
     };
     const { result, unmount } = renderHook(() => usePomodoroReminder(options));
@@ -101,9 +108,11 @@ describe('Pomodoro break reminder', () => {
 
   it('does not prompt before plannedEnd', () => {
     vi.setSystemTime('2026-07-21T09:24:59.000Z');
-    const focus = task();
-    const breakTask = task({
+    const focus = block();
+    const breakBlock = block({
       id: 'break-1',
+      taskId: undefined,
+      blockType: 'short_break',
       activityId: 'pomodoro-breaks',
       plannedStart: '09:25',
       plannedEnd: '09:30',
@@ -113,9 +122,9 @@ describe('Pomodoro break reminder', () => {
 
     const { result } = renderHook(() =>
       usePomodoroReminder({
-        runningTask: focus,
+        runningBlock: focus,
         runningEntry,
-        tasks: [focus, breakTask],
+        blocks: [focus, breakBlock],
         timeZone: 'UTC',
       })
     );

@@ -8,17 +8,25 @@ describe('parseTaskCreateInput', () => {
 		const result = parseTaskCreateInput({
 			activityId: 'activity-1',
 			title: 'Backlog task',
-			plannedStart: '2026-07-21T10:00:00.000Z',
-			plannedEnd: '2026-07-21T10:25:00.000Z',
 			status: 'unplanned',
 		});
 
 		assert.deepEqual(result, {
 			activityId: 'activity-1',
 			title: 'Backlog task',
-			plannedStart: '2026-07-21T10:00:00.000Z',
-			plannedEnd: '2026-07-21T10:25:00.000Z',
 			status: 'unplanned',
+		});
+	});
+
+	it('rejects legacy scheduling fields', () => {
+		const result = parseTaskCreateInput({
+			activityId: 'activity-1',
+			title: 'Scheduled task',
+			plannedStart: '2026-07-21T10:00:00.000Z',
+		});
+
+		assert.deepEqual(result, {
+			error: 'Task scheduling fields belong on /api/schedule-blocks',
 		});
 	});
 });

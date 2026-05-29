@@ -12,12 +12,16 @@ export function taskSk(taskId: string): string {
 	return `TASK#${taskId}`;
 }
 
+export function scheduleBlockSk(scheduleBlockId: string): string {
+	return `SCHEDULE_BLOCK#${scheduleBlockId}`;
+}
+
 export function timeEntrySk(timeEntryId: string): string {
 	return `TIME_ENTRY#${timeEntryId}`;
 }
 
-/** Query tasks scheduled on a given date for a user. */
-export function tasksByDateGsi(userId: string, date: string): {
+/** Query schedule blocks that start on a given UTC date for a user. */
+export function scheduleBlocksByDateGsi(userId: string, date: string): {
 	gsi1pk: string;
 } {
 	return {
@@ -34,15 +38,15 @@ export function timeEntriesByTaskGsi(userId: string, taskId: string): {
 	};
 }
 
-export function taskGsiKeys(
+export function scheduleBlockGsiKeys(
 	userId: string,
 	date: string,
 	plannedStart: string,
-	taskId: string
+	scheduleBlockId: string
 ): { gsi1pk: string; gsi1sk: string } {
 	return {
 		gsi1pk: `${USER_PREFIX}#${userId}#DATE#${date}`,
-		gsi1sk: `${plannedStart}#${taskId}`,
+		gsi1sk: `${plannedStart}#${scheduleBlockId}`,
 	};
 }
 
@@ -64,6 +68,10 @@ export function activityPrefix(): string {
 
 export function taskPrefix(): string {
 	return 'TASK#';
+}
+
+export function scheduleBlockPrefix(): string {
+	return 'SCHEDULE_BLOCK#';
 }
 
 export function timeEntryPrefix(): string {

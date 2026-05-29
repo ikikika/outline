@@ -123,15 +123,15 @@ const FEATURES = [
   },
   {
     icon: '📋',
-    title: 'Templates & week view',
+    title: 'Week view & exports',
     description:
-      'Copy yesterday, save weekday templates, browse the week strip, and export CSV or JSON.',
+      'Browse your schedule across the week and export reports for deeper review.',
   },
   {
-    icon: '🔒',
-    title: 'Local-first',
+    icon: '☁️',
+    title: 'Synced planning',
     description:
-      'Your plan lives in this browser via IndexedDB — fast, private, and ready for sync later.',
+      'Your activities, schedule, and tracked time stay available across signed-in sessions.',
   },
   {
     icon: '✨',

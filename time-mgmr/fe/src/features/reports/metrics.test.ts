@@ -4,10 +4,12 @@ import {
   buildDayReport,
   classifyVariance,
 } from './metrics';
-import type { ITask, ITimeEntry } from '@/features/activities';
+import type { ITimetableBlock, ITimeEntry } from '@/features/activities';
 
-const baseTask = (overrides: Partial<ITask> = {}): ITask => ({
-  id: 't1',
+const baseBlock = (overrides: Partial<ITimetableBlock> = {}): ITimetableBlock => ({
+  id: 'block-1',
+  taskId: 't1',
+  blockType: 'focus',
   activityId: 'a1',
   title: 'Deep work',
   date: '2026-07-19',
@@ -52,7 +54,7 @@ describe('classifyVariance', () => {
 
 describe('buildActivityMetrics', () => {
   it('sums multiple time entries for one task', () => {
-    const metrics = buildActivityMetrics(baseTask(), [
+    const metrics = buildActivityMetrics(baseBlock(), [
       entry({ id: 'e1', durationMinutes: 60 }),
       entry({ id: 'e2', durationMinutes: 50 }),
     ]);
@@ -64,7 +66,7 @@ describe('buildActivityMetrics', () => {
 
   it('uses timeEstimationSeconds instead of the scheduled block duration', () => {
     const metrics = buildActivityMetrics(
-      baseTask({ timeEstimationSeconds: 60 * 60 }),
+      baseBlock({ timeEstimationSeconds: 60 * 60 }),
       [entry({ durationMinutes: 90 })]
     );
 
@@ -76,10 +78,11 @@ describe('buildActivityMetrics', () => {
 
 describe('buildDayReport', () => {
   it('computes day totals and category mix', () => {
-    const tasks = [
-      baseTask(),
-      baseTask({
-        id: 't2',
+    const blocks = [
+      baseBlock(),
+      baseBlock({
+        id: 'block-2',
+        taskId: 't2',
         activityId: 'a2',
         title: 'Email',
         plannedStart: '11:00',
@@ -90,7 +93,7 @@ describe('buildDayReport', () => {
       }),
     ];
     const entries = [entry({ durationMinutes: 150 })];
-    const report = buildDayReport('2026-07-19', tasks, entries);
+    const report = buildDayReport('2026-07-19', blocks, entries);
 
     expect(report.plannedMinutes).toBe(150);
     expect(report.actualMinutes).toBe(150);

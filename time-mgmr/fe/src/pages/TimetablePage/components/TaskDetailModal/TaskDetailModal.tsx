@@ -9,7 +9,7 @@ import {
   formatMinutes,
   formatSignedMinutes,
   manualTimeEntrySchema,
-  type ITask,
+  type ITimetableBlock,
   type ITimeEntry,
   type ManualTimeEntryFormValues,
 } from '@/features/activities';
@@ -19,15 +19,15 @@ import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './TaskDetailModal.module.scss';
 
 interface TaskDetailModalProps {
-  task: ITask;
+  block: ITimetableBlock;
   activityTitle?: string;
   entries: ITimeEntry[];
   runningEntry: ITimeEntry | null;
   busy?: boolean;
   onClose: () => void;
-  onEdit: (task: ITask) => void;
-  onDelete: (id: string) => void;
-  onStatus: (id: string, status: ITask['status']) => void;
+  onEdit: (block: ITimetableBlock) => void;
+  onDelete: (block: ITimetableBlock) => void;
+  onStatus: (taskId: string, status: ITimetableBlock['status']) => void;
   onStart: (taskId: string) => void;
   onStop: (entryId: string) => void;
   onLogManual: (taskId: string, durationMinutes: number) => Promise<void> | void;
@@ -77,7 +77,7 @@ export function elapsedSecondsForEntries(entries: ITimeEntry[], nowMs: number): 
 }
 
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
-  task,
+  block,
   activityTitle,
   entries,
   runningEntry,
@@ -97,11 +97,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const { isOpen: sidebarOpen, open: openSidebar, close: closeSidebar } = useSidebarLayout();
   sidebarOpenRef.current = sidebarOpen;
-  const category = CATEGORY_MAP[task.categoryId];
-  const metrics = buildActivityMetrics(task, entries);
-  const isRunningHere = runningEntry?.taskId === task.id;
-  const accent = getTaskBlockColor(task.activityId);
-  const plannedSeconds = Math.max(0, task.timeEstimationSeconds ?? 0);
+  const category = CATEGORY_MAP[block.categoryId];
+  const metrics = buildActivityMetrics(block, entries);
+  const taskId = block.taskId;
+  const isRunningHere = Boolean(taskId && runningEntry?.taskId === taskId);
+  const accent = getTaskBlockColor(block.activityId);
+  const plannedSeconds = Math.max(0, block.timeEstimationSeconds ?? 0);
+  const canTrackTime = Boolean(taskId);
 
   const {
     register,
@@ -157,17 +159,19 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
 
   const submitManual = handleSubmit(async (values) => {
-    await onLogManual(task.id, values.durationMinutes);
+    if (!taskId) return;
+    await onLogManual(taskId, values.durationMinutes);
     reset({ durationMinutes: 30 });
     setShowManual(false);
   });
 
   const handleFocusPrimary = () => {
+    if (!taskId) return;
     if (isRunningHere && runningEntry) {
       onStop(runningEntry.id);
       return;
     }
-    onStart(task.id);
+    onStart(taskId);
   };
 
   if (focusMode) {
@@ -185,16 +189,24 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
         <div className={styles.focusBody}>
           <h2 id="task-focus-title" className={styles.focusTitle}>
-            {task.title}
+            {block.title}
           </h2>
 
           <div className={styles.focusControls}>
             <button
               type="button"
               className={`${styles.focusPrimary} ${isRunningHere ? styles.focusPrimaryStop : ''}`}
-              disabled={busy || (!isRunningHere && Boolean(runningEntry))}
+              disabled={
+                busy ||
+                !canTrackTime ||
+                (!isRunningHere && Boolean(runningEntry))
+              }
               title={
-                !isRunningHere && runningEntry ? 'Stop the current timer first' : undefined
+                !canTrackTime
+                  ? 'This break has no linked task'
+                  : !isRunningHere && runningEntry
+                    ? 'Stop the current timer first'
+                    : undefined
               }
               onClick={handleFocusPrimary}
             >
@@ -242,7 +254,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           <div>
             <p className={styles.eyebrow}>Task details</p>
             <h2 id="task-detail-title" className={styles.title}>
-              {task.title}
+              {block.title}
             </h2>
             <div className={styles.badges}>
               <span
@@ -253,7 +265,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 {category.label}
               </span>
               <span className={styles.badge} style={{ background: '#f3f4f6', color: '#374151' }}>
-                {task.status.replace('_', ' ')}
+                {block.status.replace('_', ' ')}
               </span>
               {isRunningHere ? <span className={styles.running}>Timer running</span> : null}
             </div>
@@ -288,12 +300,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           ) : null}
           <div className={styles.row}>
             <dt>Date</dt>
-            <dd className={styles.value}>{formatDisplayDate(task.date)}</dd>
+            <dd className={styles.value}>{formatDisplayDate(block.date)}</dd>
           </div>
           <div className={styles.row}>
             <dt>Planned</dt>
             <dd className={styles.value}>
-              {task.plannedStart}–{task.plannedEnd} · {formatMinutes(metrics.plannedMinutes)}
+              {block.plannedStart}–{block.plannedEnd} · {formatMinutes(metrics.plannedMinutes)}
             </dd>
           </div>
           <div className={styles.row}>
@@ -306,10 +318,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               {formatSignedMinutes(metrics.varianceMinutes)}
             </dd>
           </div>
-          {task.notes ? (
+          {block.notes ? (
             <div className={`${styles.row} ${styles.notes}`}>
               <dt>Notes</dt>
-              <dd className={styles.value}>{task.notes}</dd>
+              <dd className={styles.value}>{block.notes}</dd>
             </div>
           ) : null}
         </dl>
@@ -345,63 +357,71 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         </section>
 
         <div className={styles.actions}>
-          {isRunningHere && runningEntry ? (
-            <Button size="sm" disabled={busy} onClick={() => onStop(runningEntry.id)}>
-              Stop
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              disabled={busy || Boolean(runningEntry)}
-              onClick={() => onStart(task.id)}
-              title={runningEntry ? 'Stop the current timer first' : undefined}
-            >
-              Start
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={() => setShowManual((v) => !v)}
-          >
-            Log time
-          </Button>
-          {task.status === 'done' ? (
+          {canTrackTime ? (
+            isRunningHere && runningEntry ? (
+              <Button size="sm" disabled={busy} onClick={() => onStop(runningEntry.id)}>
+                Stop
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                disabled={busy || Boolean(runningEntry)}
+                onClick={() => onStart(taskId!)}
+                title={runningEntry ? 'Stop the current timer first' : undefined}
+              >
+                Start
+              </Button>
+            )
+          ) : null}
+          {canTrackTime ? (
             <Button
               size="sm"
               variant="outline"
               disabled={busy}
-              onClick={() => onStatus(task.id, 'in_progress')}
+              onClick={() => setShowManual((v) => !v)}
             >
-              Mark in progress
+              Log time
             </Button>
-          ) : (
+          ) : null}
+          {canTrackTime ? (
+            block.status === 'done' ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => onStatus(taskId!, 'in_progress')}
+              >
+                Mark in progress
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => onStatus(taskId!, 'done')}
+              >
+                Done
+              </Button>
+            )
+          ) : null}
+          {canTrackTime ? (
             <Button
               size="sm"
-              variant="outline"
+              variant="ghost"
               disabled={busy}
-              onClick={() => onStatus(task.id, 'done')}
+              onClick={() => onStatus(taskId!, 'skipped')}
             >
-              Done
+              Skip
             </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            onClick={() => onStatus(task.id, 'skipped')}
-          >
-            Skip
-          </Button>
-          <Button size="sm" variant="ghost" disabled={busy} onClick={() => onEdit(task)}>
+          ) : null}
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => onEdit(block)}>
             Edit
           </Button>
           <Button
             size="sm"
             variant="destructive"
             disabled={busy}
-            onClick={() => onDelete(task.id)}
+            onClick={() => onDelete(block)}
           >
             Delete
           </Button>

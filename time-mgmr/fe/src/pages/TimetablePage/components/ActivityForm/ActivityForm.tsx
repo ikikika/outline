@@ -6,13 +6,13 @@ import {
   ACTIVITY_CATEGORIES,
   activityFormSchema,
   type ActivityFormValues,
-  type ITask,
+  type ITimetableBlock,
 } from '@/features/activities';
 import styles from './ActivityForm.module.scss';
 
 interface ActivityFormProps {
   date: string;
-  initial?: ITask | null;
+  initial?: ITimetableBlock | null;
   onSubmit: (values: ActivityFormValues) => Promise<void> | void;
   onCancel: () => void;
   isSubmitting?: boolean;

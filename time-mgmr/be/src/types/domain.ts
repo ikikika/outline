@@ -46,8 +46,6 @@ export interface ITask {
 	id: string;
 	activityId: string;
 	title: string;
-	plannedStart: string;
-	plannedEnd: string;
 	timeEstimationSeconds?: number;
 	categoryId: ActivityCategoryId;
 	notes: string;
@@ -61,8 +59,6 @@ export interface ITaskCreateInput {
 	id?: string;
 	activityId: string;
 	title: string;
-	plannedStart: string;
-	plannedEnd: string;
 	timeEstimationSeconds?: number;
 	categoryId?: ActivityCategoryId;
 	notes?: string;
@@ -74,13 +70,38 @@ export interface ITaskCreateInput {
 export interface ITaskPatchInput {
 	activityId?: string;
 	title?: string;
-	plannedStart?: string;
-	plannedEnd?: string;
 	timeEstimationSeconds?: number;
 	categoryId?: ActivityCategoryId;
 	notes?: string;
 	status?: TaskStatus;
 	sortOrder?: number;
+}
+
+export type ScheduleBlockType = 'focus' | 'short_break' | 'long_break';
+
+export interface IScheduleBlock {
+	id: string;
+	taskId?: string;
+	blockType: ScheduleBlockType;
+	plannedStart: string;
+	plannedEnd: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface IScheduleBlockCreateInput {
+	id?: string;
+	taskId?: string;
+	blockType: ScheduleBlockType;
+	plannedStart: string;
+	plannedEnd: string;
+}
+
+export interface IScheduleBlockPatchInput {
+	taskId?: string | null;
+	blockType?: ScheduleBlockType;
+	plannedStart?: string;
+	plannedEnd?: string;
 }
 
 export type TimeEntrySource = 'timer' | 'manual';
@@ -111,7 +132,7 @@ export interface ITimeEntryPatchInput {
 	endAt?: string;
 }
 
-export type EntityType = 'activity' | 'task' | 'time_entry';
+export type EntityType = 'activity' | 'task' | 'schedule_block' | 'time_entry';
 
 export interface IDynamoItem {
 	pk: string;
@@ -131,9 +152,6 @@ export interface ITaskStorageFields {
 	id: string;
 	activityId: string;
 	title: string;
-	date: string;
-	plannedStart: string;
-	plannedEnd: string;
 	categoryId: ActivityCategoryId;
 	notes: string;
 	color?: string;
@@ -144,6 +162,10 @@ export interface ITaskStorageFields {
 
 export interface ITaskRecord extends IDynamoItem, ITaskStorageFields {
 	entityType: 'task';
+}
+
+export interface IScheduleBlockRecord extends IDynamoItem, IScheduleBlock {
+	entityType: 'schedule_block';
 }
 
 export interface ITimeEntryRecord extends IDynamoItem, ITimeEntry {

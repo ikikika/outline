@@ -3,18 +3,19 @@ import { MainLayout } from '@/layouts';
 import {
   formatDisplayDate,
   todayKey,
-  useActivitiesByRange,
+  useTimetableBlocksByRange,
   useActivityMutations,
   useActivityById,
   useRunningTimer,
   useResolvedTimeZone,
-  useTaskCatalog,
+  useTimetableBlocksForCatalog,
   useTaskById,
+  useTimetableBlocksByTask,
   useTimeEntriesByTask,
   useTimeEntryMutations,
   weekDateKeys,
   type ActivityFormValues,
-  type ITask,
+  type ITimetableBlock,
 } from '@/features/activities';
 import { useDayReport } from '@/features/reports';
 import { ActivityForm } from './components/ActivityForm/ActivityForm';
@@ -29,39 +30,46 @@ import styles from './TimetablePage.module.scss';
 export const TimetablePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [timetableView, setTimetableView] = useState<TimetableView>('day');
-  const [detailTask, setDetailTask] = useState<ITask | null>(null);
-  const [editing, setEditing] = useState<ITask | null>(null);
+  const [detailBlock, setDetailBlock] = useState<ITimetableBlock | null>(null);
+  const [editing, setEditing] = useState<ITimetableBlock | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const week = weekDateKeys(selectedDate);
-  const { activities, isLoading: dayLoading, error: dayError } = useDayReport(selectedDate);
-  const weekActivitiesQuery = useActivitiesByRange(week[0], week[week.length - 1]);
-  const weekActivities = weekActivitiesQuery.data ?? [];
+  const { activities: dayBlocks, isLoading: dayLoading, error: dayError } =
+    useDayReport(selectedDate);
+  const weekBlocksQuery = useTimetableBlocksByRange(week[0], week[week.length - 1]);
+  const weekBlocks = weekBlocksQuery.data ?? [];
   const { data: runningEntry = null } = useRunningTimer();
   const runningTaskQuery = useTaskById(runningEntry?.taskId ?? null);
   const runningTask = runningTaskQuery.data ?? null;
+  const runningBlocksQuery = useTimetableBlocksByTask(runningEntry?.taskId ?? null);
+  const runningBlock = runningBlocksQuery.data?.[0] ?? null;
   const timeZone = useResolvedTimeZone();
-  const taskCatalogQuery = useTaskCatalog(Boolean(runningEntry));
+  const blockCatalogQuery = useTimetableBlocksForCatalog(Boolean(runningEntry));
   const pomodoroReminder = usePomodoroReminder({
-    runningTask,
+    runningBlock,
     runningEntry,
-    tasks: taskCatalogQuery.data ?? [],
+    blocks: blockCatalogQuery.data ?? [],
     timeZone,
   });
   const { data: detailActivity = null } = useActivityById(
-    detailTask?.activityId ?? null
+    detailBlock?.activityId ?? null
   );
-  const { data: detailEntries = [] } = useTimeEntriesByTask(detailTask?.id ?? null);
-  const { update, remove, setStatus, complete } = useActivityMutations(selectedDate);
+  const { data: detailEntries = [] } = useTimeEntriesByTask(
+    detailBlock?.taskId ?? null
+  );
+  const { update, updateBlock, remove, setStatus, complete } =
+    useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
   const isLoading =
-    dayLoading || (timetableView === 'week' && weekActivitiesQuery.isLoading);
+    dayLoading || (timetableView === 'week' && weekBlocksQuery.isLoading);
   const loadError =
-    dayError ?? (timetableView === 'week' ? weekActivitiesQuery.error : null);
+    dayError ?? (timetableView === 'week' ? weekBlocksQuery.error : null);
 
   const busy =
     update.isPending ||
+    updateBlock.isPending ||
     remove.isPending ||
     setStatus.isPending ||
     complete.isPending ||
@@ -70,31 +78,31 @@ export const TimetablePage: React.FC = () => {
     addManual.isPending;
 
   useEffect(() => {
-    if (!detailTask) return;
+    if (!detailBlock) return;
     const next =
-      activities.find((task) => task.id === detailTask.id) ??
-      weekActivities.find((task) => task.id === detailTask.id) ??
-      (runningTask?.id === detailTask.id ? runningTask : undefined);
+      dayBlocks.find((block) => block.id === detailBlock.id) ??
+      weekBlocks.find((block) => block.id === detailBlock.id) ??
+      (runningBlock?.id === detailBlock.id ? runningBlock : undefined);
     if (!next) {
       if (dayLoading) return;
-      setDetailTask(null);
+      setDetailBlock(null);
       return;
     }
     if (
-      next.status !== detailTask.status ||
-      next.title !== detailTask.title ||
-      next.notes !== detailTask.notes ||
-      next.plannedStart !== detailTask.plannedStart ||
-      next.plannedEnd !== detailTask.plannedEnd ||
-      next.updatedAt !== detailTask.updatedAt
+      next.status !== detailBlock.status ||
+      next.title !== detailBlock.title ||
+      next.notes !== detailBlock.notes ||
+      next.plannedStart !== detailBlock.plannedStart ||
+      next.plannedEnd !== detailBlock.plannedEnd ||
+      next.updatedAt !== detailBlock.updatedAt
     ) {
-      setDetailTask(next);
+      setDetailBlock(next);
     }
-  }, [activities, weekActivities, runningTask, detailTask, dayLoading]);
+  }, [dayBlocks, weekBlocks, runningBlock, detailBlock, dayLoading]);
 
-  const openDetails = (item: ITask) => {
+  const openDetails = (item: ITimetableBlock) => {
     setSelectedDate(item.date);
-    setDetailTask(item);
+    setDetailBlock(item);
     setEditing(null);
   };
 
@@ -102,9 +110,13 @@ export const TimetablePage: React.FC = () => {
     if (!editing) return;
     setActionError(null);
     try {
-      await update.mutateAsync({ id: editing.id, patch: values });
+      await update.mutateAsync({
+        blockId: editing.id,
+        taskId: editing.taskId,
+        patch: values,
+      });
       setEditing(null);
-      setDetailTask(null);
+      setDetailBlock(null);
       if (values.date !== selectedDate) {
         setSelectedDate(values.date);
       }
@@ -141,7 +153,7 @@ export const TimetablePage: React.FC = () => {
   return (
     <MainLayout>
       <div className={styles.timetable}>
-        {runningEntry && detailTask?.id !== runningEntry.taskId ? (
+        {runningEntry && detailBlock?.taskId !== runningEntry.taskId ? (
           <aside className={styles.runningNotice} aria-live="polite">
             <div className={styles.runningNoticeText}>
               <strong>Timer still running</strong>
@@ -159,9 +171,9 @@ export const TimetablePage: React.FC = () => {
             <button
               type="button"
               className={styles.runningNoticeAction}
-              disabled={!runningTask || runningTaskQuery.isPending}
+              disabled={!runningBlock || runningBlocksQuery.isPending}
               onClick={() => {
-                if (runningTask) openDetails(runningTask);
+                if (runningBlock) openDetails(runningBlock);
               }}
             >
               Open task
@@ -171,17 +183,17 @@ export const TimetablePage: React.FC = () => {
         {pomodoroReminder.shouldPrompt &&
         runningTask &&
         runningEntry &&
-        pomodoroReminder.breakTask ? (
+        pomodoroReminder.breakBlock ? (
           <PomodoroBreakPrompt
             focusTitle={runningTask.title}
-            breakTitle={pomodoroReminder.breakTask.title}
+            breakTitle={pomodoroReminder.breakBlock.title}
             isOpening={stopTimer.isPending}
             onContinueWorking={pomodoroReminder.dismiss}
             onOpenBreak={() =>
               runAction(async () => {
                 await stopTimer.mutateAsync(runningEntry.id);
                 pomodoroReminder.dismiss();
-                openDetails(pomodoroReminder.breakTask!);
+                openDetails(pomodoroReminder.breakBlock!);
               })
             }
           />
@@ -189,7 +201,9 @@ export const TimetablePage: React.FC = () => {
         {actionError && <div className={styles.error}>{actionError}</div>}
         {loadError && (
           <div className={styles.error}>
-            {loadError instanceof Error ? loadError.message : 'Failed to load tasks from API.'}
+            {loadError instanceof Error
+              ? loadError.message
+              : 'Failed to load schedule blocks from API.'}
           </div>
         )}
         {isLoading && !loadError ? <div className={styles.loading}>Loading timetable…</div> : null}
@@ -197,7 +211,7 @@ export const TimetablePage: React.FC = () => {
         {timetableView === 'week' ? (
           <WeekTimetable
             days={week}
-            activities={weekActivities}
+            blocks={weekBlocks}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             disabled={busy}
@@ -205,7 +219,7 @@ export const TimetablePage: React.FC = () => {
             onSelect={openDetails}
             onReschedule={(id, plannedStart, plannedEnd, date) =>
               runAction(() =>
-                update.mutateAsync({
+                updateBlock.mutateAsync({
                   id,
                   patch: { plannedStart, plannedEnd, ...(date ? { date } : {}) },
                 })
@@ -215,75 +229,56 @@ export const TimetablePage: React.FC = () => {
         ) : (
           <DayTimetable
             date={selectedDate}
-            activities={activities}
+            blocks={dayBlocks}
             disabled={busy}
             toolbar={toolbar}
             onSelect={openDetails}
             onReschedule={(id, plannedStart, plannedEnd) =>
-              runAction(() => update.mutateAsync({ id, patch: { plannedStart, plannedEnd } }))
+              runAction(() =>
+                updateBlock.mutateAsync({ id, patch: { plannedStart, plannedEnd } })
+              )
             }
           />
         )}
 
-        {detailTask && !editing ? (
+        {detailBlock && !editing ? (
           <TaskDetailModal
-            task={detailTask}
+            block={detailBlock}
             activityTitle={detailActivity?.title}
             entries={detailEntries}
             runningEntry={runningEntry}
             busy={busy}
-            onClose={() => setDetailTask(null)}
-            onEdit={(task) => setEditing(task)}
-            onDelete={(id) =>
+            onClose={() => setDetailBlock(null)}
+            onEdit={(block) => setEditing(block)}
+            onDelete={(block) =>
               runAction(async () => {
-                await remove.mutateAsync(id);
-                setDetailTask(null);
+                await remove.mutateAsync({
+                  blockId: block.id,
+                  taskId: block.taskId,
+                });
+                setDetailBlock(null);
               })
             }
-            onStatus={(id, status) =>
+            onStatus={(taskId, status) =>
               runAction(async () => {
                 if (status === 'done') {
-                  let workEntries = detailEntries;
-
-                  if (runningEntry?.taskId === id) {
-                    const stoppedEntry = await stopTimer.mutateAsync(runningEntry.id);
-                    const alreadyListed = workEntries.some(
-                      (entry) => entry.id === stoppedEntry.id
-                    );
-                    workEntries = alreadyListed
-                      ? workEntries.map((entry) =>
-                          entry.id === stoppedEntry.id ? stoppedEntry : entry
-                        )
-                      : [...workEntries, stoppedEntry];
+                  if (runningEntry?.taskId === taskId) {
+                    await stopTimer.mutateAsync(runningEntry.id);
                   }
-
-                  const completedEntries = workEntries.filter(
-                    (entry) => entry.endAt !== null
-                  );
-                  const firstStartAt = completedEntries
-                    .map((entry) => entry.startAt)
-                    .sort()[0];
-                  const lastEndAt = completedEntries
-                    .map((entry) => entry.endAt!)
-                    .sort()
-                    .at(-1);
-
-                  await complete.mutateAsync({
-                    id,
-                    firstStartAt,
-                    lastEndAt,
-                  });
-                  setDetailTask(null);
+                  await complete.mutateAsync({ taskId });
+                  setDetailBlock(null);
                   return;
                 }
 
-                await setStatus.mutateAsync({ id, status });
+                await setStatus.mutateAsync({ taskId, status });
               })
             }
-            onStart={(id) => runAction(() => startTimer.mutateAsync(id))}
-            onStop={(id) => runAction(() => stopTimer.mutateAsync(id))}
-            onLogManual={(id, minutes) =>
-              runAction(() => addManual.mutateAsync({ activityId: id, durationMinutes: minutes }))
+            onStart={(taskId) => runAction(() => startTimer.mutateAsync(taskId))}
+            onStop={(entryId) => runAction(() => stopTimer.mutateAsync(entryId))}
+            onLogManual={(taskId, minutes) =>
+              runAction(() =>
+                addManual.mutateAsync({ activityId: taskId, durationMinutes: minutes })
+              )
             }
           />
         ) : null}
@@ -303,7 +298,7 @@ export const TimetablePage: React.FC = () => {
                 isSubmitting={update.isPending}
                 onCancel={() => {
                   setEditing(null);
-                  setDetailTask(null);
+                  setDetailBlock(null);
                 }}
                 onSubmit={handleSubmit}
               />

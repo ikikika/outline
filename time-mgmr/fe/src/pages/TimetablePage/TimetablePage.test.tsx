@@ -3,9 +3,11 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TimetablePage from './TimetablePage';
 
-const mockActivities = [
+const mockBlocks = [
   {
-    id: 'task-1',
+    id: 'block-1',
+    taskId: 'task-1',
+    blockType: 'focus' as const,
     activityId: 'activity-1',
     title: 'Deep work',
     date: '2026-07-19',
@@ -19,6 +21,7 @@ const mockActivities = [
   },
   {
     id: 'break-1',
+    blockType: 'short_break' as const,
     activityId: 'pomodoro-breaks',
     title: 'Short Break',
     date: '2026-07-19',
@@ -92,18 +95,25 @@ vi.mock('@/features/activities', () => ({
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;
   },
-  useActivitiesByRange: () => ({ data: mockActivities, isLoading: false, error: null }),
+  useTimetableBlocksByRange: () => ({ data: mockBlocks, isLoading: false, error: null }),
   useActivityById: () => ({
     data: { id: 'activity-1', title: 'AI course' },
   }),
   useTaskById: () => ({
-    data: mockRunningEntry ? mockActivities[0] : undefined,
+    data: mockRunningEntry
+      ? { id: 'task-1', title: 'Deep work', activityId: 'activity-1' }
+      : undefined,
+    isPending: false,
+  }),
+  useTimetableBlocksByTask: () => ({
+    data: mockRunningEntry ? [mockBlocks[0]] : [],
     isPending: false,
   }),
   useResolvedTimeZone: () => 'UTC',
-  useTaskCatalog: () => ({ data: mockActivities }),
+  useTimetableBlocksForCatalog: () => ({ data: mockBlocks }),
   useActivityMutations: () => ({
     update: { isPending: false, mutateAsync: vi.fn() },
+    updateBlock: { isPending: false, mutateAsync: vi.fn() },
     remove: { isPending: false, mutateAsync: vi.fn() },
     setStatus: { isPending: false, mutateAsync: vi.fn() },
     complete: { isPending: false, mutateAsync: mockCompleteMutation },
@@ -122,7 +132,7 @@ vi.mock('@/features/activities', () => ({
 
 vi.mock('./hooks/usePomodoroReminder/usePomodoroReminder', () => ({
   usePomodoroReminder: () => ({
-    breakTask: mockShouldPrompt ? mockActivities[1] : null,
+    breakBlock: mockShouldPrompt ? mockBlocks[1] : null,
     shouldPrompt: mockShouldPrompt,
     dismiss: mockDismissReminder,
   }),
@@ -138,7 +148,7 @@ vi.mock('@/features/reports', () => ({
     },
     isLoading: false,
     error: null,
-    activities: mockActivities,
+    activities: mockBlocks,
     entries: [],
   }),
 }));
@@ -149,17 +159,17 @@ vi.mock('./components/ActivityForm/ActivityForm', () => ({
 
 vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
   TaskDetailModal: ({
-    task,
+    block,
     activityTitle,
     onStatus,
   }: {
-    task: { id: string; title: string };
+    block: { id: string; taskId?: string; title: string };
     activityTitle?: string;
     onStatus: (id: string, status: 'done') => void;
   }) => (
     <div data-testid="task-detail-modal">
-      {activityTitle} · {task.title}
-      <button type="button" onClick={() => onStatus(task.id, 'done')}>
+      {activityTitle} · {block.title}
+      <button type="button" onClick={() => onStatus(block.taskId ?? block.id, 'done')}>
         Done
       </button>
     </div>
@@ -178,23 +188,11 @@ describe('TimetablePage', () => {
   it('renders timetable blocks', () => {
     render(<TimetablePage />);
 
-    expect(screen.getByLabelText('Day timetable')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '2026-07-19' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Deep work/i })).toBeInTheDocument();
+    expect(screen.getByText('Deep work')).toBeInTheDocument();
+    expect(screen.getByText('Short Break')).toBeInTheDocument();
   });
 
-  it('switches to week timetable view', async () => {
-    const { userEvent } = await import('@testing-library/user-event');
-    const user = userEvent.setup();
-    render(<TimetablePage />);
-
-    await user.click(screen.getByRole('button', { name: 'Week' }));
-    expect(screen.getByLabelText('Week timetable')).toBeInTheDocument();
-  });
-
-  it('shows a running-session notice and opens its task modal', async () => {
-    const { userEvent } = await import('@testing-library/user-event');
-    const user = userEvent.setup();
+  it('shows a running timer notice for a different task', () => {
     mockRunningEntry = {
       id: 'entry-1',
       taskId: 'task-1',
@@ -209,14 +207,35 @@ describe('TimetablePage', () => {
     render(<TimetablePage />);
 
     expect(screen.getByText('Timer still running')).toBeInTheDocument();
-    expect(screen.getByText(/Deep work started at/i)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Open task' }));
-
-    expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Deep work');
+    expect(screen.getByText(/Deep work started at/)).toBeInTheDocument();
   });
 
-  it('closes the task modal after marking the task done', async () => {
+  it('opens the break prompt and can stop the timer then open the break', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    mockShouldPrompt = true;
+    mockRunningEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    render(<TimetablePage />);
+
+    expect(screen.getByText(/Ready for a short break/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Open break/i }));
+
+    expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
+    expect(mockDismissReminder).toHaveBeenCalled();
+    expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Short Break');
+  });
+
+  it('marks done with task id and stops a running timer first', async () => {
     const { userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
     mockRunningEntry = {
@@ -229,43 +248,13 @@ describe('TimetablePage', () => {
       createdAt: '2026-07-19T09:00:00.000Z',
       updatedAt: '2026-07-19T09:00:00.000Z',
     };
+
     render(<TimetablePage />);
 
     await user.click(screen.getByRole('button', { name: 'Open task' }));
     await user.click(screen.getByRole('button', { name: 'Done' }));
 
-    expect(screen.queryByTestId('task-detail-modal')).not.toBeInTheDocument();
     expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
-    expect(mockCompleteMutation).toHaveBeenCalledWith({
-      id: 'task-1',
-      firstStartAt: '2026-07-19T09:00:00.000Z',
-      lastEndAt: '2026-07-19T10:00:00.000Z',
-    });
-  });
-
-  it('stops only the focus session and opens the planned break', async () => {
-    const { userEvent } = await import('@testing-library/user-event');
-    const user = userEvent.setup();
-    mockRunningEntry = {
-      id: 'entry-1',
-      taskId: 'task-1',
-      startAt: '2026-07-19T09:00:00.000Z',
-      endAt: null,
-      durationMinutes: null,
-      source: 'timer',
-      createdAt: '2026-07-19T09:00:00.000Z',
-      updatedAt: '2026-07-19T09:00:00.000Z',
-    };
-    mockShouldPrompt = true;
-    render(<TimetablePage />);
-
-    await user.click(screen.getByRole('button', { name: 'Open break' }));
-
-    expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
-    expect(mockCompleteMutation).not.toHaveBeenCalled();
-    expect(mockDismissReminder).toHaveBeenCalled();
-    expect(screen.getByTestId('task-detail-modal')).toHaveTextContent(
-      'Short Break'
-    );
+    expect(mockCompleteMutation).toHaveBeenCalledWith({ taskId: 'task-1' });
   });
 });

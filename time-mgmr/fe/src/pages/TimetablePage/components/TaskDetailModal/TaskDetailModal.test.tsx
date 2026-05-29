@@ -8,7 +8,7 @@ import {
   sessionDurationSeconds,
   TaskDetailModal,
 } from './TaskDetailModal';
-import type { ITask, ITimeEntry } from '@/features/activities';
+import type { ITimetableBlock, ITimeEntry } from '@/features/activities';
 
 vi.mock('@/components/ui', () => ({
   Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
@@ -31,8 +31,10 @@ vi.mock('../../utils/taskBlockColor/taskBlockColor', () => ({
   getTaskBlockColor: () => '#2563eb',
 }));
 
-const task: ITask = {
-  id: 'task-1',
+const block: ITimetableBlock = {
+  id: 'block-1',
+  taskId: 'task-1',
+  blockType: 'focus',
   activityId: 'activity-1',
   title: 'Deep work',
   date: '2026-07-19',
@@ -47,7 +49,7 @@ const task: ITask = {
 };
 
 const baseProps = {
-  task,
+  block,
   activityTitle: 'Agentic AI course',
   entries: [] as ITimeEntry[],
   runningEntry: null as ITimeEntry | null,
@@ -147,7 +149,7 @@ describe('completed task actions', () => {
     render(
       <TaskDetailModal
         {...baseProps}
-        task={{ ...task, status: 'done' }}
+        block={{ ...block, status: 'done' }}
         onStatus={onStatus}
       />
     );
@@ -186,7 +188,7 @@ describe('TaskDetailModal focus mode', () => {
     render(
       <TaskDetailModal
         {...baseProps}
-        task={{ ...task, timeEstimationSeconds: 45 * 60 }}
+        block={{ ...block, timeEstimationSeconds: 45 * 60 }}
       />
     );
 

@@ -43,9 +43,7 @@ describe('activitiesApi', () => {
     );
   });
 
-  it('POSTs a catalog task with its estimated duration', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-07-21T10:00:00.000Z'));
+  it('POSTs a catalog task without invented schedule timestamps', async () => {
     postJsonAuth.mockResolvedValue({ id: 'task-1' });
     const { createCatalogTaskApi } = await import('./activitiesApi');
 
@@ -59,44 +57,13 @@ describe('activitiesApi', () => {
     expect(postJsonAuth).toHaveBeenCalledWith('http://api.test/api/tasks', {
       activityId: 'activity-1',
       title: 'Lesson 1',
-      plannedStart: '2026-07-21T10:00:00.000Z',
-      plannedEnd: '2026-07-21T10:15:00.000Z',
       timeEstimationSeconds: 900,
       categoryId: 'deep_work',
       notes: '',
       status: 'unplanned',
     });
-    vi.useRealTimers();
-  });
-
-  it('excludes unplanned tasks from calendar date results', async () => {
-    getJsonAuth.mockResolvedValue([
-      {
-        id: 'unplanned-task',
-        activityId: 'activity-1',
-        title: 'Backlog task',
-        plannedStart: '2026-07-21T10:00:00.000Z',
-        plannedEnd: '2026-07-21T10:15:00.000Z',
-        categoryId: 'work',
-        notes: '',
-        status: 'unplanned',
-      },
-      {
-        id: 'planned-task',
-        activityId: 'activity-1',
-        title: 'Calendar task',
-        plannedStart: '2026-07-21T11:00:00.000Z',
-        plannedEnd: '2026-07-21T11:15:00.000Z',
-        categoryId: 'work',
-        notes: '',
-        status: 'planned',
-      },
-    ]);
-    const { fetchTasksByDate } = await import('./activitiesApi');
-
-    const tasks = await fetchTasksByDate('2026-07-21', 'UTC');
-
-    expect(tasks.map((task) => task.id)).toEqual(['planned-task']);
+    expect(postJsonAuth.mock.calls[0][1]).not.toHaveProperty('plannedStart');
+    expect(postJsonAuth.mock.calls[0][1]).not.toHaveProperty('plannedEnd');
   });
 
   it('DELETEs activities and tasks by id', async () => {
@@ -115,9 +82,44 @@ describe('activitiesApi', () => {
     );
   });
 
-  it('schedules a catalog task and marks it planned', async () => {
-    patchJsonAuth.mockResolvedValue({ id: 'task-1' });
-    const { scheduleTaskApi } = await import('./activitiesApi');
+  it('PATCHes task status without schedule times', async () => {
+    patchJsonAuth.mockResolvedValue({
+      id: 'task-1',
+      activityId: 'activity-1',
+      title: 'Deep work',
+      categoryId: 'deep_work',
+      notes: '',
+      status: 'done',
+    });
+
+    const { updateTaskApi } = await import('./activitiesApi');
+
+    await updateTaskApi('task-1', { status: 'done' });
+
+    expect(patchJsonAuth).toHaveBeenCalledWith(
+      'http://api.test/api/tasks/task-1',
+      { status: 'done' }
+    );
+  });
+});
+
+describe('scheduleBlocksApi', () => {
+  beforeEach(() => {
+    patchJsonAuth.mockReset();
+    postJsonAuth.mockReset();
+    getJsonAuth.mockReset();
+    deleteJsonAuth.mockReset();
+  });
+
+  it('schedules a catalog task by POSTing a focus schedule block', async () => {
+    postJsonAuth.mockResolvedValue({
+      id: 'block-1',
+      taskId: 'task-1',
+      blockType: 'focus',
+      plannedStart: '2026-07-22T01:00:00.000Z',
+      plannedEnd: '2026-07-22T01:25:00.000Z',
+    });
+    const { scheduleTaskApi } = await import('./scheduleBlocksApi');
 
     await scheduleTaskApi(
       'task-1',
@@ -129,32 +131,40 @@ describe('activitiesApi', () => {
       'Asia/Singapore'
     );
 
-    expect(patchJsonAuth).toHaveBeenCalledWith(
-      'http://api.test/api/tasks/task-1',
+    expect(postJsonAuth).toHaveBeenCalledWith(
+      'http://api.test/api/schedule-blocks',
       {
+        taskId: 'task-1',
+        blockType: 'focus',
         plannedStart: '2026-07-22T01:00:00.000Z',
         plannedEnd: '2026-07-22T01:25:00.000Z',
-        status: 'planned',
       }
     );
   });
 
-  it('converts HH:mm reschedule times to UTC ISO and PATCHes the task', async () => {
+  it('converts HH:mm reschedule times to UTC ISO and PATCHes the block', async () => {
     patchJsonAuth.mockResolvedValue({
-      id: 'task-1',
-      activityId: 'activity-1',
-      title: 'Deep work',
+      id: 'block-1',
+      taskId: 'task-1',
+      blockType: 'focus',
       plannedStart: '2026-07-22T01:15:00.000Z',
       plannedEnd: '2026-07-22T03:15:00.000Z',
-      categoryId: 'deep_work',
-      notes: '',
-      status: 'planned',
     });
+    getJsonAuth.mockResolvedValue([
+      {
+        id: 'task-1',
+        activityId: 'activity-1',
+        title: 'Deep work',
+        categoryId: 'deep_work',
+        notes: '',
+        status: 'planned',
+      },
+    ]);
 
-    const { updateTaskApi } = await import('./activitiesApi');
+    const { updateScheduleBlockApi } = await import('./scheduleBlocksApi');
 
-    const result = await updateTaskApi(
-      'task-1',
+    const result = await updateScheduleBlockApi(
+      'block-1',
       { plannedStart: '09:15', plannedEnd: '11:15' },
       'Asia/Singapore',
       {
@@ -165,43 +175,62 @@ describe('activitiesApi', () => {
     );
 
     expect(patchJsonAuth).toHaveBeenCalledWith(
-      'http://api.test/api/tasks/task-1',
+      'http://api.test/api/schedule-blocks/block-1',
       {
         plannedStart: '2026-07-22T01:15:00.000Z',
         plannedEnd: '2026-07-22T03:15:00.000Z',
       }
     );
     expect(result).toMatchObject({
-      id: 'task-1',
+      id: 'block-1',
+      taskId: 'task-1',
       date: '2026-07-22',
       plannedStart: '09:15',
       plannedEnd: '11:15',
     });
   });
 
-  it('PATCHes status without converting times', async () => {
-    patchJsonAuth.mockResolvedValue({
-      id: 'task-1',
-      activityId: 'activity-1',
-      title: 'Deep work',
-      plannedStart: '2026-07-22T01:00:00.000Z',
-      plannedEnd: '2026-07-22T03:00:00.000Z',
-      categoryId: 'deep_work',
-      notes: '',
-      status: 'done',
+  it('loads timetable blocks for a day and joins task metadata', async () => {
+    getJsonAuth
+      .mockResolvedValueOnce([
+        {
+          id: 'block-1',
+          taskId: 'task-1',
+          blockType: 'focus',
+          plannedStart: '2026-07-21T11:00:00.000Z',
+          plannedEnd: '2026-07-21T11:15:00.000Z',
+        },
+        {
+          id: 'break-1',
+          blockType: 'short_break',
+          plannedStart: '2026-07-21T11:15:00.000Z',
+          plannedEnd: '2026-07-21T11:20:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'task-1',
+          activityId: 'activity-1',
+          title: 'Calendar task',
+          categoryId: 'work',
+          notes: '',
+          status: 'planned',
+        },
+      ]);
+
+    const { fetchTimetableBlocksByDate } = await import('./scheduleBlocksApi');
+    const blocks = await fetchTimetableBlocksByDate('2026-07-21', 'UTC');
+
+    expect(blocks.map((b) => b.id)).toEqual(['block-1', 'break-1']);
+    expect(blocks[0]).toMatchObject({
+      id: 'block-1',
+      taskId: 'task-1',
+      title: 'Calendar task',
     });
-
-    const { updateTaskApi } = await import('./activitiesApi');
-
-    await updateTaskApi('task-1', { status: 'done' }, 'Asia/Singapore', {
-      date: '2026-07-22',
-      plannedStart: '09:00',
-      plannedEnd: '11:00',
+    expect(blocks[1]).toMatchObject({
+      id: 'break-1',
+      title: 'Short Break',
+      categoryId: 'break',
     });
-
-    expect(patchJsonAuth).toHaveBeenCalledWith(
-      'http://api.test/api/tasks/task-1',
-      { status: 'done' }
-    );
   });
 });

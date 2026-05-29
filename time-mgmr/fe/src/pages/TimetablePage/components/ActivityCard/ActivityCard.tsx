@@ -7,7 +7,7 @@ import {
   formatMinutes,
   formatSignedMinutes,
   manualTimeEntrySchema,
-  type ITask,
+  type ITimetableBlock,
   type ITimeEntry,
   type ManualTimeEntryFormValues,
 } from '@/features/activities';
@@ -18,12 +18,12 @@ import {
 import styles from './ActivityCard.module.scss';
 
 interface ActivityCardProps {
-  activity: ITask;
+  activity: ITimetableBlock;
   entries: ITimeEntry[];
   runningEntry: ITimeEntry | null;
-  onEdit: (activity: ITask) => void;
+  onEdit: (activity: ITimetableBlock) => void;
   onDelete: (id: string) => void;
-  onStatus: (id: string, status: ITask['status']) => void;
+  onStatus: (id: string, status: ITimetableBlock['status']) => void;
   onStart: (activityId: string) => void;
   onStop: (entryId: string) => void;
   onPause: (entryId: string) => void;
@@ -54,7 +54,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   const [showManual, setShowManual] = useState(false);
   const category = CATEGORY_MAP[activity.categoryId];
   const metrics = buildActivityMetrics(activity, entries);
-  const isRunningHere = runningEntry?.taskId === activity.id;
+  const taskId = activity.taskId ?? activity.id;
+  const isRunningHere = runningEntry?.taskId === taskId;
   const {
     register,
     handleSubmit,
@@ -66,7 +67,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   });
 
   const submitManual = handleSubmit(async (values) => {
-    await onLogManual(activity.id, values.durationMinutes);
+    await onLogManual(taskId, values.durationMinutes);
     reset({ durationMinutes: 30 });
     setShowManual(false);
   });
@@ -144,7 +145,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           <Button
             size="sm"
             disabled={busy || Boolean(runningEntry)}
-            onClick={() => onStart(activity.id)}
+            onClick={() => onStart(taskId)}
             title={runningEntry ? 'Stop the current timer first' : undefined}
           >
             Start
@@ -157,7 +158,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           size="sm"
           variant="outline"
           disabled={busy}
-          onClick={() => onStatus(activity.id, 'done')}
+          onClick={() => onStatus(taskId, 'done')}
         >
           Done
         </Button>
@@ -165,7 +166,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           size="sm"
           variant="ghost"
           disabled={busy}
-          onClick={() => onStatus(activity.id, 'skipped')}
+          onClick={() => onStatus(taskId, 'skipped')}
         >
           Skip
         </Button>
@@ -176,7 +177,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           size="sm"
           variant="destructive"
           disabled={busy}
-          onClick={() => onDelete(activity.id)}
+          onClick={() => onDelete(taskId)}
         >
           Delete
         </Button>

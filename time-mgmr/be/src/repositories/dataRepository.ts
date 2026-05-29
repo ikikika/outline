@@ -9,13 +9,10 @@ import { getDocumentClient, getTableName } from '../lib/dynamo.js';
 import {
 	activityPrefix,
 	activitySk,
-	taskGsiKeys,
 	taskPrefix,
 	taskSk,
-	tasksByDateGsi,
 	userPk,
 } from '../lib/keys.js';
-import { toDateOnly, toIsoDateTime } from '../lib/timeFormat.js';
 import { toTaskResponse } from '../lib/taskMapper.js';
 import type {
 	IActivity,
@@ -238,121 +235,6 @@ export async function updateActivity(
 	return toActivity(record);
 }
 
-export async function listTasksByDate(userId: string, date: string): Promise<ITask[]> {
-	const client = getDocumentClient();
-	const { gsi1pk } = tasksByDateGsi(userId, date);
-
-	const result = await client.send(
-		new QueryCommand({
-			TableName: getTableName(),
-			IndexName: 'Gsi1',
-			KeyConditionExpression: 'gsi1pk = :gsi1pk',
-			ExpressionAttributeValues: {
-				':gsi1pk': gsi1pk,
-			},
-		})
-	);
-
-	return (result.Items ?? [])
-		.filter((item): item is ITaskRecord => item.entityType === 'task')
-		.map(toTaskResponse)
-		.sort(
-			(a, b) =>
-				a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title)
-		);
-}
-
-/**
- * List tasks whose plannedStart falls in [from, to).
- * When from/to are ISO instants, queries UTC calendar GSI partitions that
- * cover the range, then filters by plannedStart.
- * When from/to are YYYY-MM-DD, enumerates those calendar date partitions (legacy).
- */
-export async function listTasksByDateRange(
-	userId: string,
-	from: string,
-	to: string
-): Promise<ITask[]> {
-	if (from.includes('T') || to.includes('T')) {
-		return listTasksByInstantRange(userId, from, to);
-	}
-
-	const dates = enumerateDates(from, to);
-	const tasks: ITask[] = [];
-
-	for (const date of dates) {
-		const dayTasks = await listTasksByDate(userId, date);
-		tasks.push(...dayTasks);
-	}
-
-	return tasks.sort(
-		(a, b) =>
-			a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title)
-	);
-}
-
-async function listTasksByInstantRange(
-	userId: string,
-	fromIso: string,
-	toIso: string
-): Promise<ITask[]> {
-	const dates = utcCalendarDatesCovering(fromIso, toIso);
-	const tasks: ITask[] = [];
-
-	for (const date of dates) {
-		const dayTasks = await listTasksByDate(userId, date);
-		tasks.push(...dayTasks);
-	}
-
-	return tasks
-		.filter((task) => task.plannedStart >= fromIso && task.plannedStart < toIso)
-		.sort(
-			(a, b) =>
-				a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title)
-		);
-}
-
-function utcCalendarDatesCovering(fromIso: string, toIso: string): string[] {
-	const from = new Date(fromIso);
-	const toExclusive = new Date(toIso);
-	if (Number.isNaN(from.getTime()) || Number.isNaN(toExclusive.getTime())) {
-		return [];
-	}
-
-	const lastInclusive = new Date(toExclusive.getTime() - 1);
-	const dates: string[] = [];
-	const cursor = new Date(
-		Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate())
-	);
-	const end = new Date(
-		Date.UTC(
-			lastInclusive.getUTCFullYear(),
-			lastInclusive.getUTCMonth(),
-			lastInclusive.getUTCDate()
-		)
-	);
-
-	while (cursor <= end) {
-		dates.push(cursor.toISOString().slice(0, 10));
-		cursor.setUTCDate(cursor.getUTCDate() + 1);
-	}
-
-	return dates;
-}
-
-function enumerateDates(from: string, to: string): string[] {
-	const dates: string[] = [];
-	const cursor = new Date(`${from}T12:00:00.000Z`);
-	const end = new Date(`${to}T12:00:00.000Z`);
-
-	while (cursor <= end) {
-		dates.push(cursor.toISOString().slice(0, 10));
-		cursor.setUTCDate(cursor.getUTCDate() + 1);
-	}
-
-	return dates;
-}
-
 function compareCatalogTasks(a: ITask, b: ITask): number {
 	return (
 		a.activityId.localeCompare(b.activityId) ||
@@ -410,14 +292,6 @@ export async function upsertTask(
 	const client = getDocumentClient();
 	const now = new Date().toISOString();
 	const existing = await getTask(userId, task.id);
-	const date = task.date ?? toDateOnly(task.plannedStart, task.plannedStart.slice(0, 10));
-	const plannedStart = task.plannedStart.includes('T')
-		? task.plannedStart
-		: toIsoDateTime(task.plannedStart, date);
-	const plannedEnd = task.plannedEnd.includes('T')
-		? task.plannedEnd
-		: toIsoDateTime(task.plannedEnd, date);
-	const gsiKeys = taskGsiKeys(userId, date, plannedStart, task.id);
 	const sortOrder =
 		task.sortOrder ??
 		(existing ? resolveSortOrder(existing.sortOrder) : await nextTaskSortOrder(userId, task.activityId));
@@ -426,14 +300,9 @@ export async function upsertTask(
 		pk: userPk(userId),
 		sk: taskSk(task.id),
 		entityType: 'task',
-		gsi1pk: gsiKeys.gsi1pk,
-		gsi1sk: gsiKeys.gsi1sk,
 		id: task.id,
 		activityId: task.activityId,
 		title: task.title,
-		date,
-		plannedStart,
-		plannedEnd,
 		categoryId: task.categoryId,
 		notes: task.notes,
 		color: task.color,
@@ -465,9 +334,6 @@ export async function updateTask(
 	}
 
 	const activityId = patch.activityId ?? existing.activityId;
-	const plannedStart = patch.plannedStart ?? existing.plannedStart;
-	const plannedEnd = patch.plannedEnd ?? existing.plannedEnd;
-	const date = toDateOnly(plannedStart, existing.date);
 	const sortOrder =
 		patch.sortOrder ??
 		(patch.activityId && patch.activityId !== existing.activityId
@@ -478,9 +344,6 @@ export async function updateTask(
 		id: existing.id,
 		activityId,
 		title: patch.title ?? existing.title,
-		date,
-		plannedStart,
-		plannedEnd,
 		categoryId: patch.categoryId ?? existing.categoryId,
 		notes: patch.notes ?? existing.notes,
 		color: existing.color,

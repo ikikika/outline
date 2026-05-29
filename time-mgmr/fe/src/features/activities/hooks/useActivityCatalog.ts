@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ACTIVITY_QUERY_KEYS } from '../constants';
+import { ACTIVITY_QUERY_KEYS, SCHEDULE_BLOCK_QUERY_KEYS } from '../constants';
 import {
   createActivityApi,
   createCatalogTaskApi,
@@ -9,13 +9,14 @@ import {
   fetchCatalogTasks,
   patchActivityApi,
   patchTaskApi,
-  scheduleTaskApi,
   type IActivityCreateInput,
   type ICatalogTaskCreateInput,
-  type IManualScheduleInput,
 } from '../api/activitiesApi';
-import type { IActivity } from '../types';
-import type { IApiTask } from '../api/mapApiTask';
+import {
+  scheduleTaskApi,
+  type IManualScheduleInput,
+} from '../api/scheduleBlocksApi';
+import type { IActivity, IApiTask } from '../types';
 import { sortBySortOrder } from '../utils/sortBySortOrder/sortBySortOrder';
 import { useResolvedTimeZone } from './useActivities';
 
@@ -109,17 +110,23 @@ export function useScheduleCatalogTask() {
   const timeZone = useResolvedTimeZone();
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       schedule,
     }: {
       id: string;
       schedule: IManualScheduleInput;
-    }) => scheduleTaskApi(id, schedule, timeZone),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
+    }) => {
+      return scheduleTaskApi(id, schedule, timeZone);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
         queryKey: ACTIVITY_QUERY_KEYS.all,
-      }),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all,
+      });
+    },
   });
 }
 

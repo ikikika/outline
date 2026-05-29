@@ -8,14 +8,12 @@ export type TaskUpsertInput = ITaskStorageFields;
 export function normalizeImportedTask(
 	rawTask: Record<string, unknown>,
 	activity: IActivity,
-	fallbackDate: string,
 	fallbackSortOrder = 0
 ): TaskUpsertInput {
-	const input = importedTaskToCreateInput(rawTask, activity, fallbackDate);
+	const input = importedTaskToCreateInput(rawTask, activity);
 	const id = input.id ?? (rawTask.id != null ? String(rawTask.id) : randomUUID());
 	return taskInputToRecord(
 		{ ...input, id, sortOrder: input.sortOrder ?? fallbackSortOrder },
-		activity,
-		fallbackDate
+		activity
 	);
 }

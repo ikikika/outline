@@ -23,6 +23,15 @@ export const ACTIVITY_QUERY_KEYS = {
   one: (id: string) => ['activities', 'id', id] as const,
 };
 
+export const SCHEDULE_BLOCK_QUERY_KEYS = {
+  all: ['schedule-blocks'] as const,
+  byDate: (date: string) => ['schedule-blocks', 'date', date] as const,
+  byRange: (from: string, to: string) =>
+    ['schedule-blocks', 'range', from, to] as const,
+  byTask: (taskId: string) => ['schedule-blocks', 'task', taskId] as const,
+  one: (id: string) => ['schedule-blocks', 'id', id] as const,
+};
+
 export const TIME_ENTRY_QUERY_KEYS = {
   all: ['time-entries'] as const,
   byActivity: (activityId: string) => ['time-entries', 'activity', activityId] as const,
@@ -30,10 +39,6 @@ export const TIME_ENTRY_QUERY_KEYS = {
   byDate: (date: string) => ['time-entries', 'date', date] as const,
   byRange: (from: string, to: string) => ['time-entries', 'range', from, to] as const,
   running: ['time-entries', 'running'] as const,
-};
-
-export const TEMPLATE_QUERY_KEYS = {
-  all: ['activity-templates'] as const,
 };
 
 /** Variance within ±10% counts as on-target */

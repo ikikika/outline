@@ -3,37 +3,45 @@ import { useAuthContext } from '@/app/providers/auth/useAuthContext';
 import { getBrowserTimeZone } from '@/core/utils/timeZone/timeZone';
 import {
   ACTIVITY_QUERY_KEYS,
-  TEMPLATE_QUERY_KEYS,
+  SCHEDULE_BLOCK_QUERY_KEYS,
   TIME_ENTRY_QUERY_KEYS,
 } from '../constants';
 import {
-  createTaskApi,
   fetchActivityById,
   fetchTaskById,
-  fetchTimetableTaskCatalog,
-  fetchTasksByDate,
-  fetchTasksByDateRange,
   patchTaskApi,
   requireApiBaseUrl,
   updateTaskApi,
+  deleteTaskApi,
+  type ITaskPatch,
 } from '../api/activitiesApi';
-import { apiTaskToTimetableTask } from '../api/mapApiTask';
-import { activityRepository } from '../repository/activityRepository';
+import {
+  deleteScheduleBlockApi,
+  fetchTimetableBlocksByDate,
+  fetchTimetableBlocksByDateRange,
+  fetchTimetableBlocksByTaskId,
+  updateScheduleBlockApi,
+  type ITimetableBlockPatch,
+} from '../api/scheduleBlocksApi';
 import { timeEntryRepository } from '../repository/timeEntryRepository';
-import { persistTasksJsonSnapshot } from '../repository/jsonBackup';
-import type { ActivityStatus, IActivityInput, ITask, TaskStatus } from '../types';
-import { addDays, createId } from '../utils/dateUtils';
+import type {
+  ActivityStatus,
+  IActivityInput,
+  ITimetableBlock,
+  TaskStatus,
+} from '../types';
+import { addDays, todayKey } from '../utils/dateUtils';
 
-function findTaskInCache(
+function findBlockInCache(
   queryClient: ReturnType<typeof useQueryClient>,
   id: string
-): ITask | undefined {
-  const queries = queryClient.getQueriesData<ITask[]>({
-    queryKey: ACTIVITY_QUERY_KEYS.all,
+): ITimetableBlock | undefined {
+  const queries = queryClient.getQueriesData<ITimetableBlock[]>({
+    queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all,
   });
-  for (const [, tasks] of queries) {
-    if (!Array.isArray(tasks)) continue;
-    const found = tasks.find((task) => task.id === id);
+  for (const [, blocks] of queries) {
+    if (!Array.isArray(blocks)) continue;
+    const found = blocks.find((block) => block.id === id);
     if (found) return found;
   }
   return undefined;
@@ -44,42 +52,47 @@ export function useResolvedTimeZone(): string {
   return user?.timeZone ?? getBrowserTimeZone();
 }
 
-async function loadTasksByDate(date: string, timeZone: string) {
-  requireApiBaseUrl();
-  return fetchTasksByDate(date, timeZone);
-}
-
-async function loadTasksByRange(from: string, to: string, timeZone: string) {
-  requireApiBaseUrl();
-  return fetchTasksByDateRange(from, to, timeZone);
-}
-
-async function invalidateActivityQueries(
+async function invalidateScheduleQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   date?: string
 ) {
+  await queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all });
   await queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all });
   await queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.all });
   if (date) {
-    await queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.byDate(date) });
+    await queryClient.invalidateQueries({
+      queryKey: SCHEDULE_BLOCK_QUERY_KEYS.byDate(date),
+    });
   }
 }
 
-export function useActivitiesByDate(date: string) {
+export function useTimetableBlocksByDate(date: string) {
   const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: [...ACTIVITY_QUERY_KEYS.byDate(date), timeZone],
-    queryFn: () => loadTasksByDate(date, timeZone),
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byDate(date), timeZone],
+    queryFn: () => {
+      requireApiBaseUrl();
+      return fetchTimetableBlocksByDate(date, timeZone);
+    },
   });
 }
 
-export function useActivitiesByRange(from: string, to: string) {
+/** @deprecated Use useTimetableBlocksByDate */
+export const useActivitiesByDate = useTimetableBlocksByDate;
+
+export function useTimetableBlocksByRange(from: string, to: string) {
   const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: [...ACTIVITY_QUERY_KEYS.byRange(from, to), timeZone],
-    queryFn: () => loadTasksByRange(from, to, timeZone),
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byRange(from, to), timeZone],
+    queryFn: () => {
+      requireApiBaseUrl();
+      return fetchTimetableBlocksByDateRange(from, to, timeZone);
+    },
   });
 }
+
+/** @deprecated Use useTimetableBlocksByRange */
+export const useActivitiesByRange = useTimetableBlocksByRange;
 
 export function useActivityById(activityId: string | null) {
   return useQuery({
@@ -89,20 +102,34 @@ export function useActivityById(activityId: string | null) {
   });
 }
 
-export function useTaskCatalog(enabled = true) {
+export function useTimetableBlocksForCatalog(enabled = true) {
   const timeZone = useResolvedTimeZone();
+  const from = addDays(todayKey(), -1);
+  const to = addDays(todayKey(), 7);
   return useQuery({
-    queryKey: [...ACTIVITY_QUERY_KEYS.catalog, timeZone],
-    queryFn: () => fetchTimetableTaskCatalog(timeZone),
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byRange(from, to), timeZone, 'catalog'],
+    queryFn: () => fetchTimetableBlocksByDateRange(from, to, timeZone),
     enabled,
   });
 }
 
+/** @deprecated Use useTimetableBlocksForCatalog */
+export const useTaskCatalog = useTimetableBlocksForCatalog;
+
 export function useTaskById(taskId: string | null) {
+  return useQuery({
+    queryKey: ACTIVITY_QUERY_KEYS.one(taskId ?? ''),
+    queryFn: () => fetchTaskById(taskId!),
+    enabled: Boolean(taskId),
+  });
+}
+
+export function useTimetableBlocksByTask(taskId: string | null) {
   const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: [...ACTIVITY_QUERY_KEYS.one(taskId ?? ''), timeZone],
-    queryFn: () => fetchTaskById(taskId!, timeZone),
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byTask(taskId ?? ''), timeZone],
+    queryFn: () =>
+      fetchTimetableBlocksByTaskId(taskId!, timeZone, todayKey()),
     enabled: Boolean(taskId),
   });
 }
@@ -118,7 +145,8 @@ export function useTimeEntriesByRange(from: string, to: string) {
 export function useTimeEntriesByTask(taskId: string | null) {
   return useQuery({
     queryKey: TIME_ENTRY_QUERY_KEYS.byTask(taskId ?? ''),
-    queryFn: () => (taskId ? timeEntryRepository.listByTask(taskId) : Promise.resolve([])),
+    queryFn: () =>
+      taskId ? timeEntryRepository.listByTask(taskId) : Promise.resolve([]),
     enabled: Boolean(taskId),
   });
 }
@@ -138,37 +166,16 @@ export function useActivityMutations(date: string) {
   const queryClient = useQueryClient();
   const timeZone = useResolvedTimeZone();
 
-  const create = useMutation({
-    mutationFn: async (input: IActivityInput) => {
-      return createTaskApi(
-        {
-          activityId: input.activityId ?? `ad-hoc-${createId()}`,
-          title: input.title,
-          date: input.date,
-          plannedStart: input.plannedStart,
-          plannedEnd: input.plannedEnd,
-          categoryId: input.categoryId,
-          notes: input.notes,
-          status: input.status,
-        },
-        timeZone
-      );
-    },
-    onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
-    },
-  });
-
-  const update = useMutation({
+  const updateBlock = useMutation({
     mutationFn: async ({
       id,
       patch,
     }: {
       id: string;
-      patch: Partial<IActivityInput>;
+      patch: ITimetableBlockPatch;
     }) => {
-      const existing = findTaskInCache(queryClient, id);
-      return updateTaskApi(
+      const existing = findBlockInCache(queryClient, id);
+      return updateScheduleBlockApi(
         id,
         patch,
         timeZone,
@@ -182,86 +189,125 @@ export function useActivityMutations(date: string) {
       );
     },
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateScheduleQueries(queryClient, date);
+    },
+  });
+
+  const updateTask = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: ITaskPatch }) => {
+      return updateTaskApi(id, patch);
+    },
+    onSuccess: async () => {
+      await invalidateScheduleQueries(queryClient, date);
+    },
+  });
+
+  /** Edit timetable form: task metadata (if linked) + block schedule times. */
+  const update = useMutation({
+    mutationFn: async ({
+      blockId,
+      taskId,
+      patch,
+    }: {
+      blockId: string;
+      taskId?: string;
+      patch: Partial<IActivityInput>;
+    }) => {
+      if (taskId) {
+        const taskPatch: ITaskPatch = {};
+        if (patch.title !== undefined) taskPatch.title = patch.title;
+        if (patch.categoryId !== undefined) taskPatch.categoryId = patch.categoryId;
+        if (patch.notes !== undefined) taskPatch.notes = patch.notes;
+        if (patch.status !== undefined) taskPatch.status = patch.status;
+        if (Object.keys(taskPatch).length > 0) {
+          await updateTaskApi(taskId, taskPatch);
+        }
+      }
+
+      const blockPatch: ITimetableBlockPatch = {};
+      if (patch.date !== undefined) blockPatch.date = patch.date;
+      if (patch.plannedStart !== undefined) blockPatch.plannedStart = patch.plannedStart;
+      if (patch.plannedEnd !== undefined) blockPatch.plannedEnd = patch.plannedEnd;
+
+      if (Object.keys(blockPatch).length === 0) {
+        return findBlockInCache(queryClient, blockId);
+      }
+
+      const existing = findBlockInCache(queryClient, blockId);
+      return updateScheduleBlockApi(
+        blockId,
+        blockPatch,
+        timeZone,
+        existing
+          ? {
+              date: existing.date,
+              plannedStart: existing.plannedStart,
+              plannedEnd: existing.plannedEnd,
+            }
+          : { date, plannedStart: '09:00', plannedEnd: '10:00' }
+      );
+    },
+    onSuccess: async () => {
+      await invalidateScheduleQueries(queryClient, date);
     },
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      await timeEntryRepository.removeByTask(id);
-      await activityRepository.remove(id);
+    mutationFn: async ({
+      blockId,
+      taskId,
+    }: {
+      blockId: string;
+      taskId?: string;
+    }) => {
+      if (taskId) {
+        await timeEntryRepository.removeByTask(taskId);
+        await deleteTaskApi(taskId);
+      } else {
+        await deleteScheduleBlockApi(blockId);
+      }
     },
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateScheduleQueries(queryClient, date);
     },
   });
 
   const setStatus = useMutation({
     mutationFn: async ({
-      id,
+      taskId,
       status,
     }: {
-      id: string;
+      taskId: string;
       status: ActivityStatus | TaskStatus;
-    }) => {
-      const existing = findTaskInCache(queryClient, id);
-      const updated = await patchTaskApi(id, { status });
-      return apiTaskToTimetableTask(updated, existing?.date ?? date, timeZone);
-    },
+    }) => patchTaskApi(taskId, { status }),
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateScheduleQueries(queryClient, date);
     },
   });
 
   const complete = useMutation({
-    mutationFn: async ({
-      id,
-      firstStartAt,
-      lastEndAt,
-    }: {
-      id: string;
-      firstStartAt?: string;
-      lastEndAt?: string;
-    }) => {
-      const existing = findTaskInCache(queryClient, id);
-      const updated = await patchTaskApi(id, {
-        status: 'done',
-        ...(firstStartAt && lastEndAt
-          ? {
-              plannedStart: firstStartAt,
-              plannedEnd: lastEndAt,
-            }
-          : {}),
-      });
-      return apiTaskToTimetableTask(
-        updated,
-        existing?.date ?? date,
-        timeZone
-      );
-    },
+    mutationFn: async ({ taskId }: { taskId: string }) =>
+      patchTaskApi(taskId, { status: 'done' }),
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateScheduleQueries(queryClient, date);
     },
   });
 
-  return { create, update, remove, setStatus, complete };
+  return { update, updateBlock, updateTask, remove, setStatus, complete };
 }
 
 export function useTimeEntryMutations(date: string) {
   const queryClient = useQueryClient();
 
   const refresh = async () => {
-    await invalidateActivityQueries(queryClient, date);
+    await invalidateScheduleQueries(queryClient, date);
     await queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.running });
   };
 
   const startTimer = useMutation({
     mutationFn: async (taskId: string) => {
       const entry = await timeEntryRepository.startTimer(taskId);
-      const existing = findTaskInCache(queryClient, taskId);
-      if (existing && existing.status !== 'in_progress') {
-        await patchTaskApi(taskId, { status: 'in_progress' });
-      }
+      await patchTaskApi(taskId, { status: 'in_progress' });
       return entry;
     },
     onSuccess: refresh,
@@ -287,119 +333,4 @@ export function useTimeEntryMutations(date: string) {
   });
 
   return { startTimer, stopTimer, pauseTimer, addManual };
-}
-
-export function useTemplates() {
-  return useQuery({
-    queryKey: TEMPLATE_QUERY_KEYS.all,
-    queryFn: () => activityRepository.listTemplates(),
-  });
-}
-
-export function useTemplateMutations() {
-  const queryClient = useQueryClient();
-
-  const save = useMutation({
-    mutationFn: activityRepository.saveTemplate,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: TEMPLATE_QUERY_KEYS.all });
-      await persistTasksJsonSnapshot();
-    },
-  });
-
-  const remove = useMutation({
-    mutationFn: (id: string) => activityRepository.removeTemplate(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: TEMPLATE_QUERY_KEYS.all });
-      await persistTasksJsonSnapshot();
-    },
-  });
-
-  return { save, remove };
-}
-
-export function useCopyYesterdayPlan(targetDate: string) {
-  const queryClient = useQueryClient();
-  const sourceDate = addDays(targetDate, -1);
-
-  return useMutation({
-    mutationFn: async () => {
-      const source = await activityRepository.listByDate(sourceDate);
-      if (source.length === 0) {
-        throw new Error('No activities found for yesterday.');
-      }
-      return activityRepository.createMany(
-        source.map((a) => ({
-          title: a.title,
-          date: targetDate,
-          plannedStart: a.plannedStart,
-          plannedEnd: a.plannedEnd,
-          categoryId: a.categoryId,
-          notes: a.notes,
-          status: 'planned',
-          activityId: a.activityId,
-        }))
-      );
-    },
-    onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, targetDate);
-    },
-  });
-}
-
-export function useApplyTemplate(targetDate: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (templateId: string) => {
-      const templates = await activityRepository.listTemplates();
-      const template = templates.find((t) => t.id === templateId);
-      if (!template) throw new Error('Template not found.');
-      return activityRepository.createMany(
-        template.items.map((item) => ({
-          title: item.title,
-          date: targetDate,
-          plannedStart: item.plannedStart,
-          plannedEnd: item.plannedEnd,
-          categoryId: item.categoryId,
-          notes: item.notes,
-          status: 'planned' as const,
-          activityId: item.activityId ?? `ad-hoc-${createId()}`,
-        }))
-      );
-    },
-    onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, targetDate);
-    },
-  });
-}
-
-export function useSaveDayAsTemplate(date: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (name: string) => {
-      const tasks = await activityRepository.listByDate(date);
-      if (tasks.length === 0) {
-        throw new Error('Add activities before saving a template.');
-      }
-      const weekday = new Date(`${date}T12:00:00`).getDay();
-      return activityRepository.saveTemplate({
-        name,
-        weekday,
-        items: tasks.map((a) => ({
-          activityId: a.activityId,
-          title: a.title,
-          plannedStart: a.plannedStart,
-          plannedEnd: a.plannedEnd,
-          categoryId: a.categoryId,
-          notes: a.notes,
-        })),
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: TEMPLATE_QUERY_KEYS.all });
-      await persistTasksJsonSnapshot();
-    },
-  });
 }

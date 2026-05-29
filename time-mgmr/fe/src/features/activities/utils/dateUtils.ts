@@ -94,7 +94,3 @@ export function minutesBetween(startIso: string, endIso: string): number {
   const end = new Date(endIso).getTime();
   return Math.max(0, Math.round((end - start) / 60000));
 }
-
-export function createId(): string {
-  return crypto.randomUUID();
-}

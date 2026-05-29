@@ -5,7 +5,7 @@ import {
   snapMinutes,
   timeToMinutes,
   todayKey,
-  type ITask,
+  type ITimetableBlock,
 } from '@/features/activities';
 import {
   assignOverlapColumns,
@@ -27,9 +27,9 @@ const NOW_TICK_MS = 30_000;
 
 interface DayTimetableProps {
   date: string;
-  activities: ITask[];
+  blocks: ITimetableBlock[];
   onReschedule: (id: string, plannedStart: string, plannedEnd: string) => void;
-  onSelect?: (activity: ITask) => void;
+  onSelect?: (block: ITimetableBlock) => void;
   disabled?: boolean;
   toolbar?: React.ReactNode;
 }
@@ -60,7 +60,7 @@ function currentMinutesOfDay(now = new Date()): number {
 
 export const DayTimetable: React.FC<DayTimetableProps> = ({
   date,
-  activities,
+  blocks,
   onReschedule,
   onSelect,
   disabled = false,
@@ -95,22 +95,22 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     isToday && nowMinutes >= dayStartMinutes && nowMinutes <= dayEndMinutes;
   const nowTop = (nowMinutes - dayStartMinutes) * PX_PER_MINUTE;
 
-  const visibleActivities = useMemo(() => {
-    return activities.filter((a) => {
+  const visibleBlocks = useMemo(() => {
+    return blocks.filter((a) => {
       const start = timeToMinutes(a.plannedStart);
       const end = timeToMinutes(a.plannedEnd);
       return end > dayStartMinutes && start < dayEndMinutes;
     });
-  }, [activities, dayStartMinutes, dayEndMinutes]);
+  }, [blocks, dayStartMinutes, dayEndMinutes]);
 
   const earliestBlockTop = useMemo(() => {
-    if (visibleActivities.length === 0) return null;
+    if (visibleBlocks.length === 0) return null;
     let earliestStart = Infinity;
-    for (const activity of visibleActivities) {
+    for (const activity of visibleBlocks) {
       earliestStart = Math.min(earliestStart, timeToMinutes(activity.plannedStart));
     }
     return (earliestStart - dayStartMinutes) * PX_PER_MINUTE;
-  }, [visibleActivities, dayStartMinutes]);
+  }, [visibleBlocks, dayStartMinutes]);
 
   useEffect(() => {
     if (centeredForDateRef.current === date) return;
@@ -142,7 +142,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   }, [date, isToday, showNowLine, nowTop, earliestBlockTop]);
 
   const { overlapLayout, columnNextStart } = useMemo(() => {
-    const intervals = visibleActivities.map((activity) => {
+    const intervals = visibleBlocks.map((activity) => {
       const isDragging = drag?.id === activity.id;
       const start =
         isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
@@ -155,7 +155,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
       overlapLayout: layout,
       columnNextStart: computeColumnNextStart(intervals, layout),
     };
-  }, [visibleActivities, drag]);
+  }, [visibleBlocks, drag]);
 
   const clientYToStartMinutes = useCallback(
     (clientY: number, offsetY: number) => {
@@ -179,7 +179,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 
   const handlePointerDown = (
     event: React.PointerEvent<HTMLElement>,
-    activity: ITask,
+    activity: ITimetableBlock,
     mode: DragState['mode'] = 'move'
   ) => {
     if (disabled || activity.status === 'done' || event.button !== 0) return;
@@ -260,7 +260,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   const handlePointerUp = () => {
     if (!drag) return;
     const id = drag.id;
-    const activity = activities.find((item) => item.id === id);
+    const activity = blocks.find((item) => item.id === id);
     const didDrag = drag.moved;
     const nextStart = drag.previewStart;
     const nextEnd = drag.previewEnd;
@@ -282,7 +282,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     >
       <div className={styles.header}>{toolbar}</div>
 
-      {visibleActivities.length === 0 ? (
+      {visibleBlocks.length === 0 ? (
         <p className={styles.empty}>No planned blocks for this day yet.</p>
       ) : null}
 
@@ -318,7 +318,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
               </div>
             ) : null}
 
-            {visibleActivities.map((activity) => {
+            {visibleBlocks.map((activity) => {
               const baseStart = timeToMinutes(activity.plannedStart);
               const duration = plannedDurationMinutes(
                 activity.plannedStart,

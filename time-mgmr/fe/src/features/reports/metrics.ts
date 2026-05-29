@@ -1,10 +1,14 @@
 import { ON_TARGET_TOLERANCE, CATEGORY_MAP } from '@/features/activities/constants';
-import type { ActivityCategoryId, ITask, ITimeEntry } from '@/features/activities/types';
+import type {
+  ActivityCategoryId,
+  ITimetableBlock,
+  ITimeEntry,
+} from '@/features/activities/types';
 
 export type VarianceKind = 'over' | 'under' | 'on_target' | 'untracked';
 
 export interface IActivityMetrics {
-  activity: ITask;
+  activity: ITimetableBlock;
   plannedMinutes: number;
   actualMinutes: number;
   varianceMinutes: number;
@@ -78,18 +82,18 @@ export function classifyVariance(
 }
 
 export function buildActivityMetrics(
-  task: ITask,
+  block: ITimetableBlock,
   entries: ITimeEntry[],
   now = new Date()
 ): IActivityMetrics {
-  const plannedMinutes = Math.max(0, task.timeEstimationSeconds ?? 0) / 60;
+  const plannedMinutes = Math.max(0, block.timeEstimationSeconds ?? 0) / 60;
   const actualMinutes = completedActualMinutes(entries, now);
   const varianceMinutes = actualMinutes - plannedMinutes;
   const accuracyRatio =
     plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null;
 
   return {
-    activity: task,
+    activity: block,
     plannedMinutes,
     actualMinutes,
     varianceMinutes,
@@ -125,7 +129,7 @@ function buildCategoryMix(metrics: IActivityMetrics[]): ICategoryMixItem[] {
 
 export function buildDayReport(
   date: string,
-  tasks: ITask[],
+  blocks: ITimetableBlock[],
   entries: ITimeEntry[],
   now = new Date()
 ): IDayReport {
@@ -136,13 +140,17 @@ export function buildDayReport(
     byTask.set(entry.taskId, list);
   }
 
-  const metrics = tasks.map((task) =>
-    buildActivityMetrics(task, byTask.get(task.id) ?? [], now)
+  const metrics = blocks.map((block) =>
+    buildActivityMetrics(
+      block,
+      block.taskId ? (byTask.get(block.taskId) ?? []) : [],
+      now
+    )
   );
 
   const plannedMinutes = metrics.reduce((s, m) => s + m.plannedMinutes, 0);
   const actualMinutes = metrics.reduce((s, m) => s + m.actualMinutes, 0);
-  const doneCount = tasks.filter((a) => a.status === 'done').length;
+  const doneCount = blocks.filter((a) => a.status === 'done').length;
   const trackedCount = metrics.filter((m) => m.actualMinutes > 0).length;
 
   return {
@@ -150,8 +158,8 @@ export function buildDayReport(
     plannedMinutes,
     actualMinutes,
     varianceMinutes: actualMinutes - plannedMinutes,
-    completionRate: tasks.length > 0 ? doneCount / tasks.length : 0,
-    coverageRate: tasks.length > 0 ? trackedCount / tasks.length : 0,
+    completionRate: blocks.length > 0 ? doneCount / blocks.length : 0,
+    coverageRate: blocks.length > 0 ? trackedCount / blocks.length : 0,
     accuracyRatio:
       plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null,
     activities: metrics,
@@ -166,25 +174,25 @@ export function buildDayReport(
 export function buildRangeReport(
   from: string,
   to: string,
-  tasks: ITask[],
+  blocks: ITimetableBlock[],
   entries: ITimeEntry[],
   dayKeys: string[],
   now = new Date()
 ): IRangeReport {
   const byDay = dayKeys.map((date) => {
-    const dayTasks = tasks.filter((a) => a.date === date);
+    const dayBlocks = blocks.filter((a) => a.date === date);
     const dayEntries = entries.filter((e) => {
       const d = new Date(e.startAt);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       return key === date;
     });
-    return buildDayReport(date, dayTasks, dayEntries, now);
+    return buildDayReport(date, dayBlocks, dayEntries, now);
   });
 
   const plannedMinutes = byDay.reduce((s, d) => s + d.plannedMinutes, 0);
   const actualMinutes = byDay.reduce((s, d) => s + d.actualMinutes, 0);
   const allMetrics = byDay.flatMap((d) => d.activities);
-  const doneCount = tasks.filter((a) => a.status === 'done').length;
+  const doneCount = blocks.filter((a) => a.status === 'done').length;
   const trackedCount = allMetrics.filter((m) => m.actualMinutes > 0).length;
   const daysLogged = byDay.filter((d) => d.actualMinutes > 0 || d.activities.length > 0).length;
 
@@ -194,8 +202,8 @@ export function buildRangeReport(
     plannedMinutes,
     actualMinutes,
     varianceMinutes: actualMinutes - plannedMinutes,
-    completionRate: tasks.length > 0 ? doneCount / tasks.length : 0,
-    coverageRate: tasks.length > 0 ? trackedCount / tasks.length : 0,
+    completionRate: blocks.length > 0 ? doneCount / blocks.length : 0,
+    coverageRate: blocks.length > 0 ? trackedCount / blocks.length : 0,
     accuracyRatio:
       plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null,
     daysLogged,

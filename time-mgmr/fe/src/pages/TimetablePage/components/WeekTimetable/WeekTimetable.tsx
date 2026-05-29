@@ -6,7 +6,7 @@ import {
   snapMinutes,
   timeToMinutes,
   todayKey,
-  type ITask,
+  type ITimetableBlock,
 } from '@/features/activities';
 import {
   assignOverlapColumns,
@@ -28,7 +28,7 @@ const NOW_TICK_MS = 30_000;
 
 interface WeekTimetableProps {
   days: string[];
-  activities: ITask[];
+  blocks: ITimetableBlock[];
   selectedDate: string;
   onSelectDate?: (date: string) => void;
   onReschedule: (
@@ -37,7 +37,7 @@ interface WeekTimetableProps {
     plannedEnd: string,
     date?: string
   ) => void;
-  onSelect?: (activity: ITask) => void;
+  onSelect?: (block: ITimetableBlock) => void;
   disabled?: boolean;
   toolbar?: React.ReactNode;
 }
@@ -70,7 +70,7 @@ function currentMinutesOfDay(now = new Date()): number {
 
 export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   days,
-  activities,
+  blocks,
   selectedDate,
   onSelectDate,
   onReschedule,
@@ -109,10 +109,10 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     weekContainsToday && nowMinutes >= dayStartMinutes && nowMinutes <= dayEndMinutes;
   const nowTop = (nowMinutes - dayStartMinutes) * PX_PER_MINUTE;
 
-  const activitiesByDate = useMemo(() => {
-    const map = new Map<string, ITask[]>();
+  const blocksByDate = useMemo(() => {
+    const map = new Map<string, ITimetableBlock[]>();
     for (const day of days) map.set(day, []);
-    for (const activity of activities) {
+    for (const activity of blocks) {
       const list = map.get(activity.date);
       if (!list) continue;
       const start = timeToMinutes(activity.plannedStart);
@@ -122,14 +122,14 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       }
     }
     return map;
-  }, [activities, days, dayStartMinutes, dayEndMinutes]);
+  }, [blocks, days, dayStartMinutes, dayEndMinutes]);
 
   const { layoutsByDate, nextStartByDate } = useMemo(() => {
     const layouts = new Map<string, ReturnType<typeof assignOverlapColumns>>();
     const nextStarts = new Map<string, Map<string, number>>();
     for (const day of days) {
-      const dayActivities = activitiesByDate.get(day) ?? [];
-      const intervals = dayActivities.map((activity) => {
+      const dayBlocks = blocksByDate.get(day) ?? [];
+      const intervals = dayBlocks.map((activity) => {
         const isDragging = drag?.id === activity.id;
         const start =
           isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
@@ -142,18 +142,18 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       nextStarts.set(day, computeColumnNextStart(intervals, layout));
     }
     return { layoutsByDate: layouts, nextStartByDate: nextStarts };
-  }, [days, activitiesByDate, drag]);
+  }, [days, blocksByDate, drag]);
 
   const earliestBlockTop = useMemo(() => {
     let earliestStart = Infinity;
     for (const day of days) {
-      for (const activity of activitiesByDate.get(day) ?? []) {
+      for (const activity of blocksByDate.get(day) ?? []) {
         earliestStart = Math.min(earliestStart, timeToMinutes(activity.plannedStart));
       }
     }
     if (!Number.isFinite(earliestStart)) return null;
     return (earliestStart - dayStartMinutes) * PX_PER_MINUTE;
-  }, [days, activitiesByDate, dayStartMinutes]);
+  }, [days, blocksByDate, dayStartMinutes]);
 
   useEffect(() => {
     if (scrolledForWeekRef.current === weekKey) return;
@@ -229,7 +229,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
 
   const handlePointerDown = (
     event: React.PointerEvent<HTMLElement>,
-    activity: ITask,
+    activity: ITimetableBlock,
     mode: DragState['mode'] = 'move'
   ) => {
     if (disabled || activity.status === 'done' || event.button !== 0) return;
@@ -320,7 +320,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   const handlePointerUp = () => {
     if (!drag) return;
     const id = drag.id;
-    const activity = activities.find((item) => item.id === id);
+    const activity = blocks.find((item) => item.id === id);
     const didDrag = drag.moved;
     const nextStart = drag.previewStart;
     const nextEnd = drag.previewEnd;
@@ -375,7 +375,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
           </div>
 
           {days.map((day) => {
-            const dayActivities = activitiesByDate.get(day) ?? [];
+            const dayBlocks = blocksByDate.get(day) ?? [];
             const layout = layoutsByDate.get(day);
             const columnNextStart = nextStartByDate.get(day);
             const isTodayColumn = day === today;
@@ -400,7 +400,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                   </div>
                 ) : null}
 
-                {dayActivities.map((activity) => {
+                {dayBlocks.map((activity) => {
                   const baseStart = timeToMinutes(activity.plannedStart);
                   const duration = plannedDurationMinutes(
                     activity.plannedStart,
