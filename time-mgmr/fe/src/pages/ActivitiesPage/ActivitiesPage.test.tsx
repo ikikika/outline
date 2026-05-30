@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { manualScheduleSchema } from '@/features/activities/schemas';
+import { manualScheduleSchema, autoScheduleSchema } from '@/features/activities/schemas';
 import ActivitiesPage from './ActivitiesPage';
 
 const mockActivities = [
@@ -74,6 +74,42 @@ const mockScheduleTask = {
   isPending: false,
   error: null,
 };
+const mockPreviewAutoSchedule = {
+  mutateAsync: vi.fn().mockResolvedValue({
+    previewToken: 'token-1',
+    days: [
+      {
+        date: '2026-07-21',
+        blocks: [
+          {
+            id: 'task-task-1',
+            taskId: 'task-1',
+            blockType: 'focus',
+            plannedStart: '2026-07-21T09:00:00.000Z',
+            plannedEnd: '2026-07-21T09:10:00.000Z',
+          },
+        ],
+      },
+    ],
+    replacedBlockIds: [],
+    warnings: [],
+    canConfirm: true,
+    unplacedTaskIds: [],
+  }),
+  reset: vi.fn(),
+  isPending: false,
+  error: null,
+};
+const mockConfirmAutoSchedule = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  reset: vi.fn(),
+  isPending: false,
+  error: null,
+};
+
+vi.mock('@/features/activities/hooks/useActivities', () => ({
+  useResolvedTimeZone: () => 'UTC',
+}));
 
 vi.mock('@/layouts', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => (
@@ -92,10 +128,14 @@ vi.mock('@/features/activities', () => ({
   useDeleteActivity: () => mockDeleteActivity,
   useDeleteCatalogTask: () => mockDeleteTask,
   useScheduleCatalogTask: () => mockScheduleTask,
+  usePreviewAutoSchedule: () => mockPreviewAutoSchedule,
+  useConfirmAutoSchedule: () => mockConfirmAutoSchedule,
   useReorderActivities: () => mockReorderActivities,
   useReorderTasks: () => mockReorderTasks,
   todayKey: () => '2026-07-21',
   manualScheduleSchema,
+  autoScheduleSchema,
+  formatMinutes: (minutes: number) => `${minutes}m`,
   ACTIVITY_CATEGORIES: [
     { id: 'work', label: 'Work', color: '#2563eb' },
     { id: 'deep_work', label: 'Deep work', color: '#7c3aed' },
@@ -120,6 +160,10 @@ describe('ActivitiesPage', () => {
     mockDeleteTask.mutateAsync.mockClear();
     mockScheduleTask.mutateAsync.mockClear();
     mockScheduleTask.reset.mockClear();
+    mockPreviewAutoSchedule.mutateAsync.mockClear();
+    mockPreviewAutoSchedule.reset.mockClear();
+    mockConfirmAutoSchedule.mutateAsync.mockClear();
+    mockConfirmAutoSchedule.reset.mockClear();
   });
 
   it('renders activity rows sorted by priority', () => {
@@ -271,5 +315,97 @@ describe('ActivitiesPage', () => {
         plannedEnd: '10:30',
       },
     });
+  });
+
+  it('opens auto-schedule modal from activity header', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Auto-schedule Deep Learning' })
+    );
+
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      'Auto-schedule Deep Learning'
+    );
+    expect(screen.getByLabelText(/Lesson 1/)).toBeChecked();
+  });
+
+  it('previews and confirms auto-schedule', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Auto-schedule Deep Learning' })
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Preview schedule' })
+    );
+
+    expect(mockPreviewAutoSchedule.mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activityId: 'act-1',
+        taskIds: ['task-1'],
+        earliestDate: '2026-07-21',
+      })
+    );
+    expect(await screen.findByText('2026-07-21')).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Confirm schedule' })
+    );
+
+    expect(mockConfirmAutoSchedule.mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activityId: 'act-1',
+        previewToken: 'token-1',
+      })
+    );
+  });
+
+  it('returns to configuration from preview', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Auto-schedule Deep Learning' })
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Preview schedule' })
+    );
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Preview schedule' })
+    ).toBeInTheDocument();
+  });
+
+  it('disables confirm when preview reports unplaced tasks', async () => {
+    mockPreviewAutoSchedule.mutateAsync.mockResolvedValueOnce({
+      previewToken: 'token-2',
+      days: [],
+      replacedBlockIds: [],
+      warnings: ['Could not schedule "Lesson 1" within constraints.'],
+      canConfirm: false,
+      unplacedTaskIds: ['task-1'],
+    });
+
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(
+      screen.getByRole('button', { name: 'Auto-schedule Deep Learning' })
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Preview schedule' })
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Confirm schedule' })
+    ).toBeDisabled();
   });
 });

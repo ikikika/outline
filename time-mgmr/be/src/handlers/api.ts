@@ -10,6 +10,7 @@ import { registerHealthRoutes } from '../routes/health.js';
 import { registerTaskRoutes } from '../routes/tasks.js';
 import { registerTimeEntryRoutes } from '../routes/timeEntries.js';
 import { registerScheduleBlockRoutes } from '../routes/scheduleBlocks.js';
+import { registerAutoScheduleRoutes } from '../routes/autoSchedule.js';
 
 const app = new Hono();
 
@@ -47,6 +48,7 @@ api.use('/time-entries/*', authMiddleware);
 registerActivityRoutes(api);
 registerTaskRoutes(api);
 registerScheduleBlockRoutes(api);
+registerAutoScheduleRoutes(api);
 registerTimeEntryRoutes(api);
 
 api.notFound((c) => c.json({ error: 'Not found' }, 404));

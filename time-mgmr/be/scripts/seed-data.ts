@@ -25,11 +25,27 @@ interface IActivitiesJsonFile {
 
 type TasksJsonFile =
 	| Array<Record<string, unknown>>
-	| { tasks: Array<Record<string, unknown>> };
+	| {
+			tasks: Array<Record<string, unknown>>;
+			scheduleBlocks?: Array<Record<string, unknown>>;
+		};
 
-function loadTasks(relativePath: string): Array<Record<string, unknown>> {
+interface ISeedData {
+	tasks: Array<Record<string, unknown>>;
+	scheduleBlocks: Array<Record<string, unknown>> | null;
+}
+
+function loadSeedData(relativePath: string): ISeedData {
 	const data = loadJson<TasksJsonFile>(relativePath);
-	return Array.isArray(data) ? data : data.tasks;
+	if (Array.isArray(data)) {
+		return { tasks: data, scheduleBlocks: null };
+	}
+	return {
+		tasks: data.tasks,
+		scheduleBlocks: Array.isArray(data.scheduleBlocks)
+			? data.scheduleBlocks
+			: null,
+	};
 }
 
 function resolveTableName(): string {
@@ -91,7 +107,7 @@ function blockTypeForTask(rawTask: Record<string, unknown>): ScheduleBlockType {
 
 function scheduleBlockFromTask(
 	rawTask: Record<string, unknown>,
-	taskId: string
+	taskId?: string
 ): (IScheduleBlockCreateInput & { id: string }) | null {
 	const plannedStart = rawTask.plannedStart;
 	const plannedEnd = rawTask.plannedEnd;
@@ -106,13 +122,70 @@ function scheduleBlockFromTask(
 		Number.isNaN(end.getTime()) ||
 		end <= start
 	) {
-		throw new Error(`Invalid schedule for seeded task ${taskId}`);
+		throw new Error(
+			`Invalid legacy schedule for ${taskId ?? String(rawTask.id ?? 'break')}`
+		);
 	}
 
+	const blockType = blockTypeForTask(rawTask);
+	const rawId = String(rawTask.id ?? '').trim();
 	return {
-		id: `task-${taskId}`,
-		taskId,
-		blockType: blockTypeForTask(rawTask),
+		id:
+			blockType === 'focus'
+				? `task-${taskId}`
+				: rawId || `pomodoro-break-${plannedStart.replace(/\D/g, '')}`,
+		...(taskId ? { taskId } : {}),
+		blockType,
+		plannedStart: start.toISOString(),
+		plannedEnd: end.toISOString(),
+	};
+}
+
+function explicitScheduleBlock(
+	rawBlock: Record<string, unknown>,
+	taskIds: Set<string>,
+	sourceTimeZone: string
+): IScheduleBlockCreateInput & { id: string } {
+	const migrated = migrateTaskTimesIfNeeded(rawBlock, sourceTimeZone);
+	const id = typeof migrated.id === 'string' ? migrated.id.trim() : '';
+	const taskId =
+		typeof migrated.taskId === 'string' ? migrated.taskId.trim() : undefined;
+	const blockType = migrated.blockType;
+	const plannedStart = migrated.plannedStart;
+	const plannedEnd = migrated.plannedEnd;
+	if (!id) throw new Error('Canonical schedule block id is required');
+	if (
+		blockType !== 'focus' &&
+		blockType !== 'short_break' &&
+		blockType !== 'long_break'
+	) {
+		throw new Error(`Invalid blockType for schedule block ${id}`);
+	}
+	if (blockType === 'focus' && !taskId) {
+		throw new Error(`Focus schedule block ${id} requires taskId`);
+	}
+	if (blockType !== 'focus' && taskId) {
+		throw new Error(`Break schedule block ${id} must not have taskId`);
+	}
+	if (taskId && !taskIds.has(taskId)) {
+		throw new Error(`Schedule block ${id} references unknown task ${taskId}`);
+	}
+	if (typeof plannedStart !== 'string' || typeof plannedEnd !== 'string') {
+		throw new Error(`Schedule block ${id} requires plannedStart and plannedEnd`);
+	}
+	const start = new Date(plannedStart);
+	const end = new Date(plannedEnd);
+	if (
+		Number.isNaN(start.getTime()) ||
+		Number.isNaN(end.getTime()) ||
+		end <= start
+	) {
+		throw new Error(`Invalid schedule block interval for ${id}`);
+	}
+	return {
+		id,
+		...(taskId ? { taskId } : {}),
+		blockType,
 		plannedStart: start.toISOString(),
 		plannedEnd: end.toISOString(),
 	};
@@ -144,7 +217,8 @@ async function main(): Promise<void> {
 		'Asia/Singapore';
 
 	const activitiesFile = loadJson<IActivitiesJsonFile>('../scripts/activities.json');
-	const rawTasks = loadTasks('../scripts/tasks.json');
+	const seedData = loadSeedData('../scripts/tasks.json');
+	const rawTasks = seedData.tasks;
 
 	console.log(`Seeding data for ${email} (${userId})...`);
 	if (process.env.MIGRATE_WALL_Z === '1') {
@@ -172,6 +246,7 @@ async function main(): Promise<void> {
 	const tasks: TaskUpsertInput[] = [];
 	const scheduleBlocks: Array<IScheduleBlockCreateInput & { id: string }> = [];
 	const nextSortByActivity = new Map<string, number>();
+	const usesExplicitScheduleBlocks = seedData.scheduleBlocks !== null;
 
 	for (const rawTask of rawTasks) {
 		const activityId = String(rawTask.activityId ?? '');
@@ -182,6 +257,13 @@ async function main(): Promise<void> {
 		}
 
 		const migrated = migrateTaskTimesIfNeeded(rawTask, sourceTimeZone);
+		if (activityId === 'pomodoro-breaks') {
+			if (!usesExplicitScheduleBlocks) {
+				const block = scheduleBlockFromTask(migrated);
+				if (block) scheduleBlocks.push(block);
+			}
+			continue;
+		}
 		const fallbackSortOrder = nextSortByActivity.get(activityId) ?? 0;
 		nextSortByActivity.set(activityId, fallbackSortOrder + 1);
 		const task = normalizeImportedTask(
@@ -189,12 +271,38 @@ async function main(): Promise<void> {
 			activity,
 			fallbackSortOrder
 		);
-		const block = scheduleBlockFromTask(migrated, task.id);
+		const block = usesExplicitScheduleBlocks
+			? null
+			: scheduleBlockFromTask(migrated, task.id);
 		tasks.push({
 			...task,
-			status: block ? task.status : 'unplanned',
+			status:
+				block && task.status === 'unplanned'
+					? 'planned'
+					: block
+						? task.status
+						: 'unplanned',
 		});
 		if (block) scheduleBlocks.push(block);
+	}
+
+	if (seedData.scheduleBlocks) {
+		const taskIds = new Set(tasks.map((task) => task.id));
+		scheduleBlocks.push(
+			...seedData.scheduleBlocks.map((block) =>
+				explicitScheduleBlock(block, taskIds, sourceTimeZone)
+			)
+		);
+		const scheduledTaskIds = new Set(
+			scheduleBlocks.flatMap((block) => (block.taskId ? [block.taskId] : []))
+		);
+		for (const task of tasks) {
+			task.status = scheduledTaskIds.has(task.id)
+				? task.status === 'unplanned'
+					? 'planned'
+					: task.status
+				: 'unplanned';
+		}
 	}
 
 	if (tasks.length > 0) {

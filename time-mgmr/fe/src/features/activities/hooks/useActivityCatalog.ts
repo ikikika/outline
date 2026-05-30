@@ -14,7 +14,11 @@ import {
 } from '../api/activitiesApi';
 import {
   scheduleTaskApi,
+  previewAutoScheduleApi,
+  confirmAutoScheduleApi,
   type IManualScheduleInput,
+  type IAutoScheduleRequest,
+  type IAutoSchedulePreviewResponse,
 } from '../api/scheduleBlocksApi';
 import type { IActivity, IApiTask } from '../types';
 import { sortBySortOrder } from '../utils/sortBySortOrder/sortBySortOrder';
@@ -129,6 +133,31 @@ export function useScheduleCatalogTask() {
     },
   });
 }
+
+export function usePreviewAutoSchedule() {
+  return useMutation({
+    mutationFn: (input: IAutoScheduleRequest) => previewAutoScheduleApi(input),
+  });
+}
+
+export function useConfirmAutoSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: IAutoScheduleRequest & { previewToken: string }) =>
+      confirmAutoScheduleApi(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.all,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all,
+      });
+    },
+  });
+}
+
+export type { IAutoSchedulePreviewResponse };
 
 export function useReorderActivities() {
   const queryClient = useQueryClient();

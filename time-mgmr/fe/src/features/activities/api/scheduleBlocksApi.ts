@@ -159,6 +159,69 @@ export interface IManualScheduleInput {
   blockType?: ScheduleBlockType;
 }
 
+export interface IAutoScheduleRequest {
+  activityId: string;
+  taskIds: string[];
+  earliestDate: string;
+  deadline?: string;
+  workStart?: string;
+  workEnd?: string;
+  sessionMinutes?: number;
+  shortBreakMinutes?: number;
+  longBreakMinutes?: number;
+  allowSplitAcrossDays?: boolean;
+}
+
+export interface IAutoSchedulePreviewBlock {
+  id: string;
+  taskId?: string;
+  blockType: ScheduleBlockType;
+  plannedStart: string;
+  plannedEnd: string;
+}
+
+export interface IAutoSchedulePreviewDay {
+  date: string;
+  blocks: IAutoSchedulePreviewBlock[];
+}
+
+export interface IAutoSchedulePreviewResponse {
+  previewToken: string;
+  days: IAutoSchedulePreviewDay[];
+  replacedBlockIds: string[];
+  warnings: string[];
+  canConfirm: boolean;
+  unplacedTaskIds: string[];
+}
+
+export interface IAutoScheduleConfirmResponse {
+  createdBlockIds: string[];
+  replacedBlockIds: string[];
+  scheduledTaskIds: string[];
+}
+
+const AUTO_SCHEDULE_BASE_URL = `${API_BASE_URL}/schedule-blocks/auto`;
+
+export async function previewAutoScheduleApi(
+  body: IAutoScheduleRequest
+): Promise<IAutoSchedulePreviewResponse> {
+  requireApiBaseUrl();
+  return postJsonAuth<IAutoSchedulePreviewResponse>(
+    `${AUTO_SCHEDULE_BASE_URL}/preview`,
+    body
+  );
+}
+
+export async function confirmAutoScheduleApi(
+  body: IAutoScheduleRequest & { previewToken: string }
+): Promise<IAutoScheduleConfirmResponse> {
+  requireApiBaseUrl();
+  return postJsonAuth<IAutoScheduleConfirmResponse>(
+    `${AUTO_SCHEDULE_BASE_URL}/confirm`,
+    body
+  );
+}
+
 /** Place an unplanned task on the timetable by creating a schedule block. */
 export async function scheduleTaskApi(
   taskId: string,

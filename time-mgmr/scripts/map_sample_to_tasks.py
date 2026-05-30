@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Map Udemy-style sample.json lectures into tempo tasks.json format.
+"""Map Udemy-style sample.json lectures into canonical task catalog JSON.
 
 Runs outside the frontend app. Example:
 
@@ -33,9 +33,8 @@ def lecture_to_task(lecture: dict[str, Any], activity_id: str) -> dict[str, Any]
         "id": str(lecture["id"]),
         "activityId": activity_id,
         "title": str(lecture.get("title") or ""),
-        "plannedStart": "",
-        "plannedEnd": "",
         "timeEstimationSeconds": time_estimation_seconds,
+        "status": "unplanned",
     }
 
 
@@ -58,6 +57,7 @@ def map_sample_to_tasks(
         "version": 1,
         "exportedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         "tasks": tasks,
+        "scheduleBlocks": [],
     }
 
 

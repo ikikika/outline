@@ -64,6 +64,49 @@ export const manualTimeEntrySchema = z.object({
     .max(24 * 60, 'Cannot exceed 24 hours.'),
 });
 
+export const autoScheduleSchema = z
+  .object({
+    taskIds: z.array(z.string()).min(1, 'Select at least one task.'),
+    earliestDate: z.string().regex(datePattern, 'Enter a valid date.'),
+    deadline: z
+      .string()
+      .regex(datePattern, 'Enter a valid date.')
+      .optional()
+      .or(z.literal('')),
+    workStart: z.string().regex(timePattern, 'Use HH:mm format.'),
+    workEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
+    sessionMinutes: z
+      .number()
+      .int('Use whole minutes.')
+      .min(5, 'At least 5 minutes.')
+      .max(120, 'Cannot exceed 120 minutes.'),
+    shortBreakMinutes: z
+      .number()
+      .int('Use whole minutes.')
+      .min(1, 'At least 1 minute.')
+      .max(60, 'Cannot exceed 60 minutes.'),
+    longBreakMinutes: z
+      .number()
+      .int('Use whole minutes.')
+      .min(1, 'At least 1 minute.')
+      .max(60, 'Cannot exceed 60 minutes.'),
+    allowSplitAcrossDays: z.boolean(),
+  })
+  .refine((data) => timeToMinutes(data.workEnd) > timeToMinutes(data.workStart), {
+    message: 'Work end must be after work start.',
+    path: ['workEnd'],
+  })
+  .refine(
+    (data) =>
+      !data.deadline ||
+      data.deadline.localeCompare(data.earliestDate) >= 0,
+    {
+      message: 'Deadline must be on or after the earliest date.',
+      path: ['deadline'],
+    }
+  );
+
 export type ActivityFormValues = z.infer<typeof activityFormSchema>;
 export type ManualScheduleValues = z.infer<typeof manualScheduleSchema>;
 export type ManualTimeEntryFormValues = z.infer<typeof manualTimeEntrySchema>;
+export type AutoScheduleFormValues = z.infer<typeof autoScheduleSchema>;

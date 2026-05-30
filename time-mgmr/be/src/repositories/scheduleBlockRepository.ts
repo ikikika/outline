@@ -186,6 +186,28 @@ export async function deleteScheduleBlock(
 	return true;
 }
 
+export async function deleteScheduleBlocksByIds(
+	userId: string,
+	blockIds: string[]
+): Promise<void> {
+	await Promise.all(blockIds.map((id) => deleteScheduleBlock(userId, id)));
+}
+
+export async function replaceScheduleBlocksForAutoSchedule(
+	userId: string,
+	input: {
+		deleteIds: string[];
+		createBlocks: Array<IScheduleBlockCreateInput & { id: string }>;
+	}
+): Promise<IScheduleBlock[]> {
+	await deleteScheduleBlocksByIds(userId, input.deleteIds);
+	const created: IScheduleBlock[] = [];
+	for (const block of input.createBlocks) {
+		created.push(await upsertScheduleBlock(userId, block));
+	}
+	return created;
+}
+
 export async function deleteScheduleBlocksByTask(
 	userId: string,
 	taskId: string

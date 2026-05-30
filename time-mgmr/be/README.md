@@ -203,10 +203,10 @@ npm run seed:data -- you@example.com
 This script:
 
 1. Upserts activities from `../scripts/activities.json`
-2. Upserts catalog task metadata from `../scripts/tasks.json` without timing fields
-3. Converts each valid `plannedStart` / `plannedEnd` pair into an idempotent `ScheduleBlock` with ID `task-{taskId}`
+2. Upserts catalog task metadata from `../scripts/tasks.json`
+3. Upserts the file's explicit `scheduleBlocks`, including multiple focus blocks per task and taskless Pomodoro breaks
 
-Existing task JSON remains supported as an import format. Task records written to DynamoDB do not contain `date`, `plannedStart`, `plannedEnd`, or scheduling GSI fields.
+Legacy timed-task JSON remains supported as an import format. Task records written to DynamoDB do not contain `date`, `plannedStart`, `plannedEnd`, or scheduling GSI fields.
 
 ---
 

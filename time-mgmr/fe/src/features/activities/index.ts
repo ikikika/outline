@@ -26,9 +26,11 @@ export {
   activityFormSchema,
   manualScheduleSchema,
   manualTimeEntrySchema,
+  autoScheduleSchema,
   type ActivityFormValues,
   type ManualScheduleValues,
   type ManualTimeEntryFormValues,
+  type AutoScheduleFormValues,
 } from './schemas';
 
 export {
@@ -62,8 +64,14 @@ export {
   fetchTimetableBlocksByTaskId,
   scheduleTaskApi,
   updateScheduleBlockApi,
+  previewAutoScheduleApi,
+  confirmAutoScheduleApi,
   type IManualScheduleInput,
   type ITimetableBlockPatch,
+  type IAutoScheduleRequest,
+  type IAutoSchedulePreviewResponse,
+  type IAutoSchedulePreviewDay,
+  type IAutoScheduleConfirmResponse,
 } from './api/scheduleBlocksApi';
 
 export {
@@ -112,6 +120,8 @@ export {
   useDeleteActivity,
   useDeleteCatalogTask,
   useScheduleCatalogTask,
+  usePreviewAutoSchedule,
+  useConfirmAutoSchedule,
   useReorderActivities,
   useReorderTasks,
   type IActivityWithTasks,

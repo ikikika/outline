@@ -1,376 +1,402 @@
-[
-  {
-    "id": "56468647",
-    "activityId": "github-copilot",
-    "title": "GitHub Copilot CLI",
-    "plannedStart": "2026-07-21T01:00:00.000Z",
-    "plannedEnd": "2026-07-21T01:22:56.000Z",
-    "timeEstimationSeconds": 917,
-    "sortOrder": 0
-  },
-  {
-    "id": "54695299",
-    "activityId": "github-copilot",
-    "title": "Hooks with GitHub Copilot",
-    "plannedStart": "2026-07-21T01:22:56.000Z",
-    "plannedEnd": "2026-07-21T01:48:05.000Z",
-    "timeEstimationSeconds": 1006,
-    "sortOrder": 1
-  },
-  {
-    "id": "pomodoro-break-20260721T094805",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T01:48:05.000Z",
-    "plannedEnd": "2026-07-21T01:53:05.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784627285
-  },
-  {
-    "id": "89ehfj9hfw-p1",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (1/11)",
-    "plannedStart": "2026-07-21T01:53:05.000Z",
-    "plannedEnd": "2026-07-21T02:18:05.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T101805",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T02:18:05.000Z",
-    "plannedEnd": "2026-07-21T02:23:05.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784629085
-  },
-  {
-    "id": "89ehfj9hfw-p2",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (2/11)",
-    "plannedStart": "2026-07-21T02:23:05.000Z",
-    "plannedEnd": "2026-07-21T02:48:05.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T104805",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T02:48:05.000Z",
-    "plannedEnd": "2026-07-21T02:53:05.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784630885
-  },
-  {
-    "id": "89ehfj9hfw-p3",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (3/11)",
-    "plannedStart": "2026-07-21T02:53:05.000Z",
-    "plannedEnd": "2026-07-21T03:18:05.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T111805",
-    "activityId": "pomodoro-breaks",
-    "title": "Long Break",
-    "plannedStart": "2026-07-21T03:18:05.000Z",
-    "plannedEnd": "2026-07-21T03:33:05.000Z",
-    "timeEstimationSeconds": 900,
-    "status": "planned",
-    "sortOrder": 1784632685
-  },
-  {
-    "id": "89ehfj9hfw-p4",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (4/11)",
-    "plannedStart": "2026-07-21T03:33:05.000Z",
-    "plannedEnd": "2026-07-21T03:58:05.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "89ehfj9hfw-p5",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (5/11)",
-    "plannedStart": "2026-07-21T05:00:00.000Z",
-    "plannedEnd": "2026-07-21T05:25:00.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T132500",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T05:25:00.000Z",
-    "plannedEnd": "2026-07-21T05:30:00.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784640300
-  },
-  {
-    "id": "89ehfj9hfw-p6",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (6/11)",
-    "plannedStart": "2026-07-21T05:30:00.000Z",
-    "plannedEnd": "2026-07-21T05:55:00.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T135500",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T05:55:00.000Z",
-    "plannedEnd": "2026-07-21T06:00:00.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784642100
-  },
-  {
-    "id": "89ehfj9hfw-p7",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (7/11)",
-    "plannedStart": "2026-07-21T06:00:00.000Z",
-    "plannedEnd": "2026-07-21T06:25:00.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T142500",
-    "activityId": "pomodoro-breaks",
-    "title": "Long Break",
-    "plannedStart": "2026-07-21T06:25:00.000Z",
-    "plannedEnd": "2026-07-21T06:40:00.000Z",
-    "timeEstimationSeconds": 900,
-    "status": "planned",
-    "sortOrder": 1784643900
-  },
-  {
-    "id": "89ehfj9hfw-p8",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (8/11)",
-    "plannedStart": "2026-07-21T06:40:00.000Z",
-    "plannedEnd": "2026-07-21T07:05:00.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T150500",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T07:05:00.000Z",
-    "plannedEnd": "2026-07-21T07:10:00.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784646300
-  },
-  {
-    "id": "89ehfj9hfw-p9",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (9/11)",
-    "plannedStart": "2026-07-21T07:10:00.000Z",
-    "plannedEnd": "2026-07-21T07:35:00.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T153500",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T07:35:00.000Z",
-    "plannedEnd": "2026-07-21T07:40:00.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784648100
-  },
-  {
-    "id": "89ehfj9hfw-p10",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (10/11)",
-    "plannedStart": "2026-07-21T07:40:00.000Z",
-    "plannedEnd": "2026-07-21T08:05:00.000Z",
-    "timeEstimationSeconds": 1000,
-    "sortOrder": 0
-  },
-  {
-    "id": "pomodoro-break-20260721T160500",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-21T08:05:00.000Z",
-    "plannedEnd": "2026-07-21T08:10:00.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784649900
-  },
-  {
-    "id": "89ehfj9hfw-p11",
-    "activityId": "how-senior-devs-build-with-ai-2026-youtube",
-    "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform (11/11)",
-    "plannedStart": "2026-07-21T08:10:00.000Z",
-    "plannedEnd": "2026-07-21T08:24:00.000Z",
-    "timeEstimationSeconds": 560,
-    "sortOrder": 0
-  },
-  {
-    "id": "49739779",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 1 - Build Your First Autonomous AI Agent with n8n (No-Code Demo)",
-    "plannedStart": "2026-07-21T08:24:00.000Z",
-    "plannedEnd": "2026-07-21T08:45:45.000Z",
-    "timeEstimationSeconds": 870,
-    "sortOrder": 0
-  },
-  {
-    "id": "49770319",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 1 - Course Roadmap: 6 Weeks, 8 Projects in Agentic AI Engineering",
-    "plannedStart": "2026-07-22T01:00:00.000Z",
-    "plannedEnd": "2026-07-22T01:19:57.000Z",
-    "timeEstimationSeconds": 798,
-    "sortOrder": 1
-  },
-  {
-    "id": "56543285",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Your Path to Becoming a Proficient AI Engineer",
-    "plannedStart": "2026-07-22T01:19:57.000Z",
-    "plannedEnd": "2026-07-22T01:25:30.000Z",
-    "timeEstimationSeconds": 222,
-    "sortOrder": 2
-  },
-  {
-    "id": "pomodoro-break-20260722T092530",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-22T01:25:30.000Z",
-    "plannedEnd": "2026-07-22T01:30:30.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784712330
-  },
-  {
-    "id": "50768351",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 4 - Orchestrate the Trading Floor and Launch the Gradio Dashboard",
-    "plannedStart": "2026-07-22T01:30:30.000Z",
-    "plannedEnd": "2026-07-22T01:43:14.000Z",
-    "timeEstimationSeconds": 509,
-    "sortOrder": 138
-  },
-  {
-    "id": "50768373",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 5 - Add Observability, Evaluation and Feedback to AI Traders",
-    "plannedStart": "2026-07-22T01:43:14.000Z",
-    "plannedEnd": "2026-07-22T01:56:59.000Z",
-    "timeEstimationSeconds": 550,
-    "sortOrder": 139
-  },
-  {
-    "id": "pomodoro-break-20260722T095659",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-22T01:56:59.000Z",
-    "plannedEnd": "2026-07-22T02:01:59.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784714219
-  },
-  {
-    "id": "50768387",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 5 - Ship the Trading App: FastAPI Backend and React Front End",
-    "plannedStart": "2026-07-22T02:01:59.000Z",
-    "plannedEnd": "2026-07-22T02:18:16.000Z",
-    "timeEstimationSeconds": 651,
-    "sortOrder": 140
-  },
-  {
-    "id": "50769781",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 5 - Inspecting Traces and Your Capstone Trading Floor Challenge",
-    "plannedStart": "2026-07-22T02:18:16.000Z",
-    "plannedEnd": "2026-07-22T02:22:28.000Z",
-    "timeEstimationSeconds": 168,
-    "sortOrder": 141
-  },
-  {
-    "id": "50769785",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 5 - Choosing an Agent Framework and 10 Things That Really Matter",
-    "plannedStart": "2026-07-22T02:22:28.000Z",
-    "plannedEnd": "2026-07-22T02:36:10.000Z",
-    "timeEstimationSeconds": 548,
-    "sortOrder": 142
-  },
-  {
-    "id": "pomodoro-break-20260722T103610",
-    "activityId": "pomodoro-breaks",
-    "title": "Short Break",
-    "plannedStart": "2026-07-22T02:36:10.000Z",
-    "plannedEnd": "2026-07-22T02:41:10.000Z",
-    "timeEstimationSeconds": 300,
-    "status": "planned",
-    "sortOrder": 1784716570
-  },
-  {
-    "id": "50769797",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Day 5 - Course Wrap-Up: Your Agentic AI Engineering Journey",
-    "plannedStart": "2026-07-22T02:41:10.000Z",
-    "plannedEnd": "2026-07-22T02:46:12.000Z",
-    "timeEstimationSeconds": 201,
-    "sortOrder": 143
-  },
-  {
-    "id": "56469947",
-    "activityId": "the-complete-agentic-ai-engineering-course",
-    "title": "Bonus Lecture - Your Exclusive Links",
-    "plannedStart": "2026-07-22T02:46:12.000Z",
-    "plannedEnd": "2026-07-22T02:50:15.000Z",
-    "timeEstimationSeconds": 162,
-    "sortOrder": 144
-  },
-  {
-    "id": "11482928",
-    "activityId": "docker-and-kubernetes-the-complete-guide",
-    "title": "Mapping Existing Knowledge",
-    "plannedStart": "2026-07-22T02:50:15.000Z",
-    "plannedEnd": "2026-07-22T03:01:41.000Z",
-    "timeEstimationSeconds": 457,
-    "sortOrder": 0
-  },
-  {
-    "id": "19125114",
-    "activityId": "docker-and-kubernetes-the-complete-guide",
-    "title": "Quick Note to Prevent an Error",
-    "plannedStart": "2026-07-22T03:01:41.000Z",
-    "plannedEnd": "2026-07-22T03:02:37.000Z",
-    "timeEstimationSeconds": 37,
-    "sortOrder": 1
-  },
-  {
-    "id": "11482930",
-    "activityId": "docker-and-kubernetes-the-complete-guide",
-    "title": "Adding Configuration Files",
-    "plannedStart": "2026-07-22T03:02:37.000Z",
-    "plannedEnd": "2026-07-22T03:12:54.000Z",
-    "timeEstimationSeconds": 411,
-    "sortOrder": 2
-  },
-  {
-    "id": "pomodoro-break-20260722T111254",
-    "activityId": "pomodoro-breaks",
-    "title": "Long Break",
-    "plannedStart": "2026-07-22T03:12:54.000Z",
-    "plannedEnd": "2026-07-22T03:27:54.000Z",
-    "timeEstimationSeconds": 900,
-    "status": "planned",
-    "sortOrder": 1784718774
-  }
-]
+{
+  "version": 1,
+  "exportedAt": "2026-07-21T14:14:48.082Z",
+  "tasks": [
+    {
+      "id": "56468647",
+      "activityId": "github-copilot",
+      "title": "GitHub Copilot CLI",
+      "timeEstimationSeconds": 917,
+      "sortOrder": 0,
+      "status": "planned"
+    },
+    {
+      "id": "54695299",
+      "activityId": "github-copilot",
+      "title": "Hooks with GitHub Copilot",
+      "timeEstimationSeconds": 1006,
+      "sortOrder": 1,
+      "status": "planned"
+    },
+    {
+      "id": "89ehfj9hfw",
+      "activityId": "how-senior-devs-build-with-ai-2026-youtube",
+      "title": "How Senior Engineers Actually Build with AI in 2026 | Build a Full Stack Job Applications Platform",
+      "timeEstimationSeconds": 10560,
+      "sortOrder": 0,
+      "status": "planned"
+    },
+    {
+      "id": "49739779",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 1 - Build Your First Autonomous AI Agent with n8n (No-Code Demo)",
+      "timeEstimationSeconds": 870,
+      "sortOrder": 0,
+      "status": "planned"
+    },
+    {
+      "id": "49770319",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 1 - Course Roadmap: 6 Weeks, 8 Projects in Agentic AI Engineering",
+      "timeEstimationSeconds": 798,
+      "sortOrder": 1,
+      "status": "planned"
+    },
+    {
+      "id": "56543285",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Your Path to Becoming a Proficient AI Engineer",
+      "timeEstimationSeconds": 222,
+      "sortOrder": 2,
+      "status": "planned"
+    },
+    {
+      "id": "50768351",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 4 - Orchestrate the Trading Floor and Launch the Gradio Dashboard",
+      "timeEstimationSeconds": 509,
+      "sortOrder": 138,
+      "status": "planned"
+    },
+    {
+      "id": "50768373",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 5 - Add Observability, Evaluation and Feedback to AI Traders",
+      "timeEstimationSeconds": 550,
+      "sortOrder": 139,
+      "status": "planned"
+    },
+    {
+      "id": "50768387",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 5 - Ship the Trading App: FastAPI Backend and React Front End",
+      "timeEstimationSeconds": 651,
+      "sortOrder": 140,
+      "status": "planned"
+    },
+    {
+      "id": "50769781",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 5 - Inspecting Traces and Your Capstone Trading Floor Challenge",
+      "timeEstimationSeconds": 168,
+      "sortOrder": 141,
+      "status": "planned"
+    },
+    {
+      "id": "50769785",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 5 - Choosing an Agent Framework and 10 Things That Really Matter",
+      "timeEstimationSeconds": 548,
+      "sortOrder": 142,
+      "status": "planned"
+    },
+    {
+      "id": "50769797",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Day 5 - Course Wrap-Up: Your Agentic AI Engineering Journey",
+      "timeEstimationSeconds": 201,
+      "sortOrder": 143,
+      "status": "planned"
+    },
+    {
+      "id": "56469947",
+      "activityId": "the-complete-agentic-ai-engineering-course",
+      "title": "Bonus Lecture - Your Exclusive Links",
+      "timeEstimationSeconds": 162,
+      "sortOrder": 144,
+      "status": "planned"
+    },
+    {
+      "id": "11482928",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Mapping Existing Knowledge",
+      "timeEstimationSeconds": 457,
+      "sortOrder": 0,
+      "status": "planned"
+    },
+    {
+      "id": "19125114",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Quick Note to Prevent an Error",
+      "timeEstimationSeconds": 37,
+      "sortOrder": 1,
+      "status": "planned"
+    },
+    {
+      "id": "11482930",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Adding Configuration Files",
+      "timeEstimationSeconds": 411,
+      "sortOrder": 2,
+      "status": "planned"
+    }
+  ],
+  "scheduleBlocks": [
+    {
+      "id": "task-56468647",
+      "taskId": "56468647",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T09:00:00.000Z",
+      "plannedEnd": "2026-07-21T09:22:56.000Z"
+    },
+    {
+      "id": "task-54695299",
+      "taskId": "54695299",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T09:22:56.000Z",
+      "plannedEnd": "2026-07-21T09:48:05.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T094805",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T09:48:05.000Z",
+      "plannedEnd": "2026-07-21T09:53:05.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-1",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T09:53:05.000Z",
+      "plannedEnd": "2026-07-21T10:18:05.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T101805",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T10:18:05.000Z",
+      "plannedEnd": "2026-07-21T10:23:05.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-2",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T10:23:05.000Z",
+      "plannedEnd": "2026-07-21T10:48:05.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T104805",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T10:48:05.000Z",
+      "plannedEnd": "2026-07-21T10:53:05.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-3",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T10:53:05.000Z",
+      "plannedEnd": "2026-07-21T11:18:05.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T111805",
+      "blockType": "long_break",
+      "plannedStart": "2026-07-21T11:18:05.000Z",
+      "plannedEnd": "2026-07-21T11:33:05.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-4",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T11:33:05.000Z",
+      "plannedEnd": "2026-07-21T11:58:05.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-5",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T13:00:00.000Z",
+      "plannedEnd": "2026-07-21T13:25:00.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T132500",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T13:25:00.000Z",
+      "plannedEnd": "2026-07-21T13:30:00.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-6",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T13:30:00.000Z",
+      "plannedEnd": "2026-07-21T13:55:00.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T135500",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T13:55:00.000Z",
+      "plannedEnd": "2026-07-21T14:00:00.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-7",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T14:00:00.000Z",
+      "plannedEnd": "2026-07-21T14:25:00.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T142500",
+      "blockType": "long_break",
+      "plannedStart": "2026-07-21T14:25:00.000Z",
+      "plannedEnd": "2026-07-21T14:40:00.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-8",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T14:40:00.000Z",
+      "plannedEnd": "2026-07-21T15:05:00.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T150500",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T15:05:00.000Z",
+      "plannedEnd": "2026-07-21T15:10:00.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-9",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T15:10:00.000Z",
+      "plannedEnd": "2026-07-21T15:35:00.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T153500",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T15:35:00.000Z",
+      "plannedEnd": "2026-07-21T15:40:00.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-10",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T15:40:00.000Z",
+      "plannedEnd": "2026-07-21T16:05:00.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260721T160500",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-21T16:05:00.000Z",
+      "plannedEnd": "2026-07-21T16:10:00.000Z"
+    },
+    {
+      "id": "task-89ehfj9hfw-focus-11",
+      "taskId": "89ehfj9hfw",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T16:10:00.000Z",
+      "plannedEnd": "2026-07-21T16:24:00.000Z"
+    },
+    {
+      "id": "task-49739779",
+      "taskId": "49739779",
+      "blockType": "focus",
+      "plannedStart": "2026-07-21T16:24:00.000Z",
+      "plannedEnd": "2026-07-21T16:45:45.000Z"
+    },
+    {
+      "id": "task-49770319",
+      "taskId": "49770319",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T09:00:00.000Z",
+      "plannedEnd": "2026-07-22T09:19:57.000Z"
+    },
+    {
+      "id": "task-56543285",
+      "taskId": "56543285",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T09:19:57.000Z",
+      "plannedEnd": "2026-07-22T09:25:30.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260722T092530",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-22T09:25:30.000Z",
+      "plannedEnd": "2026-07-22T09:30:30.000Z"
+    },
+    {
+      "id": "task-50768351",
+      "taskId": "50768351",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T09:30:30.000Z",
+      "plannedEnd": "2026-07-22T09:43:14.000Z"
+    },
+    {
+      "id": "task-50768373",
+      "taskId": "50768373",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T09:43:14.000Z",
+      "plannedEnd": "2026-07-22T09:56:59.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260722T095659",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-22T09:56:59.000Z",
+      "plannedEnd": "2026-07-22T10:01:59.000Z"
+    },
+    {
+      "id": "task-50768387",
+      "taskId": "50768387",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T10:01:59.000Z",
+      "plannedEnd": "2026-07-22T10:18:16.000Z"
+    },
+    {
+      "id": "task-50769781",
+      "taskId": "50769781",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T10:18:16.000Z",
+      "plannedEnd": "2026-07-22T10:22:28.000Z"
+    },
+    {
+      "id": "task-50769785",
+      "taskId": "50769785",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T10:22:28.000Z",
+      "plannedEnd": "2026-07-22T10:36:10.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260722T103610",
+      "blockType": "short_break",
+      "plannedStart": "2026-07-22T10:36:10.000Z",
+      "plannedEnd": "2026-07-22T10:41:10.000Z"
+    },
+    {
+      "id": "task-50769797",
+      "taskId": "50769797",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T10:41:10.000Z",
+      "plannedEnd": "2026-07-22T10:46:12.000Z"
+    },
+    {
+      "id": "task-56469947",
+      "taskId": "56469947",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T10:46:12.000Z",
+      "plannedEnd": "2026-07-22T10:50:15.000Z"
+    },
+    {
+      "id": "task-11482928",
+      "taskId": "11482928",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T10:50:15.000Z",
+      "plannedEnd": "2026-07-22T11:01:41.000Z"
+    },
+    {
+      "id": "task-19125114",
+      "taskId": "19125114",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T11:01:41.000Z",
+      "plannedEnd": "2026-07-22T11:02:37.000Z"
+    },
+    {
+      "id": "task-11482930",
+      "taskId": "11482930",
+      "blockType": "focus",
+      "plannedStart": "2026-07-22T11:02:37.000Z",
+      "plannedEnd": "2026-07-22T11:12:54.000Z"
+    },
+    {
+      "id": "pomodoro-break-20260722T111254",
+      "blockType": "long_break",
+      "plannedStart": "2026-07-22T11:12:54.000Z",
+      "plannedEnd": "2026-07-22T11:27:54.000Z"
+    }
+  ]
+}

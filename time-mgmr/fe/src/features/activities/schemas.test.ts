@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activityFormSchema,
+  autoScheduleSchema,
   manualScheduleSchema,
   manualTimeEntrySchema,
 } from './schemas';
@@ -54,6 +55,40 @@ describe('manualScheduleSchema', () => {
         date: '2026-07-22',
         plannedStart: '10:00',
         plannedEnd: '09:25',
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe('autoScheduleSchema', () => {
+  it('accepts valid auto-schedule constraints', () => {
+    expect(
+      autoScheduleSchema.safeParse({
+        taskIds: ['task-1'],
+        earliestDate: '2026-07-21',
+        deadline: '',
+        workStart: '09:00',
+        workEnd: '17:00',
+        sessionMinutes: 25,
+        shortBreakMinutes: 5,
+        longBreakMinutes: 15,
+        allowSplitAcrossDays: false,
+      }).success
+    ).toBe(true);
+  });
+
+  it('rejects deadlines before the earliest date', () => {
+    expect(
+      autoScheduleSchema.safeParse({
+        taskIds: ['task-1'],
+        earliestDate: '2026-07-21',
+        deadline: '2026-07-20',
+        workStart: '09:00',
+        workEnd: '17:00',
+        sessionMinutes: 25,
+        shortBreakMinutes: 5,
+        longBreakMinutes: 15,
+        allowSplitAcrossDays: false,
       }).success
     ).toBe(false);
   });

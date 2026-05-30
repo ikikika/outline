@@ -2,18 +2,24 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/layouts';
 import {
   useActivityCatalog,
+  useConfirmAutoSchedule,
   useCreateActivity,
   useCreateCatalogTask,
   useDeleteActivity,
   useDeleteCatalogTask,
+  usePreviewAutoSchedule,
   useReorderActivities,
   useReorderTasks,
   useScheduleCatalogTask,
   todayKey,
+  type IActivityWithTasks,
   type IApiTask,
+  type IAutoSchedulePreviewResponse,
+  type IAutoScheduleRequest,
 } from '@/features/activities';
 import { AddActivityForm } from './components/AddActivityForm/AddActivityForm';
 import { ActivityPriorityList } from './components/ActivityPriorityList/ActivityPriorityList';
+import { AutoScheduleModal } from './components/AutoScheduleModal/AutoScheduleModal';
 import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
 import { ManualScheduleModal } from './components/ManualScheduleModal/ManualScheduleModal';
 import styles from './ActivitiesPage.module.scss';
@@ -26,12 +32,18 @@ type DeleteTarget =
 export const ActivitiesPage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [scheduleTarget, setScheduleTarget] = useState<IApiTask | null>(null);
+  const [autoScheduleTarget, setAutoScheduleTarget] =
+    useState<IActivityWithTasks | null>(null);
+  const [autoSchedulePreview, setAutoSchedulePreview] =
+    useState<IAutoSchedulePreviewResponse | null>(null);
   const { data: activities, isLoading, error } = useActivityCatalog();
   const createActivity = useCreateActivity();
   const createTask = useCreateCatalogTask();
   const deleteActivity = useDeleteActivity();
   const deleteTask = useDeleteCatalogTask();
   const scheduleTask = useScheduleCatalogTask();
+  const previewAutoSchedule = usePreviewAutoSchedule();
+  const confirmAutoSchedule = useConfirmAutoSchedule();
   const reorderActivities = useReorderActivities();
   const reorderTasks = useReorderTasks();
 
@@ -41,6 +53,8 @@ export const ActivitiesPage: React.FC = () => {
     deleteActivity.isPending ||
     deleteTask.isPending ||
     scheduleTask.isPending ||
+    previewAutoSchedule.isPending ||
+    confirmAutoSchedule.isPending ||
     reorderActivities.isPending ||
     reorderTasks.isPending;
   const mutationError =
@@ -49,6 +63,8 @@ export const ActivitiesPage: React.FC = () => {
     deleteActivity.error ??
     deleteTask.error ??
     scheduleTask.error ??
+    previewAutoSchedule.error ??
+    confirmAutoSchedule.error ??
     reorderActivities.error ??
     reorderTasks.error;
 
@@ -65,6 +81,36 @@ export const ActivitiesPage: React.FC = () => {
       // Mutation errors are presented above the list.
     }
   };
+
+  const closeAutoScheduleModal = () => {
+    previewAutoSchedule.reset();
+    confirmAutoSchedule.reset();
+    setAutoSchedulePreview(null);
+    setAutoScheduleTarget(null);
+  };
+
+  const handleAutoSchedulePreview = async (request: IAutoScheduleRequest) => {
+    previewAutoSchedule.reset();
+    confirmAutoSchedule.reset();
+    const preview = await previewAutoSchedule.mutateAsync(request);
+    setAutoSchedulePreview(preview);
+  };
+
+  const handleAutoScheduleConfirm = async (
+    request: IAutoScheduleRequest & { previewToken: string }
+  ) => {
+    await confirmAutoSchedule.mutateAsync(request);
+    closeAutoScheduleModal();
+  };
+
+  const autoScheduleError =
+    previewAutoSchedule.error instanceof Error
+      ? previewAutoSchedule.error.message
+      : confirmAutoSchedule.error instanceof Error
+        ? confirmAutoSchedule.error.message
+        : previewAutoSchedule.error || confirmAutoSchedule.error
+          ? 'Failed to auto-schedule activity.'
+          : null;
 
   return (
     <MainLayout>
@@ -122,6 +168,12 @@ export const ActivitiesPage: React.FC = () => {
                 taskCount: activity.tasks.length,
               })
             }
+            onAutoScheduleActivity={(activity) => {
+              previewAutoSchedule.reset();
+              confirmAutoSchedule.reset();
+              setAutoSchedulePreview(null);
+              setAutoScheduleTarget(activity);
+            }}
             onScheduleTask={(task) => {
               scheduleTask.reset();
               setScheduleTarget(task);
@@ -181,6 +233,23 @@ export const ActivitiesPage: React.FC = () => {
               // Mutation errors are presented above the list.
             }
           }}
+        />
+      ) : null}
+      {autoScheduleTarget ? (
+        <AutoScheduleModal
+          activity={autoScheduleTarget}
+          defaultDate={todayKey()}
+          busy={previewAutoSchedule.isPending || confirmAutoSchedule.isPending}
+          error={autoScheduleError}
+          preview={autoSchedulePreview}
+          onCancel={closeAutoScheduleModal}
+          onBack={() => {
+            previewAutoSchedule.reset();
+            confirmAutoSchedule.reset();
+            setAutoSchedulePreview(null);
+          }}
+          onPreview={handleAutoSchedulePreview}
+          onConfirm={handleAutoScheduleConfirm}
         />
       ) : null}
     </MainLayout>

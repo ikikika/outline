@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Schedule tasks.json lectures into plannedStart / plannedEnd.
+"""Schedule task catalog entries into canonical tasks + scheduleBlocks JSON.
 
 Rules:
   - Workdays only, daily window 09:00–17:00 (ISO timestamps with Z)
@@ -7,9 +7,11 @@ Rules:
   - Duration = timeEstimationSeconds × 1.5 (round half up)
   - Do not split a segment across lunch, breaks, or days
   - Oversized lectures (longer than one focus block and too long for a single
-    work window, e.g. the YouTube lecture) are split at focus boundaries
+    work window, e.g. the YouTube lecture) use multiple focus schedule blocks
   - Pomodoro: ~25 min focus blocks; 5 min short break; every 4th focus → 15 min
   - Lunch resets the current focus accumulation; a new day resets the pomodoro count
+  - Input may be a legacy timed-task array or the canonical object; output is
+    always the canonical object
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ FOCUS_TARGET_SECONDS = 25 * 60
 SHORT_BREAK_SECONDS = 5 * 60
 LONG_BREAK_SECONDS = 15 * 60
 POMODORO_BREAK_ACTIVITY_ID = "pomodoro-breaks"
+EXPORT_VERSION = 1
 
 DAY_START = (9, 0)
 LUNCH_START = (12, 0)
@@ -104,8 +107,6 @@ def collapse_split_tasks(tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         base["timeEstimationSeconds"] = sum(
             int(p.get("timeEstimationSeconds") or 0) for p in pending_parts
         )
-        base["plannedStart"] = ""
-        base["plannedEnd"] = ""
         collapsed.append(base)
         pending_base = None
         pending_parts = []
@@ -255,32 +256,36 @@ class Scheduler:
             self._move_to_next_window()
 
 
-def estimation_for_chunk(chunk_seconds: int) -> int:
-    """Inverse of duration = round_half_up(est * 1.5)."""
-    return round_half_up(chunk_seconds / 1.5)
+def catalog_task(task: dict[str, Any]) -> dict[str, Any]:
+    """Return task metadata without legacy schedule fields."""
+    result = {
+        key: value
+        for key, value in task.items()
+        if key not in {"plannedStart", "plannedEnd"}
+    }
+    if result.get("status") in {None, "unplanned"}:
+        result["status"] = "planned"
+    return result
 
 
-def make_break_task(placement: tuple[datetime, datetime]) -> dict[str, Any]:
+def make_break_block(placement: tuple[datetime, datetime]) -> dict[str, Any]:
     start, end = placement
     duration = int((end - start).total_seconds())
-    title = "Long Break" if duration == LONG_BREAK_SECONDS else "Short Break"
     timestamp_id = start.strftime("%Y%m%dT%H%M%S")
     return {
         "id": f"pomodoro-break-{timestamp_id}",
-        "activityId": POMODORO_BREAK_ACTIVITY_ID,
-        "title": title,
+        "blockType": (
+            "long_break" if duration == LONG_BREAK_SECONDS else "short_break"
+        ),
         "plannedStart": format_iso(start),
         "plannedEnd": format_iso(end),
-        "timeEstimationSeconds": duration,
-        "status": "planned",
-        "sortOrder": int(start.timestamp()),
     }
 
 
 def schedule_task(
     scheduler: Scheduler,
     task: dict[str, Any],
-) -> list[dict[str, Any]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     est = int(task.get("timeEstimationSeconds") or 0)
     duration = lecture_duration_seconds(est)
     title = strip_part_title(str(task.get("title") or ""))
@@ -296,20 +301,25 @@ def schedule_task(
     # Normal lectures: never interrupt (may push the focus block past 25 min)
     if not should_split:
         start, end, break_placement = scheduler.place(duration)
-        updated = dict(task)
+        updated = catalog_task(task)
         updated["id"] = task_id
         updated["title"] = title
-        updated["plannedStart"] = format_iso(start)
-        updated["plannedEnd"] = format_iso(end)
         updated["timeEstimationSeconds"] = est
-        scheduled = [updated]
+        blocks = [
+            {
+                "id": f"task-{task_id}",
+                "taskId": task_id,
+                "blockType": "focus",
+                "plannedStart": format_iso(start),
+                "plannedEnd": format_iso(end),
+            }
+        ]
         if break_placement:
-            scheduled.append(make_break_task(break_placement))
-        return scheduled
+            blocks.append(make_break_block(break_placement))
+        return updated, blocks
 
-    # Split long / oversized lectures at focus-block boundaries
+    # Keep one catalog task while splitting its schedule at focus boundaries.
     remaining = duration
-    chunk_sizes: list[int] = []
     placements: list[
         tuple[datetime, datetime, tuple[datetime, datetime] | None]
     ] = []
@@ -320,62 +330,72 @@ def schedule_task(
             room = FOCUS_TARGET_SECONDS
         chunk = min(remaining, room)
         start, end, break_placement = scheduler.place(chunk)
-        chunk_sizes.append(chunk)
         placements.append((start, end, break_placement))
         remaining -= chunk
 
-    total_parts = len(placements)
-    # Allocate estimations so they sum to the original
-    estimations: list[int] = []
-    allocated = 0
-    for i, chunk in enumerate(chunk_sizes):
-        if i == total_parts - 1:
-            estimations.append(est - allocated)
-        else:
-            part_est = estimation_for_chunk(chunk)
-            estimations.append(part_est)
-            allocated += part_est
-
-    parts: list[dict[str, Any]] = []
-    for i, ((start, end, break_placement), part_est) in enumerate(
-        zip(placements, estimations), start=1
-    ):
-        part = dict(task)
-        part["id"] = f"{task_id}-p{i}"
-        part["title"] = f"{title} ({i}/{total_parts})"
-        part["plannedStart"] = format_iso(start)
-        part["plannedEnd"] = format_iso(end)
-        part["timeEstimationSeconds"] = part_est
-        parts.append(part)
+    updated = catalog_task(task)
+    updated["id"] = task_id
+    updated["title"] = title
+    updated["timeEstimationSeconds"] = est
+    blocks: list[dict[str, Any]] = []
+    for index, (start, end, break_placement) in enumerate(placements, start=1):
+        blocks.append(
+            {
+                "id": f"task-{task_id}-focus-{index}",
+                "taskId": task_id,
+                "blockType": "focus",
+                "plannedStart": format_iso(start),
+                "plannedEnd": format_iso(end),
+            }
+        )
         if break_placement:
-            parts.append(make_break_task(break_placement))
-    return parts
+            blocks.append(make_break_block(break_placement))
+    return updated, blocks
 
 
 def schedule_tasks(
-    tasks: list[dict[str, Any]],
+    payload: list[dict[str, Any]] | dict[str, Any],
     *,
     start_date: date,
-) -> list[dict[str, Any]]:
+    exported_at: datetime | None = None,
+) -> dict[str, Any]:
+    raw_tasks = payload if isinstance(payload, list) else payload.get("tasks")
+    if not isinstance(raw_tasks, list):
+        raise ValueError(
+            "tasks.json must be an array or contain a top-level 'tasks' array"
+        )
+    if not all(isinstance(task, dict) for task in raw_tasks):
+        raise ValueError("Every task must be a JSON object")
+
     scheduler = Scheduler(start_date)
-    scheduled: list[dict[str, Any]] = []
+    tasks: list[dict[str, Any]] = []
+    schedule_blocks: list[dict[str, Any]] = []
     focus_tasks = [
         task
-        for task in tasks
+        for task in raw_tasks
         if str(task.get("activityId") or "") != POMODORO_BREAK_ACTIVITY_ID
     ]
     for task in collapse_split_tasks(focus_tasks):
-        scheduled.extend(schedule_task(scheduler, task))
-    return scheduled
+        catalog_entry, blocks = schedule_task(scheduler, task)
+        tasks.append(catalog_entry)
+        schedule_blocks.extend(blocks)
+    return {
+        "version": EXPORT_VERSION,
+        "exportedAt": format_iso(exported_at or datetime.now(timezone.utc)),
+        "tasks": tasks,
+        "scheduleBlocks": schedule_blocks,
+    }
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Fill plannedStart/plannedEnd on tasks.json")
+    parser = argparse.ArgumentParser(
+        description="Generate canonical tasks + scheduleBlocks JSON"
+    )
     parser.add_argument(
         "--input",
         "-i",
         type=Path,
-        default=Path(__file__).resolve().parent / "../fe/public/tasks.json",
+        default=Path(__file__).resolve().parent / "tasks.json",
     )
     parser.add_argument(
         "--output",
@@ -399,32 +419,26 @@ def main() -> None:
     start_date = date.fromisoformat(args.start_date)
 
     payload = json.loads(input_path.read_text(encoding="utf-8"))
-    tasks = payload if isinstance(payload, list) else payload.get("tasks")
-    if not isinstance(tasks, list):
-        raise SystemExit("tasks.json must be an array or contain a top-level 'tasks' array")
-
-    scheduled = schedule_tasks(tasks, start_date=start_date)
-    output_payload: Any
-    if isinstance(payload, list):
-        output_payload = scheduled
-    else:
-        payload["tasks"] = scheduled
-        payload["exportedAt"] = format_iso(datetime.now(timezone.utc))
-        output_payload = payload
+    try:
+        output_payload = schedule_tasks(payload, start_date=start_date)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(output_payload, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
 
-    yt_parts = [t for t in scheduled if str(t.get("id", "")).startswith("89ehfj9hfw")]
-    first = scheduled[0]["plannedStart"] if scheduled else "-"
-    last = scheduled[-1]["plannedEnd"] if scheduled else "-"
-    print(f"Wrote {len(scheduled)} tasks to {output_path}")
+    tasks = output_payload["tasks"]
+    blocks = output_payload["scheduleBlocks"]
+    yt_blocks = [
+        block for block in blocks if block.get("taskId") == "89ehfj9hfw"
+    ]
+    first = blocks[0]["plannedStart"] if blocks else "-"
+    last = blocks[-1]["plannedEnd"] if blocks else "-"
+    print(f"Wrote {len(tasks)} tasks and {len(blocks)} schedule blocks to {output_path}")
     print(f"Range: {first} → {last}")
-    print(f"YouTube parts: {len(yt_parts)}")
-    for part in yt_parts:
-        print(f"  {part['plannedStart']} → {part['plannedEnd']}  {part['title'][-8:]}")
+    print(f"YouTube focus blocks: {len(yt_blocks)}")
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ interface ActivityPriorityRowProps {
     input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
   ) => Promise<void>;
   onDeleteActivity: () => void;
+  onAutoScheduleActivity: () => void;
   onScheduleTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onDeleteTask: (task: IActivityWithTasks['tasks'][number]) => void;
   disabled?: boolean;
@@ -30,6 +31,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   onToggle,
   onAddTask,
   onDeleteActivity,
+  onAutoScheduleActivity,
   onScheduleTask,
   onDeleteTask,
   disabled = false,
@@ -102,6 +104,19 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
         <span className={styles.taskCount}>
           {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
         </span>
+        <button
+          type="button"
+          className={styles.autoScheduleButton}
+          aria-label={`Auto-schedule ${activity.title}`}
+          disabled={disabled || taskCount === 0}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAutoScheduleActivity();
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          Auto-schedule
+        </button>
         <button
           type="button"
           className={styles.iconButton}
