@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { manualScheduleSchema, autoScheduleSchema } from '@/features/activities/schemas';
+import { manualScheduleSchema, autoScheduleSchema, activityCatalogImportSchema } from '@/features/activities/schemas';
 import ActivitiesPage from './ActivitiesPage';
 
 const mockActivities = [
@@ -52,6 +52,12 @@ const mockCreateActivity = {
   mutateAsync: vi.fn().mockResolvedValue(undefined),
   isPending: false,
   error: null,
+};
+const mockImportActivityCatalog = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  reset: vi.fn(),
+  isPending: false,
+  error: null as Error | null,
 };
 const mockCreateTask = {
   mutateAsync: vi.fn().mockResolvedValue(undefined),
@@ -124,6 +130,7 @@ vi.mock('@/features/activities', () => ({
     error: null,
   }),
   useCreateActivity: () => mockCreateActivity,
+  useImportActivityCatalog: () => mockImportActivityCatalog,
   useCreateCatalogTask: () => mockCreateTask,
   useDeleteActivity: () => mockDeleteActivity,
   useDeleteCatalogTask: () => mockDeleteTask,
@@ -135,6 +142,7 @@ vi.mock('@/features/activities', () => ({
   todayKey: () => '2026-07-21',
   manualScheduleSchema,
   autoScheduleSchema,
+  activityCatalogImportSchema,
   formatMinutes: (minutes: number) => `${minutes}m`,
   ACTIVITY_CATEGORIES: [
     { id: 'work', label: 'Work', color: '#2563eb' },
@@ -155,6 +163,9 @@ describe('ActivitiesPage', () => {
     mockReorderActivities.mutate.mockClear();
     mockReorderTasks.mutate.mockClear();
     mockCreateActivity.mutateAsync.mockClear();
+    mockImportActivityCatalog.mutateAsync.mockClear();
+    mockImportActivityCatalog.reset.mockClear();
+    mockImportActivityCatalog.error = null;
     mockCreateTask.mutateAsync.mockClear();
     mockDeleteActivity.mutateAsync.mockClear();
     mockDeleteTask.mutateAsync.mockClear();
@@ -381,6 +392,93 @@ describe('ActivitiesPage', () => {
     expect(
       screen.getByRole('button', { name: 'Preview schedule' })
     ).toBeInTheDocument();
+  });
+
+  it('imports an activity and tasks from a valid JSON file', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    const payload = {
+      activity: {
+        title: 'Imported Course',
+        categoryId: 'admin',
+        notes: '',
+        id: 'imported-course',
+      },
+      tasks: [
+        {
+          title: 'Lesson A',
+          timeEstimationSeconds: 600,
+          sortOrder: 0,
+          id: 'lesson-a',
+        },
+      ],
+    };
+    const file = new File([JSON.stringify(payload)], 'import.json', {
+      type: 'application/json',
+    });
+
+    const input = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    expect(input).toBeTruthy();
+    await user.upload(input, file);
+
+    expect(mockImportActivityCatalog.mutateAsync).toHaveBeenCalledWith({
+      activity: {
+        title: 'Imported Course',
+        categoryId: 'admin',
+        notes: '',
+        id: 'imported-course',
+      },
+      tasks: [
+        {
+          title: 'Lesson A',
+          timeEstimationSeconds: 600,
+          sortOrder: 0,
+          id: 'lesson-a',
+        },
+      ],
+    });
+  });
+
+  it('shows an error for invalid import JSON', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    const file = new File(['{not-json'], 'bad.json', {
+      type: 'application/json',
+    });
+    const input = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    await user.upload(input, file);
+
+    expect(mockImportActivityCatalog.mutateAsync).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Import file must be valid JSON.'
+    );
+  });
+
+  it('shows an error for import files that fail schema validation', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    const file = new File(
+      [JSON.stringify({ activity: { title: 'Missing category' }, tasks: [] })],
+      'invalid.json',
+      { type: 'application/json' }
+    );
+    const input = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+    await user.upload(input, file);
+
+    expect(mockImportActivityCatalog.mutateAsync).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
   it('disables confirm when preview reports unplaced tasks', async () => {

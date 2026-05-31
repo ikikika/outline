@@ -7,6 +7,7 @@ import {
   useCreateCatalogTask,
   useDeleteActivity,
   useDeleteCatalogTask,
+  useImportActivityCatalog,
   usePreviewAutoSchedule,
   useReorderActivities,
   useReorderTasks,
@@ -21,6 +22,7 @@ import { AddActivityForm } from './components/AddActivityForm/AddActivityForm';
 import { ActivityPriorityList } from './components/ActivityPriorityList/ActivityPriorityList';
 import { AutoScheduleModal } from './components/AutoScheduleModal/AutoScheduleModal';
 import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
+import { ImportActivityForm } from './components/ImportActivityForm/ImportActivityForm';
 import { ManualScheduleModal } from './components/ManualScheduleModal/ManualScheduleModal';
 import styles from './ActivitiesPage.module.scss';
 
@@ -36,8 +38,10 @@ export const ActivitiesPage: React.FC = () => {
     useState<IActivityWithTasks | null>(null);
   const [autoSchedulePreview, setAutoSchedulePreview] =
     useState<IAutoSchedulePreviewResponse | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const { data: activities, isLoading, error } = useActivityCatalog();
   const createActivity = useCreateActivity();
+  const importActivityCatalog = useImportActivityCatalog();
   const createTask = useCreateCatalogTask();
   const deleteActivity = useDeleteActivity();
   const deleteTask = useDeleteCatalogTask();
@@ -49,6 +53,7 @@ export const ActivitiesPage: React.FC = () => {
 
   const busy =
     createActivity.isPending ||
+    importActivityCatalog.isPending ||
     createTask.isPending ||
     deleteActivity.isPending ||
     deleteTask.isPending ||
@@ -58,6 +63,10 @@ export const ActivitiesPage: React.FC = () => {
     reorderActivities.isPending ||
     reorderTasks.isPending;
   const mutationError =
+    importError ??
+    (importActivityCatalog.error instanceof Error
+      ? importActivityCatalog.error.message
+      : null) ??
     createActivity.error ??
     createTask.error ??
     deleteActivity.error ??
@@ -125,15 +134,31 @@ export const ActivitiesPage: React.FC = () => {
         <AddActivityForm
           disabled={busy}
           onAdd={async (input) => {
+            setImportError(null);
             await createActivity.mutateAsync(input);
+          }}
+        />
+
+        <ImportActivityForm
+          disabled={busy}
+          onError={(message) => {
+            importActivityCatalog.reset();
+            setImportError(message);
+          }}
+          onImport={async (input) => {
+            setImportError(null);
+            importActivityCatalog.reset();
+            await importActivityCatalog.mutateAsync(input);
           }}
         />
 
         {mutationError ? (
           <div className={styles.error} role="alert">
-            {mutationError instanceof Error
-              ? mutationError.message
-              : 'Failed to save new order.'}
+            {typeof mutationError === 'string'
+              ? mutationError
+              : mutationError instanceof Error
+                ? mutationError.message
+                : 'Failed to save new order.'}
           </div>
         ) : null}
 

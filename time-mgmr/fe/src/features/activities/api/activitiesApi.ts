@@ -47,6 +47,34 @@ export interface ICatalogTaskCreateInput {
   status?: TaskStatus;
 }
 
+export interface IActivityCatalogImportActivity {
+  title: string;
+  categoryId: ActivityCategoryId;
+  notes?: string;
+  id?: string;
+  sortOrder?: number;
+}
+
+export interface IActivityCatalogImportTask {
+  title: string;
+  timeEstimationSeconds?: number;
+  categoryId?: ActivityCategoryId;
+  notes?: string;
+  status?: TaskStatus;
+  sortOrder?: number;
+  id?: string;
+}
+
+export interface IActivityCatalogImportInput {
+  activity: IActivityCatalogImportActivity;
+  tasks: IActivityCatalogImportTask[];
+}
+
+export interface IActivityCatalogImportResponse {
+  activity: IActivity;
+  tasks: IApiTask[];
+}
+
 export function isActivitiesApiEnabled(): boolean {
   return Boolean(API_BASE_URL);
 }
@@ -80,6 +108,41 @@ export async function createActivityApi(
     categoryId: input.categoryId,
     notes: input.notes ?? '',
   });
+}
+
+export async function importActivityCatalogApi(
+  input: IActivityCatalogImportInput
+): Promise<IActivityCatalogImportResponse> {
+  requireApiBaseUrl();
+  return postJsonAuth<IActivityCatalogImportResponse>(
+    `${ACTIVITIES_BASE_URL}/import`,
+    {
+      activity: {
+        title: input.activity.title.trim(),
+        categoryId: input.activity.categoryId,
+        ...(input.activity.notes !== undefined
+          ? { notes: input.activity.notes }
+          : {}),
+        ...(input.activity.id !== undefined ? { id: input.activity.id } : {}),
+        ...(input.activity.sortOrder !== undefined
+          ? { sortOrder: input.activity.sortOrder }
+          : {}),
+      },
+      tasks: input.tasks.map((task) => ({
+        title: task.title.trim(),
+        ...(task.timeEstimationSeconds !== undefined
+          ? { timeEstimationSeconds: task.timeEstimationSeconds }
+          : {}),
+        ...(task.categoryId !== undefined
+          ? { categoryId: task.categoryId }
+          : {}),
+        ...(task.notes !== undefined ? { notes: task.notes } : {}),
+        ...(task.status !== undefined ? { status: task.status } : {}),
+        ...(task.sortOrder !== undefined ? { sortOrder: task.sortOrder } : {}),
+        ...(task.id !== undefined ? { id: task.id } : {}),
+      })),
+    }
+  );
 }
 
 export async function deleteActivityApi(id: string): Promise<void> {

@@ -27,10 +27,12 @@ export {
   manualScheduleSchema,
   manualTimeEntrySchema,
   autoScheduleSchema,
+  activityCatalogImportSchema,
   type ActivityFormValues,
   type ManualScheduleValues,
   type ManualTimeEntryFormValues,
   type AutoScheduleFormValues,
+  type ActivityCatalogImportValues,
 } from './schemas';
 
 export {
@@ -41,6 +43,7 @@ export {
   fetchTaskById,
   createActivityApi,
   createCatalogTaskApi,
+  importActivityCatalogApi,
   deleteActivityApi,
   deleteTaskApi,
   updateTaskApi,
@@ -50,6 +53,8 @@ export {
   type IActivityPatch,
   type IActivityCreateInput,
   type ICatalogTaskCreateInput,
+  type IActivityCatalogImportInput,
+  type IActivityCatalogImportResponse,
   type ITaskPatch,
 } from './api/activitiesApi';
 
@@ -116,6 +121,7 @@ export {
 export {
   useActivityCatalog,
   useCreateActivity,
+  useImportActivityCatalog,
   useCreateCatalogTask,
   useDeleteActivity,
   useDeleteCatalogTask,

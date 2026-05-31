@@ -419,6 +419,68 @@ Do not send `createdAt` or `updatedAt`; the server sets them.
 
 ---
 
+#### `POST /api/activities/import`
+
+Import one activity and its nested catalog tasks from a JSON body. Catalog only — does not create schedule blocks.
+
+**Request body**
+
+```json
+{
+  "activity": {
+    "title": "GitHub Copilot for Agentic Coding",
+    "categoryId": "admin",
+    "notes": "Inbox zero, pick top 3 for the day",
+    "id": "github-copilot",
+    "sortOrder": 0
+  },
+  "tasks": [
+    {
+      "title": "GitHub Copilot CLI",
+      "timeEstimationSeconds": 917,
+      "sortOrder": 0,
+      "status": "unplanned",
+      "notes": "",
+      "id": "56468647"
+    },
+    {
+      "title": "Hooks with GitHub Copilot",
+      "timeEstimationSeconds": 1006,
+      "sortOrder": 1,
+      "status": "unplanned"
+    }
+  ]
+}
+```
+
+**`activity`**
+- Required: `title`, `categoryId`
+- Optional: `notes` (defaults to `""`), `id`, `sortOrder`
+
+**`tasks`**
+- Required array (may be empty). Each task requires `title`.
+- Optional per task: `id`, `timeEstimationSeconds`, `categoryId` (defaults to parent activity), `notes`, `status` (defaults to `unplanned`), `sortOrder` (defaults to array index when omitted).
+- `activityId` is assigned by the server from the imported activity.
+- Do not send `scheduleBlocks`, or task scheduling fields (`plannedStart` / `plannedEnd` / `date`).
+- Do not send `createdAt` / `updatedAt`.
+
+Optional `id`s upsert (idempotent re-import), same as `POST /api/activities` and `POST /api/tasks`.
+
+**Response `201`**
+
+```json
+{
+  "activity": { "id": "github-copilot", "title": "...", "categoryId": "admin", "notes": "...", "sortOrder": 0, "createdAt": "...", "updatedAt": "..." },
+  "tasks": [
+    { "id": "56468647", "activityId": "github-copilot", "title": "...", "timeEstimationSeconds": 917, "categoryId": "admin", "notes": "", "status": "unplanned", "sortOrder": 0 }
+  ]
+}
+```
+
+**Error `400`** — `{ "error": "..." }` when validation fails
+
+---
+
 #### `PATCH /api/activities/:id`
 
 Partial update (reorder / edit).

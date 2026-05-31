@@ -106,7 +106,66 @@ export const autoScheduleSchema = z
     }
   );
 
+const optionalIdSchema = z
+  .string()
+  .trim()
+  .min(1, 'id must be a non-empty string when provided.')
+  .optional();
+
+export const activityCatalogImportSchema = z
+  .object({
+    activity: z.object({
+      title: z.string().trim().min(1, 'Activity title is required.'),
+      categoryId: activityCategorySchema,
+      notes: z.string().optional(),
+      id: optionalIdSchema,
+      sortOrder: z.number().finite().optional(),
+    }),
+    tasks: z.array(
+      z
+        .object({
+          title: z.string().trim().min(1, 'Task title is required.'),
+          timeEstimationSeconds: z.number().finite().optional(),
+          categoryId: activityCategorySchema.optional(),
+          notes: z.string().optional(),
+          status: activityStatusSchema.optional(),
+          sortOrder: z.number().finite().optional(),
+          id: optionalIdSchema,
+          activityId: z.string().optional(),
+          plannedStart: z.unknown().optional(),
+          plannedEnd: z.unknown().optional(),
+          date: z.unknown().optional(),
+        })
+        .superRefine((task, ctx) => {
+          if (
+            task.plannedStart !== undefined ||
+            task.plannedEnd !== undefined ||
+            task.date !== undefined
+          ) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                'Task scheduling fields are not supported in catalog import.',
+            });
+          }
+        })
+    ),
+    scheduleBlocks: z.unknown().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.scheduleBlocks !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'scheduleBlocks are not supported; import is catalog-only.',
+        path: ['scheduleBlocks'],
+      });
+    }
+  });
+
 export type ActivityFormValues = z.infer<typeof activityFormSchema>;
 export type ManualScheduleValues = z.infer<typeof manualScheduleSchema>;
 export type ManualTimeEntryFormValues = z.infer<typeof manualTimeEntrySchema>;
 export type AutoScheduleFormValues = z.infer<typeof autoScheduleSchema>;
+export type ActivityCatalogImportValues = z.infer<
+  typeof activityCatalogImportSchema
+>;

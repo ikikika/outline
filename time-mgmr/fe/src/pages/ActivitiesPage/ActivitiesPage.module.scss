@@ -31,6 +31,35 @@
   margin-bottom: 1rem;
 }
 
+.importForm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.importButton {
+  border: 1px solid var(--color-border, #cbd5e1);
+  border-radius: 0.375rem;
+  background: var(--color-surface, #fff);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.48rem 0.7rem;
+  white-space: nowrap;
+}
+
+.importButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.importHint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #64748b);
+}
+
 .addTaskForm {
   padding: 0.6rem 0.75rem 0.75rem 2.25rem;
   border-top: 1px solid var(--color-border, #e2e8f0);

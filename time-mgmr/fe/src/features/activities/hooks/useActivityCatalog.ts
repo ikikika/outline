@@ -7,8 +7,10 @@ import {
   deleteTaskApi,
   fetchActivities,
   fetchCatalogTasks,
+  importActivityCatalogApi,
   patchActivityApi,
   patchTaskApi,
+  type IActivityCatalogImportInput,
   type IActivityCreateInput,
   type ICatalogTaskCreateInput,
 } from '../api/activitiesApi';
@@ -65,6 +67,19 @@ export function useCreateActivity() {
 
   return useMutation({
     mutationFn: (input: IActivityCreateInput) => createActivityApi(input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.catalogList,
+      }),
+  });
+}
+
+export function useImportActivityCatalog() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: IActivityCatalogImportInput) =>
+      importActivityCatalogApi(input),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: ACTIVITY_QUERY_KEYS.catalogList,
