@@ -55,8 +55,20 @@ describe('classifyVariance', () => {
 describe('buildActivityMetrics', () => {
   it('sums multiple time entries for one task', () => {
     const metrics = buildActivityMetrics(baseBlock(), [
-      entry({ id: 'e1', durationMinutes: 60 }),
-      entry({ id: 'e2', durationMinutes: 50 }),
+      entry({
+        id: 'e1',
+        source: 'manual',
+        durationMinutes: 60,
+        startAt: '2026-07-19T09:00:00.000Z',
+        endAt: '2026-07-19T10:00:00.000Z',
+      }),
+      entry({
+        id: 'e2',
+        source: 'manual',
+        durationMinutes: 50,
+        startAt: '2026-07-19T10:00:00.000Z',
+        endAt: '2026-07-19T10:50:00.000Z',
+      }),
     ]);
     expect(metrics.plannedMinutes).toBe(120);
     expect(metrics.actualMinutes).toBe(110);
@@ -67,12 +79,33 @@ describe('buildActivityMetrics', () => {
   it('uses timeEstimationSeconds instead of the scheduled block duration', () => {
     const metrics = buildActivityMetrics(
       baseBlock({ timeEstimationSeconds: 60 * 60 }),
-      [entry({ durationMinutes: 90 })]
+      [
+        entry({
+          source: 'manual',
+          durationMinutes: 90,
+          startAt: '2026-07-19T09:00:00.000Z',
+          endAt: '2026-07-19T10:30:00.000Z',
+        }),
+      ]
     );
 
     expect(metrics.plannedMinutes).toBe(60);
     expect(metrics.varianceMinutes).toBe(30);
     expect(metrics.varianceKind).toBe('over');
+  });
+
+  it('derives timer actuals from start/end even when durationMinutes is 0', () => {
+    const metrics = buildActivityMetrics(baseBlock(), [
+      entry({
+        source: 'timer',
+        startAt: '2026-07-19T09:00:00.000Z',
+        endAt: '2026-07-19T09:05:00.000Z',
+        durationMinutes: 0,
+      }),
+    ]);
+
+    expect(metrics.actualMinutes).toBe(5);
+    expect(metrics.varianceKind).toBe('under');
   });
 });
 

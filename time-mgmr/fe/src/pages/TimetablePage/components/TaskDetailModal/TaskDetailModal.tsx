@@ -310,12 +310,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           </div>
           <div className={styles.row}>
             <dt>Actual</dt>
-            <dd className={styles.value}>{formatMinutes(metrics.actualMinutes)}</dd>
+            <dd className={styles.value}>{formatClock(elapsedSeconds)}</dd>
           </div>
           <div className={styles.row}>
             <dt>Variance</dt>
             <dd className={`${styles.value} ${varianceClass(metrics.varianceKind)}`}>
-              {formatSignedMinutes(metrics.varianceMinutes)}
+              {formatSignedMinutes(elapsedSeconds / 60 - metrics.plannedMinutes)}
             </dd>
           </div>
           {block.notes ? (

@@ -54,18 +54,18 @@ export interface IRangeReport {
   byDay: IDayReport[];
 }
 
+function entryActualMinutes(entry: ITimeEntry, now: Date): number {
+  // Manual entries are duration-authored; timer entries may store durationMinutes: 0
+  // for sub-minute sessions, so always derive from timestamps.
+  if (entry.source === 'manual' && entry.durationMinutes != null) {
+    return entry.durationMinutes;
+  }
+  const endMs = entry.endAt ? new Date(entry.endAt).getTime() : now.getTime();
+  return Math.max(0, (endMs - new Date(entry.startAt).getTime()) / 60000);
+}
+
 function completedActualMinutes(entries: ITimeEntry[], now = new Date()): number {
-  return entries.reduce((sum, entry) => {
-    if (entry.durationMinutes != null) return sum + entry.durationMinutes;
-    if (entry.endAt === null) {
-      const elapsed = Math.max(
-        0,
-        Math.round((now.getTime() - new Date(entry.startAt).getTime()) / 60000)
-      );
-      return sum + elapsed;
-    }
-    return sum;
-  }, 0);
+  return entries.reduce((sum, entry) => sum + entryActualMinutes(entry, now), 0);
 }
 
 export function classifyVariance(

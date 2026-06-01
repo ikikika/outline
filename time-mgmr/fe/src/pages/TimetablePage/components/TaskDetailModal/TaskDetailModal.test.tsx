@@ -25,6 +25,7 @@ vi.mock('@/features/reports', () => ({
     varianceKind: 'untracked',
     entryCount: 0,
   }),
+  classifyVariance: () => 'untracked',
 }));
 
 vi.mock('../../utils/taskBlockColor/taskBlockColor', () => ({
@@ -119,7 +120,7 @@ describe('work session log', () => {
 
     expect(screen.getByRole('heading', { name: 'Work sessions' })).toBeInTheDocument();
     expect(document.querySelectorAll('time')).toHaveLength(2);
-    expect(screen.getByText('0:30')).toBeInTheDocument();
+    expect(screen.getAllByText('0:30')).toHaveLength(2);
     expect(sessionDurationSeconds(entry, Date.now())).toBe(30);
   });
 
