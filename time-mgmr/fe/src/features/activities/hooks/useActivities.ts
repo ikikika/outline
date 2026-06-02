@@ -20,6 +20,7 @@ import {
   fetchTimetableBlocksByDate,
   fetchTimetableBlocksByDateRange,
   fetchTimetableBlocksByTaskId,
+  patchScheduleBlockApi,
   updateScheduleBlockApi,
   type ITimetableBlockPatch,
 } from '../api/scheduleBlocksApi';
@@ -27,6 +28,7 @@ import { timeEntryRepository } from '../repository/timeEntryRepository';
 import type {
   ActivityStatus,
   IActivityInput,
+  ITimeEntry,
   ITimetableBlock,
   TaskStatus,
 } from '../types';
@@ -45,6 +47,24 @@ function findBlockInCache(
     if (found) return found;
   }
   return undefined;
+}
+
+/** Earliest session start and latest session end across work sessions. */
+export function workSessionBounds(
+  entries: ITimeEntry[]
+): { startAt: string; endAt: string } | null {
+  let startAt: string | null = null;
+  let endAt: string | null = null;
+  for (const entry of entries) {
+    if (entry.startAt && (startAt === null || entry.startAt < startAt)) {
+      startAt = entry.startAt;
+    }
+    if (entry.endAt && (endAt === null || entry.endAt > endAt)) {
+      endAt = entry.endAt;
+    }
+  }
+  if (!startAt || !endAt) return null;
+  return { startAt, endAt };
 }
 
 export function useResolvedTimeZone(): string {
@@ -286,8 +306,37 @@ export function useActivityMutations(date: string) {
   });
 
   const complete = useMutation({
-    mutationFn: async ({ taskId }: { taskId: string }) =>
-      patchTaskApi(taskId, { status: 'done' }),
+    mutationFn: async ({
+      taskId,
+      blockId,
+      sessionStartAt,
+      sessionEndAt,
+    }: {
+      taskId: string;
+      blockId?: string;
+      /** Earliest work-session start (UTC ISO); stored as the actual start. */
+      sessionStartAt?: string;
+      /** Latest work-session end (UTC ISO); stored as the actual end. */
+      sessionEndAt?: string;
+    }) => {
+      // Persist the actual worked window separately from the original plan.
+      // Bounds are supplied by the caller (computed from in-hand entries) to avoid reading
+      // the eventually-consistent time-entry GSI right after stopping a timer.
+      if (blockId && sessionStartAt && sessionEndAt) {
+        // Guarantee a visible one-minute block for sub-minute sessions.
+        const startMs = new Date(sessionStartAt).getTime();
+        const endMs = new Date(sessionEndAt).getTime();
+        const safeEndAt =
+          endMs - startMs < 60_000
+            ? new Date(startMs + 60_000).toISOString()
+            : sessionEndAt;
+        await patchScheduleBlockApi(blockId, {
+          actualStart: sessionStartAt,
+          actualEnd: safeEndAt,
+        });
+      }
+      return patchTaskApi(taskId, { status: 'done' });
+    },
     onSuccess: async () => {
       await invalidateScheduleQueries(queryClient, date);
     },

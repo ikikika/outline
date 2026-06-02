@@ -13,6 +13,7 @@ import {
   computeColumnNextStart,
   overlapColumnStyle,
 } from '../../utils/overlapLayout/overlapLayout';
+import { blockDisplayWindow } from '../../utils/blockDisplayWindow/blockDisplayWindow';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './WeekTimetable.module.scss';
 
@@ -113,10 +114,11 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     const map = new Map<string, ITimetableBlock[]>();
     for (const day of days) map.set(day, []);
     for (const activity of blocks) {
-      const list = map.get(activity.date);
+      const window = blockDisplayWindow(activity);
+      const list = map.get(window.date);
       if (!list) continue;
-      const start = timeToMinutes(activity.plannedStart);
-      const end = timeToMinutes(activity.plannedEnd);
+      const start = timeToMinutes(window.start);
+      const end = timeToMinutes(window.end);
       if (end > dayStartMinutes && start < dayEndMinutes) {
         list.push(activity);
       }
@@ -131,10 +133,11 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       const dayBlocks = blocksByDate.get(day) ?? [];
       const intervals = dayBlocks.map((activity) => {
         const isDragging = drag?.id === activity.id;
+        const window = blockDisplayWindow(activity);
         const start =
-          isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
+          isDragging && drag ? drag.previewStart : timeToMinutes(window.start);
         const end =
-          isDragging && drag ? drag.previewEnd : timeToMinutes(activity.plannedEnd);
+          isDragging && drag ? drag.previewEnd : timeToMinutes(window.end);
         return { id: activity.id, start, end };
       });
       const layout = assignOverlapColumns(intervals);
@@ -148,7 +151,10 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     let earliestStart = Infinity;
     for (const day of days) {
       for (const activity of blocksByDate.get(day) ?? []) {
-        earliestStart = Math.min(earliestStart, timeToMinutes(activity.plannedStart));
+        earliestStart = Math.min(
+          earliestStart,
+          timeToMinutes(blockDisplayWindow(activity).start)
+        );
       }
     }
     if (!Number.isFinite(earliestStart)) return null;
@@ -401,15 +407,16 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                 ) : null}
 
                 {dayBlocks.map((activity) => {
-                  const baseStart = timeToMinutes(activity.plannedStart);
+                  const window = blockDisplayWindow(activity);
+                  const baseStart = timeToMinutes(window.start);
                   const duration = plannedDurationMinutes(
-                    activity.plannedStart,
-                    activity.plannedEnd
+                    window.start,
+                    window.end
                   );
                   const isDragging = drag?.id === activity.id;
                   const start = isDragging && drag ? drag.previewStart : baseStart;
                   const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
-                  const sourceTrack = dayTrackRefs.current.get(activity.date);
+                  const sourceTrack = dayTrackRefs.current.get(window.date);
                   const targetTrack =
                     isDragging && drag
                       ? dayTrackRefs.current.get(drag.previewDate)

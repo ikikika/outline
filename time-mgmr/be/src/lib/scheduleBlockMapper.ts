@@ -106,6 +106,24 @@ export function parseScheduleBlockPatchInput(
 		if (typeof parsed !== 'string') return parsed;
 		patch.plannedEnd = parsed;
 	}
+	if (input.actualStart !== undefined) {
+		if (input.actualStart === null) {
+			patch.actualStart = null;
+		} else {
+			const parsed = parseIsoDateTime(input.actualStart, 'actualStart');
+			if (typeof parsed !== 'string') return parsed;
+			patch.actualStart = parsed;
+		}
+	}
+	if (input.actualEnd !== undefined) {
+		if (input.actualEnd === null) {
+			patch.actualEnd = null;
+		} else {
+			const parsed = parseIsoDateTime(input.actualEnd, 'actualEnd');
+			if (typeof parsed !== 'string') return parsed;
+			patch.actualEnd = parsed;
+		}
+	}
 
 	if (input.id !== undefined) return { error: 'id cannot be changed' };
 	if (input.createdAt !== undefined || input.updatedAt !== undefined) {
@@ -122,10 +140,26 @@ export function validateScheduleBlockPatchRange(
 	existing: IScheduleBlock,
 	patch: IScheduleBlockPatchInput
 ): { error: string } | null {
-	return validateRange(
+	const plannedRangeError = validateRange(
 		patch.plannedStart ?? existing.plannedStart,
 		patch.plannedEnd ?? existing.plannedEnd
 	);
+	if (plannedRangeError) return plannedRangeError;
+
+	const actualStart =
+		patch.actualStart === null
+			? undefined
+			: patch.actualStart ?? existing.actualStart;
+	const actualEnd =
+		patch.actualEnd === null ? undefined : patch.actualEnd ?? existing.actualEnd;
+	if (!actualStart && !actualEnd) return null;
+	if (!actualStart || !actualEnd) {
+		return { error: 'actualStart and actualEnd must be provided together' };
+	}
+	if (Date.parse(actualEnd) <= Date.parse(actualStart)) {
+		return { error: 'actualEnd must be after actualStart' };
+	}
+	return null;
 }
 
 export function toScheduleBlockResponse(
@@ -137,6 +171,8 @@ export function toScheduleBlockResponse(
 		blockType: record.blockType,
 		plannedStart: record.plannedStart,
 		plannedEnd: record.plannedEnd,
+		...(record.actualStart ? { actualStart: record.actualStart } : {}),
+		...(record.actualEnd ? { actualEnd: record.actualEnd } : {}),
 		createdAt: record.createdAt,
 		updatedAt: record.updatedAt,
 	};

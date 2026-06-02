@@ -13,6 +13,8 @@ describe('mapApiScheduleBlock', () => {
         blockType: 'focus',
         plannedStart: '2026-07-22T02:44:00.000Z',
         plannedEnd: '2026-07-22T03:05:45.000Z',
+        actualStart: '2026-07-22T04:10:00.000Z',
+        actualEnd: '2026-07-22T04:40:00.000Z',
       },
       {
         id: '49739779',
@@ -34,6 +36,9 @@ describe('mapApiScheduleBlock', () => {
       date: '2026-07-22',
       plannedStart: '10:44',
       plannedEnd: '11:05',
+      actualDate: '2026-07-22',
+      actualStart: '12:10',
+      actualEnd: '12:40',
       timeEstimationSeconds: 870,
       categoryId: 'admin',
       status: 'planned',

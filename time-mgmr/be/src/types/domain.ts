@@ -85,6 +85,8 @@ export interface IScheduleBlock {
 	blockType: ScheduleBlockType;
 	plannedStart: string;
 	plannedEnd: string;
+	actualStart?: string;
+	actualEnd?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -95,6 +97,8 @@ export interface IScheduleBlockCreateInput {
 	blockType: ScheduleBlockType;
 	plannedStart: string;
 	plannedEnd: string;
+	actualStart?: string;
+	actualEnd?: string;
 }
 
 export interface IScheduleBlockPatchInput {
@@ -102,6 +106,8 @@ export interface IScheduleBlockPatchInput {
 	blockType?: ScheduleBlockType;
 	plannedStart?: string;
 	plannedEnd?: string;
+	actualStart?: string | null;
+	actualEnd?: string | null;
 }
 
 export type TimeEntrySource = 'timer' | 'manual';

@@ -116,6 +116,7 @@ export {
   useRunningTimer,
   useActivityMutations,
   useTimeEntryMutations,
+  workSessionBounds,
 } from './hooks/useActivities';
 
 export {

@@ -67,6 +67,9 @@ export interface ITimetableBlock {
   date: string; // YYYY-MM-DD
   plannedStart: string; // HH:mm
   plannedEnd: string; // HH:mm
+  actualDate?: string; // YYYY-MM-DD
+  actualStart?: string; // HH:mm
+  actualEnd?: string; // HH:mm
   activityId: string;
   title: string;
   timeEstimationSeconds?: number;

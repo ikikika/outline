@@ -118,6 +118,17 @@ vi.mock('@/features/activities', () => ({
     setStatus: { isPending: false, mutateAsync: vi.fn() },
     complete: { isPending: false, mutateAsync: mockCompleteMutation },
   }),
+  workSessionBounds: (
+    entries: Array<{ startAt: string; endAt: string | null }>
+  ) => {
+    let startAt: string | null = null;
+    let endAt: string | null = null;
+    for (const e of entries) {
+      if (e.startAt && (startAt === null || e.startAt < startAt)) startAt = e.startAt;
+      if (e.endAt && (endAt === null || e.endAt > endAt)) endAt = e.endAt;
+    }
+    return startAt && endAt ? { startAt, endAt } : null;
+  },
   useRunningTimer: () => ({ data: mockRunningEntry }),
   useTimeEntriesByTask: () => ({
     data: mockRunningEntry ? [mockRunningEntry] : [],
@@ -255,6 +266,11 @@ describe('TimetablePage', () => {
     await user.click(screen.getByRole('button', { name: 'Done' }));
 
     expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
-    expect(mockCompleteMutation).toHaveBeenCalledWith({ taskId: 'task-1' });
+    expect(mockCompleteMutation).toHaveBeenCalledWith({
+      taskId: 'task-1',
+      blockId: 'block-1',
+      sessionStartAt: '2026-07-19T09:00:00.000Z',
+      sessionEndAt: '2026-07-19T10:00:00.000Z',
+    });
   });
 });

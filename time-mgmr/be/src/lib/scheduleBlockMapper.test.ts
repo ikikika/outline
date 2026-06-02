@@ -44,6 +44,19 @@ describe('parseScheduleBlockPatchInput', () => {
 		});
 	});
 
+	it('normalizes an actual work window separately from the plan', () => {
+		assert.deepEqual(
+			parseScheduleBlockPatchInput({
+				actualStart: '2026-07-21T11:00:00Z',
+				actualEnd: '2026-07-21T11:30:00Z',
+			}),
+			{
+				actualStart: '2026-07-21T11:00:00.000Z',
+				actualEnd: '2026-07-21T11:30:00.000Z',
+			}
+		);
+	});
+
 	it('validates the combined patched range', () => {
 		const existing = {
 			id: 'block-1',
@@ -59,6 +72,31 @@ describe('parseScheduleBlockPatchInput', () => {
 				plannedStart: '2026-07-21T10:30:00.000Z',
 			}),
 			{ error: 'plannedEnd must be after plannedStart' }
+		);
+	});
+
+	it('requires a valid actual work window', () => {
+		const existing = {
+			id: 'block-1',
+			taskId: 'task-1',
+			blockType: 'focus' as const,
+			plannedStart: '2026-07-21T10:00:00.000Z',
+			plannedEnd: '2026-07-21T10:25:00.000Z',
+			createdAt: '2026-07-21T09:00:00.000Z',
+			updatedAt: '2026-07-21T09:00:00.000Z',
+		};
+		assert.deepEqual(
+			validateScheduleBlockPatchRange(existing, {
+				actualStart: '2026-07-21T11:00:00.000Z',
+			}),
+			{ error: 'actualStart and actualEnd must be provided together' }
+		);
+		assert.deepEqual(
+			validateScheduleBlockPatchRange(existing, {
+				actualStart: '2026-07-21T11:30:00.000Z',
+				actualEnd: '2026-07-21T11:00:00.000Z',
+			}),
+			{ error: 'actualEnd must be after actualStart' }
 		);
 	});
 });

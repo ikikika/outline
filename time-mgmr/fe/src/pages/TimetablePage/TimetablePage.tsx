@@ -14,6 +14,7 @@ import {
   useTimeEntriesByTask,
   useTimeEntryMutations,
   weekDateKeys,
+  workSessionBounds,
   type ActivityFormValues,
   type ITimetableBlock,
 } from '@/features/activities';
@@ -262,10 +263,23 @@ export const TimetablePage: React.FC = () => {
             onStatus={(taskId, status) =>
               runAction(async () => {
                 if (status === 'done') {
+                  let sessions = detailEntries;
                   if (runningEntry?.taskId === taskId) {
-                    await stopTimer.mutateAsync(runningEntry.id);
+                    const stopped = await stopTimer.mutateAsync(runningEntry.id);
+                    const endAt = stopped?.endAt ?? new Date().toISOString();
+                    sessions = detailEntries.some((e) => e.id === runningEntry.id)
+                      ? detailEntries.map((e) =>
+                          e.id === runningEntry.id ? { ...e, endAt } : e
+                        )
+                      : [...detailEntries, { ...runningEntry, endAt }];
                   }
-                  await complete.mutateAsync({ taskId });
+                  const bounds = workSessionBounds(sessions);
+                  await complete.mutateAsync({
+                    taskId,
+                    blockId: detailBlock.id,
+                    sessionStartAt: bounds?.startAt,
+                    sessionEndAt: bounds?.endAt,
+                  });
                   setDetailBlock(null);
                   return;
                 }

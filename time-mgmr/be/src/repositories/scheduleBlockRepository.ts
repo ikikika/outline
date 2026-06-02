@@ -144,6 +144,8 @@ export async function upsertScheduleBlock(
 		blockType: input.blockType,
 		plannedStart: input.plannedStart,
 		plannedEnd: input.plannedEnd,
+		...(input.actualStart ? { actualStart: input.actualStart } : {}),
+		...(input.actualEnd ? { actualEnd: input.actualEnd } : {}),
 		createdAt: existing?.createdAt ?? now,
 		updatedAt: now,
 	};
@@ -160,6 +162,12 @@ export async function updateScheduleBlock(
 ): Promise<IScheduleBlock | null> {
 	const existing = await getScheduleBlock(userId, scheduleBlockId);
 	if (!existing) return null;
+	const actualStart =
+		patch.actualStart === null
+			? undefined
+			: patch.actualStart ?? existing.actualStart;
+	const actualEnd =
+		patch.actualEnd === null ? undefined : patch.actualEnd ?? existing.actualEnd;
 	return upsertScheduleBlock(userId, {
 		id: existing.id,
 		...(patch.taskId === null
@@ -168,6 +176,8 @@ export async function updateScheduleBlock(
 		blockType: patch.blockType ?? existing.blockType,
 		plannedStart: patch.plannedStart ?? existing.plannedStart,
 		plannedEnd: patch.plannedEnd ?? existing.plannedEnd,
+		...(actualStart ? { actualStart } : {}),
+		...(actualEnd ? { actualEnd } : {}),
 	});
 }
 

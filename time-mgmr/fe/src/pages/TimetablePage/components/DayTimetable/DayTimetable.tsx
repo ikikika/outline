@@ -12,6 +12,7 @@ import {
   computeColumnNextStart,
   overlapColumnStyle,
 } from '../../utils/overlapLayout/overlapLayout';
+import { blockDisplayWindow } from '../../utils/blockDisplayWindow/blockDisplayWindow';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './DayTimetable.module.scss';
 
@@ -97,8 +98,9 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 
   const visibleBlocks = useMemo(() => {
     return blocks.filter((a) => {
-      const start = timeToMinutes(a.plannedStart);
-      const end = timeToMinutes(a.plannedEnd);
+      const window = blockDisplayWindow(a);
+      const start = timeToMinutes(window.start);
+      const end = timeToMinutes(window.end);
       return end > dayStartMinutes && start < dayEndMinutes;
     });
   }, [blocks, dayStartMinutes, dayEndMinutes]);
@@ -107,7 +109,10 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     if (visibleBlocks.length === 0) return null;
     let earliestStart = Infinity;
     for (const activity of visibleBlocks) {
-      earliestStart = Math.min(earliestStart, timeToMinutes(activity.plannedStart));
+      earliestStart = Math.min(
+        earliestStart,
+        timeToMinutes(blockDisplayWindow(activity).start)
+      );
     }
     return (earliestStart - dayStartMinutes) * PX_PER_MINUTE;
   }, [visibleBlocks, dayStartMinutes]);
@@ -144,10 +149,11 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   const { overlapLayout, columnNextStart } = useMemo(() => {
     const intervals = visibleBlocks.map((activity) => {
       const isDragging = drag?.id === activity.id;
+      const window = blockDisplayWindow(activity);
       const start =
-        isDragging && drag ? drag.previewStart : timeToMinutes(activity.plannedStart);
+        isDragging && drag ? drag.previewStart : timeToMinutes(window.start);
       const end =
-        isDragging && drag ? drag.previewEnd : timeToMinutes(activity.plannedEnd);
+        isDragging && drag ? drag.previewEnd : timeToMinutes(window.end);
       return { id: activity.id, start, end };
     });
     const layout = assignOverlapColumns(intervals);
@@ -319,10 +325,11 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
             ) : null}
 
             {visibleBlocks.map((activity) => {
-              const baseStart = timeToMinutes(activity.plannedStart);
+              const window = blockDisplayWindow(activity);
+              const baseStart = timeToMinutes(window.start);
               const duration = plannedDurationMinutes(
-                activity.plannedStart,
-                activity.plannedEnd
+                window.start,
+                window.end
               );
               const isDragging = drag?.id === activity.id;
               const start = isDragging && drag ? drag.previewStart : baseStart;
