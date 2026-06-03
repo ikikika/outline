@@ -56,6 +56,9 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
 
   const category = CATEGORY_MAP[activity.categoryId];
   const taskCount = activity.tasks.length;
+  const completedTaskCount = activity.tasks.filter(
+    (task) => task.status === 'done'
+  ).length;
   const panelId = `activity-tasks-${activity.id}`;
 
   return (
@@ -102,7 +105,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
           </span>
         ) : null}
         <span className={styles.taskCount}>
-          {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+          {completedTaskCount}/{taskCount} {taskCount === 1 ? 'task' : 'tasks'}
         </span>
         <button
           type="button"

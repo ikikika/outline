@@ -29,7 +29,7 @@ const mockActivities = [
         title: 'Lesson 2',
         categoryId: 'deep_work' as const,
         notes: '',
-        status: 'in_progress' as const,
+        status: 'done' as const,
         sortOrder: 1,
       },
     ],
@@ -181,8 +181,8 @@ describe('ActivitiesPage', () => {
     render(<ActivitiesPage />);
     expect(screen.getByText('Deep Learning')).toBeInTheDocument();
     expect(screen.getByText('Admin Tasks')).toBeInTheDocument();
-    expect(screen.getByText('2 tasks')).toBeInTheDocument();
-    expect(screen.getByText('0 tasks')).toBeInTheDocument();
+    expect(screen.getByText('1/2 tasks')).toBeInTheDocument();
+    expect(screen.getByText('0/0 tasks')).toBeInTheDocument();
   });
 
   it('expands an activity to show its tasks', async () => {
@@ -197,7 +197,7 @@ describe('ActivitiesPage', () => {
     expect(screen.getByText('Lesson 1')).toBeInTheDocument();
     expect(screen.getByText('Lesson 2')).toBeInTheDocument();
     expect(screen.getByText('Unplanned')).toBeInTheDocument();
-    expect(screen.getByText('In progress')).toBeInTheDocument();
+    expect(screen.getByText('Done')).toBeInTheDocument();
   });
 
   it('collapses an expanded activity on second click', async () => {
