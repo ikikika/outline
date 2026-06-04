@@ -49,6 +49,14 @@ export function exportDayReportCsv(report: IDayReport): void {
     `# actual=${formatMinutes(report.actualMinutes)}`,
     `# variance=${formatSignedMinutes(report.varianceMinutes)}`,
     `# completion=${Math.round(report.completionRate * 100)}%`,
+    `# coverage=${Math.round(report.coverageRate * 100)}%`,
+    `# deep_work=${Math.round(report.deepWorkPercent)}%`,
+    `# admin=${Math.round(report.adminPercent)}%`,
+    `# break=${Math.round(report.breakPercent)}%`,
+    `# over=${report.varianceBreakdown.over}`,
+    `# under=${report.varianceBreakdown.under}`,
+    `# on_target=${report.varianceBreakdown.on_target}`,
+    `# untracked=${report.varianceBreakdown.untracked}`,
   ];
   downloadBlob(
     `tempo-${report.date}.csv`,

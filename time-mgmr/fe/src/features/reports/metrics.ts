@@ -21,8 +21,18 @@ export interface ICategoryMixItem {
   categoryId: ActivityCategoryId;
   label: string;
   color: string;
+  plannedMinutes: number;
   actualMinutes: number;
+  plannedPercent: number;
+  /** Share of actual time */
   percent: number;
+}
+
+export interface IVarianceBreakdown {
+  over: number;
+  under: number;
+  on_target: number;
+  untracked: number;
 }
 
 export interface IDayReport {
@@ -33,9 +43,21 @@ export interface IDayReport {
   completionRate: number;
   coverageRate: number;
   accuracyRatio: number | null;
+  varianceBreakdown: IVarianceBreakdown;
+  /** Deep work share of actual time (0–100) */
+  deepWorkPercent: number;
+  /** Admin share of actual time (0–100) */
+  adminPercent: number;
+  /** Break share of actual time (0–100) */
+  breakPercent: number;
   activities: IActivityMetrics[];
   categoryMix: ICategoryMixItem[];
   biggestOverruns: IActivityMetrics[];
+  biggestUnderruns: IActivityMetrics[];
+  /** Highest entry counts — likely interruptions / context switching */
+  mostFragmented: IActivityMetrics[];
+  /** Time logged but not marked done */
+  busyButUnfinished: IActivityMetrics[];
 }
 
 export interface IRangeReport {
@@ -49,8 +71,15 @@ export interface IRangeReport {
   accuracyRatio: number | null;
   daysLogged: number;
   dayCount: number;
+  varianceBreakdown: IVarianceBreakdown;
+  deepWorkPercent: number;
+  adminPercent: number;
+  breakPercent: number;
   categoryMix: ICategoryMixItem[];
   biggestOverruns: IActivityMetrics[];
+  biggestUnderruns: IActivityMetrics[];
+  mostFragmented: IActivityMetrics[];
+  busyButUnfinished: IActivityMetrics[];
   byDay: IDayReport[];
 }
 
@@ -103,28 +132,126 @@ export function buildActivityMetrics(
   };
 }
 
-function buildCategoryMix(metrics: IActivityMetrics[]): ICategoryMixItem[] {
-  const totals = new Map<ActivityCategoryId, number>();
+function buildVarianceBreakdown(metrics: IActivityMetrics[]): IVarianceBreakdown {
+  const breakdown: IVarianceBreakdown = {
+    over: 0,
+    under: 0,
+    on_target: 0,
+    untracked: 0,
+  };
   for (const m of metrics) {
-    if (m.actualMinutes <= 0) continue;
-    totals.set(
-      m.activity.categoryId,
-      (totals.get(m.activity.categoryId) ?? 0) + m.actualMinutes
-    );
+    breakdown[m.varianceKind] += 1;
   }
-  const sum = [...totals.values()].reduce((a, b) => a + b, 0);
-  return [...totals.entries()]
-    .map(([categoryId, actualMinutes]) => {
+  return breakdown;
+}
+
+function buildCategoryMix(metrics: IActivityMetrics[]): ICategoryMixItem[] {
+  const plannedTotals = new Map<ActivityCategoryId, number>();
+  const actualTotals = new Map<ActivityCategoryId, number>();
+
+  for (const m of metrics) {
+    if (m.plannedMinutes > 0) {
+      plannedTotals.set(
+        m.activity.categoryId,
+        (plannedTotals.get(m.activity.categoryId) ?? 0) + m.plannedMinutes
+      );
+    }
+    if (m.actualMinutes > 0) {
+      actualTotals.set(
+        m.activity.categoryId,
+        (actualTotals.get(m.activity.categoryId) ?? 0) + m.actualMinutes
+      );
+    }
+  }
+
+  const plannedSum = [...plannedTotals.values()].reduce((a, b) => a + b, 0);
+  const actualSum = [...actualTotals.values()].reduce((a, b) => a + b, 0);
+  const categoryIds = new Set([...plannedTotals.keys(), ...actualTotals.keys()]);
+
+  return [...categoryIds]
+    .map((categoryId) => {
       const cat = CATEGORY_MAP[categoryId];
+      const plannedMinutes = plannedTotals.get(categoryId) ?? 0;
+      const actualMinutes = actualTotals.get(categoryId) ?? 0;
       return {
         categoryId,
         label: cat.label,
         color: cat.color,
+        plannedMinutes,
         actualMinutes,
-        percent: sum > 0 ? (actualMinutes / sum) * 100 : 0,
+        plannedPercent: plannedSum > 0 ? (plannedMinutes / plannedSum) * 100 : 0,
+        percent: actualSum > 0 ? (actualMinutes / actualSum) * 100 : 0,
       };
     })
-    .sort((a, b) => b.actualMinutes - a.actualMinutes);
+    .sort((a, b) => b.actualMinutes - a.actualMinutes || b.plannedMinutes - a.plannedMinutes);
+}
+
+function categoryActualPercent(
+  mix: ICategoryMixItem[],
+  categoryId: ActivityCategoryId
+): number {
+  return mix.find((item) => item.categoryId === categoryId)?.percent ?? 0;
+}
+
+function topByVariance(
+  metrics: IActivityMetrics[],
+  direction: 'over' | 'under',
+  limit: number
+): IActivityMetrics[] {
+  const filtered =
+    direction === 'over'
+      ? metrics.filter((m) => m.varianceMinutes > 0)
+      : metrics.filter((m) => m.varianceMinutes < 0 && m.actualMinutes > 0);
+  return [...filtered]
+    .sort((a, b) =>
+      direction === 'over'
+        ? b.varianceMinutes - a.varianceMinutes
+        : a.varianceMinutes - b.varianceMinutes
+    )
+    .slice(0, limit);
+}
+
+function mostFragmentedActivities(
+  metrics: IActivityMetrics[],
+  limit: number
+): IActivityMetrics[] {
+  return [...metrics]
+    .filter((m) => m.entryCount >= 2)
+    .sort(
+      (a, b) =>
+        b.entryCount - a.entryCount || b.actualMinutes - a.actualMinutes
+    )
+    .slice(0, limit);
+}
+
+function busyButUnfinishedActivities(
+  metrics: IActivityMetrics[],
+  limit: number
+): IActivityMetrics[] {
+  return [...metrics]
+    .filter(
+      (m) =>
+        m.actualMinutes > 0 &&
+        m.activity.status !== 'done' &&
+        m.activity.status !== 'skipped'
+    )
+    .sort((a, b) => b.actualMinutes - a.actualMinutes)
+    .slice(0, limit);
+}
+
+function buildSharedInsights(metrics: IActivityMetrics[], overrunLimit: number) {
+  const categoryMix = buildCategoryMix(metrics);
+  return {
+    varianceBreakdown: buildVarianceBreakdown(metrics),
+    deepWorkPercent: categoryActualPercent(categoryMix, 'deep_work'),
+    adminPercent: categoryActualPercent(categoryMix, 'admin'),
+    breakPercent: categoryActualPercent(categoryMix, 'break'),
+    categoryMix,
+    biggestOverruns: topByVariance(metrics, 'over', overrunLimit),
+    biggestUnderruns: topByVariance(metrics, 'under', overrunLimit),
+    mostFragmented: mostFragmentedActivities(metrics, overrunLimit),
+    busyButUnfinished: busyButUnfinishedActivities(metrics, overrunLimit),
+  };
 }
 
 export function buildDayReport(
@@ -152,6 +279,7 @@ export function buildDayReport(
   const actualMinutes = metrics.reduce((s, m) => s + m.actualMinutes, 0);
   const doneCount = blocks.filter((a) => a.status === 'done').length;
   const trackedCount = metrics.filter((m) => m.actualMinutes > 0).length;
+  const insights = buildSharedInsights(metrics, 5);
 
   return {
     date,
@@ -163,11 +291,7 @@ export function buildDayReport(
     accuracyRatio:
       plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null,
     activities: metrics,
-    categoryMix: buildCategoryMix(metrics),
-    biggestOverruns: [...metrics]
-      .filter((m) => m.varianceMinutes > 0)
-      .sort((a, b) => b.varianceMinutes - a.varianceMinutes)
-      .slice(0, 5),
+    ...insights,
   };
 }
 
@@ -195,6 +319,7 @@ export function buildRangeReport(
   const doneCount = blocks.filter((a) => a.status === 'done').length;
   const trackedCount = allMetrics.filter((m) => m.actualMinutes > 0).length;
   const daysLogged = byDay.filter((d) => d.actualMinutes > 0 || d.activities.length > 0).length;
+  const insights = buildSharedInsights(allMetrics, 8);
 
   return {
     from,
@@ -208,12 +333,8 @@ export function buildRangeReport(
       plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null,
     daysLogged,
     dayCount: dayKeys.length,
-    categoryMix: buildCategoryMix(allMetrics),
-    biggestOverruns: [...allMetrics]
-      .filter((m) => m.varianceMinutes > 0)
-      .sort((a, b) => b.varianceMinutes - a.varianceMinutes)
-      .slice(0, 8),
     byDay,
+    ...insights,
   };
 }
 

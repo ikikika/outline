@@ -132,6 +132,66 @@ describe('buildDayReport', () => {
     expect(report.actualMinutes).toBe(150);
     expect(report.completionRate).toBe(0.5);
     expect(report.categoryMix[0]?.categoryId).toBe('deep_work');
+    expect(report.categoryMix[0]?.plannedMinutes).toBe(120);
     expect(report.biggestOverruns[0]?.varianceMinutes).toBe(30);
+    expect(report.deepWorkPercent).toBe(100);
+    expect(report.adminPercent).toBe(0);
+    expect(report.varianceBreakdown.over).toBe(1);
+    expect(report.varianceBreakdown.untracked).toBe(1);
+    expect(report.busyButUnfinished).toHaveLength(0);
+    expect(report.categoryMix.find((c) => c.categoryId === 'admin')?.plannedMinutes).toBe(
+      30
+    );
+  });
+
+  it('captures underruns, fragmentation, and focus shares', () => {
+    const blocks = [
+      baseBlock({
+        timeEstimationSeconds: 120 * 60,
+        status: 'done',
+      }),
+      baseBlock({
+        id: 'block-2',
+        taskId: 't2',
+        title: 'Admin batch',
+        timeEstimationSeconds: 60 * 60,
+        categoryId: 'admin',
+        status: 'in_progress',
+      }),
+    ];
+    const entries = [
+      entry({
+        id: 'e1',
+        source: 'manual',
+        durationMinutes: 60,
+        startAt: '2026-07-19T09:00:00.000Z',
+        endAt: '2026-07-19T10:00:00.000Z',
+      }),
+      entry({
+        id: 'e2',
+        taskId: 't2',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-19T11:00:00.000Z',
+        endAt: '2026-07-19T11:20:00.000Z',
+      }),
+      entry({
+        id: 'e3',
+        taskId: 't2',
+        source: 'manual',
+        durationMinutes: 25,
+        startAt: '2026-07-19T14:00:00.000Z',
+        endAt: '2026-07-19T14:25:00.000Z',
+      }),
+    ];
+    const report = buildDayReport('2026-07-19', blocks, entries);
+
+    expect(report.biggestUnderruns[0]?.activity.title).toBe('Deep work');
+    expect(report.mostFragmented[0]?.activity.title).toBe('Admin batch');
+    expect(report.mostFragmented[0]?.entryCount).toBe(2);
+    expect(report.busyButUnfinished[0]?.activity.title).toBe('Admin batch');
+    expect(report.deepWorkPercent).toBeCloseTo((60 / 105) * 100);
+    expect(report.adminPercent).toBeCloseTo((45 / 105) * 100);
+    expect(report.varianceBreakdown.under).toBe(2);
   });
 });

@@ -50,6 +50,55 @@
   margin-bottom: 0.25rem;
 }
 
+.metricLabel {
+  position: relative;
+  width: fit-content;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.metricLabel:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+  border-radius: 0.15rem;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  bottom: calc(100% + 0.5rem);
+  width: max-content;
+  max-width: min(18rem, 80vw);
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.4rem;
+  background: #111827;
+  color: #f9fafb;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 18%);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.2rem);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease,
+    visibility 120ms ease;
+}
+
+.metricLabel:hover .tooltip,
+.metricLabel:focus .tooltip,
+.metricLabel:focus-within .tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .summaryValue {
   font-size: 1.15rem;
   font-weight: 700;
@@ -67,9 +116,16 @@
   font-weight: 600;
 }
 
+.sectionHint {
+  margin: -0.35rem 0 0;
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.85rem;
+}
+
 .mixList,
 .overrunList,
-.dayList {
+.dayList,
+.breakdownList {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -80,12 +136,29 @@
 
 .mixItem,
 .overrunItem,
-.dayItem {
+.dayItem,
+.breakdownItem {
   display: grid;
   gap: 0.35rem;
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 0.5rem;
+}
+
+.bar_over {
+  background: #dc2626;
+}
+
+.bar_under {
+  background: #2563eb;
+}
+
+.bar_on_target {
+  background: #059669;
+}
+
+.bar_untracked {
+  background: #94a3b8;
 }
 
 .mixRow {

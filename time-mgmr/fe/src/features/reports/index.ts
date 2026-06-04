@@ -6,6 +6,7 @@ export {
   type VarianceKind,
   type IActivityMetrics,
   type ICategoryMixItem,
+  type IVarianceBreakdown,
   type IDayReport,
   type IRangeReport,
 } from './metrics';
