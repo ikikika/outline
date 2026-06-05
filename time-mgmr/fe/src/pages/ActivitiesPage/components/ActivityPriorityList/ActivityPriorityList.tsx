@@ -22,6 +22,7 @@ import { ActivityPriorityRow } from '../ActivityPriorityRow/ActivityPriorityRow'
 
 interface ActivityPriorityListProps {
   activities: IActivityWithTasks[];
+  archivedView?: boolean;
   disabled?: boolean;
   onReorderActivities: (orderedIds: string[]) => void;
   onReorderTasks: (activityId: string, orderedTaskIds: string[]) => void;
@@ -30,6 +31,8 @@ interface ActivityPriorityListProps {
     input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
   ) => Promise<void>;
   onDeleteActivity: (activity: IActivityWithTasks) => void;
+  onArchiveActivity?: (activity: IActivityWithTasks) => void;
+  onRestoreActivity?: (activity: IActivityWithTasks) => void;
   onAutoScheduleActivity: (activity: IActivityWithTasks) => void;
   onScheduleTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onDeleteTask: (task: IActivityWithTasks['tasks'][number]) => void;
@@ -37,16 +40,20 @@ interface ActivityPriorityListProps {
 
 export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
   activities,
+  archivedView = false,
   disabled = false,
   onReorderActivities,
   onReorderTasks,
   onAddTask,
   onDeleteActivity,
+  onArchiveActivity,
+  onRestoreActivity,
   onAutoScheduleActivity,
   onScheduleTask,
   onDeleteTask,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const dndDisabled = disabled || archivedView;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -69,6 +76,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      if (dndDisabled) return;
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
@@ -107,7 +115,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
         }
       }
     },
-    [activities, onReorderActivities, onReorderTasks]
+    [activities, dndDisabled, onReorderActivities, onReorderTasks]
   );
 
   const activityIds = activities.map((a) => a.id);
@@ -126,11 +134,18 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
           <ActivityPriorityRow
             key={activity.id}
             activity={activity}
+            archivedView={archivedView}
             expanded={expandedIds.has(activity.id)}
             onToggle={() => toggleExpand(activity.id)}
             disabled={disabled}
             onAddTask={(input) => onAddTask(activity, input)}
             onDeleteActivity={() => onDeleteActivity(activity)}
+            onArchiveActivity={
+              onArchiveActivity ? () => onArchiveActivity(activity) : undefined
+            }
+            onRestoreActivity={
+              onRestoreActivity ? () => onRestoreActivity(activity) : undefined
+            }
             onAutoScheduleActivity={() => onAutoScheduleActivity(activity)}
             onScheduleTask={onScheduleTask}
             onDeleteTask={onDeleteTask}

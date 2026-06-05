@@ -5,11 +5,13 @@ import type { Hono } from 'hono';
 import { getUserId } from '../middleware/auth.js';
 import { taskInputToRecord } from '../lib/taskMapper.js';
 import {
+	archiveActivity,
 	deleteActivity,
 	deleteTask,
 	getActivity,
 	listActivities,
 	listTasksByActivityId,
+	restoreActivity,
 	toActivity,
 	updateActivity,
 	upsertActivity,
@@ -17,8 +19,13 @@ import {
 } from '../repositories/dataRepository.js';
 import { deleteTimeEntriesByTask } from '../repositories/timeEntryRepository.js';
 import { deleteScheduleBlocksByTask } from '../repositories/scheduleBlockRepository.js';
+import {
+	archiveEligibilityError,
+	isActivityArchived,
+} from '../lib/activityArchive.js';
 import type {
 	ActivityCategoryId,
+	ActivityListFilter,
 	IActivityCreateInput,
 	IActivityPatchInput,
 	ITaskCreateInput,
@@ -82,6 +89,9 @@ function parseActivityCreateInput(body: unknown): IActivityCreateInput | { error
 	}
 	if (input.createdAt !== undefined || input.updatedAt !== undefined) {
 		return { error: 'createdAt and updatedAt are set by the server' };
+	}
+	if (input.archivedAt !== undefined) {
+		return { error: 'archivedAt is set by archive/restore endpoints' };
 	}
 
 	return {
@@ -266,6 +276,9 @@ function parseActivityPatchInput(body: unknown): IActivityPatchInput | { error: 
 	if (input.createdAt !== undefined || input.updatedAt !== undefined) {
 		return { error: 'createdAt and updatedAt are set by the server' };
 	}
+	if (input.archivedAt !== undefined) {
+		return { error: 'archivedAt is set by archive/restore endpoints' };
+	}
 
 	if (Object.keys(patch).length === 0) {
 		return { error: 'At least one field is required to patch' };
@@ -274,10 +287,27 @@ function parseActivityPatchInput(body: unknown): IActivityPatchInput | { error: 
 	return patch;
 }
 
+function parseActivityListFilter(value: string | undefined): ActivityListFilter | { error: string } {
+	if (value === undefined || value === '' || value === 'false' || value === 'active') {
+		return 'active';
+	}
+	if (value === 'true' || value === 'archived') {
+		return 'archived';
+	}
+	if (value === 'all') {
+		return 'all';
+	}
+	return { error: 'archived must be false | true | all (or active | archived | all)' };
+}
+
 export function registerActivityRoutes(app: Hono): void {
 	app.get('/activities', async (c) => {
 		const userId = getUserId(c);
-		const activities = await listActivities(userId);
+		const filter = parseActivityListFilter(c.req.query('archived'));
+		if (typeof filter === 'object' && 'error' in filter) {
+			return c.json({ error: filter.error }, 400);
+		}
+		const activities = await listActivities(userId, filter);
 		return c.json(activities);
 	});
 
@@ -339,6 +369,40 @@ export function registerActivityRoutes(app: Hono): void {
 		return c.json(toActivity(activity));
 	});
 
+	app.post('/activities/:id/archive', async (c) => {
+		const userId = getUserId(c);
+		const activityId = c.req.param('id');
+		const existing = await getActivity(userId, activityId);
+		if (!existing) {
+			return c.json({ error: 'Activity not found' }, 404);
+		}
+
+		if (isActivityArchived(existing.archivedAt as string | null | undefined)) {
+			return c.json(toActivity(existing));
+		}
+
+		const tasks = await listTasksByActivityId(userId, activityId);
+		const eligibilityError = archiveEligibilityError(tasks);
+		if (eligibilityError) {
+			return c.json({ error: eligibilityError }, 400);
+		}
+
+		const activity = await archiveActivity(userId, activityId);
+		return c.json(activity);
+	});
+
+	app.post('/activities/:id/restore', async (c) => {
+		const userId = getUserId(c);
+		const activityId = c.req.param('id');
+		const existing = await getActivity(userId, activityId);
+		if (!existing) {
+			return c.json({ error: 'Activity not found' }, 404);
+		}
+
+		const activity = await restoreActivity(userId, activityId);
+		return c.json(activity);
+	});
+
 	app.delete('/activities/:id', async (c) => {
 		const userId = getUserId(c);
 		const activityId = c.req.param('id');
@@ -360,6 +424,14 @@ export function registerActivityRoutes(app: Hono): void {
 	app.patch('/activities/:id', async (c) => {
 		const userId = getUserId(c);
 		const activityId = c.req.param('id');
+		const existing = await getActivity(userId, activityId);
+		if (!existing) {
+			return c.json({ error: 'Activity not found' }, 404);
+		}
+		if (isActivityArchived(existing.archivedAt as string | null | undefined)) {
+			return c.json({ error: 'Archived activities are read-only until restored' }, 409);
+		}
+
 		const body = await c.req.json();
 		const parsed = parseActivityPatchInput(body);
 

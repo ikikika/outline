@@ -46,10 +46,13 @@ export {
   importActivityCatalogApi,
   deleteActivityApi,
   deleteTaskApi,
+  archiveActivityApi,
+  restoreActivityApi,
   updateTaskApi,
   patchActivityApi,
   patchTaskApi,
   isActivitiesApiEnabled,
+  type ActivityListFilter,
   type IActivityPatch,
   type IActivityCreateInput,
   type ICatalogTaskCreateInput,
@@ -125,6 +128,8 @@ export {
   useImportActivityCatalog,
   useCreateCatalogTask,
   useDeleteActivity,
+  useArchiveActivity,
+  useRestoreActivity,
   useDeleteCatalogTask,
   useScheduleCatalogTask,
   usePreviewAutoSchedule,
@@ -135,6 +140,10 @@ export {
 } from './hooks/useActivityCatalog';
 
 export { sortBySortOrder } from './utils/sortBySortOrder/sortBySortOrder';
+export {
+  canArchiveActivity,
+  isActivityArchived,
+} from './utils/canArchiveActivity/canArchiveActivity';
 
 export {
   formatDateKey,

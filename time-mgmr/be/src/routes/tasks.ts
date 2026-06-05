@@ -24,7 +24,25 @@ import { deleteTimeEntriesByTask } from '../repositories/timeEntryRepository.js'
 import { deleteScheduleBlocksByTask } from '../repositories/scheduleBlockRepository.js';
 import { taskSk, userPk } from '../lib/keys.js';
 import { getUserId } from '../middleware/auth.js';
+import { isActivityArchived } from '../lib/activityArchive.js';
 import type { ITaskRecord } from '../types/domain.js';
+
+async function assertActivityMutable(
+	userId: string,
+	activityId: string
+): Promise<{ error: string; status: 404 | 409 } | null> {
+	const activity = await getActivity(userId, activityId);
+	if (!activity) {
+		return { error: 'Activity not found', status: 404 };
+	}
+	if (isActivityArchived(activity.archivedAt as string | null | undefined)) {
+		return {
+			error: 'Archived activities are read-only until restored',
+			status: 409,
+		};
+	}
+	return null;
+}
 
 export function registerTaskRoutes(app: Hono): void {
 	app.get('/tasks', async (c) => {
@@ -98,6 +116,11 @@ export function registerTaskRoutes(app: Hono): void {
 			return c.json({ error: parsed.error }, 400);
 		}
 
+		const mutableError = await assertActivityMutable(userId, parsed.activityId);
+		if (mutableError) {
+			return c.json({ error: mutableError.error }, mutableError.status);
+		}
+
 		const activity = await getActivity(userId, parsed.activityId);
 		const sortOrder =
 			parsed.sortOrder ?? (await nextTaskSortOrder(userId, parsed.activityId));
@@ -118,6 +141,11 @@ export function registerTaskRoutes(app: Hono): void {
 			return c.json({ error: 'Task not found' }, 404);
 		}
 
+		const mutableError = await assertActivityMutable(userId, existing.activityId);
+		if (mutableError) {
+			return c.json({ error: mutableError.error }, mutableError.status);
+		}
+
 		await deleteTimeEntriesByTask(userId, taskId);
 		await deleteScheduleBlocksByTask(userId, taskId);
 		await deleteTask(userId, taskId);
@@ -132,6 +160,17 @@ export function registerTaskRoutes(app: Hono): void {
 
 		if ('error' in parsed) {
 			return c.json({ error: parsed.error }, 400);
+		}
+
+		const existing = await getTask(userId, taskId);
+		if (!existing) {
+			return c.json({ error: 'Task not found' }, 404);
+		}
+
+		const activityId = parsed.activityId ?? existing.activityId;
+		const mutableError = await assertActivityMutable(userId, activityId);
+		if (mutableError) {
+			return c.json({ error: mutableError.error }, mutableError.status);
 		}
 
 		if (parsed.activityId) {

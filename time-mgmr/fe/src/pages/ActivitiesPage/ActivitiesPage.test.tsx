@@ -11,6 +11,7 @@ const mockActivities = [
     categoryId: 'deep_work' as const,
     notes: '',
     sortOrder: 0,
+    archivedAt: null,
     createdAt: '2026-07-21T00:00:00.000Z',
     updatedAt: '2026-07-21T00:00:00.000Z',
     tasks: [
@@ -40,9 +41,52 @@ const mockActivities = [
     categoryId: 'admin' as const,
     notes: '',
     sortOrder: 1,
+    archivedAt: null,
     createdAt: '2026-07-21T00:00:00.000Z',
     updatedAt: '2026-07-21T00:00:00.000Z',
     tasks: [],
+  },
+  {
+    id: 'act-3',
+    title: 'Finished Project',
+    categoryId: 'work' as const,
+    notes: '',
+    sortOrder: 2,
+    archivedAt: null,
+    createdAt: '2026-07-21T00:00:00.000Z',
+    updatedAt: '2026-07-21T00:00:00.000Z',
+    tasks: [
+      {
+        id: 'task-3',
+        activityId: 'act-3',
+        title: 'Ship release',
+        categoryId: 'work' as const,
+        notes: '',
+        status: 'done' as const,
+        sortOrder: 0,
+      },
+    ],
+  },
+  {
+    id: 'act-4',
+    title: 'Old Launch',
+    categoryId: 'work' as const,
+    notes: '',
+    sortOrder: 3,
+    archivedAt: '2026-07-20T00:00:00.000Z',
+    createdAt: '2026-07-10T00:00:00.000Z',
+    updatedAt: '2026-07-20T00:00:00.000Z',
+    tasks: [
+      {
+        id: 'task-4',
+        activityId: 'act-4',
+        title: 'Announce',
+        categoryId: 'work' as const,
+        notes: '',
+        status: 'done' as const,
+        sortOrder: 0,
+      },
+    ],
   },
 ];
 
@@ -65,6 +109,16 @@ const mockCreateTask = {
   error: null,
 };
 const mockDeleteActivity = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  isPending: false,
+  error: null,
+};
+const mockArchiveActivity = {
+  mutateAsync: vi.fn().mockResolvedValue(undefined),
+  isPending: false,
+  error: null,
+};
+const mockRestoreActivity = {
   mutateAsync: vi.fn().mockResolvedValue(undefined),
   isPending: false,
   error: null,
@@ -133,12 +187,18 @@ vi.mock('@/features/activities', () => ({
   useImportActivityCatalog: () => mockImportActivityCatalog,
   useCreateCatalogTask: () => mockCreateTask,
   useDeleteActivity: () => mockDeleteActivity,
+  useArchiveActivity: () => mockArchiveActivity,
+  useRestoreActivity: () => mockRestoreActivity,
   useDeleteCatalogTask: () => mockDeleteTask,
   useScheduleCatalogTask: () => mockScheduleTask,
   usePreviewAutoSchedule: () => mockPreviewAutoSchedule,
   useConfirmAutoSchedule: () => mockConfirmAutoSchedule,
   useReorderActivities: () => mockReorderActivities,
   useReorderTasks: () => mockReorderTasks,
+  canArchiveActivity: (tasks: Array<{ status: string }>) =>
+    tasks.length > 0 && tasks.every((task) => task.status === 'done'),
+  isActivityArchived: (archivedAt: string | null | undefined) =>
+    typeof archivedAt === 'string' && archivedAt.length > 0,
   todayKey: () => '2026-07-21',
   manualScheduleSchema,
   autoScheduleSchema,
@@ -154,6 +214,7 @@ vi.mock('@/features/activities', () => ({
   CATEGORY_MAP: {
     deep_work: { id: 'deep_work', label: 'Deep work', color: '#7c3aed' },
     admin: { id: 'admin', label: 'Admin', color: '#64748b' },
+    work: { id: 'work', label: 'Work', color: '#2563eb' },
     break: { id: 'break', label: 'Break', color: '#d97706' },
   },
 }));
@@ -168,6 +229,8 @@ describe('ActivitiesPage', () => {
     mockImportActivityCatalog.error = null;
     mockCreateTask.mutateAsync.mockClear();
     mockDeleteActivity.mutateAsync.mockClear();
+    mockArchiveActivity.mutateAsync.mockClear();
+    mockRestoreActivity.mutateAsync.mockClear();
     mockDeleteTask.mutateAsync.mockClear();
     mockScheduleTask.mutateAsync.mockClear();
     mockScheduleTask.reset.mockClear();
@@ -181,6 +244,8 @@ describe('ActivitiesPage', () => {
     render(<ActivitiesPage />);
     expect(screen.getByText('Deep Learning')).toBeInTheDocument();
     expect(screen.getByText('Admin Tasks')).toBeInTheDocument();
+    expect(screen.getByText('Finished Project')).toBeInTheDocument();
+    expect(screen.queryByText('Old Launch')).not.toBeInTheDocument();
     expect(screen.getByText('1/2 tasks')).toBeInTheDocument();
     expect(screen.getByText('0/0 tasks')).toBeInTheDocument();
   });
@@ -275,6 +340,62 @@ describe('ActivitiesPage', () => {
     );
 
     expect(mockDeleteActivity.mutateAsync).toHaveBeenCalledWith('act-1');
+  });
+
+  it('shows archive only when every task is done', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Archive activity Deep Learning' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Archive activity Admin Tasks' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Archive activity Finished Project' })
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Archive activity Finished Project' })
+    );
+    expect(
+      screen.getByText(/Archive “Finished Project” and its 1 completed task/)
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', { name: /^Archive activity$/ })
+    );
+    expect(mockArchiveActivity.mutateAsync).toHaveBeenCalledWith('act-3');
+  });
+
+  it('shows archived activities and restores them', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Archived' }));
+
+    expect(screen.getByText('Old Launch')).toBeInTheDocument();
+    expect(screen.queryByText('Deep Learning')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Auto-schedule Old Launch' })
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('Old Launch'));
+    expect(screen.getByText('Announce')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Task title')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Delete task Announce' })
+    ).toBeDisabled();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Restore activity Old Launch' })
+    );
+    await user.click(
+      screen.getByRole('button', { name: /^Restore activity$/ })
+    );
+    expect(mockRestoreActivity.mutateAsync).toHaveBeenCalledWith('act-4');
   });
 
   it('can cancel or confirm task deletion', async () => {

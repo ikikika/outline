@@ -8,6 +8,7 @@ import {
 	type IAutoScheduleRequest,
 } from '../lib/autoScheduleMapper.js';
 import { getUserId } from '../middleware/auth.js';
+import { isActivityArchived } from '../lib/activityArchive.js';
 import { getActivity, getTask, listTasksByActivityId, updateTask } from '../repositories/dataRepository.js';
 import {
 	listAllScheduleBlocks,
@@ -23,6 +24,9 @@ async function loadAutoScheduleContext(
 	const activity = await getActivity(userId, request.activityId);
 	if (!activity) {
 		return { error: 'Activity not found' as const };
+	}
+	if (isActivityArchived(activity.archivedAt as string | null | undefined)) {
+		return { error: 'Archived activities are read-only until restored' as const };
 	}
 
 	const activityTasks = await listTasksByActivityId(userId, request.activityId);
@@ -62,7 +66,12 @@ export function registerAutoScheduleRoutes(app: Hono): void {
 
 		const context = await loadAutoScheduleContext(userId, parsed);
 		if ('error' in context) {
-			const status = context.error === 'Activity not found' ? 404 : 400;
+			const status =
+				context.error === 'Activity not found'
+					? 404
+					: context.error === 'Archived activities are read-only until restored'
+						? 409
+						: 400;
 			return c.json({ error: context.error }, status);
 		}
 
@@ -92,7 +101,12 @@ export function registerAutoScheduleRoutes(app: Hono): void {
 
 		const context = await loadAutoScheduleContext(userId, parsed);
 		if ('error' in context) {
-			const status = context.error === 'Activity not found' ? 404 : 400;
+			const status =
+				context.error === 'Activity not found'
+					? 404
+					: context.error === 'Archived activities are read-only until restored'
+						? 409
+						: 400;
 			return c.json({ error: context.error }, status);
 		}
 

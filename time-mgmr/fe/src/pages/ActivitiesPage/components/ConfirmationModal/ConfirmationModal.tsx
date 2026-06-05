@@ -5,6 +5,8 @@ interface ConfirmationModalProps {
   title: string;
   message: string;
   confirmLabel: string;
+  busyLabel?: string;
+  confirmVariant?: 'danger' | 'primary';
   busy?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -14,6 +16,8 @@ export function ConfirmationModal({
   title,
   message,
   confirmLabel,
+  busyLabel = 'Working…',
+  confirmVariant = 'danger',
   busy = false,
   onCancel,
   onConfirm,
@@ -63,11 +67,15 @@ export function ConfirmationModal({
           </button>
           <button
             type="button"
-            className={styles.deleteButton}
+            className={
+              confirmVariant === 'primary'
+                ? styles.confirmPrimaryButton
+                : styles.deleteButton
+            }
             disabled={busy}
             onClick={onConfirm}
           >
-            {busy ? 'Deleting…' : confirmLabel}
+            {busy ? busyLabel : confirmLabel}
           </button>
         </div>
       </div>

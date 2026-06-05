@@ -13,8 +13,10 @@ import {
 	taskSk,
 	userPk,
 } from '../lib/keys.js';
+import { normalizeArchivedAt } from '../lib/activityArchive.js';
 import { toTaskResponse } from '../lib/taskMapper.js';
 import type {
+	ActivityListFilter,
 	IActivity,
 	IActivityCreateInput,
 	IActivityPatchInput,
@@ -134,12 +136,16 @@ export function toActivity(record: IActivityRecord): IActivity {
 		categoryId: record.categoryId,
 		notes: record.notes,
 		sortOrder: resolveSortOrder(record.sortOrder),
+		archivedAt: normalizeArchivedAt(record.archivedAt),
 		createdAt: record.createdAt,
 		updatedAt: record.updatedAt,
 	};
 }
 
-export async function listActivities(userId: string): Promise<IActivity[]> {
+export async function listActivities(
+	userId: string,
+	filter: ActivityListFilter = 'active'
+): Promise<IActivity[]> {
 	const client = getDocumentClient();
 	const result = await client.send(
 		new QueryCommand({
@@ -155,11 +161,17 @@ export async function listActivities(userId: string): Promise<IActivity[]> {
 	return (result.Items ?? [])
 		.filter((item): item is IActivityRecord => item.entityType === 'activity')
 		.map(toActivity)
+		.filter((activity) => {
+			const archived = normalizeArchivedAt(activity.archivedAt) !== null;
+			if (filter === 'active') return !archived;
+			if (filter === 'archived') return archived;
+			return true;
+		})
 		.sort(compareBySortOrder);
 }
 
 export async function nextActivitySortOrder(userId: string): Promise<number> {
-	const activities = await listActivities(userId);
+	const activities = await listActivities(userId, 'all');
 	if (activities.length === 0) {
 		return 0;
 	}
@@ -186,10 +198,68 @@ export async function upsertActivity(
 		categoryId: activity.categoryId,
 		notes: activity.notes,
 		sortOrder,
+		archivedAt: normalizeArchivedAt(existing?.archivedAt),
 		createdAt: existing?.createdAt ?? now,
 		updatedAt: now,
 	};
 
+	await client.send(
+		new PutCommand({
+			TableName: getTableName(),
+			Item: record,
+		})
+	);
+
+	return toActivity(record);
+}
+
+export async function archiveActivity(
+	userId: string,
+	activityId: string,
+	archivedAt = new Date().toISOString()
+): Promise<IActivity | null> {
+	const existing = await getActivity(userId, activityId);
+	if (!existing) {
+		return null;
+	}
+
+	const now = new Date().toISOString();
+	const record: IActivityRecord = {
+		...existing,
+		sortOrder: resolveSortOrder(existing.sortOrder),
+		archivedAt,
+		updatedAt: now,
+	};
+
+	const client = getDocumentClient();
+	await client.send(
+		new PutCommand({
+			TableName: getTableName(),
+			Item: record,
+		})
+	);
+
+	return toActivity(record);
+}
+
+export async function restoreActivity(
+	userId: string,
+	activityId: string
+): Promise<IActivity | null> {
+	const existing = await getActivity(userId, activityId);
+	if (!existing) {
+		return null;
+	}
+
+	const now = new Date().toISOString();
+	const record: IActivityRecord = {
+		...existing,
+		sortOrder: resolveSortOrder(existing.sortOrder),
+		archivedAt: null,
+		updatedAt: now,
+	};
+
+	const client = getDocumentClient();
 	await client.send(
 		new PutCommand({
 			TableName: getTableName(),

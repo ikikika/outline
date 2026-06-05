@@ -40,6 +40,8 @@ export interface IActivity {
   sortOrder?: number;
   /** Optional color override for timetable blocks. */
   color?: string;
+  /** ISO timestamp when archived; null/undefined when active. */
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

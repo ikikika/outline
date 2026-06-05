@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { MainLayout } from '@/layouts';
 import {
   useActivityCatalog,
+  useArchiveActivity,
   useConfirmAutoSchedule,
   useCreateActivity,
   useCreateCatalogTask,
@@ -11,7 +12,9 @@ import {
   usePreviewAutoSchedule,
   useReorderActivities,
   useReorderTasks,
+  useRestoreActivity,
   useScheduleCatalogTask,
+  isActivityArchived,
   todayKey,
   type IActivityWithTasks,
   type IApiTask,
@@ -26,13 +29,18 @@ import { ImportActivityForm } from './components/ImportActivityForm/ImportActivi
 import { ManualScheduleModal } from './components/ManualScheduleModal/ManualScheduleModal';
 import styles from './ActivitiesPage.module.scss';
 
-type DeleteTarget =
+type ListView = 'active' | 'archived';
+
+type ConfirmTarget =
   | { kind: 'activity'; id: string; title: string; taskCount: number }
   | { kind: 'task'; id: string; title: string }
+  | { kind: 'archive'; id: string; title: string; taskCount: number }
+  | { kind: 'restore'; id: string; title: string }
   | null;
 
 export const ActivitiesPage: React.FC = () => {
-  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [listView, setListView] = useState<ListView>('active');
+  const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget>(null);
   const [scheduleTarget, setScheduleTarget] = useState<IApiTask | null>(null);
   const [autoScheduleTarget, setAutoScheduleTarget] =
     useState<IActivityWithTasks | null>(null);
@@ -44,6 +52,8 @@ export const ActivitiesPage: React.FC = () => {
   const importActivityCatalog = useImportActivityCatalog();
   const createTask = useCreateCatalogTask();
   const deleteActivity = useDeleteActivity();
+  const archiveActivity = useArchiveActivity();
+  const restoreActivity = useRestoreActivity();
   const deleteTask = useDeleteCatalogTask();
   const scheduleTask = useScheduleCatalogTask();
   const previewAutoSchedule = usePreviewAutoSchedule();
@@ -51,11 +61,21 @@ export const ActivitiesPage: React.FC = () => {
   const reorderActivities = useReorderActivities();
   const reorderTasks = useReorderTasks();
 
+  const visibleActivities = useMemo(() => {
+    if (!activities) return [];
+    return activities.filter((activity) => {
+      const archived = isActivityArchived(activity.archivedAt);
+      return listView === 'archived' ? archived : !archived;
+    });
+  }, [activities, listView]);
+
   const busy =
     createActivity.isPending ||
     importActivityCatalog.isPending ||
     createTask.isPending ||
     deleteActivity.isPending ||
+    archiveActivity.isPending ||
+    restoreActivity.isPending ||
     deleteTask.isPending ||
     scheduleTask.isPending ||
     previewAutoSchedule.isPending ||
@@ -70,6 +90,8 @@ export const ActivitiesPage: React.FC = () => {
     createActivity.error ??
     createTask.error ??
     deleteActivity.error ??
+    archiveActivity.error ??
+    restoreActivity.error ??
     deleteTask.error ??
     scheduleTask.error ??
     previewAutoSchedule.error ??
@@ -77,15 +99,19 @@ export const ActivitiesPage: React.FC = () => {
     reorderActivities.error ??
     reorderTasks.error;
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
+  const handleConfirm = async () => {
+    if (!confirmTarget) return;
     try {
-      if (deleteTarget.kind === 'activity') {
-        await deleteActivity.mutateAsync(deleteTarget.id);
+      if (confirmTarget.kind === 'activity') {
+        await deleteActivity.mutateAsync(confirmTarget.id);
+      } else if (confirmTarget.kind === 'task') {
+        await deleteTask.mutateAsync(confirmTarget.id);
+      } else if (confirmTarget.kind === 'archive') {
+        await archiveActivity.mutateAsync(confirmTarget.id);
       } else {
-        await deleteTask.mutateAsync(deleteTarget.id);
+        await restoreActivity.mutateAsync(confirmTarget.id);
       }
-      setDeleteTarget(null);
+      setConfirmTarget(null);
     } catch {
       // Mutation errors are presented above the list.
     }
@@ -121,36 +147,104 @@ export const ActivitiesPage: React.FC = () => {
           ? 'Failed to auto-schedule activity.'
           : null;
 
+  const confirmCopy = (() => {
+    if (!confirmTarget) return null;
+    if (confirmTarget.kind === 'activity') {
+      return {
+        title: 'Delete activity?',
+        message: `Delete “${confirmTarget.title}” and its ${confirmTarget.taskCount} ${
+          confirmTarget.taskCount === 1 ? 'task' : 'tasks'
+        }? This cannot be undone.`,
+        confirmLabel: 'Delete activity',
+        busyLabel: 'Deleting…',
+        confirmVariant: 'danger' as const,
+      };
+    }
+    if (confirmTarget.kind === 'task') {
+      return {
+        title: 'Delete task?',
+        message: `Delete “${confirmTarget.title}”? This cannot be undone.`,
+        confirmLabel: 'Delete task',
+        busyLabel: 'Deleting…',
+        confirmVariant: 'danger' as const,
+      };
+    }
+    if (confirmTarget.kind === 'archive') {
+      return {
+        title: 'Archive activity?',
+        message: `Archive “${confirmTarget.title}” and its ${confirmTarget.taskCount} completed ${
+          confirmTarget.taskCount === 1 ? 'task' : 'tasks'
+        }? You can restore it later. History and reports stay intact.`,
+        confirmLabel: 'Archive activity',
+        busyLabel: 'Archiving…',
+        confirmVariant: 'primary' as const,
+      };
+    }
+    return {
+      title: 'Restore activity?',
+      message: `Restore “${confirmTarget.title}” to your active list?`,
+      confirmLabel: 'Restore activity',
+      busyLabel: 'Restoring…',
+      confirmVariant: 'primary' as const,
+    };
+  })();
+
   return (
     <MainLayout>
       <div className={styles.page}>
         <header className={styles.header}>
-          <h1 className={styles.title}>Activities</h1>
-          <p className={styles.subtitle}>
-            Drag to set priority. Expand to reorder tasks within an activity.
-          </p>
+          <div>
+            <h1 className={styles.title}>Activities</h1>
+            <p className={styles.subtitle}>
+              {listView === 'active'
+                ? 'Drag to set priority. Expand to reorder tasks within an activity.'
+                : 'Review completed work. Restore an activity to edit or schedule again.'}
+            </p>
+          </div>
+          <div className={styles.viewToggle} role="group" aria-label="Activity list">
+            <button
+              type="button"
+              className={listView === 'active' ? styles.viewToggleActive : undefined}
+              aria-pressed={listView === 'active'}
+              onClick={() => setListView('active')}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              className={listView === 'archived' ? styles.viewToggleActive : undefined}
+              aria-pressed={listView === 'archived'}
+              onClick={() => setListView('archived')}
+            >
+              Archived
+            </button>
+          </div>
         </header>
 
-        <AddActivityForm
-          disabled={busy}
-          onAdd={async (input) => {
-            setImportError(null);
-            await createActivity.mutateAsync(input);
-          }}
-        />
+        {listView === 'active' ? (
+          <>
+            <AddActivityForm
+              disabled={busy}
+              onAdd={async (input) => {
+                setImportError(null);
+                await createActivity.mutateAsync(input);
+              }}
+            />
 
-        <ImportActivityForm
-          disabled={busy}
-          onError={(message) => {
-            importActivityCatalog.reset();
-            setImportError(message);
-          }}
-          onImport={async (input) => {
-            setImportError(null);
-            importActivityCatalog.reset();
-            await importActivityCatalog.mutateAsync(input);
-          }}
-        />
+            <ImportActivityForm
+              disabled={busy}
+              onError={(message) => {
+                importActivityCatalog.reset();
+                setImportError(message);
+              }}
+              onImport={async (input) => {
+                setImportError(null);
+                importActivityCatalog.reset();
+                await importActivityCatalog.mutateAsync(input);
+              }}
+            />
+          </>
+        ) : null}
 
         {mutationError ? (
           <div className={styles.error} role="alert">
@@ -170,9 +264,10 @@ export const ActivitiesPage: React.FC = () => {
               ? error.message
               : 'Failed to load activities.'}
           </div>
-        ) : activities && activities.length > 0 ? (
+        ) : visibleActivities.length > 0 ? (
           <ActivityPriorityList
-            activities={activities}
+            activities={visibleActivities}
+            archivedView={listView === 'archived'}
             disabled={busy}
             onReorderActivities={(ids) => reorderActivities.mutate(ids)}
             onReorderTasks={(activityId, taskIds) =>
@@ -186,11 +281,26 @@ export const ActivitiesPage: React.FC = () => {
               });
             }}
             onDeleteActivity={(activity) =>
-              setDeleteTarget({
+              setConfirmTarget({
                 kind: 'activity',
                 id: activity.id,
                 title: activity.title,
                 taskCount: activity.tasks.length,
+              })
+            }
+            onArchiveActivity={(activity) =>
+              setConfirmTarget({
+                kind: 'archive',
+                id: activity.id,
+                title: activity.title,
+                taskCount: activity.tasks.length,
+              })
+            }
+            onRestoreActivity={(activity) =>
+              setConfirmTarget({
+                kind: 'restore',
+                id: activity.id,
+                title: activity.title,
               })
             }
             onAutoScheduleActivity={(activity) => {
@@ -204,7 +314,7 @@ export const ActivitiesPage: React.FC = () => {
               setScheduleTarget(task);
             }}
             onDeleteTask={(task) =>
-              setDeleteTarget({
+              setConfirmTarget({
                 kind: 'task',
                 id: task.id,
                 title: task.title,
@@ -212,23 +322,28 @@ export const ActivitiesPage: React.FC = () => {
             }
           />
         ) : (
-          <p className={styles.empty}>No activities found.</p>
+          <p className={styles.empty}>
+            {listView === 'archived'
+              ? 'No archived activities yet. Archive an activity when all of its tasks are done.'
+              : 'No activities found.'}
+          </p>
         )}
       </div>
-      {deleteTarget ? (
+      {confirmTarget && confirmCopy ? (
         <ConfirmationModal
-          title={`Delete ${deleteTarget.kind}?`}
-          message={
-            deleteTarget.kind === 'activity'
-              ? `Delete “${deleteTarget.title}” and its ${deleteTarget.taskCount} ${
-                  deleteTarget.taskCount === 1 ? 'task' : 'tasks'
-                }? This cannot be undone.`
-              : `Delete “${deleteTarget.title}”? This cannot be undone.`
+          title={confirmCopy.title}
+          message={confirmCopy.message}
+          confirmLabel={confirmCopy.confirmLabel}
+          busyLabel={confirmCopy.busyLabel}
+          confirmVariant={confirmCopy.confirmVariant}
+          busy={
+            deleteActivity.isPending ||
+            deleteTask.isPending ||
+            archiveActivity.isPending ||
+            restoreActivity.isPending
           }
-          confirmLabel={`Delete ${deleteTarget.kind}`}
-          busy={deleteActivity.isPending || deleteTask.isPending}
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={() => void handleDelete()}
+          onCancel={() => setConfirmTarget(null)}
+          onConfirm={() => void handleConfirm()}
         />
       ) : null}
       {scheduleTarget ? (

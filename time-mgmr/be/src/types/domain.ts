@@ -21,9 +21,13 @@ export interface IActivity {
 	notes: string;
 	/** Catalog priority — lower values appear first. */
 	sortOrder: number;
+	/** ISO timestamp when archived; null when active. */
+	archivedAt: string | null;
 	createdAt: string;
 	updatedAt: string;
 }
+
+export type ActivityListFilter = 'active' | 'archived' | 'all';
 
 /** Request body for POST /api/activities — matches fe/public/activities.json entries (without timestamps). */
 export interface IActivityCreateInput {

@@ -82,6 +82,37 @@ describe('activitiesApi', () => {
     );
   });
 
+  it('fetches all activities including archived when requested', async () => {
+    getJsonAuth.mockResolvedValue([]);
+    const { fetchActivities } = await import('./activitiesApi');
+
+    await fetchActivities('all');
+
+    expect(getJsonAuth).toHaveBeenCalledWith(
+      'http://api.test/api/activities?archived=all'
+    );
+  });
+
+  it('archives and restores activities', async () => {
+    postJsonAuth.mockResolvedValue({ id: 'activity-1', archivedAt: '2026-07-22T00:00:00.000Z' });
+    const { archiveActivityApi, restoreActivityApi } = await import(
+      './activitiesApi'
+    );
+
+    await archiveActivityApi('activity/1');
+    expect(postJsonAuth).toHaveBeenCalledWith(
+      'http://api.test/api/activities/activity%2F1/archive',
+      {}
+    );
+
+    postJsonAuth.mockResolvedValue({ id: 'activity-1', archivedAt: null });
+    await restoreActivityApi('activity/1');
+    expect(postJsonAuth).toHaveBeenCalledWith(
+      'http://api.test/api/activities/activity%2F1/restore',
+      {}
+    );
+  });
+
   it('PATCHes task status without schedule times', async () => {
     patchJsonAuth.mockResolvedValue({
       id: 'task-1',

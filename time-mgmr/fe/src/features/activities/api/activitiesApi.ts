@@ -87,15 +87,39 @@ export function requireApiBaseUrl(): void {
   }
 }
 
-export async function fetchActivities(): Promise<IActivity[]> {
+export type ActivityListFilter = 'active' | 'archived' | 'all';
+
+export async function fetchActivities(
+  filter: ActivityListFilter = 'active'
+): Promise<IActivity[]> {
   requireApiBaseUrl();
-  return getJsonAuth<IActivity[]>(ACTIVITIES_BASE_URL);
+  const query =
+    filter === 'active'
+      ? ''
+      : `?archived=${encodeURIComponent(filter === 'archived' ? 'true' : 'all')}`;
+  return getJsonAuth<IActivity[]>(`${ACTIVITIES_BASE_URL}${query}`);
 }
 
 export async function fetchActivityById(id: string): Promise<IActivity> {
   requireApiBaseUrl();
   return getJsonAuth<IActivity>(
     `${ACTIVITIES_BASE_URL}/${encodeURIComponent(id)}`
+  );
+}
+
+export async function archiveActivityApi(id: string): Promise<IActivity> {
+  requireApiBaseUrl();
+  return postJsonAuth<IActivity>(
+    `${ACTIVITIES_BASE_URL}/${encodeURIComponent(id)}/archive`,
+    {}
+  );
+}
+
+export async function restoreActivityApi(id: string): Promise<IActivity> {
+  requireApiBaseUrl();
+  return postJsonAuth<IActivity>(
+    `${ACTIVITIES_BASE_URL}/${encodeURIComponent(id)}/restore`,
+    {}
   );
 }
 

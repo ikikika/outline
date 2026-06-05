@@ -8,6 +8,8 @@ import {
   fetchActivities,
   fetchCatalogTasks,
   importActivityCatalogApi,
+  archiveActivityApi,
+  restoreActivityApi,
   patchActivityApi,
   patchTaskApi,
   type IActivityCatalogImportInput,
@@ -24,6 +26,7 @@ import {
 } from '../api/scheduleBlocksApi';
 import type { IActivity, IApiTask } from '../types';
 import { sortBySortOrder } from '../utils/sortBySortOrder/sortBySortOrder';
+import { isActivityArchived } from '../utils/canArchiveActivity/canArchiveActivity';
 import { useResolvedTimeZone } from './useActivities';
 
 const POMODORO_BREAK_ACTIVITY_ID = 'pomodoro-breaks';
@@ -37,7 +40,7 @@ export function useActivityCatalog() {
     queryKey: ACTIVITY_QUERY_KEYS.catalogList,
     queryFn: async (): Promise<IActivityWithTasks[]> => {
       const [activities, tasks] = await Promise.all([
-        fetchActivities(),
+        fetchActivities('all'),
         fetchCatalogTasks(),
       ]);
 
@@ -56,6 +59,9 @@ export function useActivityCatalog() {
         .sort(sortBySortOrder)
         .map((activity) => ({
           ...activity,
+          archivedAt: isActivityArchived(activity.archivedAt)
+            ? activity.archivedAt
+            : null,
           tasks: (tasksByActivity.get(activity.id) ?? []).sort(sortBySortOrder),
         }));
     },
@@ -105,6 +111,30 @@ export function useDeleteActivity() {
 
   return useMutation({
     mutationFn: (id: string) => deleteActivityApi(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.all,
+      }),
+  });
+}
+
+export function useArchiveActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => archiveActivityApi(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ACTIVITY_QUERY_KEYS.all,
+      }),
+  });
+}
+
+export function useRestoreActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => restoreActivityApi(id),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: ACTIVITY_QUERY_KEYS.all,
