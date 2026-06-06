@@ -104,6 +104,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const accent = getTaskBlockColor(block.activityId);
   const plannedSeconds = Math.max(0, block.timeEstimationSeconds ?? 0);
   const canTrackTime = Boolean(taskId);
+  const canEnterFocusMode = canTrackTime && block.status !== 'done';
 
   const {
     register,
@@ -147,6 +148,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       if (wasOpen) openSidebar();
     };
   }, [focusMode, closeSidebar, openSidebar]);
+
+  useEffect(() => {
+    if (!canEnterFocusMode && focusMode) {
+      setFocusMode(false);
+    }
+  }, [canEnterFocusMode, focusMode]);
 
   const elapsedSeconds = useMemo(
     () => Math.floor(elapsedSecondsForEntries(entries, nowMs)),
@@ -275,7 +282,17 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               type="button"
               className={styles.iconBtn}
               aria-label="Expand to full screen"
-              onClick={() => setFocusMode(true)}
+              disabled={!canEnterFocusMode}
+              title={
+                block.status === 'done'
+                  ? 'Mark this task in progress before entering focus mode'
+                  : !canTrackTime
+                    ? 'This break has no linked task'
+                    : undefined
+              }
+              onClick={() => {
+                if (canEnterFocusMode) setFocusMode(true);
+              }}
             >
               <Maximize2 size={18} strokeWidth={2} />
             </button>

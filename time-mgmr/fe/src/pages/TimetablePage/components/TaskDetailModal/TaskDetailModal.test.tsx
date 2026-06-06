@@ -161,6 +161,32 @@ describe('completed task actions', () => {
 
     expect(onStatus).toHaveBeenCalledWith('task-1', 'in_progress');
   });
+
+  it('does not allow a completed task to enter focus mode', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, status: 'done' }}
+      />
+    );
+
+    const focusButton = screen.getByRole('button', {
+      name: 'Expand to full screen',
+    });
+    expect(focusButton).toBeDisabled();
+    expect(focusButton).toHaveAttribute(
+      'title',
+      'Mark this task in progress before entering focus mode'
+    );
+
+    await user.click(focusButton);
+
+    expect(
+      screen.queryByRole('button', { name: 'Exit focus mode' })
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe('TaskDetailModal focus mode', () => {
