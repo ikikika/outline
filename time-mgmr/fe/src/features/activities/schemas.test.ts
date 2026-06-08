@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   activityFormSchema,
   autoScheduleSchema,
+  createAutoScheduleSchema,
   manualScheduleSchema,
   manualTimeEntrySchema,
+  needsFirstDayStart,
 } from './schemas';
 
 describe('activityFormSchema', () => {
@@ -60,36 +62,64 @@ describe('manualScheduleSchema', () => {
   });
 });
 
+const baseAutoValues = {
+  taskIds: ['task-1'],
+  earliestDate: '2026-07-21',
+  deadline: '',
+  workStart: '09:00',
+  workEnd: '17:00',
+  sessionMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+  allowSplitAcrossDays: false,
+};
+
 describe('autoScheduleSchema', () => {
   it('accepts valid auto-schedule constraints', () => {
-    expect(
-      autoScheduleSchema.safeParse({
-        taskIds: ['task-1'],
-        earliestDate: '2026-07-21',
-        deadline: '',
-        workStart: '09:00',
-        workEnd: '17:00',
-        sessionMinutes: 25,
-        shortBreakMinutes: 5,
-        longBreakMinutes: 15,
-        allowSplitAcrossDays: false,
-      }).success
-    ).toBe(true);
+    expect(autoScheduleSchema.safeParse(baseAutoValues).success).toBe(true);
   });
 
   it('rejects deadlines before the earliest date', () => {
     expect(
       autoScheduleSchema.safeParse({
-        taskIds: ['task-1'],
-        earliestDate: '2026-07-21',
+        ...baseAutoValues,
         deadline: '2026-07-20',
-        workStart: '09:00',
-        workEnd: '17:00',
-        sessionMinutes: 25,
-        shortBreakMinutes: 5,
-        longBreakMinutes: 15,
-        allowSplitAcrossDays: false,
       }).success
     ).toBe(false);
+  });
+});
+
+describe('createAutoScheduleSchema', () => {
+  const todayCtx = { today: '2026-07-21', nowTime: '14:30' };
+
+  it('requires firstDayStart when earliest is today and workStart is past', () => {
+    expect(needsFirstDayStart('2026-07-21', '09:00', todayCtx)).toBe(true);
+    expect(
+      createAutoScheduleSchema(todayCtx).safeParse(baseAutoValues).success
+    ).toBe(false);
+    expect(
+      createAutoScheduleSchema(todayCtx).safeParse({
+        ...baseAutoValues,
+        firstDayStart: '14:30',
+      }).success
+    ).toBe(true);
+  });
+
+  it('rejects firstDayStart earlier than now', () => {
+    expect(
+      createAutoScheduleSchema(todayCtx).safeParse({
+        ...baseAutoValues,
+        firstDayStart: '14:00',
+      }).success
+    ).toBe(false);
+  });
+
+  it('does not require firstDayStart for a future earliest date', () => {
+    expect(
+      createAutoScheduleSchema(todayCtx).safeParse({
+        ...baseAutoValues,
+        earliestDate: '2026-07-22',
+      }).success
+    ).toBe(true);
   });
 });

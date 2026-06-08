@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input } from '@/components/ui';
 import { utcToZonedParts } from '@/core/utils/timeZone/timeZone';
 import {
-  autoScheduleSchema,
+  createAutoScheduleSchema,
   formatMinutes,
+  needsFirstDayStart,
   type AutoScheduleFormValues,
   type IActivityWithTasks,
   type IAutoSchedulePreviewResponse,
@@ -41,6 +42,10 @@ function blockLabel(
   return 'Short break';
 }
 
+function currentLocalParts(timeZone: string): { date: string; time: string } {
+  return utcToZonedParts(new Date().toISOString(), timeZone);
+}
+
 export function AutoScheduleModal({
   activity,
   defaultDate,
@@ -57,26 +62,64 @@ export function AutoScheduleModal({
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>(() =>
     defaultSelectedTaskIds(activity.tasks)
   );
+  const [clock, setClock] = useState(() => currentLocalParts(timeZone));
+  const clockRef = useRef(clock);
+  clockRef.current = clock;
+
+  useEffect(() => {
+    setClock(currentLocalParts(timeZone));
+    const intervalId = window.setInterval(() => {
+      setClock(currentLocalParts(timeZone));
+    }, 30_000);
+    return () => window.clearInterval(intervalId);
+  }, [timeZone]);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     getValues,
+    setValue,
+    watch,
   } = useForm<AutoScheduleFormValues>({
-    resolver: zodResolver(autoScheduleSchema),
+    resolver: async (values, context, options) => {
+      const dynamicSchema = createAutoScheduleSchema({
+        today: clockRef.current.date,
+        nowTime: clockRef.current.time,
+      });
+      return zodResolver(dynamicSchema)(values, context, options);
+    },
     defaultValues: {
       taskIds: defaultSelectedTaskIds(activity.tasks),
       earliestDate: defaultDate,
       deadline: '',
       workStart: '09:00',
       workEnd: '17:00',
+      firstDayStart: '',
       sessionMinutes: 25,
       shortBreakMinutes: 5,
       longBreakMinutes: 15,
       allowSplitAcrossDays: false,
     },
   });
+
+  const earliestDate = watch('earliestDate');
+  const workStart = watch('workStart');
+  const showFirstDayStart = needsFirstDayStart(earliestDate, workStart, {
+    today: clock.date,
+    nowTime: clock.time,
+  });
+
+  useEffect(() => {
+    if (!showFirstDayStart) {
+      setValue('firstDayStart', '');
+      return;
+    }
+    const current = getValues('firstDayStart');
+    if (!current) {
+      setValue('firstDayStart', clock.time);
+    }
+  }, [showFirstDayStart, clock.time, getValues, setValue]);
 
   const taskTitleById = useMemo(
     () => new Map(activity.tasks.map((task) => [task.id, task.title])),
@@ -98,6 +141,7 @@ export function AutoScheduleModal({
     ...(values.deadline ? { deadline: values.deadline } : {}),
     workStart: values.workStart,
     workEnd: values.workEnd,
+    ...(values.firstDayStart ? { firstDayStart: values.firstDayStart } : {}),
     sessionMinutes: values.sessionMinutes,
     shortBreakMinutes: values.shortBreakMinutes,
     longBreakMinutes: values.longBreakMinutes,
@@ -225,6 +269,25 @@ export function AutoScheduleModal({
                   <span className={styles.error}>{errors.workEnd.message}</span>
                 ) : null}
               </div>
+              {showFirstDayStart ? (
+                <div className={styles.field}>
+                  <label htmlFor="auto-first-day-start">Start time today</label>
+                  <Input
+                    id="auto-first-day-start"
+                    type="time"
+                    {...register('firstDayStart')}
+                  />
+                  {errors.firstDayStart ? (
+                    <span className={styles.error}>
+                      {errors.firstDayStart.message}
+                    </span>
+                  ) : (
+                    <span className={styles.hint}>
+                      Work start is already past; later days still use work start.
+                    </span>
+                  )}
+                </div>
+              ) : null}
               <div className={styles.field}>
                 <label htmlFor="auto-session">Session (min)</label>
                 <Input

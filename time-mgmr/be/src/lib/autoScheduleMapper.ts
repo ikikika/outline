@@ -1,3 +1,5 @@
+import { formatInTimeZone } from 'date-fns-tz';
+
 import { isValidTimeZone } from './timezone.js';
 import type { AutoScheduleConstraints } from '../services/autoScheduler.js';
 
@@ -11,6 +13,8 @@ export interface IAutoScheduleRequest {
 	deadline?: string;
 	workStart?: string;
 	workEnd?: string;
+	/** HH:mm start for the first workday only; later days use workStart. */
+	firstDayStart?: string;
 	sessionMinutes?: number;
 	shortBreakMinutes?: number;
 	longBreakMinutes?: number;
@@ -93,8 +97,25 @@ function buildConstraints(
 
 	const [startH, startM] = workStart.split(':').map(Number);
 	const [endH, endM] = workEnd.split(':').map(Number);
-	if (startH * 60 + startM >= endH * 60 + endM) {
+	const workStartMinutes = startH * 60 + startM;
+	const workEndMinutes = endH * 60 + endM;
+	if (workStartMinutes >= workEndMinutes) {
 		return { error: 'workEnd must be after workStart' };
+	}
+
+	let firstDayStart: string | undefined;
+	if (body.firstDayStart !== undefined) {
+		if (
+			typeof body.firstDayStart !== 'string' ||
+			!TIME_PATTERN.test(body.firstDayStart)
+		) {
+			return { error: 'firstDayStart must be HH:mm' };
+		}
+		const [fdH, fdM] = body.firstDayStart.split(':').map(Number);
+		if (fdH * 60 + fdM >= workEndMinutes) {
+			return { error: 'firstDayStart must be before workEnd' };
+		}
+		firstDayStart = body.firstDayStart;
 	}
 
 	const sessionMinutes = parsePositiveInt(
@@ -121,6 +142,7 @@ function buildConstraints(
 		...(deadline ? { deadline } : {}),
 		workStart,
 		workEnd,
+		...(firstDayStart ? { firstDayStart } : {}),
 		sessionMinutes,
 		shortBreakMinutes,
 		longBreakMinutes,
@@ -192,9 +214,41 @@ export function toAutoScheduleConstraints(
 		...(request.deadline ? { deadline: request.deadline } : {}),
 		workStart: request.workStart ?? '09:00',
 		workEnd: request.workEnd ?? '17:00',
+		...(request.firstDayStart
+			? { firstDayStart: request.firstDayStart }
+			: {}),
 		sessionMinutes: request.sessionMinutes ?? 25,
 		shortBreakMinutes: request.shortBreakMinutes ?? 5,
 		longBreakMinutes: request.longBreakMinutes ?? 15,
 		allowSplitAcrossDays: request.allowSplitAcrossDays ?? false,
 	};
+}
+
+/**
+ * When earliestDate is today in `timeZone`, reject firstDayStart earlier than now
+ * (minute precision). Call after timezone is resolved.
+ */
+export function validateFirstDayStartAgainstNow(
+	request: IAutoScheduleRequest,
+	timeZone: string,
+	now: Date = new Date()
+): { error: string } | null {
+	if (!request.firstDayStart) return null;
+
+	const todayLocal = formatInTimeZone(now, timeZone, 'yyyy-MM-dd');
+	if (request.earliestDate !== todayLocal) return null;
+
+	const nowMinutes = parseTimeToMinutes(
+		formatInTimeZone(now, timeZone, 'HH:mm')
+	);
+	const firstDayMinutes = parseTimeToMinutes(request.firstDayStart);
+	if (firstDayMinutes < nowMinutes) {
+		return { error: 'firstDayStart must not be earlier than the current time' };
+	}
+	return null;
+}
+
+function parseTimeToMinutes(value: string): number {
+	const [hours, minutes] = value.split(':').map(Number);
+	return hours * 60 + minutes;
 }

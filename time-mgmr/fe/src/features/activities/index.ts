@@ -27,11 +27,14 @@ export {
   manualScheduleSchema,
   manualTimeEntrySchema,
   autoScheduleSchema,
+  createAutoScheduleSchema,
+  needsFirstDayStart,
   activityCatalogImportSchema,
   type ActivityFormValues,
   type ManualScheduleValues,
   type ManualTimeEntryFormValues,
   type AutoScheduleFormValues,
+  type AutoScheduleSchemaContext,
   type ActivityCatalogImportValues,
 } from './schemas';
 

@@ -114,6 +114,11 @@
   font-size: 0.75rem;
 }
 
+.hint {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.72rem;
+}
+
 .submitError {
   margin: 0.75rem 0 0;
   color: var(--color-danger, #dc2626);

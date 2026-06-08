@@ -53,6 +53,30 @@ describe('parseAutoScheduleRequest', () => {
 			{ error: 'previewToken is required' }
 		);
 	});
+	it('parses optional firstDayStart', () => {
+		const parsed = parseAutoScheduleRequest({
+			activityId: 'activity-1',
+			taskIds: ['task-1'],
+			earliestDate: '2026-07-21',
+			firstDayStart: '14:30',
+		});
+		assert.ok(!('error' in parsed));
+		if ('error' in parsed) return;
+		assert.equal(parsed.firstDayStart, '14:30');
+	});
+
+	it('rejects firstDayStart at or after workEnd', () => {
+		assert.deepEqual(
+			parseAutoScheduleRequest({
+				activityId: 'activity-1',
+				taskIds: ['task-1'],
+				earliestDate: '2026-07-21',
+				workEnd: '17:00',
+				firstDayStart: '17:00',
+			}),
+			{ error: 'firstDayStart must be before workEnd' }
+		);
+	});
 });
 
 describe('computeAutoSchedule', () => {
@@ -321,5 +345,83 @@ describe('computeAutoSchedule', () => {
 		const second = computeAutoSchedule(input);
 		assert.equal(first.previewToken, second.previewToken);
 		assert.equal(first.proposedBlocks.length, second.proposedBlocks.length);
+	});
+
+	it('uses firstDayStart for day one and workStart for overflow days', () => {
+		const result = computeAutoSchedule({
+			activityId: 'activity-1',
+			taskIds: ['long'],
+			constraints: toAutoScheduleConstraints({
+				activityId: 'activity-1',
+				taskIds: ['long'],
+				earliestDate: '2026-07-21',
+				workStart: '09:00',
+				workEnd: '17:00',
+				firstDayStart: '15:00',
+				allowSplitAcrossDays: true,
+			}),
+			tasks: [focusTask('long', 4 * 60 * 60)],
+			existingBlocks: [],
+			timeZone: TIME_ZONE,
+			now: new Date('2026-07-21T14:00:00.000Z'),
+		});
+
+		assert.equal(result.canConfirm, true);
+		const focusBlocks = result.proposedBlocks.filter(
+			(block) => block.blockType === 'focus'
+		);
+		assert.ok(focusBlocks.length > 1);
+		assert.equal(focusBlocks[0]?.plannedStart, '2026-07-21T15:00:00.000Z');
+
+		const nextDayFocus = focusBlocks.find((block) =>
+			block.plannedStart.startsWith('2026-07-22')
+		);
+		assert.ok(nextDayFocus);
+		assert.equal(nextDayFocus?.plannedStart, '2026-07-22T09:00:00.000Z');
+	});
+
+	it('floors firstDayStart to now when scheduling today', () => {
+		const result = computeAutoSchedule({
+			activityId: 'activity-1',
+			taskIds: ['mine'],
+			constraints: toAutoScheduleConstraints({
+				activityId: 'activity-1',
+				taskIds: ['mine'],
+				earliestDate: '2026-07-21',
+				workStart: '09:00',
+				firstDayStart: '10:00',
+			}),
+			tasks: [focusTask('mine', 25 * 60)],
+			existingBlocks: [],
+			timeZone: TIME_ZONE,
+			now: new Date('2026-07-21T14:30:00.000Z'),
+		});
+
+		const focus = result.proposedBlocks.find(
+			(block) => block.blockType === 'focus'
+		);
+		assert.equal(focus?.plannedStart, '2026-07-21T14:30:00.000Z');
+	});
+
+	it('ignores firstDayStart clamp when earliest date is not today', () => {
+		const result = computeAutoSchedule({
+			activityId: 'activity-1',
+			taskIds: ['mine'],
+			constraints: toAutoScheduleConstraints({
+				activityId: 'activity-1',
+				taskIds: ['mine'],
+				earliestDate: '2026-07-22',
+				workStart: '09:00',
+			}),
+			tasks: [focusTask('mine', 25 * 60)],
+			existingBlocks: [],
+			timeZone: TIME_ZONE,
+			now: new Date('2026-07-21T14:30:00.000Z'),
+		});
+
+		const focus = result.proposedBlocks.find(
+			(block) => block.blockType === 'focus'
+		);
+		assert.equal(focus?.plannedStart, '2026-07-22T09:00:00.000Z');
 	});
 });

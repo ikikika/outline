@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { manualScheduleSchema, autoScheduleSchema, activityCatalogImportSchema } from '@/features/activities/schemas';
+import { manualScheduleSchema, autoScheduleSchema, activityCatalogImportSchema, createAutoScheduleSchema, needsFirstDayStart } from '@/features/activities/schemas';
 import ActivitiesPage from './ActivitiesPage';
 
 const mockActivities = [
@@ -202,6 +202,8 @@ vi.mock('@/features/activities', () => ({
   todayKey: () => '2026-07-21',
   manualScheduleSchema,
   autoScheduleSchema,
+  createAutoScheduleSchema,
+  needsFirstDayStart,
   activityCatalogImportSchema,
   formatMinutes: (minutes: number) => `${minutes}m`,
   ACTIVITY_CATEGORIES: [

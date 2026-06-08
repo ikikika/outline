@@ -5,6 +5,7 @@ import {
 	parseAutoScheduleRequest,
 	resolveAutoScheduleTimeZone,
 	toAutoScheduleConstraints,
+	validateFirstDayStartAgainstNow,
 	type IAutoScheduleRequest,
 } from '../lib/autoScheduleMapper.js';
 import { getUserId } from '../middleware/auth.js';
@@ -75,6 +76,14 @@ export function registerAutoScheduleRoutes(app: Hono): void {
 			return c.json({ error: context.error }, status);
 		}
 
+		const firstDayStartError = validateFirstDayStartAgainstNow(
+			parsed,
+			context.timeZone
+		);
+		if (firstDayStartError) {
+			return c.json({ error: firstDayStartError.error }, 400);
+		}
+
 		const computation = computeAutoSchedule({
 			activityId: parsed.activityId,
 			taskIds: parsed.taskIds,
@@ -108,6 +117,14 @@ export function registerAutoScheduleRoutes(app: Hono): void {
 						? 409
 						: 400;
 			return c.json({ error: context.error }, status);
+		}
+
+		const firstDayStartError = validateFirstDayStartAgainstNow(
+			parsed,
+			context.timeZone
+		);
+		if (firstDayStartError) {
+			return c.json({ error: firstDayStartError.error }, 400);
 		}
 
 		const computation = computeAutoSchedule({

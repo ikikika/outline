@@ -166,6 +166,8 @@ export interface IAutoScheduleRequest {
   deadline?: string;
   workStart?: string;
   workEnd?: string;
+  /** HH:mm start for the first workday only; later days use workStart. */
+  firstDayStart?: string;
   sessionMinutes?: number;
   shortBreakMinutes?: number;
   longBreakMinutes?: number;

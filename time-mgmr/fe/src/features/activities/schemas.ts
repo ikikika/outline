@@ -64,47 +64,110 @@ export const manualTimeEntrySchema = z.object({
     .max(24 * 60, 'Cannot exceed 24 hours.'),
 });
 
-export const autoScheduleSchema = z
-  .object({
-    taskIds: z.array(z.string()).min(1, 'Select at least one task.'),
-    earliestDate: z.string().regex(datePattern, 'Enter a valid date.'),
-    deadline: z
-      .string()
-      .regex(datePattern, 'Enter a valid date.')
-      .optional()
-      .or(z.literal('')),
-    workStart: z.string().regex(timePattern, 'Use HH:mm format.'),
-    workEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
-    sessionMinutes: z
-      .number()
-      .int('Use whole minutes.')
-      .min(5, 'At least 5 minutes.')
-      .max(120, 'Cannot exceed 120 minutes.'),
-    shortBreakMinutes: z
-      .number()
-      .int('Use whole minutes.')
-      .min(1, 'At least 1 minute.')
-      .max(60, 'Cannot exceed 60 minutes.'),
-    longBreakMinutes: z
-      .number()
-      .int('Use whole minutes.')
-      .min(1, 'At least 1 minute.')
-      .max(60, 'Cannot exceed 60 minutes.'),
-    allowSplitAcrossDays: z.boolean(),
-  })
-  .refine((data) => timeToMinutes(data.workEnd) > timeToMinutes(data.workStart), {
-    message: 'Work end must be after work start.',
-    path: ['workEnd'],
-  })
-  .refine(
-    (data) =>
-      !data.deadline ||
-      data.deadline.localeCompare(data.earliestDate) >= 0,
-    {
-      message: 'Deadline must be on or after the earliest date.',
-      path: ['deadline'],
-    }
+export const autoScheduleObjectSchema = z.object({
+  taskIds: z.array(z.string()).min(1, 'Select at least one task.'),
+  earliestDate: z.string().regex(datePattern, 'Enter a valid date.'),
+  deadline: z
+    .string()
+    .regex(datePattern, 'Enter a valid date.')
+    .optional()
+    .or(z.literal('')),
+  workStart: z.string().regex(timePattern, 'Use HH:mm format.'),
+  workEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
+  firstDayStart: z
+    .string()
+    .regex(timePattern, 'Use HH:mm format.')
+    .optional()
+    .or(z.literal('')),
+  sessionMinutes: z
+    .number()
+    .int('Use whole minutes.')
+    .min(5, 'At least 5 minutes.')
+    .max(120, 'Cannot exceed 120 minutes.'),
+  shortBreakMinutes: z
+    .number()
+    .int('Use whole minutes.')
+    .min(1, 'At least 1 minute.')
+    .max(60, 'Cannot exceed 60 minutes.'),
+  longBreakMinutes: z
+    .number()
+    .int('Use whole minutes.')
+    .min(1, 'At least 1 minute.')
+    .max(60, 'Cannot exceed 60 minutes.'),
+  allowSplitAcrossDays: z.boolean(),
+});
+
+export type AutoScheduleSchemaContext = {
+  /** Local calendar date YYYY-MM-DD in the user's timezone. */
+  today: string;
+  /** Current local HH:mm in the user's timezone. */
+  nowTime: string;
+};
+
+export function needsFirstDayStart(
+  earliestDate: string,
+  workStart: string,
+  ctx: AutoScheduleSchemaContext
+): boolean {
+  return (
+    earliestDate === ctx.today &&
+    timeToMinutes(workStart) < timeToMinutes(ctx.nowTime)
   );
+}
+
+export function createAutoScheduleSchema(ctx: AutoScheduleSchemaContext) {
+  return autoScheduleObjectSchema
+    .refine(
+      (data) => timeToMinutes(data.workEnd) > timeToMinutes(data.workStart),
+      {
+        message: 'Work end must be after work start.',
+        path: ['workEnd'],
+      }
+    )
+    .refine(
+      (data) =>
+        !data.deadline ||
+        data.deadline.localeCompare(data.earliestDate) >= 0,
+      {
+        message: 'Deadline must be on or after the earliest date.',
+        path: ['deadline'],
+      }
+    )
+    .superRefine((data, refineCtx) => {
+      if (!needsFirstDayStart(data.earliestDate, data.workStart, ctx)) {
+        return;
+      }
+      if (!data.firstDayStart || !timePattern.test(data.firstDayStart)) {
+        refineCtx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Choose when to start today.',
+          path: ['firstDayStart'],
+        });
+        return;
+      }
+      if (timeToMinutes(data.firstDayStart) < timeToMinutes(ctx.nowTime)) {
+        refineCtx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Start time today cannot be earlier than now.',
+          path: ['firstDayStart'],
+        });
+      }
+      if (timeToMinutes(data.firstDayStart) >= timeToMinutes(data.workEnd)) {
+        refineCtx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Start time today must be before work end.',
+          path: ['firstDayStart'],
+        });
+      }
+    });
+}
+
+/** Static schema without a live clock (firstDayStart never required). */
+export const autoScheduleSchema = createAutoScheduleSchema({
+  today: '1970-01-01',
+  nowTime: '00:00',
+});
+
 
 const optionalIdSchema = z
   .string()
@@ -165,7 +228,7 @@ export const activityCatalogImportSchema = z
 export type ActivityFormValues = z.infer<typeof activityFormSchema>;
 export type ManualScheduleValues = z.infer<typeof manualScheduleSchema>;
 export type ManualTimeEntryFormValues = z.infer<typeof manualTimeEntrySchema>;
-export type AutoScheduleFormValues = z.infer<typeof autoScheduleSchema>;
+export type AutoScheduleFormValues = z.infer<typeof autoScheduleObjectSchema>;
 export type ActivityCatalogImportValues = z.infer<
   typeof activityCatalogImportSchema
 >;

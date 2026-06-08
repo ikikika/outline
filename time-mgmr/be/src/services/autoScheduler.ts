@@ -20,6 +20,8 @@ export interface AutoScheduleConstraints {
 	deadline?: string;
 	workStart: string;
 	workEnd: string;
+	/** HH:mm start for the first workday only; later days use workStart. */
+	firstDayStart?: string;
 	sessionMinutes: number;
 	shortBreakMinutes: number;
 	longBreakMinutes: number;
@@ -56,6 +58,8 @@ export interface AutoScheduleInput {
 	tasks: ITask[];
 	existingBlocks: IScheduleBlock[];
 	timeZone: string;
+	/** Injectable clock for tests; defaults to Date.now(). */
+	now?: Date;
 }
 
 interface TimeInterval {
@@ -230,17 +234,23 @@ class PomodoroScheduler {
 		private readonly constraints: AutoScheduleConstraints,
 		private readonly timeZone: string,
 		private readonly busy: TimeInterval[],
-		private readonly deadline?: string
+		private readonly deadline?: string,
+		now: Date = new Date()
 	) {
 		let date = startDate;
 		while (isWeekendLocal(date, timeZone)) {
 			date = nextWorkdayLocal(date, timeZone);
 		}
-		this.cursor = localDateTimeToUtc(
-			date,
-			constraints.workStart,
-			timeZone
-		);
+		const initialTime =
+			constraints.firstDayStart ?? constraints.workStart;
+		this.cursor = localDateTimeToUtc(date, initialTime, timeZone);
+		const todayLocal = utcToLocalDate(now, timeZone);
+		const cursorLocal = utcToLocalDate(this.cursor, timeZone);
+		if (cursorLocal === todayLocal) {
+			this.cursor = new Date(
+				Math.max(this.cursor.getTime(), now.getTime())
+			);
+		}
 		this.cursor = new Date(
 			advancePastBusy(this.cursor.getTime(), busy)
 		);
@@ -736,7 +746,8 @@ export function computeAutoSchedule(
 		input.constraints,
 		input.timeZone,
 		busy,
-		input.constraints.deadline
+		input.constraints.deadline,
+		input.now ?? new Date()
 	);
 
 	const proposedBlocks: ProposedBlock[] = [];
