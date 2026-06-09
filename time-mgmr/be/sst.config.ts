@@ -18,6 +18,18 @@ export default $config({
 			'JwtRefreshSecret',
 			'dev-refresh-secret-change-me-in-production'
 		);
+		// Placeholders only — never commit real VAPID keys. Set per stage:
+		//   npx web-push generate-vapid-keys
+		//   npx sst secret set VapidPublicKey '<public>'
+		//   npx sst secret set VapidPrivateKey '<private>'
+		const vapidPublicKey = new sst.Secret(
+			'VapidPublicKey',
+			'dev-vapid-public-key-change-me'
+		);
+		const vapidPrivateKey = new sst.Secret(
+			'VapidPrivateKey',
+			'dev-vapid-private-key-change-me'
+		);
 
 		const table = new sst.aws.Dynamo('TimeMgmrTable', {
 			fields: {
@@ -50,9 +62,15 @@ export default $config({
 
 		const apiDefaults = {
 			handler: 'src/handlers/api.handler',
-			link: [table, jwtAccessSecret, jwtRefreshSecret],
-			timeout: '30 seconds',
-			memory: '512 MB',
+			link: [
+				table,
+				jwtAccessSecret,
+				jwtRefreshSecret,
+				vapidPublicKey,
+				vapidPrivateKey,
+			],
+			timeout: '30 seconds' as const,
+			memory: '512 MB' as const,
 		};
 
 		api.route('ANY /', apiDefaults);

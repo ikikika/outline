@@ -173,12 +173,80 @@ npm run remove
 
 ## Secrets (production)
 
-JWT secrets are defined in `sst.config.ts` as SST secrets:
+Secrets are defined in `sst.config.ts` as SST secrets. Config placeholders are **not** for production (and VAPID placeholders are not valid push keys).
 
-- `JwtAccessSecret`
-- `JwtRefreshSecret`
+| Secret | Purpose |
+|--------|---------|
+| `JwtAccessSecret` | Sign short-lived access JWTs |
+| `JwtRefreshSecret` | Sign refresh JWTs |
+| `VapidPublicKey` | Web Push public key (sent to browsers) |
+| `VapidPrivateKey` | Web Push private key (server only — never commit) |
 
-For production, set strong values via the SST secret workflow instead of relying on the dev defaults in config.
+Set values per stage with `npx sst secret set <Name> '<value>'` (see below for VAPID).
+
+---
+
+## Push notifications (VAPID)
+
+Web Push uses **VAPID** keys so browsers/push services can verify that *this* API is allowed to send notifications to a user’s subscription.
+
+- Generate keys yourself (`web-push`); they are not issued by Google/Apple.
+- Store them only as **SST secrets** — never commit real keys to git (`sst.config.ts` has placeholders only).
+- The frontend enables notifications under **Profile → Notifications** and calls the `/api/push/*` routes.
+
+### 1. Generate a key pair
+
+From `be/`:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+You get a **Public Key** and a **Private Key**. Keep the private key secret.
+
+### 2. Store them as SST secrets
+
+For your current stage (default personal stage when using `sst dev`):
+
+```bash
+npx sst secret set VapidPublicKey '<public-key>'
+npx sst secret set VapidPrivateKey '<private-key>'
+```
+
+For production:
+
+```bash
+npx sst secret set VapidPublicKey '<public-key>' --stage production
+npx sst secret set VapidPrivateKey '<private-key>' --stage production
+```
+
+### 3. Redeploy / restart
+
+Secrets are available to the Lambda after deploy (or after restarting `sst dev`):
+
+```bash
+npm run deploy
+# or production:
+npm run deploy:prod
+```
+
+### 4. Verify
+
+While logged in against the API:
+
+```bash
+curl -sS -b cookies.txt '{API_URL}/api/push/vapid-public-key'
+```
+
+Expect JSON like `{ "publicKey": "B...." }` (long URL-safe base64). If you still see a placeholder or a 500 about invalid VAPID config, the secrets are not set for that stage.
+
+Then in the app (HTTPS, or localhost on Android Chrome): **Profile → Notifications → Enable → Send test notification**. On iPhone, install via Safari **Add to Home Screen** first, then open from the icon.
+
+### Notes
+
+- Rotating VAPID keys invalidates existing browser subscriptions; users must enable notifications again.
+- Use a different key pair per environment if you want isolation (dev vs production).
+- Push endpoints: `GET /api/push/vapid-public-key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` (all auth-required).
 
 ---
 

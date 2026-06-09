@@ -108,3 +108,22 @@ export function emailGsiKeys(email: string, userId: string): {
 export function emailGsiPk(email: string): string {
 	return `EMAIL#${normalizeEmail(email)}`;
 }
+
+export function pushSubscriptionSk(endpointHash: string): string {
+	return `PUSH_SUB#${endpointHash}`;
+}
+
+export function pushSubscriptionPrefix(): string {
+	return 'PUSH_SUB#';
+}
+
+/** GSI for listing all push subscriptions (future reminder cron). */
+export function pushSubscriptionGsiKeys(
+	userId: string,
+	endpointHash: string
+): { gsi1pk: string; gsi1sk: string } {
+	return {
+		gsi1pk: 'PUSH_SUB',
+		gsi1sk: `${userId}#${endpointHash}`,
+	};
+}

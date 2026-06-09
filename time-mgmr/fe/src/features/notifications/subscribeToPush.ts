@@ -9,7 +9,7 @@ import {
 	getServiceWorkerRegistration,
 	isPushSupported,
 	subscriptionToPayload,
-	urlBase64ToUint8Array,
+	toApplicationServerKey,
 } from './utils/pushCapabilities';
 
 export async function getExistingPushSubscription(): Promise<PushSubscription | null> {
@@ -32,11 +32,11 @@ export async function subscribeToPush(): Promise<PushSubscription> {
 
 	const registration = await getServiceWorkerRegistration();
 	const publicKey = await fetchVapidPublicKey();
-	const applicationServerKey = urlBase64ToUint8Array(publicKey);
+	const applicationServerKey = toApplicationServerKey(publicKey);
 
 	const subscription = await registration.pushManager.subscribe({
 		userVisibleOnly: true,
-		applicationServerKey: applicationServerKey as BufferSource,
+		applicationServerKey,
 	});
 
 	await registerPushSubscription(subscriptionToPayload(subscription));
