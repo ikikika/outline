@@ -12,6 +12,7 @@ import { useProfileContext } from './context';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
 import { WorkInfoTab } from './tabs/WorkInfoTab';
 import { InterestsTab } from './tabs/InterestsTab';
+import { NotificationsTab } from './tabs/NotificationsTab';
 import styles from './ProfilePage.module.scss';
 
 const EDIT_STEPS = [
@@ -42,6 +43,7 @@ const ProfilePageContent: React.FC = () => {
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
           <TabsTrigger value="work">Work Info</TabsTrigger>
           <TabsTrigger value="interests">Interests</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic">
@@ -54,6 +56,10 @@ const ProfilePageContent: React.FC = () => {
 
         <TabsContent value="interests">
           <InterestsTab />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationsTab />
         </TabsContent>
       </Tabs>
     </div>

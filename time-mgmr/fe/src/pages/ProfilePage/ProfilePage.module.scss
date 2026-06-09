@@ -92,3 +92,43 @@
     border-radius: 2px;
   }
 }
+
+.notificationsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notificationsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.notificationsGuidance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notificationsSteps {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.notificationsMessage {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.notificationsError {
+  margin: 0;
+  color: var(--color-danger, #b91c1c);
+  font-size: 0.95rem;
+}

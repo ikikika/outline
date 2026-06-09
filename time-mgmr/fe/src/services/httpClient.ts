@@ -209,4 +209,22 @@ export async function deleteJsonAuth(
 	await request(url, { method: 'DELETE' }, { ...options, auth: true });
 }
 
+export async function deleteJsonAuthWithBody<T>(
+	url: string,
+	body?: unknown,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<T> {
+	return requestJson<T>(
+		url,
+		{
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: body === undefined ? undefined : JSON.stringify(body),
+		},
+		{ ...options, auth: true }
+	);
+}
+
 export const HTTP_BASE_URL = API_BASE_URL;
