@@ -20,6 +20,38 @@ Enterprise-oriented React + TypeScript starter with:
 - `npm run lint` run lint checks
 - `npm run preview` preview production build
 
+## Install as a PWA (phone)
+
+Tempo can be installed as a Progressive Web App. Use a **production HTTPS** URL (or a trusted tunnel). Localhost works for Android Chrome testing; iOS needs a real HTTPS origin for a useful install.
+
+After install, enable push under **Profile → Notifications**. On iPhone, you must open the app from the Home Screen icon before enabling notifications.
+
+### iOS (iPhone / iPad)
+
+1. Open the site in **Safari** (not Chrome or other browsers).
+2. Tap **Share** (square with an arrow).
+3. Tap **Add to Home Screen**.
+4. Confirm the name (**Tempo**) and tap **Add**.
+5. Launch Tempo from the new Home Screen icon (standalone, no Safari chrome).
+
+Notes:
+
+- Push notifications require **iOS 16.4+** and only work when the app was added to the Home Screen and opened from that icon.
+- If **Add to Home Screen** is missing, scroll the Share sheet or check Safari settings.
+
+### Android
+
+1. Open the site in **Chrome**.
+2. Use one of:
+   - Chrome’s **Install app** / **Add to Home screen** banner or menu item, or
+   - Chrome menu (⋮) → **Install app** / **Add to Home screen**.
+3. Confirm, then open Tempo from the Home Screen / app drawer icon.
+
+Notes:
+
+- Chrome may show an install prompt automatically when the PWA criteria are met (HTTPS, manifest, service worker).
+- You can also use **Profile → Notifications** from a Chrome tab on Android; installing still gives the best app-like experience.
+
 ## Module Federation (Webpack)
 
 This starter now supports Webpack Module Federation while keeping the existing Vite workflow.

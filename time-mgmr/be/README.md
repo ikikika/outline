@@ -248,6 +248,17 @@ Then in the app (HTTPS, or localhost on Android Chrome): **Profile → Notificat
 - Use a different key pair per environment if you want isolation (dev vs production).
 - Push endpoints: `GET /api/push/vapid-public-key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` (all auth-required).
 
+### First-task reminder (cron)
+
+A `CronV2` job (`FirstFocusReminder`) runs every **1 minute** and sends a push when a subscribed user’s **first focus block of their local calendar day** starts in **5 minutes**.
+
+- Uses the user’s profile `timeZone` (falls back to `UTC`).
+- First focus = earliest `blockType: focus` block with a `taskId` that day.
+- Dedupes with a DynamoDB `REMINDER_SENT#first_focus#{localDate}#{blockId}` marker (TTL).
+- Notification body: `{task title} starts in 5 minutes` → opens `/timetable`.
+
+Requires valid VAPID secrets and at least one push subscription for the user. Rescheduling to a different first block can notify again (dedupe is per block id).
+
 ---
 
 ## Seed data

@@ -10,6 +10,7 @@ import {
 import { getDocumentClient, getTableName } from '../lib/dynamo.js';
 import {
 	pushSubscriptionGsiKeys,
+	pushSubscriptionGsiPk,
 	pushSubscriptionPrefix,
 	pushSubscriptionSk,
 	userPk,
@@ -100,6 +101,45 @@ export async function listPushSubscriptions(
 		(item): item is IPushSubscriptionRecord =>
 			item.entityType === 'push_subscription'
 	);
+}
+
+/** Paginated GSI query of all push subscriptions (for reminder cron). */
+export async function listAllPushSubscriptions(): Promise<
+	IPushSubscriptionRecord[]
+> {
+	const client = getDocumentClient();
+	const items: IPushSubscriptionRecord[] = [];
+	let exclusiveStartKey: Record<string, unknown> | undefined;
+
+	do {
+		const result = await client.send(
+			new QueryCommand({
+				TableName: getTableName(),
+				IndexName: 'Gsi1',
+				KeyConditionExpression: 'gsi1pk = :gsi1pk',
+				ExpressionAttributeValues: {
+					':gsi1pk': pushSubscriptionGsiPk(),
+				},
+				ExclusiveStartKey: exclusiveStartKey,
+			})
+		);
+
+		for (const item of result.Items ?? []) {
+			if (item.entityType === 'push_subscription') {
+				items.push(item as IPushSubscriptionRecord);
+			}
+		}
+		exclusiveStartKey = result.LastEvaluatedKey as
+			| Record<string, unknown>
+			| undefined;
+	} while (exclusiveStartKey);
+
+	return items;
+}
+
+export async function listUserIdsWithPushSubscriptions(): Promise<string[]> {
+	const subscriptions = await listAllPushSubscriptions();
+	return [...new Set(subscriptions.map((sub) => sub.userId))];
 }
 
 export async function deletePushSubscription(

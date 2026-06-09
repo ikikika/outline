@@ -76,6 +76,16 @@ export default $config({
 		api.route('ANY /', apiDefaults);
 		api.route('ANY /{proxy+}', apiDefaults);
 
+		new sst.aws.CronV2('FirstFocusReminder', {
+			schedule: 'rate(1 minute)',
+			function: {
+				handler: 'src/handlers/firstFocusReminder.handler',
+				link: [table, vapidPublicKey, vapidPrivateKey],
+				timeout: '60 seconds',
+				memory: '512 MB',
+			},
+		});
+
 		return {
 			api: api.url,
 			table: table.name,

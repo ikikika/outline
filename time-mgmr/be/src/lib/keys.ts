@@ -127,3 +127,16 @@ export function pushSubscriptionGsiKeys(
 		gsi1sk: `${userId}#${endpointHash}`,
 	};
 }
+
+export function pushSubscriptionGsiPk(): string {
+	return 'PUSH_SUB';
+}
+
+/** Dedupe record for first-focus-of-day push reminders. */
+export function reminderSentSk(
+	ruleId: string,
+	localDate: string,
+	blockId: string
+): string {
+	return `REMINDER_SENT#${ruleId}#${localDate}#${blockId}`;
+}
