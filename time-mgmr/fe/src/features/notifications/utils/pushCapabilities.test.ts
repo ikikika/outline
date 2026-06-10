@@ -21,15 +21,15 @@ describe('toApplicationServerKey', () => {
 		bytes[0] = 0x04;
 		for (let i = 1; i < 65; i += 1) bytes[i] = i;
 		const binary = String.fromCharCode(...bytes);
-		const key = window
+		const publicKey = window
 			.btoa(binary)
 			.replace(/\+/g, '-')
 			.replace(/\//g, '_')
 			.replace(/=+$/, '');
 
-		const buffer = toApplicationServerKey(key);
-		expect(buffer.byteLength).toBe(65);
-		expect(new Uint8Array(buffer)[0]).toBe(0x04);
+		const applicationServerKey = toApplicationServerKey(publicKey);
+		expect(applicationServerKey.byteLength).toBe(65);
+		expect(new Uint8Array(applicationServerKey)[0]).toBe(0x04);
 	});
 
 	it('rejects placeholder keys', () => {

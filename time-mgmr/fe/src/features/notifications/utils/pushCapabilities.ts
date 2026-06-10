@@ -65,10 +65,10 @@ export function toApplicationServerKey(publicKey: string): ArrayBuffer {
 		);
 	}
 
-	return bytes.buffer.slice(
-		bytes.byteOffset,
-		bytes.byteOffset + bytes.byteLength
-	);
+	// Copy into a fresh ArrayBuffer (avoids SharedArrayBuffer typing issues in TS 6).
+	const copy = new Uint8Array(bytes.byteLength);
+	copy.set(bytes);
+	return copy.buffer;
 }
 
 export async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
