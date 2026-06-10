@@ -108,7 +108,8 @@ export async function updateCurrentUserRequest(
 ): Promise<IUser> {
 	const raw = await patchJson<unknown>(`${AUTH_BASE_URL}/me`, patch, {
 		...options,
-		auth: true,
+		includeCredentials: options.includeCredentials ?? true,
+		auth: options.auth ?? true,
 	});
 	const user = normalizeUser(raw);
 	if (!user) {
@@ -127,9 +128,10 @@ export async function ensureProfileTimeZone(
 	}
 
 	try {
+		// Cookie auth: send credentials but avoid 401→refresh→sessionExpired during login bootstrap.
 		return await updateCurrentUserRequest(
 			{ timeZone: getBrowserTimeZone() },
-			options
+			{ ...options, auth: false, includeCredentials: true }
 		);
 	} catch {
 		return { ...user, timeZone: getBrowserTimeZone() };
