@@ -32,7 +32,14 @@ export function registerAuthRoutes(app: Hono): void {
 				refreshToken: response.refreshToken,
 			});
 
-			return c.json({ user: response.user });
+			// Also return tokens in JSON so SPAs on a different origin (e.g. iOS
+			// Safari / Home Screen PWAs) can use Authorization Bearer when
+			// third-party cookies are blocked.
+			return c.json({
+				user: response.user,
+				token: response.token,
+				refreshToken: response.refreshToken,
+			});
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, error.status as 400 | 401);
@@ -99,7 +106,11 @@ export function registerAuthRoutes(app: Hono): void {
 				refreshToken: response.refreshToken,
 			});
 
-			return c.json({ ok: true });
+			return c.json({
+				ok: true,
+				token: response.token,
+				refreshToken: response.refreshToken,
+			});
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, error.status as 400 | 401);

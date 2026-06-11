@@ -128,10 +128,10 @@ export async function ensureProfileTimeZone(
 	}
 
 	try {
-		// Cookie auth: send credentials but avoid 401→refresh→sessionExpired during login bootstrap.
+		// Prefer credentials; avoid auth-retry/sessionExpired during login bootstrap.
 		return await updateCurrentUserRequest(
 			{ timeZone: getBrowserTimeZone() },
-			{ ...options, auth: false, includeCredentials: true }
+			{ ...options, auth: true, includeCredentials: true }
 		);
 	} catch {
 		return { ...user, timeZone: getBrowserTimeZone() };

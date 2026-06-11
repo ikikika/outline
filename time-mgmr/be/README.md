@@ -303,14 +303,13 @@ The frontend appends `/api` automatically in `API_BASE_URL`.
 
 ## Authentication
 
-The API uses **HttpOnly cookies** for browser sessions (cross-origin SPA → API Gateway):
+The API uses **HttpOnly cookies** plus **Bearer tokens in JSON** for browser sessions (cross-origin SPA → API Gateway):
 
 - `access_token` — JWT, 15 minutes, `HttpOnly; Secure; SameSite=None; Path=/`
 - `refresh_token` — JWT, 7 days, same attributes
+- Login / refresh JSON also returns `token` and `refreshToken` so the SPA can send `Authorization: Bearer …` when Safari/iOS blocks third-party cookies (common for Home Screen PWAs on a different API host)
 
-The browser stores cookies on the **API host** and sends them automatically when the client uses `credentials: 'include'`. Tokens are **not** returned in JSON login/refresh bodies.
-
-`Authorization: Bearer <access_token>` remains supported as a fallback for non-browser tooling.
+The browser stores cookies on the **API host** when allowed and sends them with `credentials: 'include'`. The frontend also keeps tokens in memory for Bearer fallback (not localStorage).
 
 CORS must allow credentials (`credentials: true` / `allowCredentials: true`) with an explicit origin allowlist (never `*`).
 
@@ -325,7 +324,8 @@ CORS must allow credentials (`credentials: true` / `allowCredentials: true`) wit
 **Security notes**
 
 - `SameSite=None` does not block CSRF by itself; mitigation is the CORS allowlist + JSON `Content-Type` (preflight) for mutating calls.
-- XSS cannot read HttpOnly cookies; do not put tokens in localStorage or JSON responses for the SPA.
+- XSS cannot read HttpOnly cookies. Tokens returned in JSON are kept in memory only (not localStorage) for cross-origin Bearer fallback.
+- Prefer hosting the SPA and API on the same site long-term so cookies alone are enough.
 - Cookies are tied to the API host; changing the API Gateway URL clears sessions.
 
 ---
@@ -378,7 +378,7 @@ Verifies DynamoDB connectivity (scan limit 1).
 }
 ```
 
-**Response `200`** — sets `access_token` and `refresh_token` cookies
+**Response `200`** — sets `access_token` and `refresh_token` cookies; also returns tokens for Bearer fallback
 
 ```json
 {
@@ -391,7 +391,9 @@ Verifies DynamoDB connectivity (scan limit 1).
     "themePreference": "system",
     "createdAt": "2026-07-20T12:00:00.000Z",
     "updatedAt": "2026-07-20T12:00:00.000Z"
-  }
+  },
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
 }
 ```
 
@@ -421,7 +423,9 @@ Rotates both cookies and returns:
 
 ```json
 {
-  "ok": true
+  "ok": true,
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
 }
 ```
 

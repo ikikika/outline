@@ -86,7 +86,7 @@ export function useMemoryAuthTokens(): void {
 	tokenStorage = createMemoryAdapter();
 }
 
-/** Browser auth via HttpOnly cookies — no JS-readable tokens. */
+/** Browser auth: prefer cookies, keep tokens in memory for Bearer fallback. */
 export function useCookieAuthMode(): void {
 	cookieAuthMode = true;
 	tokenStorage = createMemoryAdapter();
@@ -155,7 +155,16 @@ export async function refreshSession(): Promise<string> {
 	if (cookieAuthMode) {
 		refreshInFlight = (async () => {
 			try {
-				await refreshTokenRequest(undefined, { includeCredentials: true });
+				// Prefer cookie; also send in-memory refresh token so iOS/PWA works
+				// when third-party cookies are blocked.
+				const memoryRefresh = getRefreshToken() ?? undefined;
+				const data = await refreshTokenRequest(memoryRefresh, {
+					includeCredentials: true,
+				});
+				if (data.token) {
+					setTokens(data.token, data.refreshToken);
+					return data.token;
+				}
 				return 'cookie';
 			} catch (error) {
 				notifySessionExpired();

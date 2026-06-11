@@ -70,7 +70,25 @@ describe('authSession', () => {
 		expect(expired).toHaveBeenCalledTimes(1);
 	});
 
-	it('cookie mode refreshSession does not require a stored refresh token', async () => {
+	it('cookie mode refreshSession stores returned tokens and sends memory refresh', async () => {
+		useCookieAuthMode();
+		setTokens('access-1', 'refresh-1');
+		mockRefreshTokenRequest.mockResolvedValue({
+			ok: true,
+			token: 'access-2',
+			refreshToken: 'refresh-2',
+		});
+
+		const token = await refreshSession();
+
+		expect(token).toBe('access-2');
+		expect(getAccessToken()).toBe('access-2');
+		expect(mockRefreshTokenRequest).toHaveBeenCalledWith('refresh-1', {
+			includeCredentials: true,
+		});
+	});
+
+	it('cookie mode refreshSession tolerates cookie-only responses', async () => {
 		useCookieAuthMode();
 		mockRefreshTokenRequest.mockResolvedValue({ ok: true });
 
@@ -80,6 +98,5 @@ describe('authSession', () => {
 		expect(mockRefreshTokenRequest).toHaveBeenCalledWith(undefined, {
 			includeCredentials: true,
 		});
-		expect(getAccessToken()).toBeNull();
 	});
 });

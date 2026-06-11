@@ -22,7 +22,6 @@ export interface IAuthCredentials {
 
 export interface IAuthResponse {
 	user: IUser;
-	/** Issued for cookie-setting / tooling; not returned in browser JSON responses. */
 	token: string;
 	refreshToken?: string;
 }
@@ -32,9 +31,11 @@ export interface IRefreshResponse {
 	refreshToken?: string;
 }
 
-/** Browser login response — tokens are set via HttpOnly cookies only. */
+/** Browser login JSON also includes tokens for cross-origin Bearer fallback. */
 export interface IAuthLoginResponse {
 	user: IUser;
+	token: string;
+	refreshToken: string;
 }
 
 export interface IUserProfileRecord {
