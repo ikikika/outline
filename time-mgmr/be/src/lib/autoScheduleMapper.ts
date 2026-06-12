@@ -1,7 +1,10 @@
 import { formatInTimeZone } from 'date-fns-tz';
 
 import { isValidTimeZone } from './timezone.js';
-import type { AutoScheduleConstraints } from '../services/autoScheduler.js';
+import {
+	DEFAULT_ESTIMATE_BUFFER,
+	type AutoScheduleConstraints,
+} from '../services/autoScheduler.js';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -18,6 +21,8 @@ export interface IAutoScheduleRequest {
 	sessionMinutes?: number;
 	shortBreakMinutes?: number;
 	longBreakMinutes?: number;
+	/** Multiplier on timeEstimationSeconds (default 1.5). */
+	estimateBuffer?: number;
 	allowSplitAcrossDays?: boolean;
 }
 
@@ -55,6 +60,19 @@ function parsePositiveInt(
 	if (value === undefined) return defaultValue;
 	if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
 		return { error: `${field} must be a positive integer` };
+	}
+	return value;
+}
+
+function parseEstimateBuffer(
+	value: unknown
+): number | { error: string } {
+	if (value === undefined) return DEFAULT_ESTIMATE_BUFFER;
+	if (typeof value !== 'number' || !Number.isFinite(value)) {
+		return { error: 'estimateBuffer must be a number' };
+	}
+	if (value < 1 || value > 5) {
+		return { error: 'estimateBuffer must be between 1 and 5' };
 	}
 	return value;
 }
@@ -137,6 +155,9 @@ function buildConstraints(
 	);
 	if (typeof longBreakMinutes !== 'number') return longBreakMinutes;
 
+	const estimateBuffer = parseEstimateBuffer(body.estimateBuffer);
+	if (typeof estimateBuffer !== 'number') return estimateBuffer;
+
 	return {
 		earliestDate,
 		...(deadline ? { deadline } : {}),
@@ -146,6 +167,7 @@ function buildConstraints(
 		sessionMinutes,
 		shortBreakMinutes,
 		longBreakMinutes,
+		estimateBuffer,
 		allowSplitAcrossDays: body.allowSplitAcrossDays === true,
 	};
 }
@@ -220,6 +242,7 @@ export function toAutoScheduleConstraints(
 		sessionMinutes: request.sessionMinutes ?? 25,
 		shortBreakMinutes: request.shortBreakMinutes ?? 5,
 		longBreakMinutes: request.longBreakMinutes ?? 15,
+		estimateBuffer: request.estimateBuffer ?? DEFAULT_ESTIMATE_BUFFER,
 		allowSplitAcrossDays: request.allowSplitAcrossDays ?? false,
 	};
 }

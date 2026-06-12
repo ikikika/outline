@@ -94,6 +94,10 @@ export const autoScheduleObjectSchema = z.object({
     .int('Use whole minutes.')
     .min(1, 'At least 1 minute.')
     .max(60, 'Cannot exceed 60 minutes.'),
+  estimateBuffer: z
+    .number()
+    .min(1, 'At least 1× the estimate.')
+    .max(5, 'Cannot exceed 5× the estimate.'),
   allowSplitAcrossDays: z.boolean(),
 });
 

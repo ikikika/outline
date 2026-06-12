@@ -40,9 +40,33 @@ describe('parseAutoScheduleRequest', () => {
 		if ('error' in parsed) return;
 		assert.equal(parsed.workStart, '09:00');
 		assert.equal(parsed.sessionMinutes, 25);
+		assert.equal(parsed.estimateBuffer, 1.5);
 		assert.equal(parsed.allowSplitAcrossDays, false);
 	});
 
+	it('parses a custom estimateBuffer', () => {
+		const parsed = parseAutoScheduleRequest({
+			activityId: 'activity-1',
+			taskIds: ['task-1'],
+			earliestDate: '2026-07-21',
+			estimateBuffer: 2,
+		});
+		assert.ok(!('error' in parsed));
+		if ('error' in parsed) return;
+		assert.equal(parsed.estimateBuffer, 2);
+	});
+
+	it('rejects estimateBuffer outside 1–5', () => {
+		assert.deepEqual(
+			parseAutoScheduleRequest({
+				activityId: 'activity-1',
+				taskIds: ['task-1'],
+				earliestDate: '2026-07-21',
+				estimateBuffer: 0.5,
+			}),
+			{ error: 'estimateBuffer must be between 1 and 5' }
+		);
+	});
 	it('requires previewToken for confirm requests', () => {
 		assert.deepEqual(
 			parseAutoScheduleConfirmRequest({
@@ -264,6 +288,34 @@ describe('computeAutoSchedule', () => {
 			focusBlocks.every((block) => block.taskId === 'long'),
 			'all focus blocks belong to the long task'
 		);
+	});
+
+	it('honors a custom estimateBuffer when sizing focus blocks', () => {
+		const withBuffer = (estimateBuffer: number) =>
+			computeAutoSchedule({
+				activityId: 'activity-1',
+				taskIds: ['long'],
+				constraints: toAutoScheduleConstraints({
+					activityId: 'activity-1',
+					taskIds: ['long'],
+					earliestDate: '2026-07-21',
+					sessionMinutes: 25,
+					estimateBuffer,
+					allowSplitAcrossDays: true,
+				}),
+				tasks: [focusTask('long', 100 * 60)],
+				existingBlocks: [],
+				timeZone: TIME_ZONE,
+			});
+
+		const focusBuffered = withBuffer(1.5).proposedBlocks.filter(
+			(block) => block.blockType === 'focus'
+		);
+		const focusExact = withBuffer(1).proposedBlocks.filter(
+			(block) => block.blockType === 'focus'
+		);
+		assert.equal(focusBuffered.length, 6);
+		assert.equal(focusExact.length, 4);
 	});
 
 	it('marks selected future blocks for replacement', () => {

@@ -171,6 +171,8 @@ export interface IAutoScheduleRequest {
   sessionMinutes?: number;
   shortBreakMinutes?: number;
   longBreakMinutes?: number;
+  /** Multiplier on timeEstimationSeconds (default 1.5). */
+  estimateBuffer?: number;
   allowSplitAcrossDays?: boolean;
 }
 

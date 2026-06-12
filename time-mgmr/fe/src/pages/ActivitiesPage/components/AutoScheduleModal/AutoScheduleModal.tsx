@@ -99,6 +99,7 @@ export function AutoScheduleModal({
       sessionMinutes: 25,
       shortBreakMinutes: 5,
       longBreakMinutes: 15,
+      estimateBuffer: 1.5,
       allowSplitAcrossDays: false,
     },
   });
@@ -145,6 +146,7 @@ export function AutoScheduleModal({
     sessionMinutes: values.sessionMinutes,
     shortBreakMinutes: values.shortBreakMinutes,
     longBreakMinutes: values.longBreakMinutes,
+    estimateBuffer: values.estimateBuffer,
     allowSplitAcrossDays: values.allowSplitAcrossDays,
   });
 
@@ -332,6 +334,27 @@ export function AutoScheduleModal({
                     {errors.longBreakMinutes.message}
                   </span>
                 ) : null}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="auto-estimate-buffer">Estimate buffer</label>
+                <Input
+                  id="auto-estimate-buffer"
+                  type="number"
+                  min={1}
+                  max={5}
+                  step={0.1}
+                  {...register('estimateBuffer', { valueAsNumber: true })}
+                />
+                {errors.estimateBuffer ? (
+                  <span className={styles.error}>
+                    {errors.estimateBuffer.message}
+                  </span>
+                ) : (
+                  <span className={styles.hint}>
+                    Multiplier on each task&apos;s time estimate (e.g. 1.5 =
+                    50% extra).
+                  </span>
+                )}
               </div>
               <div className={`${styles.field} ${styles.checkboxField}`}>
                 <label className={styles.checkboxLabel}>

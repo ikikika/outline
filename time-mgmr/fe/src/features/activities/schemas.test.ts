@@ -71,6 +71,7 @@ const baseAutoValues = {
   sessionMinutes: 25,
   shortBreakMinutes: 5,
   longBreakMinutes: 15,
+  estimateBuffer: 1.5,
   allowSplitAcrossDays: false,
 };
 

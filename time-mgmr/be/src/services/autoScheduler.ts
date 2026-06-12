@@ -11,7 +11,7 @@ import type {
 
 const LUNCH_START = '12:00';
 const LUNCH_END = '13:00';
-const ESTIMATE_BUFFER = 1.5;
+export const DEFAULT_ESTIMATE_BUFFER = 1.5;
 const MAX_HORIZON_CALENDAR_DAYS = 180;
 const LONG_BREAK_EVERY = 4;
 
@@ -25,6 +25,8 @@ export interface AutoScheduleConstraints {
 	sessionMinutes: number;
 	shortBreakMinutes: number;
 	longBreakMinutes: number;
+	/** Multiplier applied to task timeEstimationSeconds (default 1.5). */
+	estimateBuffer: number;
 	allowSplitAcrossDays: boolean;
 }
 
@@ -148,8 +150,11 @@ function compareLocalDates(a: string, b: string): number {
 	return a.localeCompare(b);
 }
 
-function bufferedDurationSeconds(estimationSeconds: number): number {
-	return roundHalfUp(estimationSeconds * ESTIMATE_BUFFER);
+function bufferedDurationSeconds(
+	estimationSeconds: number,
+	estimateBuffer: number
+): number {
+	return roundHalfUp(estimationSeconds * estimateBuffer);
 }
 
 function formatBreakId(start: Date): string {
@@ -653,7 +658,10 @@ function scheduleTaskBlocks(
 ): { blocks: ProposedBlock[]; unplaced: boolean } {
 	const estimation =
 		task.timeEstimationSeconds ?? constraints.sessionMinutes * 60;
-	const duration = bufferedDurationSeconds(estimation);
+	const duration = bufferedDurationSeconds(
+		estimation,
+		constraints.estimateBuffer
+	);
 	const sessionSeconds = constraints.sessionMinutes * 60;
 	const maxWindowSeconds = scheduler.maxWindowSeconds();
 	const shouldSplitAtSessions =
