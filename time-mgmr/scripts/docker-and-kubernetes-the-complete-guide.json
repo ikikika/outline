@@ -1,0 +1,534 @@
+{
+  "activity": {
+    "title": "Build, test, and deploy Docker applications with Kubernetes while learning production-style development workflows",
+    "categoryId": "admin",
+    "notes": "",
+    "id": "docker-and-kubernetes-the-complete-guide"
+  },
+  "tasks": [
+    {
+      "title": "Mapping Existing Knowledge",
+      "timeEstimationSeconds": 457
+    },
+    {
+      "title": "Quick Note to Prevent an Error",
+      "timeEstimationSeconds": 37
+    },
+    {
+      "title": "Adding Configuration Files",
+      "timeEstimationSeconds": 411
+    },
+    {
+      "title": "Object Types and API Versions",
+      "timeEstimationSeconds": 415
+    },
+    {
+      "title": "Running Containers in Pods",
+      "timeEstimationSeconds": 558
+    },
+    {
+      "title": "Service Config Files in Depth",
+      "timeEstimationSeconds": 817
+    },
+    {
+      "title": "Connecting to Running Containers",
+      "timeEstimationSeconds": 624
+    },
+    {
+      "title": "The Entire Deployment Flow",
+      "timeEstimationSeconds": 782
+    },
+    {
+      "title": "Imperative vs Declarative Deployments",
+      "timeEstimationSeconds": 816
+    },
+    {
+      "title": "Updating Existing Objects",
+      "timeEstimationSeconds": 370
+    },
+    {
+      "title": "Declarative Updates in Action",
+      "timeEstimationSeconds": 424
+    },
+    {
+      "title": "Limitations in Config Updates",
+      "timeEstimationSeconds": 175
+    },
+    {
+      "title": "Running Containers with Deployments",
+      "timeEstimationSeconds": 363
+    },
+    {
+      "title": "Quick Note to Prevent an Error",
+      "timeEstimationSeconds": 9
+    },
+    {
+      "title": "Deployment Configuration Files",
+      "timeEstimationSeconds": 198
+    },
+    {
+      "title": "Walking Through the Deployment Config",
+      "timeEstimationSeconds": 263
+    },
+    {
+      "title": "Applying a Deployment",
+      "timeEstimationSeconds": 382
+    },
+    {
+      "title": "Why Use Services?",
+      "timeEstimationSeconds": 319
+    },
+    {
+      "title": "Scaling and Changing Deployments",
+      "timeEstimationSeconds": 391
+    },
+    {
+      "title": "Updating Deployment Images",
+      "timeEstimationSeconds": 237
+    },
+    {
+      "title": "Rebuilding the Client Image",
+      "timeEstimationSeconds": 179
+    },
+    {
+      "title": "Triggering Deployment Updates",
+      "timeEstimationSeconds": 744
+    },
+    {
+      "title": "Imperatively Updating a Deployment's Image",
+      "timeEstimationSeconds": 444
+    },
+    {
+      "title": "Reminder for Docker Desktop's Kubernetes Users",
+      "timeEstimationSeconds": 12
+    },
+    {
+      "title": "Multiple Docker Installations",
+      "timeEstimationSeconds": 337
+    },
+    {
+      "title": "Reconfiguring Docker CLI",
+      "timeEstimationSeconds": 357
+    },
+    {
+      "title": "Why Mess with Docker in the Node?",
+      "timeEstimationSeconds": 305
+    },
+    {
+      "title": "The Path to Production",
+      "timeEstimationSeconds": 312
+    },
+    {
+      "title": "Checkpoint Files",
+      "timeEstimationSeconds": 42
+    },
+    {
+      "title": "A Quick Checkpoint",
+      "timeEstimationSeconds": 275
+    },
+    {
+      "title": "Recreating the Deployment",
+      "timeEstimationSeconds": 329
+    },
+    {
+      "title": "NodePort vs ClusterIP Services",
+      "timeEstimationSeconds": 221
+    },
+    {
+      "title": "The ClusterIP Config",
+      "timeEstimationSeconds": 232
+    },
+    {
+      "title": "Applying Multiple Files with Kubectl",
+      "timeEstimationSeconds": 258
+    },
+    {
+      "title": "Express API Deployment Config",
+      "timeEstimationSeconds": 362
+    },
+    {
+      "title": "Cluster IP for the Express API",
+      "timeEstimationSeconds": 188
+    },
+    {
+      "title": "Combining Config Into Single Files",
+      "timeEstimationSeconds": 359
+    },
+    {
+      "title": "The Worker Deployment",
+      "timeEstimationSeconds": 276
+    },
+    {
+      "title": "Reapplying a Batch of Config Files",
+      "timeEstimationSeconds": 291
+    },
+    {
+      "title": "Creating and Applying Redis Config",
+      "timeEstimationSeconds": 446
+    },
+    {
+      "title": "Important Note about Expected Postgres Error",
+      "timeEstimationSeconds": 59
+    },
+    {
+      "title": "Last Set of Boring Config!",
+      "timeEstimationSeconds": 374
+    },
+    {
+      "title": "The Need for Volumes with Databases",
+      "timeEstimationSeconds": 438
+    },
+    {
+      "title": "Kubernetes Volumes",
+      "timeEstimationSeconds": 317
+    },
+    {
+      "title": "Volumes vs Persistent Volumes",
+      "timeEstimationSeconds": 179
+    },
+    {
+      "title": "Persistent Volumes vs Persistent Volume Claims",
+      "timeEstimationSeconds": 561
+    },
+    {
+      "title": "Claim Config Files",
+      "timeEstimationSeconds": 176
+    },
+    {
+      "title": "Persistent Volume Access Modes",
+      "timeEstimationSeconds": 211
+    },
+    {
+      "title": "Where Does Kubernetes Allocate Persistent Volumes?",
+      "timeEstimationSeconds": 462
+    },
+    {
+      "title": "Designating a PVC in a Pod Template",
+      "timeEstimationSeconds": 369
+    },
+    {
+      "title": "Applying a PVC",
+      "timeEstimationSeconds": 142
+    },
+    {
+      "title": "Defining Environment Variables",
+      "timeEstimationSeconds": 248
+    },
+    {
+      "title": "Adding Environment Variables to Config",
+      "timeEstimationSeconds": 344
+    },
+    {
+      "title": "Creating an Encoded Secret",
+      "timeEstimationSeconds": 565
+    },
+    {
+      "title": "Postgres Environment Variable Fix",
+      "timeEstimationSeconds": 14
+    },
+    {
+      "title": "Passing Secrets as Environment Variables",
+      "timeEstimationSeconds": 353
+    },
+    {
+      "title": "Environment Variables as Strings",
+      "timeEstimationSeconds": 137
+    },
+    {
+      "title": "Load Balancer Services",
+      "timeEstimationSeconds": 254
+    },
+    {
+      "title": "A Quick Note on Ingresses",
+      "timeEstimationSeconds": 212
+    },
+    {
+      "title": "One Other Quick Note!",
+      "timeEstimationSeconds": 97
+    },
+    {
+      "title": "Behind the Scenes of Ingress",
+      "timeEstimationSeconds": 317
+    },
+    {
+      "title": "More Behind the Scenes of Ingress",
+      "timeEstimationSeconds": 397
+    },
+    {
+      "title": "Optional Reading on Ingress Nginx",
+      "timeEstimationSeconds": 9
+    },
+    {
+      "title": "Docker Driver  and Ingress - IMPORTANT",
+      "timeEstimationSeconds": 37
+    },
+    {
+      "title": "Setting Up Ingress Locally with Docker Desktop",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "title": "Setting  Up Ingress Locally with Minikube",
+      "timeEstimationSeconds": 126
+    },
+    {
+      "title": "Ingress API Update + \"this.state.seenIndexes.map...\" + 404 errors",
+      "timeEstimationSeconds": 52
+    },
+    {
+      "title": "Creating the Ingress Configuration",
+      "timeEstimationSeconds": 420
+    },
+    {
+      "title": "Testing Ingress Locally",
+      "timeEstimationSeconds": 170
+    },
+    {
+      "title": "The Deployment Process",
+      "timeEstimationSeconds": 349
+    },
+    {
+      "title": "Google Cloud vs AWS for Kubernetes",
+      "timeEstimationSeconds": 293
+    },
+    {
+      "title": "Creating a Git Repo",
+      "timeEstimationSeconds": 239
+    },
+    {
+      "title": "Linking the Github Repo to Travis",
+      "timeEstimationSeconds": 95
+    },
+    {
+      "title": "Free Google Cloud Trial and Credits",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "title": "Creating a Google Cloud Project",
+      "timeEstimationSeconds": 119
+    },
+    {
+      "title": "Linking a Billing Account",
+      "timeEstimationSeconds": 131
+    },
+    {
+      "title": "GKE Creation Steps Using Autopilot",
+      "timeEstimationSeconds": 84
+    },
+    {
+      "title": "Kubernetes Dashboard on Google Cloud",
+      "timeEstimationSeconds": 273
+    },
+    {
+      "title": "Travis Deployment Overview",
+      "timeEstimationSeconds": 304
+    },
+    {
+      "title": "Installing the Google Cloud SDK",
+      "timeEstimationSeconds": 344
+    },
+    {
+      "title": "Updated Service Account steps for new GCP UI",
+      "timeEstimationSeconds": 49
+    },
+    {
+      "title": "Generating a Service Account",
+      "timeEstimationSeconds": 329
+    },
+    {
+      "title": "Ruby Version Fix",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "title": "Running Travis CLI in a Container",
+      "timeEstimationSeconds": 557
+    },
+    {
+      "title": "Travis Login Issues, \"iv undefined\" or \"repository not known\"",
+      "timeEstimationSeconds": 54
+    },
+    {
+      "title": "Encrypting a Service Account File",
+      "timeEstimationSeconds": 474
+    },
+    {
+      "title": "More Google Cloud CLI Config",
+      "timeEstimationSeconds": 279
+    },
+    {
+      "title": "Running Tests with Travis",
+      "timeEstimationSeconds": 378
+    },
+    {
+      "title": "Custom Deployment Providers",
+      "timeEstimationSeconds": 229
+    },
+    {
+      "title": "Unique Deployment Images",
+      "timeEstimationSeconds": 513
+    },
+    {
+      "title": "Unique Tags for Built Images",
+      "timeEstimationSeconds": 467
+    },
+    {
+      "title": "Updating the Deployment Script",
+      "timeEstimationSeconds": 470
+    },
+    {
+      "title": "Configuring the GCloud CLI on Cloud Console",
+      "timeEstimationSeconds": 334
+    },
+    {
+      "title": "Creating a Secret on Google Cloud",
+      "timeEstimationSeconds": 144
+    },
+    {
+      "title": "Helm Setup",
+      "timeEstimationSeconds": 374
+    },
+    {
+      "title": "Important - Updated Ingress Installation with Helm",
+      "timeEstimationSeconds": 16
+    },
+    {
+      "title": "Ingress-Nginx with Helm",
+      "timeEstimationSeconds": 116
+    },
+    {
+      "title": "The Result of Ingress-Nginx",
+      "timeEstimationSeconds": 227
+    },
+    {
+      "title": "Finally - Deployment!",
+      "timeEstimationSeconds": 210
+    },
+    {
+      "title": "Did I Really Type That?",
+      "timeEstimationSeconds": 45
+    },
+    {
+      "title": "Verifying Deployment",
+      "timeEstimationSeconds": 320
+    },
+    {
+      "title": "A Workflow for Changing in Prod",
+      "timeEstimationSeconds": 269
+    },
+    {
+      "title": "Merging a PR for Deployment",
+      "timeEstimationSeconds": 61
+    },
+    {
+      "title": "That's It!  What's Next?",
+      "timeEstimationSeconds": 97
+    },
+    {
+      "title": "Completed Code For Google Cloud Deployment",
+      "timeEstimationSeconds": 3
+    },
+    {
+      "title": "HTTPS Setup Overview",
+      "timeEstimationSeconds": 335
+    },
+    {
+      "title": "Domain Purchase",
+      "timeEstimationSeconds": 137
+    },
+    {
+      "title": "Domain Name Setup",
+      "timeEstimationSeconds": 210
+    },
+    {
+      "title": "Required Updates for Cert Manager Install",
+      "timeEstimationSeconds": 25
+    },
+    {
+      "title": "Cert Manager Install",
+      "timeEstimationSeconds": 117
+    },
+    {
+      "title": "How to Wire Up Cert Manager",
+      "timeEstimationSeconds": 358
+    },
+    {
+      "title": "Required Update for Issuer",
+      "timeEstimationSeconds": 13
+    },
+    {
+      "title": "Issuer Config File",
+      "timeEstimationSeconds": 307
+    },
+    {
+      "title": "Required Update for the Certificate",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "title": "Certificate Config File",
+      "timeEstimationSeconds": 318
+    },
+    {
+      "title": "Deploying Changes",
+      "timeEstimationSeconds": 195
+    },
+    {
+      "title": "No Resources Found?",
+      "timeEstimationSeconds": 12
+    },
+    {
+      "title": "Verifying the Certificate",
+      "timeEstimationSeconds": 234
+    },
+    {
+      "title": "Required Update for the HTTPS Ingress",
+      "timeEstimationSeconds": 4
+    },
+    {
+      "title": "Ingress Config for HTTPS",
+      "timeEstimationSeconds": 409
+    },
+    {
+      "title": "It Worked!",
+      "timeEstimationSeconds": 171
+    },
+    {
+      "title": "Google Cloud Cleanup",
+      "timeEstimationSeconds": 20
+    },
+    {
+      "title": "Local Environment Cleanup",
+      "timeEstimationSeconds": 38
+    },
+    {
+      "title": "Awkward Local Development",
+      "timeEstimationSeconds": 234
+    },
+    {
+      "title": "Installing Skaffold",
+      "timeEstimationSeconds": 119
+    },
+    {
+      "title": "The Skaffold Config File",
+      "timeEstimationSeconds": 403
+    },
+    {
+      "title": "Skaffold Sync Update and Example Source Code",
+      "timeEstimationSeconds": 114
+    },
+    {
+      "title": "Live Sync Changes",
+      "timeEstimationSeconds": 302
+    },
+    {
+      "title": "Automatic Shutdown",
+      "timeEstimationSeconds": 306
+    },
+    {
+      "title": "Testing Live Sync with the API Server",
+      "timeEstimationSeconds": 329
+    },
+    {
+      "title": "Bonus!",
+      "timeEstimationSeconds": 33
+    }
+  ]
+}

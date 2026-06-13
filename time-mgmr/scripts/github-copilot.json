@@ -1,0 +1,39 @@
+{
+  "activity": {
+    "title": "GitHub Copilot for Agentic Coding",
+    "categoryId": "admin",
+    "notes": "",
+    "id": "github-copilot2"
+  },
+  "tasks": [
+    {
+      "title": "GitHub Copilot CLI",
+      "timeEstimationSeconds": 917
+    },
+    {
+      "title": "Hooks with GitHub Copilot",
+      "timeEstimationSeconds": 1006
+    },
+    {
+      "title": "Extending the postToolUse hook logic with GitHub Copilot CLI",
+      "timeEstimationSeconds": 1073
+    },
+    {
+      "title": "Detect insecure code with GitHub Copilot Chat",
+      "timeEstimationSeconds": 727
+    },
+    {
+      "title": "Sub agents with GitHub Copilot Chat",
+      "timeEstimationSeconds": 842
+    },
+    {
+      "title": "Agent Skills in GitHub Copilot",
+      "timeEstimationSeconds": 903
+    },
+    {
+      "title": "When To Use Custom Agents, Custom Prompts, Agent Skills, and Instructions",
+      "timeEstimationSeconds": 343
+    }
+  ]
+}
+

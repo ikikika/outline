@@ -8,18 +8,17 @@ import {
   todayKey,
   type ITimetableBlock,
 } from '@/features/activities';
+import { hoursForDayBounds } from '@/features/auth';
 import {
   assignOverlapColumns,
   computeColumnNextStart,
   overlapColumnStyle,
 } from '../../utils/overlapLayout/overlapLayout';
 import { blockDisplayWindow } from '../../utils/blockDisplayWindow/blockDisplayWindow';
+import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './WeekTimetable.module.scss';
 
-const DAY_START_HOUR = 0;
-const DAY_END_HOUR = 24;
-const PX_PER_MINUTE = 1.2;
 const MIN_BLOCK_HEIGHT_PX = 14;
 const COMPACT_BLOCK_HEIGHT_PX = 28;
 const SNAP_MINUTES = 15;
@@ -30,6 +29,10 @@ const NOW_TICK_MS = 30_000;
 interface WeekTimetableProps {
   days: string[];
   blocks: ITimetableBlock[];
+  dayStartMinutes: number;
+  dayEndMinutes: number;
+  /** When false, use fixed density and allow vertical scrolling (all-hours mode). */
+  fitToWindow?: boolean;
   selectedDate: string;
   onSelectDate?: (date: string) => void;
   onReschedule: (
@@ -72,6 +75,9 @@ function currentMinutesOfDay(now = new Date()): number {
 export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   days,
   blocks,
+  dayStartMinutes,
+  dayEndMinutes,
+  fitToWindow = true,
   selectedDate,
   onSelectDate,
   onReschedule,
@@ -80,22 +86,31 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   toolbar,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const weekHeaderRef = useRef<HTMLDivElement>(null);
   const dayTrackRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const scrolledForWeekRef = useRef<string | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [nowMinutes, setNowMinutes] = useState(currentMinutesOfDay);
 
-  const dayStartMinutes = DAY_START_HOUR * 60;
-  const dayEndMinutes = DAY_END_HOUR * 60;
-  const totalMinutes = dayEndMinutes - dayStartMinutes;
+  const totalMinutes = Math.max(1, dayEndMinutes - dayStartMinutes);
+  const pxPerMinute = useFitPxPerMinute(
+    scrollRef,
+    totalMinutes,
+    weekHeaderRef,
+    fitToWindow
+  );
   const hours = useMemo(
-    () => Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => DAY_START_HOUR + i),
-    []
+    () => hoursForDayBounds(dayStartMinutes, dayEndMinutes),
+    [dayStartMinutes, dayEndMinutes]
   );
 
   const today = todayKey();
   const weekContainsToday = days.includes(today);
   const weekKey = `${days[0]}_${days[days.length - 1] ?? days[0]}`;
+
+  useEffect(() => {
+    scrolledForWeekRef.current = null;
+  }, [dayStartMinutes, dayEndMinutes]);
 
   useEffect(() => {
     if (!weekContainsToday) return;
@@ -108,7 +123,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
 
   const showNowLine =
     weekContainsToday && nowMinutes >= dayStartMinutes && nowMinutes <= dayEndMinutes;
-  const nowTop = (nowMinutes - dayStartMinutes) * PX_PER_MINUTE;
+  const nowTop = (nowMinutes - dayStartMinutes) * pxPerMinute;
 
   const blocksByDate = useMemo(() => {
     const map = new Map<string, ITimetableBlock[]>();
@@ -158,8 +173,8 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       }
     }
     if (!Number.isFinite(earliestStart)) return null;
-    return (earliestStart - dayStartMinutes) * PX_PER_MINUTE;
-  }, [days, blocksByDate, dayStartMinutes]);
+    return (earliestStart - dayStartMinutes) * pxPerMinute;
+  }, [days, blocksByDate, dayStartMinutes, pxPerMinute]);
 
   useEffect(() => {
     if (scrolledForWeekRef.current === weekKey) return;
@@ -204,10 +219,10 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       if (!track) return dayStartMinutes;
       const rect = track.getBoundingClientRect();
       const y = clientY - rect.top - offsetY;
-      const raw = dayStartMinutes + y / PX_PER_MINUTE;
+      const raw = dayStartMinutes + y / pxPerMinute;
       return snapMinutes(raw, SNAP_MINUTES);
     },
-    [dayStartMinutes]
+    [dayStartMinutes, pxPerMinute]
   );
 
   const clientXToDate = useCallback(
@@ -248,7 +263,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     const track = dayTrackRefs.current.get(activity.date);
     if (!track) return;
     const rect = track.getBoundingClientRect();
-    const blockTop = (start - dayStartMinutes) * PX_PER_MINUTE;
+    const blockTop = (start - dayStartMinutes) * pxPerMinute;
     const offsetY = event.clientY - rect.top - blockTop;
 
     setDrag({
@@ -284,7 +299,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
         Math.min(
           drag.originEnd - SNAP_MINUTES,
           snapMinutes(
-            drag.originStart + (event.clientY - drag.originClientY) / PX_PER_MINUTE,
+            drag.originStart + (event.clientY - drag.originClientY) / pxPerMinute,
             SNAP_MINUTES
           )
         )
@@ -299,7 +314,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
         Math.min(
           dayEndMinutes,
           snapMinutes(
-            drag.originEnd + (event.clientY - drag.originClientY) / PX_PER_MINUTE,
+            drag.originEnd + (event.clientY - drag.originClientY) / pxPerMinute,
             SNAP_MINUTES
           )
         )
@@ -349,7 +364,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   return (
     <section
       className={styles.timetable}
-      style={{ ['--slot-height' as string]: `${60 * PX_PER_MINUTE}px` }}
+      style={{ ['--slot-height' as string]: `${60 * pxPerMinute}px` }}
       aria-label="Week timetable"
     >
       <div className={styles.header}>{toolbar}</div>
@@ -359,7 +374,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
           className={styles.grid}
           style={{ gridTemplateColumns: `4rem repeat(${days.length}, minmax(4.5rem, 1fr))` }}
         >
-          <div className={styles.corner} />
+          <div className={styles.corner} ref={weekHeaderRef} />
           {days.map((day) => (
             <button
               key={`head-${day}`}
@@ -391,7 +406,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                 key={day}
                 ref={(node) => setDayTrackRef(day, node)}
                 className={`${styles.track} ${day === selectedDate ? styles.trackSelected : ''}`}
-                style={{ height: totalMinutes * PX_PER_MINUTE }}
+                style={{ height: totalMinutes * pxPerMinute }}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={() => setDrag(null)}
@@ -426,11 +441,11 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                       ? targetTrack.getBoundingClientRect().left -
                         sourceTrack.getBoundingClientRect().left
                       : 0;
-                  const top = (start - dayStartMinutes) * PX_PER_MINUTE;
+                  const top = (start - dayStartMinutes) * pxPerMinute;
                   const nextStart = columnNextStart?.get(activity.id) ?? Infinity;
-                  const gapToNextPx = (nextStart - start) * PX_PER_MINUTE;
+                  const gapToNextPx = (nextStart - start) * pxPerMinute;
                   const height = Math.min(
-                    Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX),
+                    Math.max((end - start) * pxPerMinute, MIN_BLOCK_HEIGHT_PX),
                     gapToNextPx
                   );
                   const isCompact = height < COMPACT_BLOCK_HEIGHT_PX;

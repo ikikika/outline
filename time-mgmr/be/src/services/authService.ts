@@ -158,10 +158,39 @@ export async function logout(
 
 export async function updateCurrentUser(
 	userId: string,
-	patch: { timeZone?: string; themePreference?: ThemePreference }
+	patch: {
+		timeZone?: string;
+		themePreference?: ThemePreference;
+		timetableVisibleStart?: string;
+		timetableVisibleEnd?: string;
+	}
 ): Promise<IUser> {
 	if (patch.timeZone !== undefined && !isValidTimeZone(patch.timeZone)) {
 		throw new AuthError('timeZone must be a valid IANA timezone id', 400);
+	}
+
+	const hasStart = patch.timetableVisibleStart !== undefined;
+	const hasEnd = patch.timetableVisibleEnd !== undefined;
+	if (hasStart || hasEnd) {
+		const start = patch.timetableVisibleStart;
+		const end = patch.timetableVisibleEnd;
+		if (typeof start !== 'string' || typeof end !== 'string') {
+			throw new AuthError(
+				'timetableVisibleStart and timetableVisibleEnd must be set together',
+				400
+			);
+		}
+		if (!isValidVisibleTime(start) || !isValidVisibleTime(end)) {
+			throw new AuthError(
+				'timetableVisibleStart and timetableVisibleEnd must be HH:mm',
+				400
+			);
+		}
+		const startMinutes = visibleTimeToMinutes(start);
+		const endMinutes = visibleTimeToMinutes(end);
+		if (startMinutes >= endMinutes) {
+			throw new AuthError('timetableVisibleEnd must be after timetableVisibleStart', 400);
+		}
 	}
 
 	try {
@@ -169,6 +198,17 @@ export async function updateCurrentUser(
 	} catch {
 		throw new AuthError('User not found', 401);
 	}
+}
+
+const VISIBLE_TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+function isValidVisibleTime(value: string): boolean {
+	return VISIBLE_TIME_RE.test(value);
+}
+
+function visibleTimeToMinutes(value: string): number {
+	const [h, m] = value.split(':').map(Number);
+	return h * 60 + m;
 }
 
 export { createUser };

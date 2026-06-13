@@ -36,6 +36,8 @@ function toUser(record: IUserProfileRecord): IUser {
 		avatar: record.avatar,
 		themePreference: record.themePreference,
 		timeZone: record.timeZone,
+		timetableVisibleStart: record.timetableVisibleStart,
+		timetableVisibleEnd: record.timetableVisibleEnd,
 		createdAt: record.createdAt,
 		updatedAt: record.updatedAt,
 	};
@@ -170,7 +172,12 @@ export async function createUser(input: {
 
 export async function updateUserProfile(
 	userId: string,
-	patch: { timeZone?: string; themePreference?: IUser['themePreference'] }
+	patch: {
+		timeZone?: string;
+		themePreference?: IUser['themePreference'];
+		timetableVisibleStart?: string;
+		timetableVisibleEnd?: string;
+	}
 ): Promise<IUser> {
 	const existing = await getUserProfile(userId);
 	if (!existing) {
@@ -183,6 +190,12 @@ export async function updateUserProfile(
 		...(patch.timeZone !== undefined ? { timeZone: patch.timeZone } : {}),
 		...(patch.themePreference !== undefined
 			? { themePreference: patch.themePreference }
+			: {}),
+		...(patch.timetableVisibleStart !== undefined
+			? { timetableVisibleStart: patch.timetableVisibleStart }
+			: {}),
+		...(patch.timetableVisibleEnd !== undefined
+			? { timetableVisibleEnd: patch.timetableVisibleEnd }
 			: {}),
 		updatedAt: now,
 	};

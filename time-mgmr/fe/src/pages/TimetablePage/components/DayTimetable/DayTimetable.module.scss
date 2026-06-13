@@ -15,7 +15,7 @@
 
 .scroll {
   overflow: auto;
-  max-height: min(70vh, 720px);
+  height: min(70vh, 720px);
   overscroll-behavior: contain;
 }
 

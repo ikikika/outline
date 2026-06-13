@@ -39,6 +39,7 @@ describe('AuthProvider', () => {
       loadCurrentUser: mockLoadCurrentUser,
       login: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
     });
 
     mockUseThemeContext.mockReturnValue({
@@ -70,6 +71,7 @@ describe('AuthProvider', () => {
       loadCurrentUser: vi.fn(),
       login: mockLogin,
       logout: mockLogout,
+      setUser: vi.fn(),
     });
 
     mockUseThemeContext.mockReturnValue({
@@ -97,6 +99,7 @@ describe('AuthProvider', () => {
       loadCurrentUser: vi.fn(),
       login: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
     });
 
     mockUseThemeContext.mockReturnValue({
@@ -127,6 +130,7 @@ describe('AuthProvider', () => {
       loadCurrentUser: vi.fn(),
       login: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
     });
 
     mockUseThemeContext.mockReturnValue({
@@ -157,6 +161,7 @@ describe('AuthProvider', () => {
       loadCurrentUser: vi.fn(),
       login: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
     });
 
     mockUseThemeContext.mockReturnValue({

@@ -132,3 +132,13 @@
   color: var(--color-danger, #b91c1c);
   font-size: 0.95rem;
 }
+
+.statusError {
+  color: #b91c1c;
+  margin: 0 0 1rem;
+}
+
+.statusOk {
+  color: #047857;
+  margin: 0 0 1rem;
+}

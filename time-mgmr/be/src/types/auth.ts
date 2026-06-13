@@ -11,6 +11,10 @@ export interface IUser {
 	themePreference?: ThemePreference;
 	/** IANA timezone id, e.g. Asia/Singapore */
 	timeZone?: string;
+	/** HH:mm local time — default timetable day grid start */
+	timetableVisibleStart?: string;
+	/** HH:mm local time — default timetable day grid end (exclusive of later hours) */
+	timetableVisibleEnd?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -52,6 +56,8 @@ export interface IUserProfileRecord {
 	avatar?: string;
 	themePreference?: ThemePreference;
 	timeZone?: string;
+	timetableVisibleStart?: string;
+	timetableVisibleEnd?: string;
 	createdAt: string;
 	updatedAt: string;
 }

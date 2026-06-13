@@ -53,6 +53,10 @@ export interface IUser extends IEntity, INameable {
   themePreference?: ThemePreference;
   /** IANA timezone id, e.g. Asia/Singapore */
   timeZone?: string;
+  /** HH:mm — default timetable visible range start */
+  timetableVisibleStart?: string;
+  /** HH:mm — default timetable visible range end */
+  timetableVisibleEnd?: string;
 }
 
 export type UserRole = 'admin' | 'user' | 'guest';

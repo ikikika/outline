@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/layouts';
+import { useAuthContext } from '@/app/providers/auth';
 import {
   formatDisplayDate,
   todayKey,
@@ -18,6 +19,10 @@ import {
   type ActivityFormValues,
   type ITimetableBlock,
 } from '@/features/activities';
+import {
+  resolveTimetableDayBounds,
+  resolveTimetableVisibleRange,
+} from '@/features/auth';
 import { useDayReport } from '@/features/reports';
 import { ActivityForm } from './components/ActivityForm/ActivityForm';
 import { DayTimetable } from './components/DayTimetable/DayTimetable';
@@ -26,11 +31,14 @@ import { TaskDetailModal } from './components/TaskDetailModal/TaskDetailModal';
 import { TimetableHeader, type TimetableView } from './components/TimetableHeader/TimetableHeader';
 import { WeekTimetable } from './components/WeekTimetable/WeekTimetable';
 import { usePomodoroReminder } from './hooks/usePomodoroReminder/usePomodoroReminder';
+import { blockDisplayWindow } from './utils/blockDisplayWindow/blockDisplayWindow';
 import styles from './TimetablePage.module.scss';
 
 export const TimetablePage: React.FC = () => {
+  const { user } = useAuthContext();
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [timetableView, setTimetableView] = useState<TimetableView>('day');
+  const [showAllHours, setShowAllHours] = useState(false);
   const [detailBlock, setDetailBlock] = useState<ITimetableBlock | null>(null);
   const [editing, setEditing] = useState<ITimetableBlock | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -62,6 +70,29 @@ export const TimetablePage: React.FC = () => {
   const { update, updateBlock, remove, setStatus, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
+
+  const visibleRange = resolveTimetableVisibleRange(user);
+
+  const rangeBlocks =
+    timetableView === 'week' ? weekBlocks : dayBlocks;
+
+  const { dayStartMinutes, dayEndMinutes } = useMemo(() => {
+    const blockWindows = rangeBlocks.map((block) => {
+      const window = blockDisplayWindow(block);
+      return { start: window.start, end: window.end };
+    });
+    return resolveTimetableDayBounds({
+      showAllHours,
+      visibleStart: visibleRange.start,
+      visibleEnd: visibleRange.end,
+      blockWindows,
+    });
+  }, [
+    showAllHours,
+    visibleRange.start,
+    visibleRange.end,
+    rangeBlocks,
+  ]);
 
   const isLoading =
     dayLoading || (timetableView === 'week' && weekBlocksQuery.isLoading);
@@ -148,6 +179,8 @@ export const TimetablePage: React.FC = () => {
       selectedDate={selectedDate}
       onSelectedDateChange={setSelectedDate}
       dateLabel={dateLabel}
+      showAllHours={showAllHours}
+      onShowAllHoursChange={setShowAllHours}
     />
   );
 
@@ -213,6 +246,9 @@ export const TimetablePage: React.FC = () => {
           <WeekTimetable
             days={week}
             blocks={weekBlocks}
+            dayStartMinutes={dayStartMinutes}
+            dayEndMinutes={dayEndMinutes}
+            fitToWindow={!showAllHours}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             disabled={busy}
@@ -231,6 +267,9 @@ export const TimetablePage: React.FC = () => {
           <DayTimetable
             date={selectedDate}
             blocks={dayBlocks}
+            dayStartMinutes={dayStartMinutes}
+            dayEndMinutes={dayEndMinutes}
+            fitToWindow={!showAllHours}
             disabled={busy}
             toolbar={toolbar}
             onSelect={openDetails}

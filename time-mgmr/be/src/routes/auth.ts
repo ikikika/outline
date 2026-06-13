@@ -62,7 +62,12 @@ export function registerAuthRoutes(app: Hono): void {
 
 	app.patch('/auth/me', authMiddleware, async (c) => {
 		try {
-			const body = await c.req.json<{ timeZone?: string; themePreference?: string }>();
+			const body = await c.req.json<{
+				timeZone?: string;
+				themePreference?: string;
+				timetableVisibleStart?: string;
+				timetableVisibleEnd?: string;
+			}>();
 			const user = await updateCurrentUser(c.get('userId'), {
 				...(typeof body.timeZone === 'string' ? { timeZone: body.timeZone } : {}),
 				...(typeof body.themePreference === 'string'
@@ -73,6 +78,12 @@ export function registerAuthRoutes(app: Hono): void {
 								| 'velvet'
 								| 'system',
 						}
+					: {}),
+				...(typeof body.timetableVisibleStart === 'string'
+					? { timetableVisibleStart: body.timetableVisibleStart }
+					: {}),
+				...(typeof body.timetableVisibleEnd === 'string'
+					? { timetableVisibleEnd: body.timetableVisibleEnd }
 					: {}),
 			});
 			return c.json(user);

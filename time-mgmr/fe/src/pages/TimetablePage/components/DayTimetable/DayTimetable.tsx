@@ -7,18 +7,17 @@ import {
   todayKey,
   type ITimetableBlock,
 } from '@/features/activities';
+import { hoursForDayBounds } from '@/features/auth';
 import {
   assignOverlapColumns,
   computeColumnNextStart,
   overlapColumnStyle,
 } from '../../utils/overlapLayout/overlapLayout';
 import { blockDisplayWindow } from '../../utils/blockDisplayWindow/blockDisplayWindow';
+import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './DayTimetable.module.scss';
 
-const DAY_START_HOUR = 0;
-const DAY_END_HOUR = 24;
-const PX_PER_MINUTE = 1.2;
 const MIN_BLOCK_HEIGHT_PX = 16;
 const COMPACT_BLOCK_HEIGHT_PX = 28;
 const SNAP_MINUTES = 15;
@@ -29,6 +28,10 @@ const NOW_TICK_MS = 30_000;
 interface DayTimetableProps {
   date: string;
   blocks: ITimetableBlock[];
+  dayStartMinutes: number;
+  dayEndMinutes: number;
+  /** When false, use fixed density and allow vertical scrolling (all-hours mode). */
+  fitToWindow?: boolean;
   onReschedule: (id: string, plannedStart: string, plannedEnd: string) => void;
   onSelect?: (block: ITimetableBlock) => void;
   disabled?: boolean;
@@ -62,6 +65,9 @@ function currentMinutesOfDay(now = new Date()): number {
 export const DayTimetable: React.FC<DayTimetableProps> = ({
   date,
   blocks,
+  dayStartMinutes,
+  dayEndMinutes,
+  fitToWindow = true,
   onReschedule,
   onSelect,
   disabled = false,
@@ -73,15 +79,18 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   const [drag, setDrag] = useState<DragState | null>(null);
   const [nowMinutes, setNowMinutes] = useState(currentMinutesOfDay);
 
-  const dayStartMinutes = DAY_START_HOUR * 60;
-  const dayEndMinutes = DAY_END_HOUR * 60;
-  const totalMinutes = dayEndMinutes - dayStartMinutes;
+  const totalMinutes = Math.max(1, dayEndMinutes - dayStartMinutes);
+  const pxPerMinute = useFitPxPerMinute(scrollRef, totalMinutes, undefined, fitToWindow);
   const hours = useMemo(
-    () => Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => DAY_START_HOUR + i),
-    []
+    () => hoursForDayBounds(dayStartMinutes, dayEndMinutes),
+    [dayStartMinutes, dayEndMinutes]
   );
 
   const isToday = date === todayKey();
+
+  useEffect(() => {
+    centeredForDateRef.current = null;
+  }, [dayStartMinutes, dayEndMinutes]);
 
   useEffect(() => {
     if (!isToday) return;
@@ -94,7 +103,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 
   const showNowLine =
     isToday && nowMinutes >= dayStartMinutes && nowMinutes <= dayEndMinutes;
-  const nowTop = (nowMinutes - dayStartMinutes) * PX_PER_MINUTE;
+  const nowTop = (nowMinutes - dayStartMinutes) * pxPerMinute;
 
   const visibleBlocks = useMemo(() => {
     return blocks.filter((a) => {
@@ -114,8 +123,8 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
         timeToMinutes(blockDisplayWindow(activity).start)
       );
     }
-    return (earliestStart - dayStartMinutes) * PX_PER_MINUTE;
-  }, [visibleBlocks, dayStartMinutes]);
+    return (earliestStart - dayStartMinutes) * pxPerMinute;
+  }, [visibleBlocks, dayStartMinutes, pxPerMinute]);
 
   useEffect(() => {
     if (centeredForDateRef.current === date) return;
@@ -125,7 +134,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 
     let scrollTopTarget: number | null = null;
     if (isToday && showNowLine) {
-      scrollTopTarget = nowTop; // centered below using viewport
+      scrollTopTarget = nowTop;
     } else if (!isToday && earliestBlockTop != null) {
       scrollTopTarget = earliestBlockTop;
     } else {
@@ -169,10 +178,10 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
       if (!track) return dayStartMinutes;
       const rect = track.getBoundingClientRect();
       const y = clientY - rect.top - offsetY + track.scrollTop;
-      const raw = dayStartMinutes + y / PX_PER_MINUTE;
+      const raw = dayStartMinutes + y / pxPerMinute;
       return snapMinutes(raw, SNAP_MINUTES);
     },
-    [dayStartMinutes]
+    [dayStartMinutes, pxPerMinute]
   );
 
   const clampStart = useCallback(
@@ -198,7 +207,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     const track = trackRef.current;
     if (!track) return;
     const rect = track.getBoundingClientRect();
-    const blockTop = (start - dayStartMinutes) * PX_PER_MINUTE;
+    const blockTop = (start - dayStartMinutes) * pxPerMinute;
     const offsetY = event.clientY - rect.top + track.scrollTop - blockTop;
 
     setDrag({
@@ -229,7 +238,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
         Math.min(
           drag.originEnd - SNAP_MINUTES,
           snapMinutes(
-            drag.originStart + (event.clientY - drag.originClientY) / PX_PER_MINUTE,
+            drag.originStart + (event.clientY - drag.originClientY) / pxPerMinute,
             SNAP_MINUTES
           )
         )
@@ -244,7 +253,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
         Math.min(
           dayEndMinutes,
           snapMinutes(
-            drag.originEnd + (event.clientY - drag.originClientY) / PX_PER_MINUTE,
+            drag.originEnd + (event.clientY - drag.originClientY) / pxPerMinute,
             SNAP_MINUTES
           )
         )
@@ -283,7 +292,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   return (
     <section
       className={styles.timetable}
-      style={{ ['--slot-height' as string]: `${60 * PX_PER_MINUTE}px` }}
+      style={{ ['--slot-height' as string]: `${60 * pxPerMinute}px` }}
       aria-label="Day timetable"
     >
       <div className={styles.header}>{toolbar}</div>
@@ -305,7 +314,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
           <div
             ref={trackRef}
             className={styles.track}
-            style={{ height: totalMinutes * PX_PER_MINUTE }}
+            style={{ height: totalMinutes * pxPerMinute }}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={() => setDrag(null)}
@@ -334,11 +343,11 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
               const isDragging = drag?.id === activity.id;
               const start = isDragging && drag ? drag.previewStart : baseStart;
               const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
-              const top = (start - dayStartMinutes) * PX_PER_MINUTE;
+              const top = (start - dayStartMinutes) * pxPerMinute;
               const nextStart = columnNextStart.get(activity.id) ?? Infinity;
-              const gapToNextPx = (nextStart - start) * PX_PER_MINUTE;
+              const gapToNextPx = (nextStart - start) * pxPerMinute;
               const height = Math.min(
-                Math.max((end - start) * PX_PER_MINUTE, MIN_BLOCK_HEIGHT_PX),
+                Math.max((end - start) * pxPerMinute, MIN_BLOCK_HEIGHT_PX),
                 gapToNextPx
               );
               const isCompact = height < COMPACT_BLOCK_HEIGHT_PX;

@@ -103,6 +103,9 @@ export function useAuth() {
     login,
     logout,
     loadCurrentUser,
+    setUser: (user: IUser | null) => {
+      setState((prev) => ({ ...prev, user, error: null }));
+    },
   };
 }
 

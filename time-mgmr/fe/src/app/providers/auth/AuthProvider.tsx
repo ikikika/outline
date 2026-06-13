@@ -31,7 +31,8 @@ const GUEST_USER: IUser = {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { user, isLoading, error, loadCurrentUser, login, logout } = useAuth();
+  const { user, isLoading, error, loadCurrentUser, login, logout, setUser } =
+    useAuth();
   const { setTheme } = useThemeContext();
 
   useEffect(() => {
@@ -53,8 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       error: AUTH_DISABLED ? null : error,
       login,
       logout: AUTH_DISABLED ? async () => undefined : logout,
+      refreshUser: AUTH_DISABLED ? async () => undefined : loadCurrentUser,
+      setUser: AUTH_DISABLED ? () => undefined : setUser,
     }),
-    [user, isLoading, error, login, logout]
+    [user, isLoading, error, login, logout, loadCurrentUser, setUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

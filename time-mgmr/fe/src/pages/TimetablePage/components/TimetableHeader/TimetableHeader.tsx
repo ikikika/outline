@@ -11,6 +11,8 @@ interface TimetableHeaderProps {
   selectedDate: string;
   onSelectedDateChange: (date: string) => void;
   dateLabel: string;
+  showAllHours: boolean;
+  onShowAllHoursChange: (showAllHours: boolean) => void;
 }
 
 export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
@@ -19,6 +21,8 @@ export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
   selectedDate,
   onSelectedDateChange,
   dateLabel,
+  showAllHours,
+  onShowAllHoursChange,
 }) => {
   const stepDays = view === 'week' ? 7 : 1;
 
@@ -44,6 +48,14 @@ export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
             Week
           </button>
         </div>
+        <button
+          type="button"
+          className={`${styles.hoursToggle} ${showAllHours ? styles.hoursToggleActive : ''}`}
+          aria-pressed={showAllHours}
+          onClick={() => onShowAllHoursChange(!showAllHours)}
+        >
+          {showAllHours ? 'Profile hours' : 'All hours'}
+        </button>
         <Button
           variant="outline"
           size="sm"

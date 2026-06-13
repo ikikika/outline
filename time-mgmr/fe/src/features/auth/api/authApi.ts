@@ -49,6 +49,14 @@ export function normalizeUser(raw: unknown): IUser | null {
 		avatar: typeof user.avatar === 'string' ? user.avatar : undefined,
 		themePreference: user.themePreference as IUser['themePreference'],
 		timeZone: typeof user.timeZone === 'string' ? user.timeZone : undefined,
+		timetableVisibleStart:
+			typeof user.timetableVisibleStart === 'string'
+				? user.timetableVisibleStart
+				: undefined,
+		timetableVisibleEnd:
+			typeof user.timetableVisibleEnd === 'string'
+				? user.timetableVisibleEnd
+				: undefined,
 		createdAt: new Date(String(user.createdAt ?? Date.now())),
 		updatedAt: new Date(String(user.updatedAt ?? Date.now())),
 	};
@@ -103,7 +111,12 @@ export async function getCurrentUserRequest(
 }
 
 export async function updateCurrentUserRequest(
-	patch: { timeZone?: string; themePreference?: IUser['themePreference'] },
+	patch: {
+		timeZone?: string;
+		themePreference?: IUser['themePreference'];
+		timetableVisibleStart?: string;
+		timetableVisibleEnd?: string;
+	},
 	options: IAuthApiRequestOptions = {}
 ): Promise<IUser> {
 	const raw = await patchJson<unknown>(`${AUTH_BASE_URL}/me`, patch, {

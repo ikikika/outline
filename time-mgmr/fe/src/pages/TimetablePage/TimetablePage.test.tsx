@@ -61,6 +61,27 @@ vi.mock('@/layouts', () => ({
   MainLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock('@/app/providers/auth', () => ({
+  useAuthContext: () => ({
+    user: {
+      id: 'u1',
+      name: 'Test',
+      email: 'test@example.com',
+      role: 'user',
+      timetableVisibleStart: '08:00',
+      timetableVisibleEnd: '20:00',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    isLoading: false,
+    error: null,
+    login: vi.fn(),
+    logout: vi.fn(),
+    refreshUser: vi.fn(),
+    setUser: vi.fn(),
+  }),
+}));
+
 vi.mock('@/components/ui', () => ({
   Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button {...props}>{children}</button>
