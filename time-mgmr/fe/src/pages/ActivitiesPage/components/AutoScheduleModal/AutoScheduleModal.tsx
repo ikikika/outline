@@ -6,7 +6,9 @@ import { utcToZonedParts } from '@/core/utils/timeZone/timeZone';
 import {
   createAutoScheduleSchema,
   formatMinutes,
+  minutesToTime,
   needsFirstDayStart,
+  timeToMinutes,
   type AutoScheduleFormValues,
   type IActivityWithTasks,
   type IAutoSchedulePreviewResponse,
@@ -44,6 +46,11 @@ function blockLabel(
 
 function currentLocalParts(timeZone: string): { date: string; time: string } {
   return utcToZonedParts(new Date().toISOString(), timeZone);
+}
+
+/** Default first-day start: ~10 minutes from now (clamped to same calendar day). */
+function defaultFirstDayStart(nowTime: string, offsetMinutes = 10): string {
+  return minutesToTime(timeToMinutes(nowTime) + offsetMinutes);
 }
 
 export function AutoScheduleModal({
@@ -118,7 +125,7 @@ export function AutoScheduleModal({
     }
     const current = getValues('firstDayStart');
     if (!current) {
-      setValue('firstDayStart', clock.time);
+      setValue('firstDayStart', defaultFirstDayStart(clock.time));
     }
   }, [showFirstDayStart, clock.time, getValues, setValue]);
 
