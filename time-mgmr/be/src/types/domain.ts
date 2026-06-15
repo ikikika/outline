@@ -86,6 +86,8 @@ export type ScheduleBlockType = 'focus' | 'short_break' | 'long_break';
 export interface IScheduleBlock {
 	id: string;
 	taskId?: string;
+	/** Owning activity when created by auto-schedule (especially rests). */
+	activityId?: string;
 	blockType: ScheduleBlockType;
 	plannedStart: string;
 	plannedEnd: string;
@@ -98,6 +100,7 @@ export interface IScheduleBlock {
 export interface IScheduleBlockCreateInput {
 	id?: string;
 	taskId?: string;
+	activityId?: string;
 	blockType: ScheduleBlockType;
 	plannedStart: string;
 	plannedEnd: string;
@@ -107,6 +110,7 @@ export interface IScheduleBlockCreateInput {
 
 export interface IScheduleBlockPatchInput {
 	taskId?: string | null;
+	activityId?: string | null;
 	blockType?: ScheduleBlockType;
 	plannedStart?: string;
 	plannedEnd?: string;

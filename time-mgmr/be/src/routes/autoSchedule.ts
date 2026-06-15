@@ -162,6 +162,7 @@ export function registerAutoScheduleRoutes(app: Hono): void {
 			createBlocks: computation.proposedBlocks.map((block) => ({
 				id: block.id,
 				...(block.taskId ? { taskId: block.taskId } : {}),
+				...(block.activityId ? { activityId: block.activityId } : {}),
 				blockType: block.blockType,
 				plannedStart: block.plannedStart,
 				plannedEnd: block.plannedEnd,

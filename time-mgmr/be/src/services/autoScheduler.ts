@@ -8,6 +8,7 @@ import type {
 	ITask,
 	ScheduleBlockType,
 } from '../types/domain.js';
+import { breakIdsToReplaceOnReschedule, isRestScheduleBlock } from '../lib/scheduleBlockCascade.js';
 
 const LUNCH_START = '12:00';
 const LUNCH_END = '13:00';
@@ -33,6 +34,7 @@ export interface AutoScheduleConstraints {
 export interface ProposedBlock {
 	id: string;
 	taskId?: string;
+	activityId?: string;
 	blockType: ScheduleBlockType;
 	plannedStart: string;
 	plannedEnd: string;
@@ -616,6 +618,7 @@ export function computePreviewToken(input: {
 			.map((block) => ({
 				id: block.id,
 				taskId: block.taskId,
+				activityId: block.activityId,
 				blockType: block.blockType,
 				plannedStart: block.plannedStart,
 				plannedEnd: block.plannedEnd,
@@ -627,20 +630,51 @@ export function computePreviewToken(input: {
 function classifyExistingBlocks(
 	existingBlocks: IScheduleBlock[],
 	selectedTaskIds: Set<string>,
-	earliestDate: string,
-	timeZone: string
+	activityId: string
 ): {
 	obstacleBlocks: IScheduleBlock[];
 	replacedBlockIds: string[];
 } {
-	const obstacleBlocks: IScheduleBlock[] = [];
+	const selectedTaskFocuses: IScheduleBlock[] = [];
+	const otherTaskFocuses: IScheduleBlock[] = [];
+	const breakBlocks: IScheduleBlock[] = [];
 	const replacedBlockIds: string[] = [];
+	const obstacleBlocks: IScheduleBlock[] = [];
 
 	for (const block of existingBlocks) {
-		const localDate = utcToLocalDate(block.plannedStart, timeZone);
+		if (isRestScheduleBlock(block)) {
+			breakBlocks.push(block);
+			continue;
+		}
+
 		const isSelectedTask =
 			block.taskId !== undefined && selectedTaskIds.has(block.taskId);
-		if (isSelectedTask && compareLocalDates(localDate, earliestDate) >= 0) {
+		if (isSelectedTask) {
+			// Wipe the previous plan for these tasks on every day, including days
+			// before the new earliestDate when the plan is moved.
+			replacedBlockIds.push(block.id);
+			if (block.blockType === 'focus') {
+				selectedTaskFocuses.push(block);
+			}
+		} else {
+			obstacleBlocks.push(block);
+			if (block.blockType === 'focus') {
+				otherTaskFocuses.push(block);
+			}
+		}
+	}
+
+	const replaceBreakIds = new Set(
+		breakIdsToReplaceOnReschedule({
+			breakBlocks,
+			selectedTaskFocusBlocks: selectedTaskFocuses,
+			otherTaskFocusBlocks: otherTaskFocuses,
+			activityId,
+		})
+	);
+
+	for (const block of breakBlocks) {
+		if (replaceBreakIds.has(block.id)) {
 			replacedBlockIds.push(block.id);
 		} else {
 			obstacleBlocks.push(block);
@@ -738,8 +772,7 @@ export function computeAutoSchedule(
 	const { obstacleBlocks, replacedBlockIds } = classifyExistingBlocks(
 		input.existingBlocks,
 		selectedTaskIds,
-		input.constraints.earliestDate,
-		input.timeZone
+		input.activityId
 	);
 
 	const busy = mergeIntervals(
@@ -786,7 +819,12 @@ export function computeAutoSchedule(
 			warnings.push(`Could not schedule "${task.title}" within constraints.`);
 			continue;
 		}
-		proposedBlocks.push(...result.blocks);
+		proposedBlocks.push(
+			...result.blocks.map((block) => ({
+				...block,
+				activityId: input.activityId,
+			}))
+		);
 	}
 
 	if (input.constraints.deadline && unplacedTaskIds.length > 0) {

@@ -18,7 +18,7 @@ import {
 	upsertTasks,
 } from '../repositories/dataRepository.js';
 import { deleteTimeEntriesByTask } from '../repositories/timeEntryRepository.js';
-import { deleteScheduleBlocksByTask } from '../repositories/scheduleBlockRepository.js';
+import { deleteScheduleBlocksByTasks } from '../repositories/scheduleBlockRepository.js';
 import {
 	archiveEligibilityError,
 	isActivityArchived,
@@ -414,7 +414,13 @@ export function registerActivityRoutes(app: Hono): void {
 		const tasks = await listTasksByActivityId(userId, activityId);
 		for (const task of tasks) {
 			await deleteTimeEntriesByTask(userId, task.id);
-			await deleteScheduleBlocksByTask(userId, task.id);
+		}
+		await deleteScheduleBlocksByTasks(
+			userId,
+			tasks.map((task) => task.id),
+			activityId
+		);
+		for (const task of tasks) {
 			await deleteTask(userId, task.id);
 		}
 		await deleteActivity(userId, activityId);

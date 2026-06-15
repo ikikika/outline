@@ -168,6 +168,7 @@ export function toScheduleBlockResponse(
 	return {
 		id: record.id,
 		...(record.taskId ? { taskId: record.taskId } : {}),
+		...(record.activityId ? { activityId: record.activityId } : {}),
 		blockType: record.blockType,
 		plannedStart: record.plannedStart,
 		plannedEnd: record.plannedEnd,

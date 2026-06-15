@@ -9,6 +9,7 @@ import {
 	userPk,
 } from '../lib/keys.js';
 import { toScheduleBlockResponse } from '../lib/scheduleBlockMapper.js';
+import { breakIdsFollowingFocuses, isRestScheduleBlock } from '../lib/scheduleBlockCascade.js';
 import type {
 	IScheduleBlock,
 	IScheduleBlockCreateInput,
@@ -141,6 +142,7 @@ export async function upsertScheduleBlock(
 		...gsi,
 		id: input.id,
 		...(input.taskId ? { taskId: input.taskId } : {}),
+		...(input.activityId ? { activityId: input.activityId } : {}),
 		blockType: input.blockType,
 		plannedStart: input.plannedStart,
 		plannedEnd: input.plannedEnd,
@@ -173,6 +175,9 @@ export async function updateScheduleBlock(
 		...(patch.taskId === null
 			? {}
 			: { taskId: patch.taskId ?? existing.taskId }),
+		...(patch.activityId === null
+			? {}
+			: { activityId: patch.activityId ?? existing.activityId }),
 		blockType: patch.blockType ?? existing.blockType,
 		plannedStart: patch.plannedStart ?? existing.plannedStart,
 		plannedEnd: patch.plannedEnd ?? existing.plannedEnd,
@@ -222,8 +227,43 @@ export async function deleteScheduleBlocksByTask(
 	userId: string,
 	taskId: string
 ): Promise<void> {
-	const blocks = await listScheduleBlocksByTask(userId, taskId);
-	await Promise.all(
-		blocks.map((block) => deleteScheduleBlock(userId, block.id))
+	const allBlocks = await listAllScheduleBlocks(userId);
+	const taskBlocks = allBlocks.filter((block) => block.taskId === taskId);
+	const followingBreakIds = breakIdsFollowingFocuses(taskBlocks, allBlocks);
+	const ids = [
+		...new Set([...taskBlocks.map((block) => block.id), ...followingBreakIds]),
+	];
+	await deleteScheduleBlocksByIds(userId, ids);
+}
+
+/** Delete focus (+ following rest) blocks for many tasks in one pass. */
+export async function deleteScheduleBlocksByTasks(
+	userId: string,
+	taskIds: string[],
+	activityId?: string
+): Promise<void> {
+	if (taskIds.length === 0 && !activityId) return;
+	const taskIdSet = new Set(taskIds);
+	const allBlocks = await listAllScheduleBlocks(userId);
+	const taskBlocks = allBlocks.filter(
+		(block) => block.taskId !== undefined && taskIdSet.has(block.taskId)
 	);
+	const followingBreakIds = breakIdsFollowingFocuses(taskBlocks, allBlocks);
+	const activityOwnedIds = activityId
+		? allBlocks
+				.filter(
+					(block) =>
+						block.activityId === activityId ||
+						(isRestScheduleBlock(block) && block.activityId === activityId)
+				)
+				.map((block) => block.id)
+		: [];
+	const ids = [
+		...new Set([
+			...taskBlocks.map((block) => block.id),
+			...followingBreakIds,
+			...activityOwnedIds,
+		]),
+	];
+	await deleteScheduleBlocksByIds(userId, ids);
 }

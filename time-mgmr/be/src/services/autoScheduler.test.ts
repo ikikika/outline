@@ -318,7 +318,7 @@ describe('computeAutoSchedule', () => {
 		assert.equal(focusExact.length, 4);
 	});
 
-	it('marks selected future blocks for replacement', () => {
+	it('marks selected future blocks and their rests for replacement', () => {
 		const existing: IScheduleBlock[] = [
 			{
 				id: 'old-focus',
@@ -330,13 +330,55 @@ describe('computeAutoSchedule', () => {
 				updatedAt: '2026-07-21T00:00:00.000Z',
 			},
 			{
-				id: 'historical',
+				id: 'old-break',
+				blockType: 'short_break',
+				plannedStart: '2026-07-22T09:30:00.000Z',
+				plannedEnd: '2026-07-22T09:35:00.000Z',
+				createdAt: '2026-07-21T00:00:00.000Z',
+				updatedAt: '2026-07-21T00:00:00.000Z',
+			},
+			{
+				id: 'detached-old-break',
+				blockType: 'short_break',
+				plannedStart: '2026-07-22T10:00:00.000Z',
+				plannedEnd: '2026-07-22T10:05:00.000Z',
+				createdAt: '2026-07-21T00:00:00.000Z',
+				updatedAt: '2026-07-21T00:00:00.000Z',
+			},
+			{
+				id: 'prior-day-focus',
 				taskId: 'mine',
 				blockType: 'focus',
 				plannedStart: '2026-07-20T09:00:00.000Z',
+				plannedEnd: '2026-07-20T09:25:00.000Z',
+				createdAt: '2026-07-19T00:00:00.000Z',
+				updatedAt: '2026-07-19T00:00:00.000Z',
+			},
+			{
+				id: 'prior-day-break',
+				activityId: 'activity-1',
+				blockType: 'short_break',
+				plannedStart: '2026-07-20T09:25:00.000Z',
 				plannedEnd: '2026-07-20T09:30:00.000Z',
 				createdAt: '2026-07-19T00:00:00.000Z',
 				updatedAt: '2026-07-19T00:00:00.000Z',
+			},
+			{
+				id: 'other-focus',
+				taskId: 'theirs',
+				blockType: 'focus',
+				plannedStart: '2026-07-22T14:00:00.000Z',
+				plannedEnd: '2026-07-22T14:25:00.000Z',
+				createdAt: '2026-07-21T00:00:00.000Z',
+				updatedAt: '2026-07-21T00:00:00.000Z',
+			},
+			{
+				id: 'other-break',
+				blockType: 'short_break',
+				plannedStart: '2026-07-22T14:25:00.000Z',
+				plannedEnd: '2026-07-22T14:30:00.000Z',
+				createdAt: '2026-07-21T00:00:00.000Z',
+				updatedAt: '2026-07-21T00:00:00.000Z',
 			},
 		];
 
@@ -353,7 +395,14 @@ describe('computeAutoSchedule', () => {
 			timeZone: TIME_ZONE,
 		});
 
-		assert.deepEqual(result.replacedBlockIds, ['old-focus']);
+		assert.deepEqual(result.replacedBlockIds.sort(), [
+			'detached-old-break',
+			'old-break',
+			'old-focus',
+			'prior-day-break',
+			'prior-day-focus',
+		]);
+		assert.ok(!result.replacedBlockIds.includes('other-break'));
 		const focus = result.proposedBlocks.find(
 			(block) => block.blockType === 'focus'
 		);
