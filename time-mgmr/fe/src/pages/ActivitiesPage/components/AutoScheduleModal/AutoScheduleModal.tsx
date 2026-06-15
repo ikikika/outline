@@ -157,13 +157,47 @@ export function AutoScheduleModal({
     allowSplitAcrossDays: values.allowSplitAcrossDays,
   });
 
-  const toggleTask = (taskId: string) => {
-    setSelectedTaskIds((current) => {
-      const next = current.includes(taskId)
-        ? current.filter((id) => id !== taskId)
-        : [...current, taskId];
-      return next;
-    });
+  const allTaskIds = useMemo(
+    () => activity.tasks.map((task) => task.id),
+    [activity.tasks]
+  );
+  const allTasksSelected =
+    allTaskIds.length > 0 && selectedTaskIds.length === allTaskIds.length;
+  const lastClickedTaskIndexRef = useRef<number | null>(null);
+
+  const handleTaskToggle = (
+    taskId: string,
+    index: number,
+    shiftKey: boolean
+  ) => {
+    const nextChecked = !selectedTaskIds.includes(taskId);
+
+    if (shiftKey && lastClickedTaskIndexRef.current != null) {
+      const from = Math.min(lastClickedTaskIndexRef.current, index);
+      const to = Math.max(lastClickedTaskIndexRef.current, index);
+      const rangeIds = new Set(allTaskIds.slice(from, to + 1));
+      setSelectedTaskIds((current) => {
+        const selected = new Set(current);
+        for (const id of rangeIds) {
+          if (nextChecked) selected.add(id);
+          else selected.delete(id);
+        }
+        return allTaskIds.filter((id) => selected.has(id));
+      });
+    } else {
+      setSelectedTaskIds((current) =>
+        nextChecked
+          ? [...current, taskId]
+          : current.filter((id) => id !== taskId)
+      );
+    }
+
+    lastClickedTaskIndexRef.current = index;
+  };
+
+  const toggleAllTasks = () => {
+    setSelectedTaskIds(allTasksSelected ? [] : allTaskIds);
+    lastClickedTaskIndexRef.current = null;
   };
 
   const handlePreviewSubmit = handleSubmit(async (values) => {
@@ -207,23 +241,49 @@ export function AutoScheduleModal({
         {step === 'configure' ? (
           <form onSubmit={handlePreviewSubmit} noValidate>
             <fieldset className={styles.taskFieldset} disabled={busy}>
-              <legend className={styles.legend}>Tasks</legend>
+              <div className={styles.taskFieldsetHeader}>
+                <legend className={styles.legend}>Tasks</legend>
+                {activity.tasks.length > 0 ? (
+                  <button
+                    type="button"
+                    className={styles.taskSelectAll}
+                    onClick={toggleAllTasks}
+                  >
+                    {allTasksSelected ? 'Uncheck all' : 'Check all'}
+                  </button>
+                ) : null}
+              </div>
               {activity.tasks.length === 0 ? (
                 <p className={styles.emptyTasks}>No tasks to schedule.</p>
               ) : (
                 <ul className={styles.taskList}>
-                  {activity.tasks.map((task) => {
+                  {activity.tasks.map((task, index) => {
                     const checked = selectedTaskIds.includes(task.id);
                     const estimateLabel = task.timeEstimationSeconds
                       ? formatMinutes(Math.round(task.timeEstimationSeconds / 60))
                       : 'No estimate';
                     return (
                       <li key={task.id}>
-                        <label className={styles.taskOption}>
+                        <label
+                          className={styles.taskOption}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            handleTaskToggle(task.id, index, event.shiftKey);
+                          }}
+                        >
                           <input
                             type="checkbox"
                             checked={checked}
-                            onChange={() => toggleTask(task.id)}
+                            readOnly
+                            tabIndex={0}
+                            aria-checked={checked}
+                            onKeyDown={(event) => {
+                              if (event.key !== ' ' && event.key !== 'Enter') {
+                                return;
+                              }
+                              event.preventDefault();
+                              handleTaskToggle(task.id, index, event.shiftKey);
+                            }}
                           />
                           <span className={styles.taskOptionTitle}>{task.title}</span>
                           <span className={styles.taskOptionMeta}>{task.status}</span>

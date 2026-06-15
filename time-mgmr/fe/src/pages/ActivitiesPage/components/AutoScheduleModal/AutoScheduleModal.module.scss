@@ -38,11 +38,40 @@
   border-radius: 0.5rem;
 }
 
+.taskFieldsetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
 .legend {
   padding: 0 0.25rem;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--color-text-muted, #64748b);
+}
+
+.taskSelectAll {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-primary, #2563eb);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.taskSelectAll:hover {
+  text-decoration: underline;
+}
+
+.taskSelectAll:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  text-decoration: none;
 }
 
 .taskList {
@@ -59,6 +88,7 @@
   padding: 0.35rem 0;
   font-size: 0.82rem;
   cursor: pointer;
+  user-select: none;
 }
 
 .taskOptionTitle {
