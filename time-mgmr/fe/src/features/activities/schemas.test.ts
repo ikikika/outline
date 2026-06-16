@@ -73,6 +73,7 @@ const baseAutoValues = {
   longBreakMinutes: 15,
   estimateBuffer: 1.5,
   allowSplitAcrossDays: false,
+  skipWeekends: false,
 };
 
 describe('autoScheduleSchema', () => {

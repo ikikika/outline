@@ -99,6 +99,7 @@ export const autoScheduleObjectSchema = z.object({
     .min(1, 'At least 1× the estimate.')
     .max(5, 'Cannot exceed 5× the estimate.'),
   allowSplitAcrossDays: z.boolean(),
+  skipWeekends: z.boolean(),
 });
 
 export type AutoScheduleSchemaContext = {

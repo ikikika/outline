@@ -24,6 +24,8 @@ export interface IAutoScheduleRequest {
 	/** Multiplier on timeEstimationSeconds (default 1.5). */
 	estimateBuffer?: number;
 	allowSplitAcrossDays?: boolean;
+	/** When true, do not place blocks on Sat/Sun. Default false. */
+	skipWeekends?: boolean;
 }
 
 export interface IAutoScheduleConfirmRequest extends IAutoScheduleRequest {
@@ -169,6 +171,7 @@ function buildConstraints(
 		longBreakMinutes,
 		estimateBuffer,
 		allowSplitAcrossDays: body.allowSplitAcrossDays === true,
+		skipWeekends: body.skipWeekends === true,
 	};
 }
 
@@ -244,6 +247,7 @@ export function toAutoScheduleConstraints(
 		longBreakMinutes: request.longBreakMinutes ?? 15,
 		estimateBuffer: request.estimateBuffer ?? DEFAULT_ESTIMATE_BUFFER,
 		allowSplitAcrossDays: request.allowSplitAcrossDays ?? false,
+		skipWeekends: request.skipWeekends ?? false,
 	};
 }
 

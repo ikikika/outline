@@ -174,6 +174,8 @@ export interface IAutoScheduleRequest {
   /** Multiplier on timeEstimationSeconds (default 1.5). */
   estimateBuffer?: number;
   allowSplitAcrossDays?: boolean;
+  /** When true, do not place blocks on Sat/Sun. Default false. */
+  skipWeekends?: boolean;
 }
 
 export interface IAutoSchedulePreviewBlock {

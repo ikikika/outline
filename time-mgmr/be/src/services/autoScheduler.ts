@@ -29,6 +29,8 @@ export interface AutoScheduleConstraints {
 	/** Multiplier applied to task timeEstimationSeconds (default 1.5). */
 	estimateBuffer: number;
 	allowSplitAcrossDays: boolean;
+	/** When true, Sat/Sun are skipped; when false, weekends are workdays. */
+	skipWeekends: boolean;
 }
 
 export interface ProposedBlock {
@@ -127,7 +129,11 @@ function isWeekendLocal(date: string, timeZone: string): boolean {
 	return weekday === '6' || weekday === '7';
 }
 
-function nextWorkdayLocal(date: string, timeZone: string): string {
+function nextScheduleDayLocal(
+	date: string,
+	timeZone: string,
+	skipWeekends: boolean
+): string {
 	let cursor = date;
 	for (let i = 0; i < 14; i += 1) {
 		cursor = formatInTimeZone(
@@ -135,7 +141,7 @@ function nextWorkdayLocal(date: string, timeZone: string): string {
 			timeZone,
 			'yyyy-MM-dd'
 		);
-		if (!isWeekendLocal(cursor, timeZone)) return cursor;
+		if (!skipWeekends || !isWeekendLocal(cursor, timeZone)) return cursor;
 	}
 	return cursor;
 }
@@ -245,8 +251,11 @@ class PomodoroScheduler {
 		now: Date = new Date()
 	) {
 		let date = startDate;
-		while (isWeekendLocal(date, timeZone)) {
-			date = nextWorkdayLocal(date, timeZone);
+		while (
+			constraints.skipWeekends &&
+			isWeekendLocal(date, timeZone)
+		) {
+			date = nextScheduleDayLocal(date, timeZone, true);
 		}
 		const initialTime =
 			constraints.firstDayStart ?? constraints.workStart;
@@ -364,7 +373,11 @@ class PomodoroScheduler {
 			return;
 		}
 
-		const nextDate = nextWorkdayLocal(localDate, this.timeZone);
+		const nextDate = nextScheduleDayLocal(
+			localDate,
+			this.timeZone,
+			this.constraints.skipWeekends
+		);
 		if (this.exceedsHorizon(nextDate)) {
 			this.cursor = new Date(Number.MAX_SAFE_INTEGER);
 			return;
@@ -382,8 +395,15 @@ class PomodoroScheduler {
 				return;
 			}
 
-			if (isWeekendLocal(localDate, this.timeZone)) {
-				const nextDate = nextWorkdayLocal(localDate, this.timeZone);
+			if (
+				this.constraints.skipWeekends &&
+				isWeekendLocal(localDate, this.timeZone)
+			) {
+				const nextDate = nextScheduleDayLocal(
+					localDate,
+					this.timeZone,
+					true
+				);
 				if (this.exceedsHorizon(nextDate)) {
 					this.cursor = new Date(Number.MAX_SAFE_INTEGER);
 					return;
@@ -419,7 +439,11 @@ class PomodoroScheduler {
 			}
 
 			if (minutes >= this.workEndMinutes()) {
-				const nextDate = nextWorkdayLocal(localDate, this.timeZone);
+				const nextDate = nextScheduleDayLocal(
+					localDate,
+					this.timeZone,
+					this.constraints.skipWeekends
+				);
 				if (this.exceedsHorizon(nextDate)) {
 					this.cursor = new Date(Number.MAX_SAFE_INTEGER);
 					return;

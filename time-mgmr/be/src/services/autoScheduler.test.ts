@@ -42,6 +42,19 @@ describe('parseAutoScheduleRequest', () => {
 		assert.equal(parsed.sessionMinutes, 25);
 		assert.equal(parsed.estimateBuffer, 1.5);
 		assert.equal(parsed.allowSplitAcrossDays, false);
+		assert.equal(parsed.skipWeekends, false);
+	});
+
+	it('parses skipWeekends when requested', () => {
+		const parsed = parseAutoScheduleRequest({
+			activityId: 'activity-1',
+			taskIds: ['task-1'],
+			earliestDate: '2026-07-25',
+			skipWeekends: true,
+		});
+		assert.ok(!('error' in parsed));
+		if ('error' in parsed) return;
+		assert.equal(parsed.skipWeekends, true);
 	});
 
 	it('parses a custom estimateBuffer', () => {
@@ -524,5 +537,50 @@ describe('computeAutoSchedule', () => {
 			(block) => block.blockType === 'focus'
 		);
 		assert.equal(focus?.plannedStart, '2026-07-22T09:00:00.000Z');
+	});
+
+	it('schedules on Saturday when skipWeekends is false', () => {
+		const result = computeAutoSchedule({
+			activityId: 'activity-1',
+			taskIds: ['mine'],
+			constraints: toAutoScheduleConstraints({
+				activityId: 'activity-1',
+				taskIds: ['mine'],
+				earliestDate: '2026-07-25',
+				skipWeekends: false,
+			}),
+			tasks: [focusTask('mine', 25 * 60)],
+			existingBlocks: [],
+			timeZone: TIME_ZONE,
+		});
+
+		const focus = result.proposedBlocks.find(
+			(block) => block.blockType === 'focus'
+		);
+		assert.equal(result.canConfirm, true);
+		assert.equal(focus?.plannedStart, '2026-07-25T09:00:00.000Z');
+	});
+
+	it('skips weekends when skipWeekends is true', () => {
+		const result = computeAutoSchedule({
+			activityId: 'activity-1',
+			taskIds: ['mine'],
+			constraints: toAutoScheduleConstraints({
+				activityId: 'activity-1',
+				taskIds: ['mine'],
+				earliestDate: '2026-07-25',
+				skipWeekends: true,
+			}),
+			tasks: [focusTask('mine', 25 * 60)],
+			existingBlocks: [],
+			timeZone: TIME_ZONE,
+		});
+
+		const focus = result.proposedBlocks.find(
+			(block) => block.blockType === 'focus'
+		);
+		assert.equal(result.canConfirm, true);
+		// 2026-07-25 Sat → 2026-07-27 Mon
+		assert.equal(focus?.plannedStart, '2026-07-27T09:00:00.000Z');
 	});
 });

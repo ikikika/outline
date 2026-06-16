@@ -108,6 +108,7 @@ export function AutoScheduleModal({
       longBreakMinutes: 15,
       estimateBuffer: 1.5,
       allowSplitAcrossDays: false,
+      skipWeekends: false,
     },
   });
 
@@ -155,6 +156,7 @@ export function AutoScheduleModal({
     longBreakMinutes: values.longBreakMinutes,
     estimateBuffer: values.estimateBuffer,
     allowSplitAcrossDays: values.allowSplitAcrossDays,
+    skipWeekends: values.skipWeekends,
   });
 
   const allTaskIds = useMemo(
@@ -427,6 +429,12 @@ export function AutoScheduleModal({
                 <label className={styles.checkboxLabel}>
                   <input type="checkbox" {...register('allowSplitAcrossDays')} />
                   Allow tasks to span multiple days
+                </label>
+              </div>
+              <div className={`${styles.field} ${styles.checkboxField}`}>
+                <label className={styles.checkboxLabel}>
+                  <input type="checkbox" {...register('skipWeekends')} />
+                  Don&apos;t schedule on weekends
                 </label>
               </div>
             </div>
