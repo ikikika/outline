@@ -261,6 +261,50 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument();
   });
 
+  it('shows a remaining-time ring around Stop while the timer is running', async () => {
+    const user = userEvent.setup();
+    const runningEntry: ITimeEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, timeEstimationSeconds: 45 * 60 }}
+        entries={[runningEntry]}
+        runningEntry={runningEntry}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+
+    const ring = screen.getByRole('progressbar', { name: 'Remaining time' });
+    expect(ring).toHaveAttribute('aria-valuemax', String(45 * 60));
+    expect(Number(ring.getAttribute('aria-valuenow'))).toBeGreaterThanOrEqual(0);
+    expect(Number(ring.getAttribute('aria-valuenow'))).toBeLessThanOrEqual(45 * 60);
+  });
+
+  it('hides the remaining-time ring before the timer starts', async () => {
+    const user = userEvent.setup();
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, timeEstimationSeconds: 45 * 60 }}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+
+    expect(screen.queryByRole('progressbar', { name: 'Remaining time' })).not.toBeInTheDocument();
+  });
+
   it('calls onStart from the focus Start button', async () => {
     const user = userEvent.setup();
     const onStart = vi.fn();

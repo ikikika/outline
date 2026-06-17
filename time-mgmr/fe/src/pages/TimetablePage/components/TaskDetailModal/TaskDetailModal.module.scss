@@ -194,10 +194,45 @@
   color: #f8fafc;
 }
 
-.focusPrimary {
-  width: min(100%, 14rem);
-  height: 14rem;
+.focusPrimaryWrap {
+  position: relative;
+  width: min(100%, 15.5rem);
+  aspect-ratio: 1;
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.focusRing {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* Gap opens at 12 o'clock and grows clockwise as time runs out */
+  transform: rotate(90deg) scaleX(-1);
+}
+
+.focusRingTrack,
+.focusRingProgress {
+  stroke-width: 5;
+}
+
+.focusRingTrack {
+  stroke: rgba(248, 250, 252, 0.14);
+}
+
+.focusRingProgress {
+  stroke: rgba(147, 197, 253, 0.95);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.9s linear;
+}
+
+.focusPrimary {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 1.5rem);
+  height: calc(100% - 1.5rem);
   border: none;
   border-radius: 50%;
   background: var(--focus-accent, #2563eb);
@@ -228,9 +263,9 @@
 }
 
 .focusPrimaryStop {
-  background: #dc2626;
+  background: #1e3a8a;
   box-shadow:
-    0 12px 40px rgba(220, 38, 38, 0.4),
+    0 12px 40px rgba(30, 58, 138, 0.45),
     0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
@@ -288,9 +323,11 @@
     gap: 1rem;
   }
 
+  .focusPrimaryWrap {
+    width: min(48vh, 12.25rem);
+  }
+
   .focusPrimary {
-    width: min(42vh, 11rem);
-    height: min(42vh, 11rem);
     font-size: clamp(1.25rem, 6vh, 1.85rem);
   }
 

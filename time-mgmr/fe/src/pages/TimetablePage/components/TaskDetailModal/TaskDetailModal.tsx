@@ -76,6 +76,9 @@ export function elapsedSecondsForEntries(entries: ITimeEntry[], nowMs: number): 
   return entries.reduce((sum, entry) => sum + sessionDurationSeconds(entry, nowMs), 0);
 }
 
+const FOCUS_RING_RADIUS = 46;
+const FOCUS_RING_CIRCUMFERENCE = 2 * Math.PI * FOCUS_RING_RADIUS;
+
 export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   block,
   activityTitle,
@@ -164,6 +167,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     [entries]
   );
   const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+  const remainingFraction =
+    plannedSeconds > 0 ? Math.min(1, remainingSeconds / plannedSeconds) : 0;
+  const showRemainingRing = isRunningHere && plannedSeconds > 0;
 
   const submitManual = handleSubmit(async (values) => {
     if (!taskId) return;
@@ -200,25 +206,56 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           </h2>
 
           <div className={styles.focusControls}>
-            <button
-              type="button"
-              className={`${styles.focusPrimary} ${isRunningHere ? styles.focusPrimaryStop : ''}`}
-              disabled={
-                busy ||
-                !canTrackTime ||
-                (!isRunningHere && Boolean(runningEntry))
-              }
-              title={
-                !canTrackTime
-                  ? 'This break has no linked task'
-                  : !isRunningHere && runningEntry
-                    ? 'Stop the current timer first'
-                    : undefined
-              }
-              onClick={handleFocusPrimary}
-            >
-              {isRunningHere ? 'Stop' : 'Start'}
-            </button>
+            <div className={styles.focusPrimaryWrap}>
+              {showRemainingRing ? (
+                <svg
+                  className={styles.focusRing}
+                  viewBox="0 0 100 100"
+                  role="progressbar"
+                  aria-label="Remaining time"
+                  aria-valuemin={0}
+                  aria-valuemax={plannedSeconds}
+                  aria-valuenow={remainingSeconds}
+                  aria-valuetext={formatClock(remainingSeconds)}
+                >
+                  <circle
+                    className={styles.focusRingTrack}
+                    cx="50"
+                    cy="50"
+                    r={FOCUS_RING_RADIUS}
+                    fill="none"
+                  />
+                  <circle
+                    className={styles.focusRingProgress}
+                    cx="50"
+                    cy="50"
+                    r={FOCUS_RING_RADIUS}
+                    fill="none"
+                    strokeDasharray={FOCUS_RING_CIRCUMFERENCE}
+                    strokeDashoffset={FOCUS_RING_CIRCUMFERENCE * (1 - remainingFraction)}
+                  />
+                </svg>
+              ) : null}
+              <button
+                type="button"
+                className={`${styles.focusPrimary} ${isRunningHere ? styles.focusPrimaryStop : ''}`}
+                disabled={
+                  busy ||
+                  !canTrackTime ||
+                  (!isRunningHere && Boolean(runningEntry))
+                }
+                title={
+                  !canTrackTime
+                    ? 'This break has no linked task'
+                    : !isRunningHere && runningEntry
+                      ? 'Stop the current timer first'
+                      : undefined
+                }
+                onClick={handleFocusPrimary}
+              >
+                {isRunningHere ? 'Stop' : 'Start'}
+              </button>
+            </div>
 
             <div className={styles.focusSide}>
               <div className={styles.focusTimes}>
