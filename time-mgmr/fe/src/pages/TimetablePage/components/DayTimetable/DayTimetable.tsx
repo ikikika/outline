@@ -14,6 +14,13 @@ import {
   overlapColumnStyle,
 } from '../../utils/overlapLayout/overlapLayout';
 import { blockDisplayWindow } from '../../utils/blockDisplayWindow/blockDisplayWindow';
+import {
+  didReschedule,
+  dragThresholdPx,
+  LONG_PRESS_CANCEL_SLOP_PX,
+  LONG_PRESS_MS,
+  pointerNeedsLongPress,
+} from '../../utils/blockDragGesture/blockDragGesture';
 import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './DayTimetable.module.scss';
@@ -21,8 +28,6 @@ import styles from './DayTimetable.module.scss';
 const MIN_BLOCK_HEIGHT_PX = 16;
 const COMPACT_BLOCK_HEIGHT_PX = 28;
 const SNAP_MINUTES = 15;
-/** Ignore pointer jitter below this before treating a gesture as a drag. */
-const DRAG_THRESHOLD_PX = 8;
 const NOW_TICK_MS = 30_000;
 
 interface DayTimetableProps {
@@ -48,6 +53,9 @@ interface DragState {
   originEnd: number;
   originClientY: number;
   pointerId: number;
+  pointerType: string;
+  /** False until mouse arms immediately or touch completes long-press. */
+  armed: boolean;
   moved: boolean;
 }
 
@@ -76,6 +84,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   const trackRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const centeredForDateRef = useRef<string | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [nowMinutes, setNowMinutes] = useState(currentMinutesOfDay);
 
@@ -157,7 +166,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 
   const { overlapLayout, columnNextStart } = useMemo(() => {
     const intervals = visibleBlocks.map((activity) => {
-      const isDragging = drag?.id === activity.id;
+      const isDragging = drag?.id === activity.id && drag.armed;
       const window = blockDisplayWindow(activity);
       const start =
         isDragging && drag ? drag.previewStart : timeToMinutes(window.start);
@@ -192,15 +201,36 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     [dayStartMinutes, dayEndMinutes]
   );
 
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearLongPressTimer(), [clearLongPressTimer]);
+
+  useEffect(() => {
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+    const onScroll = () => {
+      setDrag((current) => {
+        if (!current || current.armed) return current;
+        clearLongPressTimer();
+        return null;
+      });
+    };
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', onScroll);
+  }, [clearLongPressTimer]);
+
   const handlePointerDown = (
     event: React.PointerEvent<HTMLElement>,
     activity: ITimetableBlock,
     mode: DragState['mode'] = 'move'
   ) => {
     if (disabled || activity.status === 'done' || event.button !== 0) return;
-    event.preventDefault();
     if (mode !== 'move') event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
 
     const start = timeToMinutes(activity.plannedStart);
     const end = timeToMinutes(activity.plannedEnd);
@@ -209,8 +239,12 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     const rect = track.getBoundingClientRect();
     const blockTop = (start - dayStartMinutes) * pxPerMinute;
     const offsetY = event.clientY - rect.top + track.scrollTop - blockTop;
+    const needsLongPress = pointerNeedsLongPress(event.pointerType);
+    const target = event.currentTarget;
 
-    setDrag({
+    clearLongPressTimer();
+
+    const baseDrag: DragState = {
       id: activity.id,
       mode,
       offsetY,
@@ -220,15 +254,49 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
       originEnd: end,
       originClientY: event.clientY,
       pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      armed: !needsLongPress,
       moved: false,
-    });
+    };
+
+    if (!needsLongPress) {
+      event.preventDefault();
+      target.setPointerCapture(event.pointerId);
+      setDrag(baseDrag);
+      return;
+    }
+
+    setDrag(baseDrag);
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
+      try {
+        target.setPointerCapture(event.pointerId);
+      } catch {
+        /* pointer may already be up */
+      }
+      setDrag((current) =>
+        current && current.pointerId === event.pointerId
+          ? { ...current, armed: true }
+          : current
+      );
+    }, LONG_PRESS_MS);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!drag) return;
 
     const distance = Math.abs(event.clientY - drag.originClientY);
-    if (!drag.moved && distance < DRAG_THRESHOLD_PX) {
+
+    if (!drag.armed) {
+      if (distance > LONG_PRESS_CANCEL_SLOP_PX) {
+        clearLongPressTimer();
+        setDrag(null);
+      }
+      return;
+    }
+
+    const threshold = dragThresholdPx(drag.pointerType);
+    if (!drag.moved && distance < threshold) {
       return;
     }
 
@@ -274,19 +342,28 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 
   const handlePointerUp = () => {
     if (!drag) return;
+    clearLongPressTimer();
     const id = drag.id;
     const activity = blocks.find((item) => item.id === id);
-    const didDrag = drag.moved;
     const nextStart = drag.previewStart;
     const nextEnd = drag.previewEnd;
+    const scheduleChanged =
+      drag.armed &&
+      drag.moved &&
+      didReschedule(drag.originStart, drag.originEnd, nextStart, nextEnd);
     setDrag(null);
 
-    if (!didDrag) {
+    if (!scheduleChanged) {
       if (activity) onSelect?.(activity);
       return;
     }
 
     onReschedule(id, minutesToTime(nextStart), minutesToTime(nextEnd));
+  };
+
+  const handlePointerCancel = () => {
+    clearLongPressTimer();
+    setDrag(null);
   };
 
   return (
@@ -317,7 +394,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
             style={{ height: totalMinutes * pxPerMinute }}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            onPointerCancel={() => setDrag(null)}
+            onPointerCancel={handlePointerCancel}
           >
             {hours.map((hour) => (
               <div key={hour} className={styles.hourLine} />
@@ -340,7 +417,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                 window.start,
                 window.end
               );
-              const isDragging = drag?.id === activity.id;
+              const isDragging = drag?.id === activity.id && drag.armed;
               const start = isDragging && drag ? drag.previewStart : baseStart;
               const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
               const top = (start - dayStartMinutes) * pxPerMinute;

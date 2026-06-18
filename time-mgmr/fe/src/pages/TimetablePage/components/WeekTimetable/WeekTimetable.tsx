@@ -15,6 +15,13 @@ import {
   overlapColumnStyle,
 } from '../../utils/overlapLayout/overlapLayout';
 import { blockDisplayWindow } from '../../utils/blockDisplayWindow/blockDisplayWindow';
+import {
+  didReschedule,
+  dragThresholdPx,
+  LONG_PRESS_CANCEL_SLOP_PX,
+  LONG_PRESS_MS,
+  pointerNeedsLongPress,
+} from '../../utils/blockDragGesture/blockDragGesture';
 import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
 import styles from './WeekTimetable.module.scss';
@@ -22,8 +29,6 @@ import styles from './WeekTimetable.module.scss';
 const MIN_BLOCK_HEIGHT_PX = 14;
 const COMPACT_BLOCK_HEIGHT_PX = 28;
 const SNAP_MINUTES = 15;
-/** Ignore pointer jitter below this before treating a gesture as a drag. */
-const DRAG_THRESHOLD_PX = 8;
 const NOW_TICK_MS = 30_000;
 
 interface WeekTimetableProps {
@@ -58,6 +63,10 @@ interface DragState {
   originEnd: number;
   originClientX: number;
   originClientY: number;
+  pointerId: number;
+  pointerType: string;
+  /** False until mouse arms immediately or touch completes long-press. */
+  armed: boolean;
   moved: boolean;
 }
 
@@ -89,6 +98,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   const weekHeaderRef = useRef<HTMLDivElement>(null);
   const dayTrackRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const scrolledForWeekRef = useRef<string | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [nowMinutes, setNowMinutes] = useState(currentMinutesOfDay);
 
@@ -147,7 +157,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     for (const day of days) {
       const dayBlocks = blocksByDate.get(day) ?? [];
       const intervals = dayBlocks.map((activity) => {
-        const isDragging = drag?.id === activity.id;
+        const isDragging = drag?.id === activity.id && drag.armed;
         const window = blockDisplayWindow(activity);
         const start =
           isDragging && drag ? drag.previewStart : timeToMinutes(window.start);
@@ -248,15 +258,36 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     [days]
   );
 
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearLongPressTimer(), [clearLongPressTimer]);
+
+  useEffect(() => {
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+    const onScroll = () => {
+      setDrag((current) => {
+        if (!current || current.armed) return current;
+        clearLongPressTimer();
+        return null;
+      });
+    };
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', onScroll);
+  }, [clearLongPressTimer]);
+
   const handlePointerDown = (
     event: React.PointerEvent<HTMLElement>,
     activity: ITimetableBlock,
     mode: DragState['mode'] = 'move'
   ) => {
     if (disabled || activity.status === 'done' || event.button !== 0) return;
-    event.preventDefault();
     if (mode !== 'move') event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
 
     const start = timeToMinutes(activity.plannedStart);
     const end = timeToMinutes(activity.plannedEnd);
@@ -265,8 +296,12 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     const rect = track.getBoundingClientRect();
     const blockTop = (start - dayStartMinutes) * pxPerMinute;
     const offsetY = event.clientY - rect.top - blockTop;
+    const needsLongPress = pointerNeedsLongPress(event.pointerType);
+    const target = event.currentTarget;
 
-    setDrag({
+    clearLongPressTimer();
+
+    const baseDrag: DragState = {
       id: activity.id,
       originDate: activity.date,
       previewDate: activity.date,
@@ -278,8 +313,33 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       originEnd: end,
       originClientX: event.clientX,
       originClientY: event.clientY,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      armed: !needsLongPress,
       moved: false,
-    });
+    };
+
+    if (!needsLongPress) {
+      event.preventDefault();
+      target.setPointerCapture(event.pointerId);
+      setDrag(baseDrag);
+      return;
+    }
+
+    setDrag(baseDrag);
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
+      try {
+        target.setPointerCapture(event.pointerId);
+      } catch {
+        /* pointer may already be up */
+      }
+      setDrag((current) =>
+        current && current.pointerId === event.pointerId
+          ? { ...current, armed: true }
+          : current
+      );
+    }, LONG_PRESS_MS);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -289,7 +349,17 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       event.clientX - drag.originClientX,
       event.clientY - drag.originClientY
     );
-    if (!drag.moved && distance < DRAG_THRESHOLD_PX) {
+
+    if (!drag.armed) {
+      if (distance > LONG_PRESS_CANCEL_SLOP_PX) {
+        clearLongPressTimer();
+        setDrag(null);
+      }
+      return;
+    }
+
+    const threshold = dragThresholdPx(drag.pointerType);
+    if (!drag.moved && distance < threshold) {
       return;
     }
 
@@ -340,20 +410,36 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
 
   const handlePointerUp = () => {
     if (!drag) return;
+    clearLongPressTimer();
     const id = drag.id;
     const activity = blocks.find((item) => item.id === id);
-    const didDrag = drag.moved;
     const nextStart = drag.previewStart;
     const nextEnd = drag.previewEnd;
     const nextDate = drag.previewDate;
+    const scheduleChanged =
+      drag.armed &&
+      drag.moved &&
+      didReschedule(
+        drag.originStart,
+        drag.originEnd,
+        nextStart,
+        nextEnd,
+        drag.originDate,
+        nextDate
+      );
     setDrag(null);
 
-    if (!didDrag) {
+    if (!scheduleChanged) {
       if (activity) onSelect?.(activity);
       return;
     }
 
     onReschedule(id, minutesToTime(nextStart), minutesToTime(nextEnd), nextDate);
+  };
+
+  const handlePointerCancel = () => {
+    clearLongPressTimer();
+    setDrag(null);
   };
 
   const setDayTrackRef = (date: string, node: HTMLDivElement | null) => {
@@ -409,7 +495,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                 style={{ height: totalMinutes * pxPerMinute }}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                onPointerCancel={() => setDrag(null)}
+                onPointerCancel={handlePointerCancel}
               >
                 {hours.map((hour) => (
                   <div key={hour} className={styles.hourLine} />
@@ -428,7 +514,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                     window.start,
                     window.end
                   );
-                  const isDragging = drag?.id === activity.id;
+                  const isDragging = drag?.id === activity.id && drag.armed;
                   const start = isDragging && drag ? drag.previewStart : baseStart;
                   const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
                   const sourceTrack = dayTrackRefs.current.get(window.date);
