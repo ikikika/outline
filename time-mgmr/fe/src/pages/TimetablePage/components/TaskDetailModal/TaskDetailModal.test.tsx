@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -190,6 +190,27 @@ describe('completed task actions', () => {
 });
 
 describe('TaskDetailModal focus mode', () => {
+  it('ignores backdrop clicks briefly after open (mobile ghost click)', () => {
+    vi.useFakeTimers();
+    try {
+      const onClose = vi.fn();
+      const { container } = render(<TaskDetailModal {...baseProps} onClose={onClose} />);
+      const backdrop = container.querySelector('[role="presentation"]');
+      expect(backdrop).toBeTruthy();
+
+      fireEvent.click(backdrop!);
+      expect(onClose).not.toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(400);
+      });
+      fireEvent.click(backdrop!);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('shows the parent activity title in task details', () => {
     render(<TaskDetailModal {...baseProps} />);
 

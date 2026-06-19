@@ -340,7 +340,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     });
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (event: React.PointerEvent) => {
     if (!drag) return;
     clearLongPressTimer();
     const id = drag.id;
@@ -354,7 +354,11 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     setDrag(null);
 
     if (!scheduleChanged) {
-      if (activity) onSelect?.(activity);
+      if (activity) {
+        // Suppress the synthetic mouse click that would hit the newly opened modal backdrop.
+        event.preventDefault();
+        onSelect?.(activity);
+      }
       return;
     }
 

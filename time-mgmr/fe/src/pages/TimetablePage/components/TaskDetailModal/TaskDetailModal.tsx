@@ -98,6 +98,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [showManual, setShowManual] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [backdropCloseReady, setBackdropCloseReady] = useState(false);
   const { isOpen: sidebarOpen, open: openSidebar, close: closeSidebar } = useSidebarLayout();
   sidebarOpenRef.current = sidebarOpen;
   const category = CATEGORY_MAP[block.categoryId];
@@ -121,6 +122,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   useEffect(() => {
     closeRef.current?.focus();
+  }, []);
+
+  // Ignore the compatibility click that follows a touch tap used to open this modal.
+  useEffect(() => {
+    const id = window.setTimeout(() => setBackdropCloseReady(true), 400);
+    return () => window.clearTimeout(id);
   }, []);
 
   useEffect(() => {
@@ -286,8 +293,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   }
 
   return (
-    <div className={styles.backdrop} role="presentation" onClick={onClose}>
-      <div
+    <div
+      className={styles.backdrop}
+      role="presentation"
+      onClick={() => {
+        if (!backdropCloseReady) return;
+        onClose();
+      }}
+    >      <div
         className={styles.modal}
         role="dialog"
         aria-modal="true"
