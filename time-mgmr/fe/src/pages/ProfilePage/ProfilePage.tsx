@@ -10,8 +10,6 @@ import { StepTracker } from '@/components/molecules/StepTracker';
 import { ProfileProvider } from './context';
 import { useProfileContext } from './context';
 import { BasicInfoTab } from './tabs/BasicInfoTab';
-import { WorkInfoTab } from './tabs/WorkInfoTab';
-import { InterestsTab } from './tabs/InterestsTab';
 import { NotificationsTab } from './tabs/NotificationsTab';
 import { ScheduleTab } from './tabs/ScheduleTab';
 import styles from './ProfilePage.module.scss';
@@ -42,9 +40,7 @@ const ProfilePageContent: React.FC = () => {
       <Tabs defaultValue="basic" className={styles.tabsRoot}>
         <TabsList className={`w-full justify-start ${styles.tabs}`} aria-label="Profile sections">
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="work">Work Info</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="interests">Interests</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
@@ -52,16 +48,8 @@ const ProfilePageContent: React.FC = () => {
           <BasicInfoTab />
         </TabsContent>
 
-        <TabsContent value="work">
-          <WorkInfoTab />
-        </TabsContent>
-
         <TabsContent value="schedule">
           <ScheduleTab />
-        </TabsContent>
-
-        <TabsContent value="interests">
-          <InterestsTab />
         </TabsContent>
 
         <TabsContent value="notifications">
