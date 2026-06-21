@@ -81,16 +81,3 @@ export function formatSignedMinutes(totalMinutes: number): string {
   const sign = totalMinutes > 0 ? '+' : '−';
   return `${sign}${formatMinutes(totalMinutes)}`;
 }
-
-export function combineDateAndTime(dateKey: string, time: string): Date {
-  const [h, m] = time.split(':').map(Number);
-  const date = parseDateKey(dateKey);
-  date.setHours(h, m, 0, 0);
-  return date;
-}
-
-export function minutesBetween(startIso: string, endIso: string): number {
-  const start = new Date(startIso).getTime();
-  const end = new Date(endIso).getTime();
-  return Math.max(0, Math.round((end - start) / 60000));
-}

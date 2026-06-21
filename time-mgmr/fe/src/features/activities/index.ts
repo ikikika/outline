@@ -54,7 +54,6 @@ export {
   updateTaskApi,
   patchActivityApi,
   patchTaskApi,
-  isActivitiesApiEnabled,
   type ActivityListFilter,
   type IActivityPatch,
   type IActivityCreateInput,
@@ -66,7 +65,6 @@ export {
 
 export {
   fetchScheduleBlocks,
-  fetchScheduleBlockById,
   createScheduleBlockApi,
   patchScheduleBlockApi,
   deleteScheduleBlockApi,
@@ -109,11 +107,8 @@ export { timeEntryRepository } from './repository/timeEntryRepository';
 export {
   useTimetableBlocksByDate,
   useTimetableBlocksByRange,
-  useActivitiesByDate,
-  useActivitiesByRange,
   useActivityById,
   useTimetableBlocksForCatalog,
-  useTaskCatalog,
   useResolvedTimeZone,
   useTaskById,
   useTimetableBlocksByTask,
@@ -163,6 +158,4 @@ export {
   plannedDurationMinutes,
   formatMinutes,
   formatSignedMinutes,
-  combineDateAndTime,
-  minutesBetween,
 } from './utils/dateUtils';

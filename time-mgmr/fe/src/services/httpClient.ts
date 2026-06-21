@@ -1,4 +1,3 @@
-import { API_BASE_URL } from '@/core/constants/app';
 import {
 	getAccessToken,
 	notifySessionExpired,
@@ -226,5 +225,3 @@ export async function deleteJsonAuthWithBody<T>(
 		{ ...options, auth: true }
 	);
 }
-
-export const HTTP_BASE_URL = API_BASE_URL;

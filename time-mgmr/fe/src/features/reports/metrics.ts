@@ -337,10 +337,3 @@ export function buildRangeReport(
     ...insights,
   };
 }
-
-export function entriesForActivities(
-  entries: ITimeEntry[],
-  taskIds: Set<string>
-): ITimeEntry[] {
-  return entries.filter((e) => taskIds.has(e.taskId));
-}

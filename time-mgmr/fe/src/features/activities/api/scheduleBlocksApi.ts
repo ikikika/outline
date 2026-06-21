@@ -57,15 +57,6 @@ export async function fetchScheduleBlocks(params: {
   return getJsonAuth<IApiScheduleBlock[]>(url);
 }
 
-export async function fetchScheduleBlockById(
-  id: string
-): Promise<IApiScheduleBlock> {
-  requireApiBaseUrl();
-  return getJsonAuth<IApiScheduleBlock>(
-    `${SCHEDULE_BLOCKS_BASE_URL}/${encodeURIComponent(id)}`
-  );
-}
-
 export async function createScheduleBlockApi(
   body: IScheduleBlockCreateBody
 ): Promise<IApiScheduleBlock> {

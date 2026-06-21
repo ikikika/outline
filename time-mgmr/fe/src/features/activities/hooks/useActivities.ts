@@ -97,9 +97,6 @@ export function useTimetableBlocksByDate(date: string) {
   });
 }
 
-/** @deprecated Use useTimetableBlocksByDate */
-export const useActivitiesByDate = useTimetableBlocksByDate;
-
 export function useTimetableBlocksByRange(from: string, to: string) {
   const timeZone = useResolvedTimeZone();
   return useQuery({
@@ -110,9 +107,6 @@ export function useTimetableBlocksByRange(from: string, to: string) {
     },
   });
 }
-
-/** @deprecated Use useTimetableBlocksByRange */
-export const useActivitiesByRange = useTimetableBlocksByRange;
 
 export function useActivityById(activityId: string | null) {
   return useQuery({
@@ -132,9 +126,6 @@ export function useTimetableBlocksForCatalog(enabled = true) {
     enabled,
   });
 }
-
-/** @deprecated Use useTimetableBlocksForCatalog */
-export const useTaskCatalog = useTimetableBlocksForCatalog;
 
 export function useTaskById(taskId: string | null) {
   return useQuery({

@@ -75,10 +75,6 @@ export interface IActivityCatalogImportResponse {
   tasks: IApiTask[];
 }
 
-export function isActivitiesApiEnabled(): boolean {
-  return Boolean(API_BASE_URL);
-}
-
 export function requireApiBaseUrl(): void {
   if (!API_BASE_URL) {
     throw new Error(
