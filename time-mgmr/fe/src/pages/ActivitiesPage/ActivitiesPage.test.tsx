@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { manualScheduleSchema, autoScheduleSchema, activityCatalogImportSchema, createAutoScheduleSchema, needsFirstDayStart } from '@/features/activities/schemas';
@@ -169,12 +168,6 @@ const mockConfirmAutoSchedule = {
 
 vi.mock('@/features/activities/hooks/useActivities', () => ({
   useResolvedTimeZone: () => 'UTC',
-}));
-
-vi.mock('@/layouts', () => ({
-  MainLayout: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
 }));
 
 vi.mock('@/features/activities', () => ({

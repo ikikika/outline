@@ -57,10 +57,6 @@ const mockStopTimerMutation = vi.fn(async (entryId: string) => ({
   updatedAt: '2026-07-19T10:00:00.000Z',
 }));
 
-vi.mock('@/layouts', () => ({
-  MainLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
 vi.mock('@/app/providers/auth', () => ({
   useAuthContext: () => ({
     user: {

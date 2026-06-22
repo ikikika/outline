@@ -1,0 +1,172 @@
+.block {
+  position: absolute;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: grab;
+  user-select: none;
+  /* Allow vertical scroll until a drag is armed */
+  touch-action: pan-y;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.density_day {
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.density_week {
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.3rem;
+}
+
+.block:active {
+  cursor: grabbing;
+}
+
+.blockCompact {
+  display: flex;
+  align-items: center;
+}
+
+.density_day.blockCompact {
+  padding: 0.1rem 0.45rem;
+}
+
+.density_week.blockCompact {
+  padding: 0.08rem 0.35rem;
+}
+
+.density_day.blockCompact .blockTitle {
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+.density_week.blockCompact .blockTitle {
+  font-size: 0.65rem;
+  line-height: 1.1;
+}
+
+.blockCompact .blockMeta {
+  display: none;
+}
+
+.blockLocked,
+.blockLocked:active {
+  cursor: pointer;
+}
+
+.blockDragging {
+  opacity: 0.85;
+  z-index: 5;
+  touch-action: none;
+}
+
+.density_day.blockDragging {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.density_week.blockDragging {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  z-index: 1;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.density_day .resizeHandle {
+  width: 18px;
+  height: 10px;
+}
+
+.density_week .resizeHandle {
+  width: 14px;
+  height: 8px;
+}
+
+.resizeHandle::after {
+  content: '';
+  position: absolute;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.density_day .resizeHandle::after {
+  right: 3px;
+  width: 10px;
+}
+
+.density_week .resizeHandle::after {
+  right: 2px;
+  width: 8px;
+}
+
+.block:hover .resizeHandle::after,
+.blockDragging .resizeHandle::after {
+  opacity: 1;
+}
+
+.resizeHandleTop {
+  top: 0;
+}
+
+.density_day .resizeHandleTop::after {
+  top: 2px;
+}
+
+.density_week .resizeHandleTop::after {
+  top: 1px;
+}
+
+.resizeHandleBottom {
+  bottom: 0;
+}
+
+.density_day .resizeHandleBottom::after {
+  bottom: 2px;
+}
+
+.density_week .resizeHandleBottom::after {
+  bottom: 1px;
+}
+
+.blockTitle {
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.density_day .blockTitle {
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.density_week .blockTitle {
+  font-size: 0.7rem;
+  line-height: 1.15;
+}
+
+.blockMeta {
+  opacity: 0.95;
+}
+
+.density_day .blockMeta {
+  margin: 0.15rem 0 0;
+  font-size: 0.7rem;
+}
+
+.density_week .blockMeta {
+  margin: 0.1rem 0 0;
+  font-size: 0.6rem;
+}

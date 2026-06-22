@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
+import type { ThemePreference } from '@/core/types/common';
 
-export type ThemeMode = 'light' | 'dark' | 'velvet' | 'system';
+export type ThemeMode = ThemePreference;
 export type ResolvedTheme = 'light' | 'dark' | 'velvet';
 
 export interface IThemeContext {

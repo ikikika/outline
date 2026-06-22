@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input } from '@/components/ui';
+import { ModalShell } from '@/components/molecules/ModalShell/ModalShell';
 import { utcToZonedParts } from '@/core/utils/timeZone/timeZone';
 import {
   createAutoScheduleSchema,
@@ -135,14 +136,6 @@ export function AutoScheduleModal({
     [activity.tasks]
   );
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) onCancel();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [busy, onCancel]);
-
   const buildRequest = (values: AutoScheduleFormValues): IAutoScheduleRequest => ({
     activityId: activity.id,
     taskIds: selectedTaskIds,
@@ -217,20 +210,13 @@ export function AutoScheduleModal({
   };
 
   return (
-    <div
-      className={styles.backdrop}
-      role="presentation"
-      onMouseDown={() => {
-        if (!busy) onCancel();
-      }}
+    <ModalShell
+      onDismiss={onCancel}
+      dismissDisabled={busy}
+      backdropClassName={styles.backdrop}
+      panelClassName={styles.modal}
+      labelledBy="auto-schedule-title"
     >
-      <div
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="auto-schedule-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
         <h2 id="auto-schedule-title" className={styles.title}>
           Auto-schedule {activity.title}
         </h2>
@@ -530,7 +516,6 @@ export function AutoScheduleModal({
             </div>
           </>
         ) : null}
-      </div>
-    </div>
+    </ModalShell>
   );
 }

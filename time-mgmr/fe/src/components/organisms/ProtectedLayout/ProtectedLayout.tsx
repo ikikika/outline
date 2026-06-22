@@ -1,10 +1,12 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import { Header } from '@/components/organisms/Header/Header';
 import { Sidebar } from '@/components/organisms/Sidebar/Sidebar';
 import {
   SidebarLayoutProvider,
   useSidebarLayout,
 } from '@/components/organisms/Sidebar/SidebarLayoutContext';
+import { APP_NAME } from '@/core/constants/app';
 import './ProtectedLayout.css';
 
 const ProtectedLayoutShell: React.FC = () => {
@@ -25,15 +27,25 @@ const ProtectedLayoutShell: React.FC = () => {
         />
       ) : null}
 
-      <main className="protected-layout__main">
-        <Outlet />
-      </main>
+      <div className="protected-layout__content">
+        <Header />
+        <main className="protected-layout__main">
+          <div className="protected-layout__container">
+            <Outlet />
+          </div>
+        </main>
+        <footer className="protected-layout__footer">
+          <div className="protected-layout__footer-inner">
+            <p>&copy; 2026 {APP_NAME}. All rights reserved.</p>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };
 
 /**
- * ProtectedLayout — wraps authenticated routes with a sidebar + main content area.
+ * ProtectedLayout — authenticated shell: sidebar + header + page outlet.
  */
 export const ProtectedLayout: React.FC = () => (
   <SidebarLayoutProvider>

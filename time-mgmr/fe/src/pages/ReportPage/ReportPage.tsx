@@ -1,5 +1,4 @@
 import React, { useId, useState } from 'react';
-import { MainLayout } from '@/layouts';
 import { Button } from '@/components/ui';
 import {
   formatDisplayDate,
@@ -154,8 +153,7 @@ export const ReportPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
-      <div className={styles.report}>
+    <div className={styles.report}>
         <header className={styles.header}>
           <div>
             <h1 className={styles.title}>Report</h1>
@@ -545,7 +543,6 @@ export const ReportPage: React.FC = () => {
           </div>
         )}
       </div>
-    </MainLayout>
   );
 };
 

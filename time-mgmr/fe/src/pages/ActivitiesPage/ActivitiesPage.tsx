@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { MainLayout } from '@/layouts';
 import {
   useActivityCatalog,
   useArchiveActivity,
@@ -190,7 +189,7 @@ export const ActivitiesPage: React.FC = () => {
   })();
 
   return (
-    <MainLayout>
+    <>
       <div className={styles.page}>
         <header className={styles.header}>
           <div>
@@ -392,7 +391,7 @@ export const ActivitiesPage: React.FC = () => {
           onConfirm={handleAutoScheduleConfirm}
         />
       ) : null}
-    </MainLayout>
+    </>
   );
 };
 

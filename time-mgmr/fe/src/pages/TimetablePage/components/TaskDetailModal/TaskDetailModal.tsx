@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Maximize2, Minimize2 } from 'lucide-react';
+import { ModalShell } from '@/components/molecules/ModalShell/ModalShell';
 import { Button } from '@/components/ui';
 import {
   CATEGORY_MAP,
@@ -131,17 +132,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!focusMode) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      if (focusMode) {
-        setFocusMode(false);
-        return;
-      }
-      onClose();
+      if (event.key === 'Escape') setFocusMode(false);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, focusMode]);
+  }, [focusMode]);
 
   useEffect(() => {
     if (!focusMode && !isRunningHere) return;
@@ -293,20 +290,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   }
 
   return (
-    <div
-      className={styles.backdrop}
-      role="presentation"
-      onClick={() => {
-        if (!backdropCloseReady) return;
-        onClose();
-      }}
-    >      <div
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="task-detail-title"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalShell
+      onDismiss={onClose}
+      dismissEvent="click"
+      canDismissBackdrop={backdropCloseReady}
+      backdropClassName={styles.backdrop}
+      panelClassName={styles.modal}
+      labelledBy="task-detail-title"
+    >
         <div className={styles.top}>
           <div>
             <p className={styles.eyebrow}>Task details</p>
@@ -512,7 +503,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             ) : null}
           </form>
         ) : null}
-      </div>
-    </div>
+    </ModalShell>
   );
 };

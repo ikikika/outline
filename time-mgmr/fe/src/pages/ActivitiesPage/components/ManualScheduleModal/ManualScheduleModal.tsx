@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input } from '@/components/ui';
+import { ModalShell } from '@/components/molecules/ModalShell/ModalShell';
 import {
   manualScheduleSchema,
   type IApiTask,
@@ -51,94 +51,78 @@ export function ManualScheduleModal({
     },
   });
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) onCancel();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [busy, onCancel]);
-
   return (
-    <div
-      className={styles.backdrop}
-      role="presentation"
-      onMouseDown={() => {
-        if (!busy) onCancel();
-      }}
+    <ModalShell
+      onDismiss={onCancel}
+      dismissDisabled={busy}
+      backdropClassName={styles.backdrop}
+      panelClassName={styles.modal}
+      labelledBy="manual-schedule-title"
     >
-      <div
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="manual-schedule-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <h2 id="manual-schedule-title" className={styles.title}>
-            Schedule {task.title}
-          </h2>
-          <p className={styles.description}>
-            Choose when this task should appear on your timetable.
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <h2 id="manual-schedule-title" className={styles.title}>
+          Schedule {task.title}
+        </h2>
+        <p className={styles.description}>
+          Choose when this task should appear on your timetable.
+        </p>
+
+        <div className={styles.fields}>
+          <div className={styles.field}>
+            <label htmlFor="schedule-date">Date</label>
+            <Input id="schedule-date" type="date" {...register('date')} />
+            {errors.date ? (
+              <span className={styles.error}>{errors.date.message}</span>
+            ) : null}
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="schedule-start">Start time</label>
+            <Input
+              id="schedule-start"
+              type="time"
+              {...register('plannedStart')}
+            />
+            {errors.plannedStart ? (
+              <span className={styles.error}>
+                {errors.plannedStart.message}
+              </span>
+            ) : null}
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="schedule-end">End time</label>
+            <Input
+              id="schedule-end"
+              type="time"
+              {...register('plannedEnd')}
+            />
+            {errors.plannedEnd ? (
+              <span className={styles.error}>
+                {errors.plannedEnd.message}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        {error ? (
+          <p className={styles.submitError} role="alert">
+            {error}
           </p>
+        ) : null}
 
-          <div className={styles.fields}>
-            <div className={styles.field}>
-              <label htmlFor="schedule-date">Date</label>
-              <Input id="schedule-date" type="date" {...register('date')} />
-              {errors.date ? (
-                <span className={styles.error}>{errors.date.message}</span>
-              ) : null}
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="schedule-start">Start time</label>
-              <Input
-                id="schedule-start"
-                type="time"
-                {...register('plannedStart')}
-              />
-              {errors.plannedStart ? (
-                <span className={styles.error}>
-                  {errors.plannedStart.message}
-                </span>
-              ) : null}
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="schedule-end">End time</label>
-              <Input
-                id="schedule-end"
-                type="time"
-                {...register('plannedEnd')}
-              />
-              {errors.plannedEnd ? (
-                <span className={styles.error}>
-                  {errors.plannedEnd.message}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          {error ? (
-            <p className={styles.submitError} role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          <div className={styles.actions}>
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={busy}
-              onClick={onCancel}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy ? 'Scheduling…' : 'Add to timetable'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className={styles.actions}>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy}
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={busy}>
+            {busy ? 'Scheduling…' : 'Add to timetable'}
+          </Button>
+        </div>
+      </form>
+    </ModalShell>
   );
 }

@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import { MainLayout } from '@/layouts';
 import { Tabs, TabsContent, TabsList, TabsTrigger, Button } from '@/components/ui';
 import { StepTracker } from '@/components/molecules/StepTracker';
 import { ProfileProvider } from './context';
@@ -62,11 +61,9 @@ const ProfilePageContent: React.FC = () => {
 
 export const ProfilePage: React.FC = () => {
   return (
-    <MainLayout>
-      <ProfileProvider>
-        <ProfilePageContent />
-      </ProfileProvider>
-    </MainLayout>
+    <ProfileProvider>
+      <ProfilePageContent />
+    </ProfileProvider>
   );
 };
 

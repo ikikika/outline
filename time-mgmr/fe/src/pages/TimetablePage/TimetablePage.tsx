@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MainLayout } from '@/layouts';
 import { useAuthContext } from '@/app/providers/auth';
 import {
   formatDisplayDate,
@@ -185,8 +184,7 @@ export const TimetablePage: React.FC = () => {
   );
 
   return (
-    <MainLayout>
-      <div className={styles.timetable}>
+    <div className={styles.timetable}>
         {runningEntry && detailBlock?.taskId !== runningEntry.taskId ? (
           <aside className={styles.runningNotice} aria-live="polite">
             <div className={styles.runningNoticeText}>
@@ -359,7 +357,6 @@ export const TimetablePage: React.FC = () => {
           </div>
         ) : null}
       </div>
-    </MainLayout>
   );
 };
 

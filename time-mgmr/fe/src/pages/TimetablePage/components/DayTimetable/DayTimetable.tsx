@@ -21,14 +21,22 @@ import {
   LONG_PRESS_MS,
   pointerNeedsLongPress,
 } from '../../utils/blockDragGesture/blockDragGesture';
+import {
+  clampStartInDay,
+  computeBlockGeometry,
+  formatHourLabel,
+  MIN_BLOCK_HEIGHT_DAY_PX,
+  previewResizeEnd,
+  previewResizeStart,
+  SNAP_MINUTES,
+} from '../../utils/timetableGrid/timetableGrid';
 import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
+import { useNowMinutes } from '../../hooks/useNowMinutes/useNowMinutes';
+import { useTimetableScrollAnchor } from '../../hooks/useTimetableScrollAnchor/useTimetableScrollAnchor';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
+import { TimetableBlock } from '../shared/TimetableBlock/TimetableBlock';
+import { TimetableNowLine } from '../shared/TimetableNowLine/TimetableNowLine';
 import styles from './DayTimetable.module.scss';
-
-const MIN_BLOCK_HEIGHT_PX = 16;
-const COMPACT_BLOCK_HEIGHT_PX = 28;
-const SNAP_MINUTES = 15;
-const NOW_TICK_MS = 30_000;
 
 interface DayTimetableProps {
   date: string;
@@ -59,17 +67,6 @@ interface DragState {
   moved: boolean;
 }
 
-function formatHourLabel(hour: number): string {
-  const normalized = ((hour % 24) + 24) % 24;
-  const period = normalized >= 12 ? 'PM' : 'AM';
-  const display = normalized % 12 === 0 ? 12 : normalized % 12;
-  return `${display}:00 ${period}`;
-}
-
-function currentMinutesOfDay(now = new Date()): number {
-  return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-}
-
 export const DayTimetable: React.FC<DayTimetableProps> = ({
   date,
   blocks,
@@ -83,10 +80,8 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
 }) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const centeredForDateRef = useRef<string | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
-  const [nowMinutes, setNowMinutes] = useState(currentMinutesOfDay);
 
   const totalMinutes = Math.max(1, dayEndMinutes - dayStartMinutes);
   const pxPerMinute = useFitPxPerMinute(scrollRef, totalMinutes, undefined, fitToWindow);
@@ -96,20 +91,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   );
 
   const isToday = date === todayKey();
-
-  useEffect(() => {
-    centeredForDateRef.current = null;
-  }, [dayStartMinutes, dayEndMinutes]);
-
-  useEffect(() => {
-    if (!isToday) return;
-    setNowMinutes(currentMinutesOfDay());
-    const id = window.setInterval(() => {
-      setNowMinutes(currentMinutesOfDay());
-    }, NOW_TICK_MS);
-    return () => window.clearInterval(id);
-  }, [isToday, date]);
-
+  const nowMinutes = useNowMinutes(isToday);
   const showNowLine =
     isToday && nowMinutes >= dayStartMinutes && nowMinutes <= dayEndMinutes;
   const nowTop = (nowMinutes - dayStartMinutes) * pxPerMinute;
@@ -135,34 +117,20 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     return (earliestStart - dayStartMinutes) * pxPerMinute;
   }, [visibleBlocks, dayStartMinutes, pxPerMinute]);
 
-  useEffect(() => {
-    if (centeredForDateRef.current === date) return;
+  const scrollAnchorTop =
+    isToday && showNowLine
+      ? nowTop
+      : !isToday
+        ? earliestBlockTop
+        : null;
 
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) return;
-
-    let scrollTopTarget: number | null = null;
-    if (isToday && showNowLine) {
-      scrollTopTarget = nowTop;
-    } else if (!isToday && earliestBlockTop != null) {
-      scrollTopTarget = earliestBlockTop;
-    } else {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      const viewportHeight = scrollEl.clientHeight;
-      if (viewportHeight <= 0) return;
-      const maxScroll = Math.max(0, scrollEl.scrollHeight - viewportHeight);
-      const nextScrollTop = isToday
-        ? scrollTopTarget! - viewportHeight / 2
-        : Math.max(0, scrollTopTarget! - 8);
-      scrollEl.scrollTop = Math.max(0, Math.min(maxScroll, nextScrollTop));
-      centeredForDateRef.current = date;
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [date, isToday, showNowLine, nowTop, earliestBlockTop]);
+  useTimetableScrollAnchor({
+    scrollRef,
+    anchorKey: date,
+    anchorTop: scrollAnchorTop,
+    center: Boolean(isToday && showNowLine),
+    resetKey: `${dayStartMinutes}_${dayEndMinutes}`,
+  });
 
   const { overlapLayout, columnNextStart } = useMemo(() => {
     const intervals = visibleBlocks.map((activity) => {
@@ -194,10 +162,8 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   );
 
   const clampStart = useCallback(
-    (start: number, duration: number) => {
-      const maxStart = dayEndMinutes - duration;
-      return Math.max(dayStartMinutes, Math.min(maxStart, start));
-    },
+    (start: number, duration: number) =>
+      clampStartInDay(start, duration, dayStartMinutes, dayEndMinutes),
     [dayStartMinutes, dayEndMinutes]
   );
 
@@ -301,32 +267,34 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     }
 
     if (drag.mode === 'resize-start') {
-      const nextStart = Math.max(
-        dayStartMinutes,
-        Math.min(
-          drag.originEnd - SNAP_MINUTES,
-          snapMinutes(
-            drag.originStart + (event.clientY - drag.originClientY) / pxPerMinute,
-            SNAP_MINUTES
-          )
-        )
-      );
-      setDrag({ ...drag, previewStart: nextStart, moved: true });
+      setDrag({
+        ...drag,
+        previewStart: previewResizeStart({
+          originStart: drag.originStart,
+          originEnd: drag.originEnd,
+          originClientY: drag.originClientY,
+          clientY: event.clientY,
+          pxPerMinute,
+          dayStartMinutes,
+        }),
+        moved: true,
+      });
       return;
     }
 
     if (drag.mode === 'resize-end') {
-      const nextEnd = Math.max(
-        drag.originStart + SNAP_MINUTES,
-        Math.min(
+      setDrag({
+        ...drag,
+        previewEnd: previewResizeEnd({
+          originStart: drag.originStart,
+          originEnd: drag.originEnd,
+          originClientY: drag.originClientY,
+          clientY: event.clientY,
+          pxPerMinute,
           dayEndMinutes,
-          snapMinutes(
-            drag.originEnd + (event.clientY - drag.originClientY) / pxPerMinute,
-            SNAP_MINUTES
-          )
-        )
-      );
-      setDrag({ ...drag, previewEnd: nextEnd, moved: true });
+        }),
+        moved: true,
+      });
       return;
     }
 
@@ -404,94 +372,65 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
               <div key={hour} className={styles.hourLine} />
             ))}
 
-            {showNowLine ? (
-              <div
-                className={styles.nowLine}
-                style={{ top: nowTop }}
-                aria-hidden="true"
-              >
-                <span className={styles.nowDot} />
-              </div>
-            ) : null}
+            {showNowLine ? <TimetableNowLine top={nowTop} density="day" /> : null}
 
             {visibleBlocks.map((activity) => {
               const window = blockDisplayWindow(activity);
               const baseStart = timeToMinutes(window.start);
-              const duration = plannedDurationMinutes(
-                window.start,
-                window.end
-              );
+              const duration = plannedDurationMinutes(window.start, window.end);
               const isDragging = drag?.id === activity.id && drag.armed;
               const start = isDragging && drag ? drag.previewStart : baseStart;
               const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
-              const top = (start - dayStartMinutes) * pxPerMinute;
               const nextStart = columnNextStart.get(activity.id) ?? Infinity;
-              const gapToNextPx = (nextStart - start) * pxPerMinute;
-              const height = Math.min(
-                Math.max((end - start) * pxPerMinute, MIN_BLOCK_HEIGHT_PX),
-                gapToNextPx
-              );
-              const isCompact = height < COMPACT_BLOCK_HEIGHT_PX;
+              const { top, height, isCompact } = computeBlockGeometry({
+                start,
+                end,
+                dayStartMinutes,
+                pxPerMinute,
+                nextStart,
+                minHeightPx: MIN_BLOCK_HEIGHT_DAY_PX,
+              });
               const placement = overlapLayout.get(activity.id) ?? {
                 column: 0,
                 columnCount: 1,
               };
               const { left, width } = overlapColumnStyle(placement);
+              const startLabel = minutesToTime(start);
+              const endLabel = minutesToTime(end);
 
               return (
-                <div
+                <TimetableBlock
                   key={activity.id}
-                  className={`${styles.block} ${
-                    activity.status === 'done' ? styles.blockLocked : ''
-                  } ${isCompact ? styles.blockCompact : ''} ${
-                    isDragging ? styles.blockDragging : ''
-                  }`}
-                  style={{
-                    top,
-                    height,
-                    left,
-                    width,
-                    background: getTaskBlockColor(
-                      activity.activityId,
-                      activity.status,
-                      activity.color
-                    ),
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${activity.title}, ${minutesToTime(start)} to ${minutesToTime(end)}`}
+                  title={activity.title}
+                  startLabel={startLabel}
+                  endLabel={endLabel}
+                  top={top}
+                  height={height}
+                  left={left}
+                  width={width}
+                  background={getTaskBlockColor(
+                    activity.activityId,
+                    activity.status,
+                    activity.color
+                  )}
+                  isCompact={isCompact}
+                  isLocked={activity.status === 'done'}
+                  isDragging={Boolean(isDragging)}
+                  density="day"
                   onPointerDown={(e) => handlePointerDown(e, activity)}
+                  onResizeStartPointerDown={(e) =>
+                    handlePointerDown(e, activity, 'resize-start')
+                  }
+                  onResizeEndPointerDown={(e) =>
+                    handlePointerDown(e, activity, 'resize-end')
+                  }
                   onClick={
                     activity.status === 'done'
                       ? () => onSelect?.(activity)
                       : undefined
                   }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onSelect?.(activity);
-                    }
-                  }}
-                >
-                  {!isCompact && activity.status !== 'done' ? (
-                    <div
-                      className={`${styles.resizeHandle} ${styles.resizeHandleTop}`}
-                      aria-label={`Change start time for ${activity.title}`}
-                      onPointerDown={(e) => handlePointerDown(e, activity, 'resize-start')}
-                    />
-                  ) : null}
-                  <p className={styles.blockTitle}>{activity.title}</p>
-                  <p className={styles.blockMeta}>
-                    {minutesToTime(start)}–{minutesToTime(end)}
-                  </p>
-                  {!isCompact && activity.status !== 'done' ? (
-                    <div
-                      className={`${styles.resizeHandle} ${styles.resizeHandleBottom}`}
-                      aria-label={`Change end time for ${activity.title}`}
-                      onPointerDown={(e) => handlePointerDown(e, activity, 'resize-end')}
-                    />
-                  ) : null}
-                </div>
+                  onKeyActivate={() => onSelect?.(activity)}
+                />
               );
             })}
           </div>

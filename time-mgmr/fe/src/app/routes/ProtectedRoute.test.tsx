@@ -1,13 +1,18 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProtectedRoute } from '@/app/routes/ProtectedRoute';
 import type { IUser } from '@/core/types/common';
 
 const mockUseAuthContext = vi.hoisted(() => vi.fn());
+const mockUseThemeContext = vi.hoisted(() => vi.fn());
 
 vi.mock('@/app/providers/auth', () => ({
   useAuthContext: mockUseAuthContext,
+}));
+
+vi.mock('@/app/providers/theme', () => ({
+  useThemeContext: mockUseThemeContext,
 }));
 
 const mockUser: IUser = {
@@ -20,6 +25,22 @@ const mockUser: IUser = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
+
+function mockDesktopViewport() {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
 
 const renderWithRouter = (initialRoute = '/protected') => {
   return render(
@@ -36,6 +57,16 @@ const renderWithRouter = (initialRoute = '/protected') => {
 };
 
 describe('ProtectedRoute', () => {
+  beforeEach(() => {
+    mockDesktopViewport();
+    mockUseThemeContext.mockReturnValue({
+      theme: 'light',
+      resolvedTheme: 'light',
+      setTheme: vi.fn(),
+      toggleTheme: vi.fn(),
+    });
+  });
+
   it('shows loading state when isLoading is true', () => {
     mockUseAuthContext.mockReturnValue({
       user: null,
@@ -76,9 +107,8 @@ describe('ProtectedRoute', () => {
 
     renderWithRouter('/dashboard');
 
-      // Verify redirect happened - check that Login Page appears
-      const loginElements = screen.queryAllByText('Login Page');
-      expect(loginElements.length).toBeGreaterThan(0);
+    const loginElements = screen.queryAllByText('Login Page');
+    expect(loginElements.length).toBeGreaterThan(0);
   });
 
   it('renders outlet for authenticated users', () => {

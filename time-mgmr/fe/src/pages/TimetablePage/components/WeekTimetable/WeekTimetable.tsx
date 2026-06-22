@@ -22,14 +22,22 @@ import {
   LONG_PRESS_MS,
   pointerNeedsLongPress,
 } from '../../utils/blockDragGesture/blockDragGesture';
+import {
+  clampStartInDay,
+  computeBlockGeometry,
+  formatHourLabel,
+  MIN_BLOCK_HEIGHT_WEEK_PX,
+  previewResizeEnd,
+  previewResizeStart,
+  SNAP_MINUTES,
+} from '../../utils/timetableGrid/timetableGrid';
 import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
+import { useNowMinutes } from '../../hooks/useNowMinutes/useNowMinutes';
+import { useTimetableScrollAnchor } from '../../hooks/useTimetableScrollAnchor/useTimetableScrollAnchor';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
+import { TimetableBlock } from '../shared/TimetableBlock/TimetableBlock';
+import { TimetableNowLine } from '../shared/TimetableNowLine/TimetableNowLine';
 import styles from './WeekTimetable.module.scss';
-
-const MIN_BLOCK_HEIGHT_PX = 14;
-const COMPACT_BLOCK_HEIGHT_PX = 28;
-const SNAP_MINUTES = 15;
-const NOW_TICK_MS = 30_000;
 
 interface WeekTimetableProps {
   days: string[];
@@ -70,17 +78,6 @@ interface DragState {
   moved: boolean;
 }
 
-function formatHourLabel(hour: number): string {
-  const normalized = ((hour % 24) + 24) % 24;
-  const period = normalized >= 12 ? 'PM' : 'AM';
-  const display = normalized % 12 === 0 ? 12 : normalized % 12;
-  return `${display}:00 ${period}`;
-}
-
-function currentMinutesOfDay(now = new Date()): number {
-  return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-}
-
 export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   days,
   blocks,
@@ -97,10 +94,8 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const weekHeaderRef = useRef<HTMLDivElement>(null);
   const dayTrackRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const scrolledForWeekRef = useRef<string | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
-  const [nowMinutes, setNowMinutes] = useState(currentMinutesOfDay);
 
   const totalMinutes = Math.max(1, dayEndMinutes - dayStartMinutes);
   const pxPerMinute = useFitPxPerMinute(
@@ -117,20 +112,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   const today = todayKey();
   const weekContainsToday = days.includes(today);
   const weekKey = `${days[0]}_${days[days.length - 1] ?? days[0]}`;
-
-  useEffect(() => {
-    scrolledForWeekRef.current = null;
-  }, [dayStartMinutes, dayEndMinutes]);
-
-  useEffect(() => {
-    if (!weekContainsToday) return;
-    setNowMinutes(currentMinutesOfDay());
-    const id = window.setInterval(() => {
-      setNowMinutes(currentMinutesOfDay());
-    }, NOW_TICK_MS);
-    return () => window.clearInterval(id);
-  }, [weekContainsToday, weekKey]);
-
+  const nowMinutes = useNowMinutes(weekContainsToday);
   const showNowLine =
     weekContainsToday && nowMinutes >= dayStartMinutes && nowMinutes <= dayEndMinutes;
   const nowTop = (nowMinutes - dayStartMinutes) * pxPerMinute;
@@ -186,40 +168,20 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     return (earliestStart - dayStartMinutes) * pxPerMinute;
   }, [days, blocksByDate, dayStartMinutes, pxPerMinute]);
 
-  useEffect(() => {
-    if (scrolledForWeekRef.current === weekKey) return;
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) return;
+  const scrollAnchorTop =
+    weekContainsToday && showNowLine ? nowTop : earliestBlockTop;
 
-    let anchorTop: number | null = null;
-    if (weekContainsToday && showNowLine) {
-      anchorTop = nowTop;
-    } else if (earliestBlockTop != null) {
-      anchorTop = earliestBlockTop;
-    } else {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      const viewportHeight = scrollEl.clientHeight;
-      if (viewportHeight <= 0) return;
-      const maxScroll = Math.max(0, scrollEl.scrollHeight - viewportHeight);
-      const nextScrollTop =
-        weekContainsToday && showNowLine
-          ? anchorTop! - viewportHeight / 2
-          : Math.max(0, anchorTop! - 8);
-      scrollEl.scrollTop = Math.max(0, Math.min(maxScroll, nextScrollTop));
-      scrolledForWeekRef.current = weekKey;
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [weekKey, weekContainsToday, showNowLine, nowTop, earliestBlockTop]);
+  useTimetableScrollAnchor({
+    scrollRef,
+    anchorKey: weekKey,
+    anchorTop: scrollAnchorTop,
+    center: Boolean(weekContainsToday && showNowLine),
+    resetKey: `${dayStartMinutes}_${dayEndMinutes}`,
+  });
 
   const clampStart = useCallback(
-    (start: number, duration: number) => {
-      const maxStart = dayEndMinutes - duration;
-      return Math.max(dayStartMinutes, Math.min(maxStart, start));
-    },
+    (start: number, duration: number) =>
+      clampStartInDay(start, duration, dayStartMinutes, dayEndMinutes),
     [dayStartMinutes, dayEndMinutes]
   );
 
@@ -364,32 +326,34 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     }
 
     if (drag.mode === 'resize-start') {
-      const nextStart = Math.max(
-        dayStartMinutes,
-        Math.min(
-          drag.originEnd - SNAP_MINUTES,
-          snapMinutes(
-            drag.originStart + (event.clientY - drag.originClientY) / pxPerMinute,
-            SNAP_MINUTES
-          )
-        )
-      );
-      setDrag({ ...drag, previewStart: nextStart, moved: true });
+      setDrag({
+        ...drag,
+        previewStart: previewResizeStart({
+          originStart: drag.originStart,
+          originEnd: drag.originEnd,
+          originClientY: drag.originClientY,
+          clientY: event.clientY,
+          pxPerMinute,
+          dayStartMinutes,
+        }),
+        moved: true,
+      });
       return;
     }
 
     if (drag.mode === 'resize-end') {
-      const nextEnd = Math.max(
-        drag.originStart + SNAP_MINUTES,
-        Math.min(
+      setDrag({
+        ...drag,
+        previewEnd: previewResizeEnd({
+          originStart: drag.originStart,
+          originEnd: drag.originEnd,
+          originClientY: drag.originClientY,
+          clientY: event.clientY,
+          pxPerMinute,
           dayEndMinutes,
-          snapMinutes(
-            drag.originEnd + (event.clientY - drag.originClientY) / pxPerMinute,
-            SNAP_MINUTES
-          )
-        )
-      );
-      setDrag({ ...drag, previewEnd: nextEnd, moved: true });
+        }),
+        moved: true,
+      });
       return;
     }
 
@@ -506,9 +470,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                 ))}
 
                 {showNowLine && isTodayColumn ? (
-                  <div className={styles.nowLine} style={{ top: nowTop }} aria-hidden="true">
-                    <span className={styles.nowDot} />
-                  </div>
+                  <TimetableNowLine top={nowTop} density="week" />
                 ) : null}
 
                 {dayBlocks.map((activity) => {
@@ -531,72 +493,59 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                       ? targetTrack.getBoundingClientRect().left -
                         sourceTrack.getBoundingClientRect().left
                       : 0;
-                  const top = (start - dayStartMinutes) * pxPerMinute;
                   const nextStart = columnNextStart?.get(activity.id) ?? Infinity;
-                  const gapToNextPx = (nextStart - start) * pxPerMinute;
-                  const height = Math.min(
-                    Math.max((end - start) * pxPerMinute, MIN_BLOCK_HEIGHT_PX),
-                    gapToNextPx
-                  );
-                  const isCompact = height < COMPACT_BLOCK_HEIGHT_PX;
-                  const placement = layout?.get(activity.id) ?? { column: 0, columnCount: 1 };
+                  const { top, height, isCompact } = computeBlockGeometry({
+                    start,
+                    end,
+                    dayStartMinutes,
+                    pxPerMinute,
+                    nextStart,
+                    minHeightPx: MIN_BLOCK_HEIGHT_WEEK_PX,
+                  });
+                  const placement = layout?.get(activity.id) ?? {
+                    column: 0,
+                    columnCount: 1,
+                  };
                   const { left, width } = overlapColumnStyle(placement, 2);
+                  const startLabel = minutesToTime(start);
+                  const endLabel = minutesToTime(end);
 
                   return (
-                    <div
+                    <TimetableBlock
                       key={activity.id}
-                      className={`${styles.block} ${
-                        activity.status === 'done' ? styles.blockLocked : ''
-                      } ${isCompact ? styles.blockCompact : ''} ${
-                        isDragging ? styles.blockDragging : ''
-                      }`}
-                      style={{
-                        top,
-                        height,
-                        left,
-                        width,
-                        background: getTaskBlockColor(
-                          activity.activityId,
-                          activity.status,
-                          activity.color
-                        ),
-                        transform: dragOffsetX ? `translateX(${dragOffsetX}px)` : undefined,
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`${activity.title}, ${minutesToTime(start)} to ${minutesToTime(end)}`}
+                      title={activity.title}
+                      startLabel={startLabel}
+                      endLabel={endLabel}
+                      top={top}
+                      height={height}
+                      left={left}
+                      width={width}
+                      background={getTaskBlockColor(
+                        activity.activityId,
+                        activity.status,
+                        activity.color
+                      )}
+                      isCompact={isCompact}
+                      isLocked={activity.status === 'done'}
+                      isDragging={Boolean(isDragging)}
+                      density="week"
+                      transform={
+                        dragOffsetX ? `translateX(${dragOffsetX}px)` : undefined
+                      }
                       onPointerDown={(e) => handlePointerDown(e, activity)}
+                      onResizeStartPointerDown={(e) =>
+                        handlePointerDown(e, activity, 'resize-start')
+                      }
+                      onResizeEndPointerDown={(e) =>
+                        handlePointerDown(e, activity, 'resize-end')
+                      }
                       onClick={
                         activity.status === 'done'
                           ? () => onSelect?.(activity)
                           : undefined
                       }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onSelect?.(activity);
-                        }
-                      }}
-                    >
-                      {!isCompact && activity.status !== 'done' ? (
-                        <div
-                          className={`${styles.resizeHandle} ${styles.resizeHandleTop}`}
-                          aria-label={`Change start time for ${activity.title}`}
-                          onPointerDown={(e) => handlePointerDown(e, activity, 'resize-start')}
-                        />
-                      ) : null}
-                      <p className={styles.blockTitle}>{activity.title}</p>
-                      <p className={styles.blockMeta}>
-                        {minutesToTime(start)}–{minutesToTime(end)}
-                      </p>
-                      {!isCompact && activity.status !== 'done' ? (
-                        <div
-                          className={`${styles.resizeHandle} ${styles.resizeHandleBottom}`}
-                          aria-label={`Change end time for ${activity.title}`}
-                          onPointerDown={(e) => handlePointerDown(e, activity, 'resize-end')}
-                        />
-                      ) : null}
-                    </div>
+                      onKeyActivate={() => onSelect?.(activity)}
+                    />
                   );
                 })}
               </div>
