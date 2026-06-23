@@ -72,21 +72,38 @@ export function useResolvedTimeZone(): string {
   return user?.timeZone ?? getBrowserTimeZone();
 }
 
-async function invalidateScheduleQueries(
-  queryClient: ReturnType<typeof useQueryClient>,
-  date?: string
+async function invalidateScheduleBlocks(
+  queryClient: ReturnType<typeof useQueryClient>
 ) {
   await queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all });
-  await queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all });
-  await queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.all });
-  if (date) {
-    await queryClient.invalidateQueries({
-      queryKey: SCHEDULE_BLOCK_QUERY_KEYS.byDate(date),
-    });
-  }
 }
 
-export function useTimetableBlocksByDate(date: string) {
+/** Schedule blocks + activity/task catalog (status or metadata changed). */
+async function invalidateTaskRelated(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all }),
+  ]);
+}
+
+/** Timer / manual log / delete paths that touch entries, tasks, and blocks. */
+async function invalidateTimeTracking(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.running }),
+  ]);
+}
+
+export function useTimetableBlocksByDate(
+  date: string,
+  options?: { enabled?: boolean }
+) {
   const timeZone = useResolvedTimeZone();
   return useQuery({
     queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byDate(date), timeZone],
@@ -94,10 +111,15 @@ export function useTimetableBlocksByDate(date: string) {
       requireApiBaseUrl();
       return fetchTimetableBlocksByDate(date, timeZone);
     },
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function useTimetableBlocksByRange(from: string, to: string) {
+export function useTimetableBlocksByRange(
+  from: string,
+  to: string,
+  options?: { enabled?: boolean }
+) {
   const timeZone = useResolvedTimeZone();
   return useQuery({
     queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byRange(from, to), timeZone],
@@ -105,6 +127,7 @@ export function useTimetableBlocksByRange(from: string, to: string) {
       requireApiBaseUrl();
       return fetchTimetableBlocksByDateRange(from, to, timeZone);
     },
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -200,7 +223,7 @@ export function useActivityMutations(date: string) {
       );
     },
     onSuccess: async () => {
-      await invalidateScheduleQueries(queryClient, date);
+      await invalidateScheduleBlocks(queryClient);
     },
   });
 
@@ -209,7 +232,7 @@ export function useActivityMutations(date: string) {
       return updateTaskApi(id, patch);
     },
     onSuccess: async () => {
-      await invalidateScheduleQueries(queryClient, date);
+      await invalidateTaskRelated(queryClient);
     },
   });
 
@@ -259,7 +282,7 @@ export function useActivityMutations(date: string) {
       );
     },
     onSuccess: async () => {
-      await invalidateScheduleQueries(queryClient, date);
+      await invalidateTaskRelated(queryClient);
     },
   });
 
@@ -279,7 +302,7 @@ export function useActivityMutations(date: string) {
       }
     },
     onSuccess: async () => {
-      await invalidateScheduleQueries(queryClient, date);
+      await invalidateTimeTracking(queryClient);
     },
   });
 
@@ -292,7 +315,7 @@ export function useActivityMutations(date: string) {
       status: ActivityStatus | TaskStatus;
     }) => patchTaskApi(taskId, { status }),
     onSuccess: async () => {
-      await invalidateScheduleQueries(queryClient, date);
+      await invalidateTaskRelated(queryClient);
     },
   });
 
@@ -329,19 +352,18 @@ export function useActivityMutations(date: string) {
       return patchTaskApi(taskId, { status: 'done' });
     },
     onSuccess: async () => {
-      await invalidateScheduleQueries(queryClient, date);
+      await invalidateTaskRelated(queryClient);
     },
   });
 
   return { update, updateBlock, updateTask, remove, setStatus, complete };
 }
 
-export function useTimeEntryMutations(date: string) {
+export function useTimeEntryMutations(_date: string) {
   const queryClient = useQueryClient();
 
   const refresh = async () => {
-    await invalidateScheduleQueries(queryClient, date);
-    await queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.running });
+    await invalidateTimeTracking(queryClient);
   };
 
   const startTimer = useMutation({

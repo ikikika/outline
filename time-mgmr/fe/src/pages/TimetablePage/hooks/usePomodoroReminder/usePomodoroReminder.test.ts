@@ -130,5 +130,10 @@ describe('Pomodoro break reminder', () => {
     );
 
     expect(result.current.shouldPrompt).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current.shouldPrompt).toBe(true);
   });
 });

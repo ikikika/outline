@@ -71,6 +71,8 @@ interface DragState {
   originEnd: number;
   originClientX: number;
   originClientY: number;
+  /** Horizontal translate for cross-day preview; updated on pointermove. */
+  dragOffsetX: number;
   pointerId: number;
   pointerType: string;
   /** False until mouse arms immediately or touch completes long-press. */
@@ -275,6 +277,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       originEnd: end,
       originClientX: event.clientX,
       originClientY: event.clientY,
+      dragOffsetX: 0,
       pointerId: event.pointerId,
       pointerType: event.pointerType,
       armed: !needsLongPress,
@@ -363,11 +366,19 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
       clientYToStartMinutes(event.clientY, drag.offsetY, previewDate),
       duration
     );
+    const sourceTrack = dayTrackRefs.current.get(drag.originDate);
+    const targetTrack = dayTrackRefs.current.get(previewDate);
+    const dragOffsetX =
+      sourceTrack && targetTrack
+        ? targetTrack.getBoundingClientRect().left -
+          sourceTrack.getBoundingClientRect().left
+        : 0;
     setDrag({
       ...drag,
       previewDate,
       previewStart: nextStart,
       previewEnd: nextStart + duration,
+      dragOffsetX,
       moved: true,
     });
   };
@@ -483,16 +494,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                   const isDragging = drag?.id === activity.id && drag.armed;
                   const start = isDragging && drag ? drag.previewStart : baseStart;
                   const end = isDragging && drag ? drag.previewEnd : baseStart + duration;
-                  const sourceTrack = dayTrackRefs.current.get(window.date);
-                  const targetTrack =
-                    isDragging && drag
-                      ? dayTrackRefs.current.get(drag.previewDate)
-                      : undefined;
-                  const dragOffsetX =
-                    sourceTrack && targetTrack
-                      ? targetTrack.getBoundingClientRect().left -
-                        sourceTrack.getBoundingClientRect().left
-                      : 0;
+                  const dragOffsetX = isDragging && drag ? drag.dragOffsetX : 0;
                   const nextStart = columnNextStart?.get(activity.id) ?? Infinity;
                   const { top, height, isCompact } = computeBlockGeometry({
                     start,

@@ -3,6 +3,7 @@ import { useAuthContext } from '@/app/providers/auth';
 import {
   formatDisplayDate,
   todayKey,
+  useTimetableBlocksByDate,
   useTimetableBlocksByRange,
   useActivityMutations,
   useActivityById,
@@ -22,7 +23,6 @@ import {
   resolveTimetableDayBounds,
   resolveTimetableVisibleRange,
 } from '@/features/auth';
-import { useDayReport } from '@/features/reports';
 import { ActivityForm } from './components/ActivityForm/ActivityForm';
 import { DayTimetable } from './components/DayTimetable/DayTimetable';
 import { PomodoroBreakPrompt } from './components/PomodoroBreakPrompt/PomodoroBreakPrompt';
@@ -38,15 +38,22 @@ export const TimetablePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [timetableView, setTimetableView] = useState<TimetableView>('day');
   const [showAllHours, setShowAllHours] = useState(false);
-  const [detailBlock, setDetailBlock] = useState<ITimetableBlock | null>(null);
+  const [detailBlockId, setDetailBlockId] = useState<string | null>(null);
   const [editing, setEditing] = useState<ITimetableBlock | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const week = weekDateKeys(selectedDate);
-  const { activities: dayBlocks, isLoading: dayLoading, error: dayError } =
-    useDayReport(selectedDate);
-  const weekBlocksQuery = useTimetableBlocksByRange(week[0], week[week.length - 1]);
+  const week = useMemo(() => weekDateKeys(selectedDate), [selectedDate]);
+  const detailOpen = detailBlockId != null;
+
+  const dayBlocksQuery = useTimetableBlocksByDate(selectedDate, {
+    enabled: timetableView === 'day' || detailOpen,
+  });
+  const weekBlocksQuery = useTimetableBlocksByRange(week[0], week[week.length - 1], {
+    enabled: timetableView === 'week' || detailOpen,
+  });
+  const dayBlocks = dayBlocksQuery.data ?? [];
   const weekBlocks = weekBlocksQuery.data ?? [];
+
   const { data: runningEntry = null } = useRunningTimer();
   const runningTaskQuery = useTaskById(runningEntry?.taskId ?? null);
   const runningTask = runningTaskQuery.data ?? null;
@@ -60,6 +67,16 @@ export const TimetablePage: React.FC = () => {
     blocks: blockCatalogQuery.data ?? [],
     timeZone,
   });
+
+  const detailBlock = useMemo(() => {
+    if (!detailBlockId) return null;
+    return (
+      dayBlocks.find((block) => block.id === detailBlockId) ??
+      weekBlocks.find((block) => block.id === detailBlockId) ??
+      (runningBlock?.id === detailBlockId ? runningBlock : null)
+    );
+  }, [detailBlockId, dayBlocks, weekBlocks, runningBlock]);
+
   const { data: detailActivity = null } = useActivityById(
     detailBlock?.activityId ?? null
   );
@@ -70,10 +87,12 @@ export const TimetablePage: React.FC = () => {
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
-  const visibleRange = resolveTimetableVisibleRange(user);
+  const visibleRange = useMemo(
+    () => resolveTimetableVisibleRange(user),
+    [user?.timetableVisibleStart, user?.timetableVisibleEnd]
+  );
 
-  const rangeBlocks =
-    timetableView === 'week' ? weekBlocks : dayBlocks;
+  const rangeBlocks = timetableView === 'week' ? weekBlocks : dayBlocks;
 
   const { dayStartMinutes, dayEndMinutes } = useMemo(() => {
     const blockWindows = rangeBlocks.map((block) => {
@@ -86,17 +105,14 @@ export const TimetablePage: React.FC = () => {
       visibleEnd: visibleRange.end,
       blockWindows,
     });
-  }, [
-    showAllHours,
-    visibleRange.start,
-    visibleRange.end,
-    rangeBlocks,
-  ]);
+  }, [showAllHours, visibleRange.start, visibleRange.end, rangeBlocks]);
 
   const isLoading =
-    dayLoading || (timetableView === 'week' && weekBlocksQuery.isLoading);
+    timetableView === 'week'
+      ? weekBlocksQuery.isLoading
+      : dayBlocksQuery.isLoading;
   const loadError =
-    dayError ?? (timetableView === 'week' ? weekBlocksQuery.error : null);
+    timetableView === 'week' ? weekBlocksQuery.error : dayBlocksQuery.error;
 
   const busy =
     update.isPending ||
@@ -108,34 +124,20 @@ export const TimetablePage: React.FC = () => {
     stopTimer.isPending ||
     addManual.isPending;
 
+  // Close the modal once caches have settled and the block is gone.
   useEffect(() => {
-    if (!detailBlock) return;
-    const next =
-      dayBlocks.find((block) => block.id === detailBlock.id) ??
-      weekBlocks.find((block) => block.id === detailBlock.id) ??
-      (runningBlock?.id === detailBlock.id ? runningBlock : undefined);
-    if (!next) {
-      if (dayLoading) return;
-      setDetailBlock(null);
-      return;
-    }
-    if (
-      next.status !== detailBlock.status ||
-      next.title !== detailBlock.title ||
-      next.notes !== detailBlock.notes ||
-      next.plannedStart !== detailBlock.plannedStart ||
-      next.plannedEnd !== detailBlock.plannedEnd ||
-      next.updatedAt !== detailBlock.updatedAt
-    ) {
-      setDetailBlock(next);
-    }
-  }, [dayBlocks, weekBlocks, runningBlock, detailBlock, dayLoading]);
+    if (!detailBlockId || detailBlock) return;
+    if (isLoading || runningBlocksQuery.isPending) return;
+    setDetailBlockId(null);
+  }, [detailBlockId, detailBlock, isLoading, runningBlocksQuery.isPending]);
 
   const openDetails = (item: ITimetableBlock) => {
     setSelectedDate(item.date);
-    setDetailBlock(item);
+    setDetailBlockId(item.id);
     setEditing(null);
   };
+
+  const closeDetails = () => setDetailBlockId(null);
 
   const handleSubmit = async (values: ActivityFormValues) => {
     if (!editing) return;
@@ -147,7 +149,7 @@ export const TimetablePage: React.FC = () => {
         patch: values,
       });
       setEditing(null);
-      setDetailBlock(null);
+      closeDetails();
       if (values.date !== selectedDate) {
         setSelectedDate(values.date);
       }
@@ -185,178 +187,178 @@ export const TimetablePage: React.FC = () => {
 
   return (
     <div className={styles.timetable}>
-        {runningEntry && detailBlock?.taskId !== runningEntry.taskId ? (
-          <aside className={styles.runningNotice} aria-live="polite">
-            <div className={styles.runningNoticeText}>
-              <strong>Timer still running</strong>
-              <span>
-                {runningTask
-                  ? `${runningTask.title} started at ${new Date(
-                      runningEntry.startAt
-                    ).toLocaleTimeString([], {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })}.`
-                  : 'Loading the active task…'}
-              </span>
-            </div>
-            <button
-              type="button"
-              className={styles.runningNoticeAction}
-              disabled={!runningBlock || runningBlocksQuery.isPending}
-              onClick={() => {
-                if (runningBlock) openDetails(runningBlock);
-              }}
-            >
-              Open task
-            </button>
-          </aside>
-        ) : null}
-        {pomodoroReminder.shouldPrompt &&
-        runningTask &&
-        runningEntry &&
-        pomodoroReminder.breakBlock ? (
-          <PomodoroBreakPrompt
-            focusTitle={runningTask.title}
-            breakTitle={pomodoroReminder.breakBlock.title}
-            isOpening={stopTimer.isPending}
-            onContinueWorking={pomodoroReminder.dismiss}
-            onOpenBreak={() =>
-              runAction(async () => {
-                await stopTimer.mutateAsync(runningEntry.id);
-                pomodoroReminder.dismiss();
-                openDetails(pomodoroReminder.breakBlock!);
-              })
-            }
-          />
-        ) : null}
-        {actionError && <div className={styles.error}>{actionError}</div>}
-        {loadError && (
-          <div className={styles.error}>
-            {loadError instanceof Error
-              ? loadError.message
-              : 'Failed to load schedule blocks from API.'}
+      {runningEntry && detailBlock?.taskId !== runningEntry.taskId ? (
+        <aside className={styles.runningNotice} aria-live="polite">
+          <div className={styles.runningNoticeText}>
+            <strong>Timer still running</strong>
+            <span>
+              {runningTask
+                ? `${runningTask.title} started at ${new Date(
+                    runningEntry.startAt
+                  ).toLocaleTimeString([], {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}.`
+                : 'Loading the active task…'}
+            </span>
           </div>
-        )}
-        {isLoading && !loadError ? <div className={styles.loading}>Loading timetable…</div> : null}
+          <button
+            type="button"
+            className={styles.runningNoticeAction}
+            disabled={!runningBlock || runningBlocksQuery.isPending}
+            onClick={() => {
+              if (runningBlock) openDetails(runningBlock);
+            }}
+          >
+            Open task
+          </button>
+        </aside>
+      ) : null}
+      {pomodoroReminder.shouldPrompt &&
+      runningTask &&
+      runningEntry &&
+      pomodoroReminder.breakBlock ? (
+        <PomodoroBreakPrompt
+          focusTitle={runningTask.title}
+          breakTitle={pomodoroReminder.breakBlock.title}
+          isOpening={stopTimer.isPending}
+          onContinueWorking={pomodoroReminder.dismiss}
+          onOpenBreak={() =>
+            runAction(async () => {
+              await stopTimer.mutateAsync(runningEntry.id);
+              pomodoroReminder.dismiss();
+              openDetails(pomodoroReminder.breakBlock!);
+            })
+          }
+        />
+      ) : null}
+      {actionError && <div className={styles.error}>{actionError}</div>}
+      {loadError && (
+        <div className={styles.error}>
+          {loadError instanceof Error
+            ? loadError.message
+            : 'Failed to load schedule blocks from API.'}
+        </div>
+      )}
+      {isLoading && !loadError ? <div className={styles.loading}>Loading timetable…</div> : null}
 
-        {timetableView === 'week' ? (
-          <WeekTimetable
-            days={week}
-            blocks={weekBlocks}
-            dayStartMinutes={dayStartMinutes}
-            dayEndMinutes={dayEndMinutes}
-            fitToWindow={!showAllHours}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            disabled={busy}
-            toolbar={toolbar}
-            onSelect={openDetails}
-            onReschedule={(id, plannedStart, plannedEnd, date) =>
-              runAction(() =>
-                updateBlock.mutateAsync({
-                  id,
-                  patch: { plannedStart, plannedEnd, ...(date ? { date } : {}) },
-                })
-              )
-            }
-          />
-        ) : (
-          <DayTimetable
-            date={selectedDate}
-            blocks={dayBlocks}
-            dayStartMinutes={dayStartMinutes}
-            dayEndMinutes={dayEndMinutes}
-            fitToWindow={!showAllHours}
-            disabled={busy}
-            toolbar={toolbar}
-            onSelect={openDetails}
-            onReschedule={(id, plannedStart, plannedEnd) =>
-              runAction(() =>
-                updateBlock.mutateAsync({ id, patch: { plannedStart, plannedEnd } })
-              )
-            }
-          />
-        )}
-
-        {detailBlock && !editing ? (
-          <TaskDetailModal
-            block={detailBlock}
-            activityTitle={detailActivity?.title}
-            entries={detailEntries}
-            runningEntry={runningEntry}
-            busy={busy}
-            onClose={() => setDetailBlock(null)}
-            onEdit={(block) => setEditing(block)}
-            onDelete={(block) =>
-              runAction(async () => {
-                await remove.mutateAsync({
-                  blockId: block.id,
-                  taskId: block.taskId,
-                });
-                setDetailBlock(null);
+      {timetableView === 'week' ? (
+        <WeekTimetable
+          days={week}
+          blocks={weekBlocks}
+          dayStartMinutes={dayStartMinutes}
+          dayEndMinutes={dayEndMinutes}
+          fitToWindow={!showAllHours}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+          disabled={busy}
+          toolbar={toolbar}
+          onSelect={openDetails}
+          onReschedule={(id, plannedStart, plannedEnd, date) =>
+            runAction(() =>
+              updateBlock.mutateAsync({
+                id,
+                patch: { plannedStart, plannedEnd, ...(date ? { date } : {}) },
               })
-            }
-            onStatus={(taskId, status) =>
-              runAction(async () => {
-                if (status === 'done') {
-                  let sessions = detailEntries;
-                  if (runningEntry?.taskId === taskId) {
-                    const stopped = await stopTimer.mutateAsync(runningEntry.id);
-                    const endAt = stopped?.endAt ?? new Date().toISOString();
-                    sessions = detailEntries.some((e) => e.id === runningEntry.id)
-                      ? detailEntries.map((e) =>
-                          e.id === runningEntry.id ? { ...e, endAt } : e
-                        )
-                      : [...detailEntries, { ...runningEntry, endAt }];
-                  }
-                  const bounds = workSessionBounds(sessions);
-                  await complete.mutateAsync({
-                    taskId,
-                    blockId: detailBlock.id,
-                    sessionStartAt: bounds?.startAt,
-                    sessionEndAt: bounds?.endAt,
-                  });
-                  setDetailBlock(null);
-                  return;
+            )
+          }
+        />
+      ) : (
+        <DayTimetable
+          date={selectedDate}
+          blocks={dayBlocks}
+          dayStartMinutes={dayStartMinutes}
+          dayEndMinutes={dayEndMinutes}
+          fitToWindow={!showAllHours}
+          disabled={busy}
+          toolbar={toolbar}
+          onSelect={openDetails}
+          onReschedule={(id, plannedStart, plannedEnd) =>
+            runAction(() =>
+              updateBlock.mutateAsync({ id, patch: { plannedStart, plannedEnd } })
+            )
+          }
+        />
+      )}
+
+      {detailBlock && !editing ? (
+        <TaskDetailModal
+          block={detailBlock}
+          activityTitle={detailActivity?.title}
+          entries={detailEntries}
+          runningEntry={runningEntry}
+          busy={busy}
+          onClose={closeDetails}
+          onEdit={(block) => setEditing(block)}
+          onDelete={(block) =>
+            runAction(async () => {
+              await remove.mutateAsync({
+                blockId: block.id,
+                taskId: block.taskId,
+              });
+              closeDetails();
+            })
+          }
+          onStatus={(taskId, status) =>
+            runAction(async () => {
+              if (status === 'done') {
+                let sessions = detailEntries;
+                if (runningEntry?.taskId === taskId) {
+                  const stopped = await stopTimer.mutateAsync(runningEntry.id);
+                  const endAt = stopped?.endAt ?? new Date().toISOString();
+                  sessions = detailEntries.some((e) => e.id === runningEntry.id)
+                    ? detailEntries.map((e) =>
+                        e.id === runningEntry.id ? { ...e, endAt } : e
+                      )
+                    : [...detailEntries, { ...runningEntry, endAt }];
                 }
+                const bounds = workSessionBounds(sessions);
+                await complete.mutateAsync({
+                  taskId,
+                  blockId: detailBlock.id,
+                  sessionStartAt: bounds?.startAt,
+                  sessionEndAt: bounds?.endAt,
+                });
+                closeDetails();
+                return;
+              }
 
-                await setStatus.mutateAsync({ taskId, status });
-              })
-            }
-            onStart={(taskId) => runAction(() => startTimer.mutateAsync(taskId))}
-            onStop={(entryId) => runAction(() => stopTimer.mutateAsync(entryId))}
-            onLogManual={(taskId, minutes) =>
-              runAction(() =>
-                addManual.mutateAsync({ activityId: taskId, durationMinutes: minutes })
-              )
-            }
-          />
-        ) : null}
+              await setStatus.mutateAsync({ taskId, status });
+            })
+          }
+          onStart={(taskId) => runAction(() => startTimer.mutateAsync(taskId))}
+          onStop={(entryId) => runAction(() => stopTimer.mutateAsync(entryId))}
+          onLogManual={(taskId, minutes) =>
+            runAction(() =>
+              addManual.mutateAsync({ activityId: taskId, durationMinutes: minutes })
+            )
+          }
+        />
+      ) : null}
 
-        {editing ? (
-          <div className={styles.formBackdrop} role="presentation" onClick={() => setEditing(null)}>
-            <div
-              className={styles.formModal}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Edit activity"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ActivityForm
-                date={selectedDate}
-                initial={editing}
-                isSubmitting={update.isPending}
-                onCancel={() => {
-                  setEditing(null);
-                  setDetailBlock(null);
-                }}
-                onSubmit={handleSubmit}
-              />
-            </div>
+      {editing ? (
+        <div className={styles.formBackdrop} role="presentation" onClick={() => setEditing(null)}>
+          <div
+            className={styles.formModal}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit activity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ActivityForm
+              date={selectedDate}
+              initial={editing}
+              isSubmitting={update.isPending}
+              onCancel={() => {
+                setEditing(null);
+                closeDetails();
+              }}
+              onSubmit={handleSubmit}
+            />
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
+    </div>
   );
 };
 

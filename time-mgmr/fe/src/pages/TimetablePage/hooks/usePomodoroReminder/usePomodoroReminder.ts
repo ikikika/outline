@@ -88,16 +88,16 @@ export function usePomodoroReminder({
   useEffect(() => {
     if (!runningBlock || !reminderKey) return;
 
-    const checkReminder = () => {
-      const plannedEndMs = new Date(
-        zonedLocalToUtc(
-          runningBlock.date,
-          `${runningBlock.plannedEnd}:00`,
-          timeZone
-        )
-      ).getTime();
-      if (Date.now() < plannedEndMs) return;
+    const plannedEndMs = new Date(
+      zonedLocalToUtc(
+        runningBlock.date,
+        `${runningBlock.plannedEnd}:00`,
+        timeZone
+      )
+    ).getTime();
+    const delayMs = Math.max(0, plannedEndMs - Date.now());
 
+    const showReminder = () => {
       const storageKey = `${REMINDER_STORAGE_PREFIX}${reminderKey}`;
       if (sessionStorage.getItem(storageKey)) return;
 
@@ -105,12 +105,8 @@ export function usePomodoroReminder({
       setActiveReminderKey(reminderKey);
     };
 
-    const initialCheckId = window.setTimeout(checkReminder, 0);
-    const intervalId = window.setInterval(checkReminder, 1000);
-    return () => {
-      window.clearTimeout(initialCheckId);
-      window.clearInterval(intervalId);
-    };
+    const timeoutId = window.setTimeout(showReminder, delayMs);
+    return () => window.clearTimeout(timeoutId);
   }, [reminderKey, runningBlock, timeZone]);
 
   const dismiss = useCallback(() => {

@@ -112,6 +112,7 @@ vi.mock('@/features/activities', () => ({
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;
   },
+  useTimetableBlocksByDate: () => ({ data: mockBlocks, isLoading: false, error: null }),
   useTimetableBlocksByRange: () => ({ data: mockBlocks, isLoading: false, error: null }),
   useActivityById: () => ({
     data: { id: 'activity-1', title: 'AI course' },
@@ -163,21 +164,6 @@ vi.mock('./hooks/usePomodoroReminder/usePomodoroReminder', () => ({
     breakBlock: mockShouldPrompt ? mockBlocks[1] : null,
     shouldPrompt: mockShouldPrompt,
     dismiss: mockDismissReminder,
-  }),
-}));
-
-vi.mock('@/features/reports', () => ({
-  useDayReport: () => ({
-    report: {
-      plannedMinutes: 240,
-      actualMinutes: 180,
-      varianceMinutes: -60,
-      completionRate: 0.75,
-    },
-    isLoading: false,
-    error: null,
-    activities: mockBlocks,
-    entries: [],
   }),
 }));
 
