@@ -31,6 +31,7 @@ import { TimetableHeader, type TimetableView } from './components/TimetableHeade
 import { WeekTimetable } from './components/WeekTimetable/WeekTimetable';
 import { usePomodoroReminder } from './hooks/usePomodoroReminder/usePomodoroReminder';
 import { blockDisplayWindow } from './utils/blockDisplayWindow/blockDisplayWindow';
+import { ensureBreakTaskForBlock } from './utils/ensureBreakTask/ensureBreakTask';
 import styles from './TimetablePage.module.scss';
 
 export const TimetablePage: React.FC = () => {
@@ -138,6 +139,9 @@ export const TimetablePage: React.FC = () => {
   };
 
   const closeDetails = () => setDetailBlockId(null);
+
+  const resolveTrackableTaskId = async (block: ITimetableBlock): Promise<string> =>
+    ensureBreakTaskForBlock(block);
 
   const handleSubmit = async (values: ActivityFormValues) => {
     if (!editing) return;
@@ -326,7 +330,12 @@ export const TimetablePage: React.FC = () => {
               await setStatus.mutateAsync({ taskId, status });
             })
           }
-          onStart={(taskId) => runAction(() => startTimer.mutateAsync(taskId))}
+          onStart={(block) =>
+            runAction(async () => {
+              const taskId = await resolveTrackableTaskId(block);
+              await startTimer.mutateAsync(taskId);
+            })
+          }
           onStop={(entryId) => runAction(() => stopTimer.mutateAsync(entryId))}
           onLogManual={(taskId, minutes) =>
             runAction(() =>

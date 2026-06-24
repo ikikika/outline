@@ -17,6 +17,10 @@ import {
 import { buildActivityMetrics, type VarianceKind } from '@/features/reports';
 import { useSidebarLayout } from '@/components/organisms/Sidebar/SidebarLayoutContext';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
+import {
+  blockPlannedSeconds,
+  isBreakBlock,
+} from '../../utils/ensureBreakTask/ensureBreakTask';
 import styles from './TaskDetailModal.module.scss';
 
 interface TaskDetailModalProps {
@@ -29,7 +33,8 @@ interface TaskDetailModalProps {
   onEdit: (block: ITimetableBlock) => void;
   onDelete: (block: ITimetableBlock) => void;
   onStatus: (taskId: string, status: ITimetableBlock['status']) => void;
-  onStart: (taskId: string) => void;
+  /** Start a timer for this block (parent ensures a taskId for breaks). */
+  onStart: (block: ITimetableBlock) => void;
   onStop: (entryId: string) => void;
   onLogManual: (taskId: string, durationMinutes: number) => Promise<void> | void;
 }
@@ -105,11 +110,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const category = CATEGORY_MAP[block.categoryId];
   const metrics = buildActivityMetrics(block, entries);
   const taskId = block.taskId;
+  const isBreak = isBreakBlock(block);
   const isRunningHere = Boolean(taskId && runningEntry?.taskId === taskId);
   const accent = getTaskBlockColor(block.activityId);
-  const plannedSeconds = Math.max(0, block.timeEstimationSeconds ?? 0);
-  const canTrackTime = Boolean(taskId);
+  const plannedSeconds = blockPlannedSeconds(block);
+  const canTrackTime = Boolean(taskId) || isBreak;
   const canEnterFocusMode = canTrackTime && block.status !== 'done';
+  const focusEyebrow = isBreak ? 'Break' : 'Focus';
 
   const {
     register,
@@ -183,12 +190,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   });
 
   const handleFocusPrimary = () => {
-    if (!taskId) return;
     if (isRunningHere && runningEntry) {
       onStop(runningEntry.id);
       return;
     }
-    onStart(taskId);
+    onStart(block);
   };
 
   if (focusMode) {
@@ -201,7 +207,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         style={{ ['--focus-accent' as string]: accent }}
       >
         <div className={styles.focusTop}>
-          <p className={styles.focusEyebrow}>Focus</p>
+          <p className={styles.focusEyebrow}>{focusEyebrow}</p>
         </div>
 
         <div className={styles.focusBody}>
@@ -250,7 +256,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 }
                 title={
                   !canTrackTime
-                    ? 'This break has no linked task'
+                    ? 'This block has no linked task'
                     : !isRunningHere && runningEntry
                       ? 'Stop the current timer first'
                       : undefined
@@ -326,9 +332,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               disabled={!canEnterFocusMode}
               title={
                 block.status === 'done'
-                  ? 'Mark this task in progress before entering focus mode'
+                  ? `Mark this ${isBreak ? 'break' : 'task'} in progress before entering focus mode`
                   : !canTrackTime
-                    ? 'This break has no linked task'
+                    ? 'This block has no linked task'
                     : undefined
               }
               onClick={() => {
@@ -424,14 +430,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <Button
                 size="sm"
                 disabled={busy || Boolean(runningEntry)}
-                onClick={() => onStart(taskId!)}
+                onClick={() => onStart(block)}
                 title={runningEntry ? 'Stop the current timer first' : undefined}
               >
                 Start
               </Button>
             )
           ) : null}
-          {canTrackTime ? (
+          {taskId ? (
             <Button
               size="sm"
               variant="outline"
@@ -441,13 +447,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               Log time
             </Button>
           ) : null}
-          {canTrackTime ? (
+          {taskId ? (
             block.status === 'done' ? (
               <Button
                 size="sm"
                 variant="outline"
                 disabled={busy}
-                onClick={() => onStatus(taskId!, 'in_progress')}
+                onClick={() => onStatus(taskId, 'in_progress')}
               >
                 Mark in progress
               </Button>
@@ -456,18 +462,18 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 size="sm"
                 variant="outline"
                 disabled={busy}
-                onClick={() => onStatus(taskId!, 'done')}
+                onClick={() => onStatus(taskId, 'done')}
               >
                 Done
               </Button>
             )
           ) : null}
-          {canTrackTime ? (
+          {taskId ? (
             <Button
               size="sm"
               variant="ghost"
               disabled={busy}
-              onClick={() => onStatus(taskId!, 'skipped')}
+              onClick={() => onStatus(taskId, 'skipped')}
             >
               Skip
             </Button>

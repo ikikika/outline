@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { Hono } from 'hono';
 
 import {
@@ -10,13 +12,66 @@ import {
 } from '../lib/autoScheduleMapper.js';
 import { getUserId } from '../middleware/auth.js';
 import { isActivityArchived } from '../lib/activityArchive.js';
-import { getActivity, getTask, listTasksByActivityId, updateTask } from '../repositories/dataRepository.js';
+import {
+	getActivity,
+	getTask,
+	listTasksByActivityId,
+	updateTask,
+	upsertActivity,
+	upsertTask,
+} from '../repositories/dataRepository.js';
 import {
 	listAllScheduleBlocks,
 	replaceScheduleBlocksForAutoSchedule,
 } from '../repositories/scheduleBlockRepository.js';
 import { getUserProfile } from '../repositories/userRepository.js';
 import { computeAutoSchedule } from '../services/autoScheduler.js';
+
+const POMODORO_BREAK_ACTIVITY_ID = 'pomodoro-breaks';
+
+async function ensurePomodoroBreakActivity(userId: string) {
+	const existing = await getActivity(userId, POMODORO_BREAK_ACTIVITY_ID);
+	if (existing) return existing;
+	return upsertActivity(userId, {
+		id: POMODORO_BREAK_ACTIVITY_ID,
+		title: 'Pomodoro Break',
+		categoryId: 'break',
+		notes: 'Planned short and long Pomodoro breaks',
+	});
+}
+
+async function createBreakTaskForBlock(
+	userId: string,
+	block: {
+		id: string;
+		blockType: string;
+		plannedStart: string;
+		plannedEnd: string;
+	}
+): Promise<string> {
+	await ensurePomodoroBreakActivity(userId);
+	const durationSeconds = Math.max(
+		60,
+		Math.round(
+			(new Date(block.plannedEnd).getTime() -
+				new Date(block.plannedStart).getTime()) /
+				1000
+		)
+	);
+	const title =
+		block.blockType === 'long_break' ? 'Long Break' : 'Short Break';
+	const task = await upsertTask(userId, {
+		id: randomUUID(),
+		activityId: POMODORO_BREAK_ACTIVITY_ID,
+		title,
+		categoryId: 'break',
+		notes: '',
+		status: 'planned',
+		timeEstimationSeconds: durationSeconds,
+		sortOrder: 0,
+	});
+	return task.id;
+}
 
 async function loadAutoScheduleContext(
 	userId: string,
@@ -157,16 +212,27 @@ export function registerAutoScheduleRoutes(app: Hono): void {
 			);
 		}
 
+		const createBlocks = await Promise.all(
+			computation.proposedBlocks.map(async (block) => {
+				const isBreak =
+					block.blockType === 'short_break' || block.blockType === 'long_break';
+				const taskId =
+					block.taskId ??
+					(isBreak ? await createBreakTaskForBlock(userId, block) : undefined);
+				return {
+					id: block.id,
+					...(taskId ? { taskId } : {}),
+					...(block.activityId ? { activityId: block.activityId } : {}),
+					blockType: block.blockType,
+					plannedStart: block.plannedStart,
+					plannedEnd: block.plannedEnd,
+				};
+			})
+		);
+
 		await replaceScheduleBlocksForAutoSchedule(userId, {
 			deleteIds: computation.replacedBlockIds,
-			createBlocks: computation.proposedBlocks.map((block) => ({
-				id: block.id,
-				...(block.taskId ? { taskId: block.taskId } : {}),
-				...(block.activityId ? { activityId: block.activityId } : {}),
-				blockType: block.blockType,
-				plannedStart: block.plannedStart,
-				plannedEnd: block.plannedEnd,
-			})),
+			createBlocks,
 		});
 
 		const scheduledTaskIds = new Set(

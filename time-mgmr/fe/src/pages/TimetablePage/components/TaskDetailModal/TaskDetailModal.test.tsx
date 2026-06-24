@@ -334,7 +334,41 @@ describe('TaskDetailModal focus mode', () => {
     await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
-    expect(onStart).toHaveBeenCalledWith('task-1');
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ id: 'block-1' }));
+  });
+
+  it('shows Start and focus mode for breaks without a taskId', async () => {
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    const breakBlock: ITimetableBlock = {
+      id: 'break-1',
+      blockType: 'short_break',
+      activityId: 'pomodoro-breaks',
+      title: 'Short Break',
+      date: '2026-07-19',
+      plannedStart: '11:00',
+      plannedEnd: '11:05',
+      categoryId: 'break',
+      notes: '',
+      status: 'planned',
+      createdAt: '2026-07-19T00:00:00.000Z',
+      updatedAt: '2026-07-19T00:00:00.000Z',
+    };
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={breakBlock}
+        activityTitle={undefined}
+        onStart={onStart}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+    expect(screen.getByText('Break')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ id: 'break-1' }));
   });
 
   it('calls onStop from the focus Stop button', async () => {
