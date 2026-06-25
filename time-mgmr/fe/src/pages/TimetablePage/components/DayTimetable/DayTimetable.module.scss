@@ -1,5 +1,6 @@
 .timetable {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0;
   border: 1px solid var(--color-border, #e5e7eb);
@@ -10,12 +11,14 @@
 }
 
 .header {
+  flex: none;
   padding: 0;
 }
 
 .scroll {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
-  height: min(70vh, 720px);
   overscroll-behavior: contain;
 }
 

@@ -1,20 +1,25 @@
 .timetable {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0;
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 0.75rem;
   background: var(--color-surface, #fff);
   overflow: hidden;
+  min-height: 0;
 }
 
 .header {
+  flex: none;
   padding: 0;
 }
 
 .scroll {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
-  height: min(70vh, 720px);
+  overscroll-behavior: contain;
 }
 
 .grid {
