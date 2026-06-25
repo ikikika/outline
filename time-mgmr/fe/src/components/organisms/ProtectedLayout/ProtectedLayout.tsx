@@ -1,5 +1,6 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { ROUTES } from '@/app/routes/routes';
 import { Header } from '@/components/organisms/Header/Header';
 import { Sidebar } from '@/components/organisms/Sidebar/Sidebar';
 import {
@@ -11,6 +12,8 @@ import './ProtectedLayout.css';
 
 const ProtectedLayoutShell: React.FC = () => {
   const { isOpen, isMobile, close } = useSidebarLayout();
+  const { pathname } = useLocation();
+  const lockViewportScroll = pathname === ROUTES.TIMETABLE;
 
   return (
     <div
@@ -29,8 +32,12 @@ const ProtectedLayoutShell: React.FC = () => {
 
       <div className="protected-layout__content">
         <Header />
-        <main className="protected-layout__main">
-          <div className="protected-layout__container">
+        <main
+          className={`protected-layout__main${lockViewportScroll ? ' protected-layout__main--locked' : ''}`}
+        >
+          <div
+            className={`protected-layout__container${lockViewportScroll ? ' protected-layout__container--locked' : ''}`}
+          >
             <Outlet />
           </div>
         </main>
