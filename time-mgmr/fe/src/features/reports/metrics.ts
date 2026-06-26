@@ -193,15 +193,24 @@ function categoryActualPercent(
   return mix.find((item) => item.categoryId === categoryId)?.percent ?? 0;
 }
 
+function isBreakActivity(block: ITimetableBlock): boolean {
+  return (
+    block.categoryId === 'break' ||
+    block.blockType === 'short_break' ||
+    block.blockType === 'long_break'
+  );
+}
+
 function topByVariance(
   metrics: IActivityMetrics[],
   direction: 'over' | 'under',
   limit: number
 ): IActivityMetrics[] {
+  const withoutBreaks = metrics.filter((m) => !isBreakActivity(m.activity));
   const filtered =
     direction === 'over'
-      ? metrics.filter((m) => m.varianceMinutes > 0)
-      : metrics.filter((m) => m.varianceMinutes < 0 && m.actualMinutes > 0);
+      ? withoutBreaks.filter((m) => m.varianceMinutes > 0)
+      : withoutBreaks.filter((m) => m.varianceMinutes < 0 && m.actualMinutes > 0);
   return [...filtered]
     .sort((a, b) =>
       direction === 'over'

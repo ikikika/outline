@@ -194,4 +194,50 @@ describe('buildDayReport', () => {
     expect(report.adminPercent).toBeCloseTo((45 / 105) * 100);
     expect(report.varianceBreakdown.under).toBe(2);
   });
+
+  it('excludes breaks from biggest overruns and underruns', () => {
+    const blocks = [
+      baseBlock({
+        id: 'break-1',
+        taskId: 'break-task',
+        title: 'Short Break',
+        blockType: 'short_break',
+        categoryId: 'break',
+        timeEstimationSeconds: 5 * 60,
+        status: 'done',
+      }),
+      baseBlock({
+        id: 'focus-1',
+        taskId: 't2',
+        title: 'Write docs',
+        timeEstimationSeconds: 60 * 60,
+        status: 'done',
+      }),
+    ];
+    const entries = [
+      entry({
+        id: 'e-break',
+        taskId: 'break-task',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-19T10:00:00.000Z',
+        endAt: '2026-07-19T10:20:00.000Z',
+      }),
+      entry({
+        id: 'e-focus',
+        taskId: 't2',
+        source: 'manual',
+        durationMinutes: 30,
+        startAt: '2026-07-19T09:00:00.000Z',
+        endAt: '2026-07-19T09:30:00.000Z',
+      }),
+    ];
+    const report = buildDayReport('2026-07-19', blocks, entries);
+
+    expect(report.biggestOverruns.map((m) => m.activity.title)).toEqual([]);
+    expect(report.biggestUnderruns.map((m) => m.activity.title)).toEqual([
+      'Write docs',
+    ]);
+    expect(report.breakPercent).toBeCloseTo((20 / 50) * 100);
+  });
 });
