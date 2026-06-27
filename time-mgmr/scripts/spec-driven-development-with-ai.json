@@ -1,0 +1,126 @@
+{
+  "activity": {
+    "title": "Learn to use Spec-driven development as a source of truth for building APIs, parallel teamwork, and managing changes",
+    "categoryId": "admin",
+    "notes": "",
+    "id": "spec-driven-development-with-ai"
+  },
+  "tasks": [
+    {
+      "title": "1. Introduction & Resources",
+      "timeEstimationSeconds": 182
+    },
+    {
+      "title": "2. Different ways to create software",
+      "timeEstimationSeconds": 298
+    },
+    {
+      "title": "3. Vibe-coding vs Spec-driven development",
+      "timeEstimationSeconds": 121
+    },
+    {
+      "title": "4. What if we need to make a change?",
+      "timeEstimationSeconds": 144
+    },
+    {
+      "title": "5. You can spec any type of application",
+      "timeEstimationSeconds": 270
+    },
+    {
+      "title": "6. Introduction to REST API",
+      "timeEstimationSeconds": 337
+    },
+    {
+      "title": "7. Introduction to GraphQL",
+      "timeEstimationSeconds": 204
+    },
+    {
+      "title": "8. Introduction to API Contract",
+      "timeEstimationSeconds": 254
+    },
+    {
+      "title": "9. Kiro",
+      "timeEstimationSeconds": 187
+    },
+    {
+      "title": "10. GitHub Spec Kit",
+      "timeEstimationSeconds": 169
+    },
+    {
+      "title": "11. BMAD",
+      "timeEstimationSeconds": 126
+    },
+    {
+      "title": "12. Introduction",
+      "timeEstimationSeconds": 98
+    },
+    {
+      "title": "13. Creating OpenAPI Document using AI",
+      "timeEstimationSeconds": 339
+    },
+    {
+      "title": "14. Linting an OpenAPI document using Spectral",
+      "timeEstimationSeconds": 309
+    },
+    {
+      "title": "15. Resolving Spectral Warnings",
+      "timeEstimationSeconds": 218
+    },
+    {
+      "title": "16. Mock your API and test it before writing any code",
+      "timeEstimationSeconds": 431
+    },
+    {
+      "title": "17. Creating a Requirements document",
+      "timeEstimationSeconds": 493
+    },
+    {
+      "title": "18. Creating a Technical Design document",
+      "timeEstimationSeconds": 399
+    },
+    {
+      "title": "19. Technical Design document overview",
+      "timeEstimationSeconds": 187
+    },
+    {
+      "title": "20. Creating a list of Tasks",
+      "timeEstimationSeconds": 374
+    },
+    {
+      "title": "21. Executing the task list",
+      "timeEstimationSeconds": 296
+    },
+    {
+      "title": "22. Reviewing and Deploying the created application to AWS",
+      "timeEstimationSeconds": 206
+    },
+    {
+      "title": "23. Trying if the deployed application works",
+      "timeEstimationSeconds": 353
+    },
+    {
+      "title": "24. OpenAPI Document Is the Source of Truth for Testing",
+      "timeEstimationSeconds": 180
+    },
+    {
+      "title": "25. How OpenAPI Helps Microservices Talk Correctly",
+      "timeEstimationSeconds": 187
+    },
+    {
+      "title": "26. Diagram: Microservices and Contracts",
+      "timeEstimationSeconds": 94
+    },
+    {
+      "title": "27. What you learned so far",
+      "timeEstimationSeconds": 113
+    },
+    {
+      "title": "28. Let's connect!",
+      "timeEstimationSeconds": 10
+    },
+    {
+      "title": "29. Bonus",
+      "timeEstimationSeconds": 175
+    }
+  ]
+}
