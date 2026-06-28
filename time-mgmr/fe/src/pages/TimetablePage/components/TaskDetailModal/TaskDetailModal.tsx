@@ -10,6 +10,7 @@ import {
   formatMinutes,
   formatSignedMinutes,
   manualTimeEntrySchema,
+  plannedDurationMinutes,
   type ITimetableBlock,
   type ITimeEntry,
   type ManualTimeEntryFormValues,
@@ -28,6 +29,8 @@ interface TaskDetailModalProps {
   activityTitle?: string;
   entries: ITimeEntry[];
   runningEntry: ITimeEntry | null;
+  /** Total scheduled focus seconds for this task (includes estimate buffer). */
+  plannedFocusSeconds?: number;
   busy?: boolean;
   onClose: () => void;
   onEdit: (block: ITimetableBlock) => void;
@@ -90,6 +93,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   activityTitle,
   entries,
   runningEntry,
+  plannedFocusSeconds,
   busy = false,
   onClose,
   onEdit,
@@ -113,7 +117,15 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const isBreak = isBreakBlock(block);
   const isRunningHere = Boolean(taskId && runningEntry?.taskId === taskId);
   const accent = getTaskBlockColor(block.activityId);
-  const plannedSeconds = blockPlannedSeconds(block);
+  const blockSeconds = blockPlannedSeconds(block);
+  const plannedSeconds =
+    plannedFocusSeconds != null && plannedFocusSeconds > 0
+      ? plannedFocusSeconds
+      : blockSeconds;
+  const scheduledBlockMinutes = plannedDurationMinutes(
+    block.plannedStart,
+    block.plannedEnd
+  );
   const canTrackTime = Boolean(taskId) || isBreak;
   const canEnterFocusMode = canTrackTime && block.status !== 'done';
   const focusEyebrow = isBreak ? 'Break' : 'Focus';
@@ -369,7 +381,12 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           <div className={styles.row}>
             <dt>Planned</dt>
             <dd className={styles.value}>
-              {block.plannedStart}–{block.plannedEnd} · {formatMinutes(metrics.plannedMinutes)}
+              {block.plannedStart}–{block.plannedEnd} ·{' '}
+              {formatMinutes(scheduledBlockMinutes)}
+              {metrics.plannedMinutes > 0 &&
+              Math.round(metrics.plannedMinutes) !== scheduledBlockMinutes
+                ? ` (estimate ${formatMinutes(metrics.plannedMinutes)})`
+                : null}
             </dd>
           </div>
           <div className={styles.row}>

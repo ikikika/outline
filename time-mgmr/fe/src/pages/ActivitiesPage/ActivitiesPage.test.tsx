@@ -476,6 +476,7 @@ describe('ActivitiesPage', () => {
         activityId: 'act-1',
         taskIds: ['task-1'],
         earliestDate: '2026-07-21',
+        estimateBuffer: 1.5,
       })
     );
     expect(await screen.findByText('2026-07-21')).toBeInTheDocument();

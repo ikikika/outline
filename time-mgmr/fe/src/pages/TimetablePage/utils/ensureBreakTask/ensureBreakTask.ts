@@ -24,15 +24,25 @@ export function breakTitleForType(blockType: ScheduleBlockType): string {
   return 'Break';
 }
 
-/** Planned length in seconds from estimation or wall-clock window. */
+/**
+ * Planned length for this schedule block in seconds.
+ * Prefer the wall-clock window so autoschedule estimateBuffer (and manual
+ * resizes) are reflected in focus remaining / break task sizing.
+ */
 export function blockPlannedSeconds(block: ITimetableBlock): number {
-  if (block.timeEstimationSeconds != null && block.timeEstimationSeconds > 0) {
-    return block.timeEstimationSeconds;
+  const scheduledSeconds =
+    plannedDurationMinutes(block.plannedStart, block.plannedEnd) * 60;
+  if (scheduledSeconds > 0) {
+    return scheduledSeconds;
   }
-  return Math.max(
-    0,
-    plannedDurationMinutes(block.plannedStart, block.plannedEnd) * 60
-  );
+  return Math.max(0, block.timeEstimationSeconds ?? 0);
+}
+
+/** Total scheduled focus seconds across all focus blocks for a task. */
+export function scheduledFocusSeconds(blocks: ITimetableBlock[]): number {
+  return blocks
+    .filter((block) => block.blockType === 'focus')
+    .reduce((sum, block) => sum + blockPlannedSeconds(block), 0);
 }
 
 async function ensurePomodoroBreakActivity(): Promise<void> {

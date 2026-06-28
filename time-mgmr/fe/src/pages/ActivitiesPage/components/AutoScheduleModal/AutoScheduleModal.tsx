@@ -136,6 +136,31 @@ export function AutoScheduleModal({
     [activity.tasks]
   );
 
+  const previewFocusSummary = useMemo(() => {
+    if (!preview) return null;
+    const focusBlocks = preview.days.flatMap((day) =>
+      day.blocks.filter((block) => block.blockType === 'focus')
+    );
+    const scheduledSeconds = focusBlocks.reduce((sum, block) => {
+      const startMs = Date.parse(block.plannedStart);
+      const endMs = Date.parse(block.plannedEnd);
+      if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
+        return sum;
+      }
+      return sum + (endMs - startMs) / 1000;
+    }, 0);
+    const estimateSeconds = selectedTaskIds.reduce((sum, taskId) => {
+      const task = activity.tasks.find((item) => item.id === taskId);
+      return sum + Math.max(0, task?.timeEstimationSeconds ?? 0);
+    }, 0);
+    const buffer = getValues('estimateBuffer');
+    return {
+      scheduledMinutes: Math.round(scheduledSeconds / 60),
+      estimateMinutes: Math.round(estimateSeconds / 60),
+      buffer: Number.isFinite(buffer) ? buffer : 1.5,
+    };
+  }, [preview, selectedTaskIds, activity.tasks, getValues]);
+
   const buildRequest = (values: AutoScheduleFormValues): IAutoScheduleRequest => ({
     activityId: activity.id,
     taskIds: selectedTaskIds,
@@ -445,6 +470,14 @@ export function AutoScheduleModal({
           </form>
         ) : preview ? (
           <>
+            {previewFocusSummary ? (
+              <p className={styles.notice}>
+                Scheduled focus {formatMinutes(previewFocusSummary.scheduledMinutes)}{' '}
+                (estimates {formatMinutes(previewFocusSummary.estimateMinutes)} ×{' '}
+                {previewFocusSummary.buffer}).
+              </p>
+            ) : null}
+
             {preview.replacedBlockIds.length > 0 ? (
               <p className={styles.notice}>
                 Replaces {preview.replacedBlockIds.length} existing future block

@@ -31,7 +31,10 @@ import { TimetableHeader, type TimetableView } from './components/TimetableHeade
 import { WeekTimetable } from './components/WeekTimetable/WeekTimetable';
 import { usePomodoroReminder } from './hooks/usePomodoroReminder/usePomodoroReminder';
 import { blockDisplayWindow } from './utils/blockDisplayWindow/blockDisplayWindow';
-import { ensureBreakTaskForBlock } from './utils/ensureBreakTask/ensureBreakTask';
+import {
+  ensureBreakTaskForBlock,
+  scheduledFocusSeconds,
+} from './utils/ensureBreakTask/ensureBreakTask';
 import styles from './TimetablePage.module.scss';
 
 export const TimetablePage: React.FC = () => {
@@ -84,6 +87,15 @@ export const TimetablePage: React.FC = () => {
   const { data: detailEntries = [] } = useTimeEntriesByTask(
     detailBlock?.taskId ?? null
   );
+  const detailTaskBlocksQuery = useTimetableBlocksByTask(
+    detailBlock?.taskId ?? null
+  );
+  const detailPlannedFocusSeconds = useMemo(() => {
+    const blocks = detailTaskBlocksQuery.data;
+    if (!blocks || blocks.length === 0) return undefined;
+    const total = scheduledFocusSeconds(blocks);
+    return total > 0 ? total : undefined;
+  }, [detailTaskBlocksQuery.data]);
   const { update, updateBlock, remove, setStatus, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
@@ -291,6 +303,7 @@ export const TimetablePage: React.FC = () => {
           activityTitle={detailActivity?.title}
           entries={detailEntries}
           runningEntry={runningEntry}
+          plannedFocusSeconds={detailPlannedFocusSeconds}
           busy={busy}
           onClose={closeDetails}
           onEdit={(block) => setEditing(block)}

@@ -4,6 +4,7 @@ import {
   blockPlannedSeconds,
   ensureBreakTaskForBlock,
   isBreakBlock,
+  scheduledFocusSeconds,
 } from './ensureBreakTask';
 
 vi.mock('@/features/activities/api/activitiesApi', () => ({
@@ -56,6 +57,50 @@ describe('ensureBreakTask', () => {
 
   it('computes planned seconds from the wall-clock window', () => {
     expect(blockPlannedSeconds(breakBlock)).toBe(5 * 60);
+  });
+
+  it('prefers scheduled window over raw timeEstimationSeconds', () => {
+    expect(
+      blockPlannedSeconds({
+        ...breakBlock,
+        blockType: 'focus',
+        categoryId: 'deep_work',
+        plannedStart: '09:00',
+        plannedEnd: '09:15',
+        timeEstimationSeconds: 10 * 60,
+      })
+    ).toBe(15 * 60);
+  });
+
+  it('sums scheduled focus blocks for a task', () => {
+    const blocks: ITimetableBlock[] = [
+      {
+        ...breakBlock,
+        id: 'f1',
+        blockType: 'focus',
+        categoryId: 'deep_work',
+        plannedStart: '09:00',
+        plannedEnd: '09:25',
+        timeEstimationSeconds: 40 * 60,
+      },
+      {
+        ...breakBlock,
+        id: 'b1',
+        blockType: 'short_break',
+        plannedStart: '09:25',
+        plannedEnd: '09:30',
+      },
+      {
+        ...breakBlock,
+        id: 'f2',
+        blockType: 'focus',
+        categoryId: 'deep_work',
+        plannedStart: '09:30',
+        plannedEnd: '09:45',
+        timeEstimationSeconds: 40 * 60,
+      },
+    ];
+    expect(scheduledFocusSeconds(blocks)).toBe(40 * 60);
   });
 
   it('returns existing taskId without creating', async () => {

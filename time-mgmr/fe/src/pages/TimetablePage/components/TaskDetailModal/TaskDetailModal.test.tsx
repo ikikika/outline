@@ -231,18 +231,43 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeInTheDocument();
   });
 
-  it('calculates remaining time from timeEstimationSeconds', async () => {
+  it('calculates remaining time from the scheduled block window', async () => {
     const user = userEvent.setup();
     render(
       <TaskDetailModal
         {...baseProps}
-        block={{ ...block, timeEstimationSeconds: 45 * 60 }}
+        block={{
+          ...block,
+          plannedStart: '10:00',
+          plannedEnd: '10:45',
+          timeEstimationSeconds: 30 * 60,
+        }}
       />
     );
 
     await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
 
     expect(screen.getByText('45:00')).toBeInTheDocument();
+  });
+
+  it('uses plannedFocusSeconds when provided (buffered multi-block total)', async () => {
+    const user = userEvent.setup();
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        plannedFocusSeconds={60 * 60}
+        block={{
+          ...block,
+          plannedStart: '09:00',
+          plannedEnd: '09:25',
+          timeEstimationSeconds: 40 * 60,
+        }}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+
+    expect(screen.getByText('1:00:00')).toBeInTheDocument();
   });
 
   it('exits focus mode back to the detail modal', async () => {
@@ -298,7 +323,12 @@ describe('TaskDetailModal focus mode', () => {
     render(
       <TaskDetailModal
         {...baseProps}
-        block={{ ...block, timeEstimationSeconds: 45 * 60 }}
+        block={{
+          ...block,
+          plannedStart: '10:00',
+          plannedEnd: '10:45',
+          timeEstimationSeconds: 30 * 60,
+        }}
         entries={[runningEntry]}
         runningEntry={runningEntry}
       />
