@@ -369,6 +369,18 @@ describe('TaskDetailModal focus mode', () => {
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ id: 'block-1' }));
   });
 
+  it('enters focus mode when Start is clicked from task details', async () => {
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    render(<TaskDetailModal {...baseProps} onStart={onStart} />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ id: 'block-1' }));
+    expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Deep work' })).toBeInTheDocument();
+  });
+
   it('shows Start and focus mode for breaks without a taskId', async () => {
     const user = userEvent.setup();
     const onStart = vi.fn();

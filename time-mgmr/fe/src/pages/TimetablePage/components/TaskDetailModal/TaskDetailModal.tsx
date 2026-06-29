@@ -464,7 +464,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <Button
                 size="sm"
                 disabled={busy || Boolean(runningEntry)}
-                onClick={() => onStart(block)}
+                onClick={() => {
+                  onStart(block);
+                  if (canEnterFocusMode) setFocusMode(true);
+                }}
                 title={runningEntry ? 'Stop the current timer first' : undefined}
               >
                 Start
