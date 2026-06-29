@@ -223,9 +223,25 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         </div>
 
         <div className={styles.focusBody}>
-          <h2 id="task-focus-title" className={styles.focusTitle}>
-            {block.title}
-          </h2>
+          <div className={styles.focusHeading}>
+            <button
+              type="button"
+              className={styles.focusExit}
+              aria-label="Exit focus mode"
+              onClick={() => setFocusMode(false)}
+            >
+              <Minimize2 size={16} strokeWidth={2} aria-hidden />
+              Exit
+            </button>
+
+            {activityTitle ? (
+              <p className={styles.focusActivity}>{activityTitle}</p>
+            ) : null}
+
+            <h2 id="task-focus-title" className={styles.focusTitle}>
+              {block.title}
+            </h2>
+          </div>
 
           <div className={styles.focusControls}>
             <div className={styles.focusPrimaryWrap}>
@@ -291,15 +307,16 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </div>
               </div>
 
-              <button
-                type="button"
-                className={styles.focusExit}
-                aria-label="Exit focus mode"
-                onClick={() => setFocusMode(false)}
-              >
-                <Minimize2 size={16} strokeWidth={2} aria-hidden />
-                Exit
-              </button>
+              {taskId && block.status !== 'done' ? (
+                <button
+                  type="button"
+                  className={styles.focusDone}
+                  disabled={busy}
+                  onClick={() => onStatus(taskId, 'done')}
+                >
+                  Done
+                </button>
+              ) : null}
             </div>
           </div>
         </div>

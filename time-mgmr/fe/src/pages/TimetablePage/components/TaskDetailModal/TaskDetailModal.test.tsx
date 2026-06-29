@@ -225,9 +225,11 @@ describe('TaskDetailModal focus mode', () => {
     await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
 
     expect(screen.getByRole('heading', { name: 'Deep work' })).toBeInTheDocument();
+    expect(screen.getByText('Agentic AI course')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
     expect(screen.getByText('Elapsed')).toBeInTheDocument();
     expect(screen.getByText('Remaining')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeInTheDocument();
   });
 
@@ -428,5 +430,16 @@ describe('TaskDetailModal focus mode', () => {
     await user.click(screen.getByRole('button', { name: 'Stop' }));
 
     expect(onStop).toHaveBeenCalledWith('entry-1');
+  });
+
+  it('calls onStatus done from the focus Done button', async () => {
+    const user = userEvent.setup();
+    const onStatus = vi.fn();
+    render(<TaskDetailModal {...baseProps} onStatus={onStatus} />);
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(onStatus).toHaveBeenCalledWith('task-1', 'done');
   });
 });
