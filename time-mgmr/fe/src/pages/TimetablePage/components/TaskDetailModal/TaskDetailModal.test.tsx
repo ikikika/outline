@@ -9,6 +9,7 @@ import {
   TaskDetailModal,
 } from './TaskDetailModal';
 import type { ITimetableBlock, ITimeEntry } from '@/features/activities';
+import { playSoftTone } from '../../utils/playSoftTone/playSoftTone';
 
 vi.mock('@/components/ui', () => ({
   Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
@@ -30,6 +31,10 @@ vi.mock('@/features/reports', () => ({
 
 vi.mock('../../utils/taskBlockColor/taskBlockColor', () => ({
   getTaskBlockColor: () => '#2563eb',
+}));
+
+vi.mock('../../utils/playSoftTone/playSoftTone', () => ({
+  playSoftTone: vi.fn(),
 }));
 
 const block: ITimetableBlock = {
@@ -453,5 +458,101 @@ describe('TaskDetailModal focus mode', () => {
     await user.click(screen.getByRole('button', { name: 'Done' }));
 
     expect(onStatus).toHaveBeenCalledWith('task-1', 'done');
+  });
+
+  it('rings a soft tone when a running break reaches 10 seconds remaining', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-19T11:04:49.000Z'));
+    vi.mocked(playSoftTone).mockClear();
+
+    const breakBlock: ITimetableBlock = {
+      id: 'break-1',
+      taskId: 'break-task-1',
+      blockType: 'short_break',
+      activityId: 'pomodoro-breaks',
+      title: 'Short Break',
+      date: '2026-07-19',
+      plannedStart: '11:00',
+      plannedEnd: '11:05',
+      categoryId: 'break',
+      notes: '',
+      status: 'in_progress',
+      createdAt: '2026-07-19T00:00:00.000Z',
+      updatedAt: '2026-07-19T00:00:00.000Z',
+    };
+    const runningEntry: ITimeEntry = {
+      id: 'entry-break',
+      taskId: 'break-task-1',
+      startAt: '2026-07-19T11:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T11:00:00.000Z',
+      updatedAt: '2026-07-19T11:00:00.000Z',
+    };
+
+    try {
+      render(
+        <TaskDetailModal
+          {...baseProps}
+          block={breakBlock}
+          activityTitle={undefined}
+          entries={[runningEntry]}
+          runningEntry={runningEntry}
+        />
+      );
+
+      expect(playSoftTone).not.toHaveBeenCalled();
+
+      act(() => {
+        vi.setSystemTime(new Date('2026-07-19T11:04:50.000Z'));
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(playSoftTone).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not ring the ending tone for a running focus block', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-19T10:59:49.000Z'));
+    vi.mocked(playSoftTone).mockClear();
+
+    const runningEntry: ITimeEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    try {
+      render(
+        <TaskDetailModal
+          {...baseProps}
+          block={{
+            ...block,
+            plannedStart: '09:00',
+            plannedEnd: '11:00',
+          }}
+          entries={[runningEntry]}
+          runningEntry={runningEntry}
+        />
+      );
+
+      act(() => {
+        vi.setSystemTime(new Date('2026-07-19T10:59:50.000Z'));
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(playSoftTone).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

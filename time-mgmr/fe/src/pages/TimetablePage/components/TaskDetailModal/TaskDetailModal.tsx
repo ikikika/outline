@@ -22,6 +22,8 @@ import {
   blockPlannedSeconds,
   isBreakBlock,
 } from '../../utils/ensureBreakTask/ensureBreakTask';
+import { playSoftTone } from '../../utils/playSoftTone/playSoftTone';
+import { shouldPlayBreakEndingTone } from '../../utils/playSoftTone/shouldPlayBreakEndingTone';
 import styles from './TaskDetailModal.module.scss';
 
 interface TaskDetailModalProps {
@@ -105,6 +107,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 }) => {
   const closeRef = useRef<HTMLButtonElement>(null);
   const sidebarOpenRef = useRef(true);
+  const prevBreakRemainingRef = useRef<number | null>(null);
   const [showManual, setShowManual] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -193,6 +196,22 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const remainingFraction =
     plannedSeconds > 0 ? Math.min(1, remainingSeconds / plannedSeconds) : 0;
   const showRemainingRing = isRunningHere && plannedSeconds > 0;
+
+  useEffect(() => {
+    const previous = prevBreakRemainingRef.current;
+    prevBreakRemainingRef.current = isBreak && isRunningHere ? remainingSeconds : null;
+
+    if (
+      shouldPlayBreakEndingTone({
+        isBreak,
+        isRunning: isRunningHere,
+        previousRemainingSeconds: previous,
+        remainingSeconds,
+      })
+    ) {
+      playSoftTone();
+    }
+  }, [isBreak, isRunningHere, remainingSeconds]);
 
   const submitManual = handleSubmit(async (values) => {
     if (!taskId) return;
