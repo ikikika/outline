@@ -3,6 +3,10 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+  /* Absolute tooltips still contribute to scroll width while hidden */
+  overflow-x: clip;
 }
 
 .header {
@@ -68,10 +72,10 @@
 .tooltip {
   position: absolute;
   z-index: 20;
-  left: 0;
+  left: 50%;
   bottom: calc(100% + 0.5rem);
   width: max-content;
-  max-width: min(18rem, 80vw);
+  max-width: min(18rem, calc(100vw - 2rem));
   padding: 0.55rem 0.65rem;
   border-radius: 0.4rem;
   background: #111827;
@@ -81,22 +85,15 @@
   font-weight: 400;
   line-height: 1.4;
   text-align: left;
-  visibility: hidden;
-  opacity: 0;
+  /* Hidden tooltips must not expand the page scroll width */
+  display: none;
   pointer-events: none;
-  transform: translateY(0.2rem);
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease,
-    visibility 120ms ease;
+  transform: translateX(-50%);
 }
 
 .metricLabel:hover .tooltip,
-.metricLabel:focus .tooltip,
-.metricLabel:focus-within .tooltip {
-  visibility: visible;
-  opacity: 1;
-  transform: translateY(0);
+.metricLabel:focus-visible .tooltip {
+  display: block;
 }
 
 .summaryValue {
@@ -140,6 +137,7 @@
 .breakdownItem {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 0.5rem;
@@ -165,7 +163,17 @@
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
+  min-width: 0;
   font-size: 0.9rem;
+
+  > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  > :last-child {
+    flex-shrink: 0;
+  }
 }
 
 .barTrack {
