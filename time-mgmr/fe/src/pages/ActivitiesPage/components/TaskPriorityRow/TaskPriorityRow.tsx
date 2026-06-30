@@ -8,6 +8,7 @@ import styles from '../../ActivitiesPage.module.scss';
 interface TaskPriorityRowProps {
   task: IApiTask;
   disabled?: boolean;
+  onSelect: () => void;
   onSchedule: () => void;
   onDelete: () => void;
 }
@@ -39,6 +40,7 @@ function statusLabel(status: string): string {
 export const TaskPriorityRow: React.FC<TaskPriorityRowProps> = ({
   task,
   disabled = false,
+  onSelect,
   onSchedule,
   onDelete,
 }) => {
@@ -77,7 +79,14 @@ export const TaskPriorityRow: React.FC<TaskPriorityRowProps> = ({
       <span className={styles.dragHandle} {...attributes} {...listeners}>
         <GripVertical size={14} />
       </span>
-      <span className={styles.taskTitle}>{task.title}</span>
+      <button
+        type="button"
+        className={styles.taskTitleButton}
+        disabled={disabled}
+        onClick={onSelect}
+      >
+        {task.title}
+      </button>
       {est ? <span className={styles.taskMeta}>{est}</span> : null}
       <span className={`${styles.statusChip} ${statusClass}`}>
         {statusLabel(task.status)}

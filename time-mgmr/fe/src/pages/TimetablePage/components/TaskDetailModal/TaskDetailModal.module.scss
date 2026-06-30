@@ -398,8 +398,64 @@
   color: var(--color-text, #111827);
 }
 
-.notes .value {
+.notesSection {
+  margin: 0.85rem 0 0;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.notesSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  background: rgba(0, 0, 0, 0.03);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.notesSummary::-webkit-details-marker {
+  display: none;
+}
+
+.notesSummary::after {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid var(--color-text-muted, #6b7280);
+  border-bottom: 1.5px solid var(--color-text-muted, #6b7280);
+  transform: rotate(45deg);
+  transition: transform 120ms ease;
+}
+
+.notesSection[open] .notesSummary {
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.notesSection[open] .notesSummary::after {
+  transform: rotate(-135deg);
+}
+
+.notesBody {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text, #111827);
   white-space: pre-wrap;
+}
+
+.notesEmpty {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-text-muted, #6b7280);
 }
 
 .over {

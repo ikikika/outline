@@ -13,6 +13,8 @@ import styles from './ActivityForm.module.scss';
 interface ActivityFormProps {
   date: string;
   initial?: ITimetableBlock | null;
+  /** When false, hide date/time fields (catalog task edit). Default true. */
+  includeScheduleFields?: boolean;
   onSubmit: (values: ActivityFormValues) => Promise<void> | void;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -21,6 +23,7 @@ interface ActivityFormProps {
 export const ActivityForm: React.FC<ActivityFormProps> = ({
   date,
   initial,
+  includeScheduleFields = true,
   onSubmit,
   onCancel,
   isSubmitting = false,
@@ -43,7 +46,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({
 
   return (
     <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
-      <h2 className={styles.formTitle}>{initial ? 'Edit activity' : 'New activity'}</h2>
+      <h2 className={styles.formTitle}>{initial ? 'Edit task' : 'New activity'}</h2>
 
       <div className={styles.grid}>
         <div className={`${styles.field} ${styles.full}`}>
@@ -54,13 +57,17 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({
           {errors.title && <span className={styles.error}>{errors.title.message}</span>}
         </div>
 
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="activity-date">
-            Date
-          </label>
-          <Input id="activity-date" type="date" {...register('date')} />
-          {errors.date && <span className={styles.error}>{errors.date.message}</span>}
-        </div>
+        {includeScheduleFields ? (
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="activity-date">
+              Date
+            </label>
+            <Input id="activity-date" type="date" {...register('date')} />
+            {errors.date && <span className={styles.error}>{errors.date.message}</span>}
+          </div>
+        ) : (
+          <input type="hidden" {...register('date')} />
+        )}
 
         <div className={styles.field}>
           <label className={styles.label} htmlFor="activity-category">
@@ -82,25 +89,34 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({
           )}
         </div>
 
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="activity-start">
-            Planned start
-          </label>
-          <Input id="activity-start" type="time" {...register('plannedStart')} />
-          {errors.plannedStart && (
-            <span className={styles.error}>{errors.plannedStart.message}</span>
-          )}
-        </div>
+        {includeScheduleFields ? (
+          <>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="activity-start">
+                Planned start
+              </label>
+              <Input id="activity-start" type="time" {...register('plannedStart')} />
+              {errors.plannedStart && (
+                <span className={styles.error}>{errors.plannedStart.message}</span>
+              )}
+            </div>
 
-        <div className={styles.field}>
-          <label className={styles.label} htmlFor="activity-end">
-            Planned end
-          </label>
-          <Input id="activity-end" type="time" {...register('plannedEnd')} />
-          {errors.plannedEnd && (
-            <span className={styles.error}>{errors.plannedEnd.message}</span>
-          )}
-        </div>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="activity-end">
+                Planned end
+              </label>
+              <Input id="activity-end" type="time" {...register('plannedEnd')} />
+              {errors.plannedEnd && (
+                <span className={styles.error}>{errors.plannedEnd.message}</span>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <input type="hidden" {...register('plannedStart')} />
+            <input type="hidden" {...register('plannedEnd')} />
+          </>
+        )}
 
         <div className={`${styles.field} ${styles.full}`}>
           <label className={styles.label} htmlFor="activity-notes">

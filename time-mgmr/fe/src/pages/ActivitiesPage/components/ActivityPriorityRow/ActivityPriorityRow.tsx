@@ -24,6 +24,7 @@ interface ActivityPriorityRowProps {
   onArchiveActivity?: () => void;
   onRestoreActivity?: () => void;
   onAutoScheduleActivity: () => void;
+  onSelectTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onScheduleTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onDeleteTask: (task: IActivityWithTasks['tasks'][number]) => void;
   disabled?: boolean;
@@ -39,6 +40,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   onArchiveActivity,
   onRestoreActivity,
   onAutoScheduleActivity,
+  onSelectTask,
   onScheduleTask,
   onDeleteTask,
   disabled = false,
@@ -186,6 +188,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
             <TaskPriorityList
               tasks={activity.tasks}
               disabled={readOnly}
+              onSelectTask={onSelectTask}
               onScheduleTask={onScheduleTask}
               onDeleteTask={onDeleteTask}
             />

@@ -410,38 +410,47 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <dd className={styles.value}>{activityTitle}</dd>
             </div>
           ) : null}
-          <div className={styles.row}>
-            <dt>Date</dt>
-            <dd className={styles.value}>{formatDisplayDate(block.date)}</dd>
-          </div>
-          <div className={styles.row}>
-            <dt>Planned</dt>
-            <dd className={styles.value}>
-              {block.plannedStart}–{block.plannedEnd} ·{' '}
-              {formatMinutes(scheduledBlockMinutes)}
-              {metrics.plannedMinutes > 0 &&
-              Math.round(metrics.plannedMinutes) !== scheduledBlockMinutes
-                ? ` (estimate ${formatMinutes(metrics.plannedMinutes)})`
-                : null}
-            </dd>
-          </div>
-          <div className={styles.row}>
-            <dt>Actual</dt>
-            <dd className={styles.value}>{formatClock(elapsedSeconds)}</dd>
-          </div>
-          <div className={styles.row}>
-            <dt>Variance</dt>
-            <dd className={`${styles.value} ${varianceClass(metrics.varianceKind)}`}>
-              {formatSignedMinutes(elapsedSeconds / 60 - metrics.plannedMinutes)}
-            </dd>
-          </div>
-          {block.notes ? (
-            <div className={`${styles.row} ${styles.notes}`}>
-              <dt>Notes</dt>
-              <dd className={styles.value}>{block.notes}</dd>
-            </div>
+          {block.status !== 'unplanned' ? (
+            <>
+              <div className={styles.row}>
+                <dt>Date</dt>
+                <dd className={styles.value}>{formatDisplayDate(block.date)}</dd>
+              </div>
+              <div className={styles.row}>
+                <dt>Planned</dt>
+                <dd className={styles.value}>
+                  {block.plannedStart}–{block.plannedEnd} ·{' '}
+                  {formatMinutes(scheduledBlockMinutes)}
+                  {metrics.plannedMinutes > 0 &&
+                  Math.round(metrics.plannedMinutes) !== scheduledBlockMinutes
+                    ? ` (estimate ${formatMinutes(metrics.plannedMinutes)})`
+                    : null}
+                </dd>
+              </div>
+              <div className={styles.row}>
+                <dt>Actual</dt>
+                <dd className={styles.value}>{formatClock(elapsedSeconds)}</dd>
+              </div>
+              <div className={styles.row}>
+                <dt>Variance</dt>
+                <dd className={`${styles.value} ${varianceClass(metrics.varianceKind)}`}>
+                  {formatSignedMinutes(elapsedSeconds / 60 - metrics.plannedMinutes)}
+                </dd>
+              </div>
+            </>
           ) : null}
         </dl>
+
+        {(block.notes.trim() || block.status === 'unplanned') ? (
+          <details className={styles.notesSection}>
+            <summary className={styles.notesSummary}>Notes</summary>
+            {block.notes.trim() ? (
+              <p className={styles.notesBody}>{block.notes}</p>
+            ) : (
+              <p className={styles.notesEmpty}>No notes yet.</p>
+            )}
+          </details>
+        ) : null}
 
         <section className={styles.sessionLog} aria-labelledby="work-session-log-title">
           <div className={styles.sessionLogHeader}>

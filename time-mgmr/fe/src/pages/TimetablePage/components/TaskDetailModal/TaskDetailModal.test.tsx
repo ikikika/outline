@@ -223,6 +223,63 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByText('Agentic AI course')).toBeInTheDocument();
   });
 
+  it('shows notes in a collapsed read-only section that expands on click', async () => {
+    const user = userEvent.setup();
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, notes: 'Review PR checklist\nPing Sarah' }}
+      />
+    );
+
+    const details = screen.getByText('Notes').closest('details');
+    expect(details).not.toBeNull();
+    expect(details).not.toHaveAttribute('open');
+    expect(details).toHaveTextContent('Review PR checklist');
+    expect(details).toHaveTextContent('Ping Sarah');
+
+    await user.click(screen.getByText('Notes'));
+
+    expect(details).toHaveAttribute('open');
+  });
+
+  it('hides the notes section when notes are empty', () => {
+    render(<TaskDetailModal {...baseProps} />);
+
+    expect(screen.queryByText('Notes')).not.toBeInTheDocument();
+  });
+
+  it('shows an empty notes section for unplanned tasks', async () => {
+    const user = userEvent.setup();
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, status: 'unplanned', notes: '' }}
+      />
+    );
+
+    const summary = screen.getByText('Notes');
+    expect(summary).toBeInTheDocument();
+
+    await user.click(summary);
+
+    expect(screen.getByText('No notes yet.')).toBeInTheDocument();
+  });
+
+  it('hides schedule metrics for unplanned tasks', () => {
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, status: 'unplanned' }}
+      />
+    );
+
+    expect(screen.queryByText('Date')).not.toBeInTheDocument();
+    expect(screen.queryByText('Planned')).not.toBeInTheDocument();
+    expect(screen.queryByText('Actual')).not.toBeInTheDocument();
+    expect(screen.queryByText('Variance')).not.toBeInTheDocument();
+  });
+
   it('expands to full screen with a Start button and times', async () => {
     const user = userEvent.setup();
     render(<TaskDetailModal {...baseProps} />);

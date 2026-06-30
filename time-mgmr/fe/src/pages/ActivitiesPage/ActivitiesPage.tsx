@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   useActivityCatalog,
+  useActivityMutations,
   useArchiveActivity,
   useConfirmAutoSchedule,
   useCreateActivity,
@@ -12,20 +13,34 @@ import {
   useReorderActivities,
   useReorderTasks,
   useRestoreActivity,
+  useRunningTimer,
   useScheduleCatalogTask,
+  useTimeEntriesByTask,
+  useTimeEntryMutations,
+  useTimetableBlocksByTask,
   isActivityArchived,
   todayKey,
+  workSessionBounds,
+  type ActivityFormValues,
   type IActivityWithTasks,
   type IApiTask,
   type IAutoSchedulePreviewResponse,
   type IAutoScheduleRequest,
+  type ITimetableBlock,
 } from '@/features/activities';
+import { TaskDetailModal } from '@/pages/TimetablePage/components/TaskDetailModal/TaskDetailModal';
+import { ActivityForm } from '@/pages/TimetablePage/components/ActivityForm/ActivityForm';
+import { scheduledFocusSeconds } from '@/pages/TimetablePage/utils/ensureBreakTask/ensureBreakTask';
 import { AddActivityForm } from './components/AddActivityForm/AddActivityForm';
 import { ActivityPriorityList } from './components/ActivityPriorityList/ActivityPriorityList';
 import { AutoScheduleModal } from './components/AutoScheduleModal/AutoScheduleModal';
 import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
 import { ImportActivityForm } from './components/ImportActivityForm/ImportActivityForm';
 import { ManualScheduleModal } from './components/ManualScheduleModal/ManualScheduleModal';
+import {
+  isUnscheduledDetailBlock,
+  pickDetailBlockForTask,
+} from './utils/detailBlockForCatalogTask/detailBlockForCatalogTask';
 import styles from './ActivitiesPage.module.scss';
 
 type ListView = 'active' | 'archived';
@@ -41,11 +56,15 @@ export const ActivitiesPage: React.FC = () => {
   const [listView, setListView] = useState<ListView>('active');
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget>(null);
   const [scheduleTarget, setScheduleTarget] = useState<IApiTask | null>(null);
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [editingBlock, setEditingBlock] = useState<ITimetableBlock | null>(null);
+  const [detailActionError, setDetailActionError] = useState<string | null>(null);
   const [autoScheduleTarget, setAutoScheduleTarget] =
     useState<IActivityWithTasks | null>(null);
   const [autoSchedulePreview, setAutoSchedulePreview] =
     useState<IAutoSchedulePreviewResponse | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const selectedDate = todayKey();
   const { data: activities, isLoading, error } = useActivityCatalog();
   const createActivity = useCreateActivity();
   const importActivityCatalog = useImportActivityCatalog();
@@ -59,6 +78,11 @@ export const ActivitiesPage: React.FC = () => {
   const confirmAutoSchedule = useConfirmAutoSchedule();
   const reorderActivities = useReorderActivities();
   const reorderTasks = useReorderTasks();
+  const { data: runningEntry = null } = useRunningTimer();
+  const { data: detailEntries = [] } = useTimeEntriesByTask(detailTaskId);
+  const detailBlocksQuery = useTimetableBlocksByTask(detailTaskId);
+  const { update, updateTask, remove, setStatus, complete } = useActivityMutations(selectedDate);
+  const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
   const visibleActivities = useMemo(() => {
     if (!activities) return [];
@@ -68,7 +92,36 @@ export const ActivitiesPage: React.FC = () => {
     });
   }, [activities, listView]);
 
-  const busy =
+  const detailContext = useMemo(() => {
+    if (!detailTaskId || !activities) return null;
+    for (const activity of activities) {
+      const task = activity.tasks.find((item) => item.id === detailTaskId);
+      if (task) return { activity, task };
+    }
+    return null;
+  }, [activities, detailTaskId]);
+
+  const detailBlock = useMemo(() => {
+    if (!detailContext) return null;
+    // Wait for the first schedule-block fetch so we don't flash a stand-in.
+    if (detailBlocksQuery.isLoading && detailBlocksQuery.data === undefined) {
+      return null;
+    }
+    return pickDetailBlockForTask(
+      detailContext.task,
+      detailBlocksQuery.data,
+      selectedDate
+    );
+  }, [detailContext, detailBlocksQuery.data, detailBlocksQuery.isLoading, selectedDate]);
+
+  const detailPlannedFocusSeconds = useMemo(() => {
+    const blocks = detailBlocksQuery.data;
+    if (!blocks || blocks.length === 0) return undefined;
+    const total = scheduledFocusSeconds(blocks);
+    return total > 0 ? total : undefined;
+  }, [detailBlocksQuery.data]);
+
+  const catalogBusy =
     createActivity.isPending ||
     importActivityCatalog.isPending ||
     createTask.isPending ||
@@ -81,8 +134,21 @@ export const ActivitiesPage: React.FC = () => {
     confirmAutoSchedule.isPending ||
     reorderActivities.isPending ||
     reorderTasks.isPending;
+
+  const detailBusy =
+    update.isPending ||
+    updateTask.isPending ||
+    remove.isPending ||
+    setStatus.isPending ||
+    complete.isPending ||
+    startTimer.isPending ||
+    stopTimer.isPending ||
+    addManual.isPending;
+
+  const busy = catalogBusy || detailBusy;
   const mutationError =
     importError ??
+    detailActionError ??
     (importActivityCatalog.error instanceof Error
       ? importActivityCatalog.error.message
       : null) ??
@@ -98,6 +164,24 @@ export const ActivitiesPage: React.FC = () => {
     reorderActivities.error ??
     reorderTasks.error;
 
+  const closeDetails = () => {
+    setDetailTaskId(null);
+    setEditingBlock(null);
+    setDetailActionError(null);
+  };
+
+  const runDetailAction = async (fn: () => Promise<unknown>) => {
+    setDetailActionError(null);
+    try {
+      await fn();
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setDetailActionError(
+        err instanceof Error ? err.message : 'Something went wrong.'
+      );
+    }
+  };
+
   const handleConfirm = async () => {
     if (!confirmTarget) return;
     try {
@@ -105,6 +189,7 @@ export const ActivitiesPage: React.FC = () => {
         await deleteActivity.mutateAsync(confirmTarget.id);
       } else if (confirmTarget.kind === 'task') {
         await deleteTask.mutateAsync(confirmTarget.id);
+        if (detailTaskId === confirmTarget.id) closeDetails();
       } else if (confirmTarget.kind === 'archive') {
         await archiveActivity.mutateAsync(confirmTarget.id);
       } else {
@@ -135,6 +220,35 @@ export const ActivitiesPage: React.FC = () => {
   ) => {
     await confirmAutoSchedule.mutateAsync(request);
     closeAutoScheduleModal();
+  };
+
+  const handleEditSubmit = async (values: ActivityFormValues) => {
+    if (!editingBlock?.taskId) return;
+    setDetailActionError(null);
+    try {
+      if (isUnscheduledDetailBlock(editingBlock)) {
+        await updateTask.mutateAsync({
+          id: editingBlock.taskId,
+          patch: {
+            title: values.title,
+            categoryId: values.categoryId,
+            notes: values.notes,
+          },
+        });
+      } else {
+        await update.mutateAsync({
+          blockId: editingBlock.id,
+          taskId: editingBlock.taskId,
+          patch: values,
+        });
+      }
+      setEditingBlock(null);
+      closeDetails();
+    } catch (err) {
+      setDetailActionError(
+        err instanceof Error ? err.message : 'Failed to save task.'
+      );
+    }
   };
 
   const autoScheduleError =
@@ -308,6 +422,11 @@ export const ActivitiesPage: React.FC = () => {
               setAutoSchedulePreview(null);
               setAutoScheduleTarget(activity);
             }}
+            onSelectTask={(task) => {
+              setDetailActionError(null);
+              setEditingBlock(null);
+              setDetailTaskId(task.id);
+            }}
             onScheduleTask={(task) => {
               scheduleTask.reset();
               setScheduleTarget(task);
@@ -348,7 +467,7 @@ export const ActivitiesPage: React.FC = () => {
       {scheduleTarget ? (
         <ManualScheduleModal
           task={scheduleTarget}
-          defaultDate={todayKey()}
+          defaultDate={selectedDate}
           busy={scheduleTask.isPending}
           error={
             scheduleTask.error instanceof Error
@@ -377,7 +496,7 @@ export const ActivitiesPage: React.FC = () => {
       {autoScheduleTarget ? (
         <AutoScheduleModal
           activity={autoScheduleTarget}
-          defaultDate={todayKey()}
+          defaultDate={selectedDate}
           busy={previewAutoSchedule.isPending || confirmAutoSchedule.isPending}
           error={autoScheduleError}
           preview={autoSchedulePreview}
@@ -390,6 +509,93 @@ export const ActivitiesPage: React.FC = () => {
           onPreview={handleAutoSchedulePreview}
           onConfirm={handleAutoScheduleConfirm}
         />
+      ) : null}
+      {detailBlock && detailContext && !editingBlock ? (
+        <TaskDetailModal
+          block={detailBlock}
+          activityTitle={detailContext.activity.title}
+          entries={detailEntries}
+          runningEntry={runningEntry}
+          plannedFocusSeconds={detailPlannedFocusSeconds}
+          busy={detailBusy}
+          onClose={closeDetails}
+          onEdit={(block) => {
+            setEditingBlock(block);
+          }}
+          onDelete={(block) => {
+            if (!block.taskId) return;
+            setConfirmTarget({
+              kind: 'task',
+              id: block.taskId,
+              title: block.title,
+            });
+          }}
+          onStatus={(taskId, status) =>
+            runDetailAction(async () => {
+              if (status === 'done') {
+                let sessions = detailEntries;
+                if (runningEntry?.taskId === taskId) {
+                  const stopped = await stopTimer.mutateAsync(runningEntry.id);
+                  const endAt = stopped?.endAt ?? new Date().toISOString();
+                  sessions = detailEntries.some((e) => e.id === runningEntry.id)
+                    ? detailEntries.map((e) =>
+                        e.id === runningEntry.id ? { ...e, endAt } : e
+                      )
+                    : [...detailEntries, { ...runningEntry, endAt }];
+                }
+                const bounds = workSessionBounds(sessions);
+                await complete.mutateAsync({
+                  taskId,
+                  blockId: isUnscheduledDetailBlock(detailBlock)
+                    ? undefined
+                    : detailBlock.id,
+                  sessionStartAt: bounds?.startAt,
+                  sessionEndAt: bounds?.endAt,
+                });
+                closeDetails();
+                return;
+              }
+
+              await setStatus.mutateAsync({ taskId, status });
+            })
+          }
+          onStart={(block) =>
+            runDetailAction(async () => {
+              if (!block.taskId) return;
+              await startTimer.mutateAsync(block.taskId);
+            })
+          }
+          onStop={(entryId) => runDetailAction(() => stopTimer.mutateAsync(entryId))}
+          onLogManual={(taskId, minutes) =>
+            runDetailAction(() =>
+              addManual.mutateAsync({ activityId: taskId, durationMinutes: minutes })
+            )
+          }
+        />
+      ) : null}
+      {editingBlock ? (
+        <div
+          className={styles.formBackdrop}
+          role="presentation"
+          onClick={() => setEditingBlock(null)}
+        >
+          <div
+            className={styles.formModal}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit task"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ActivityForm
+              date={editingBlock.date}
+              initial={editingBlock}
+              includeScheduleFields={!isUnscheduledDetailBlock(editingBlock)}
+              isSubmitting={update.isPending || updateTask.isPending}
+              onCancel={() => setEditingBlock(null)}
+              onSubmit={handleEditSubmit}
+            />
+          </div>
+        </div>
       ) : null}
     </>
   );

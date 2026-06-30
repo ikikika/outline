@@ -168,6 +168,65 @@ const mockConfirmAutoSchedule = {
 
 vi.mock('@/features/activities/hooks/useActivities', () => ({
   useResolvedTimeZone: () => 'UTC',
+  useRunningTimer: () => ({ data: null }),
+  useTimeEntriesByTask: () => ({ data: [] }),
+  useTimetableBlocksByTask: () => ({
+    data: [],
+    isLoading: false,
+    isFetching: false,
+  }),
+  useActivityMutations: () => ({
+    update: { mutateAsync: vi.fn(), isPending: false },
+    updateTask: { mutateAsync: vi.fn(), isPending: false },
+    remove: { mutateAsync: vi.fn(), isPending: false },
+    setStatus: { mutateAsync: vi.fn(), isPending: false },
+    complete: { mutateAsync: vi.fn(), isPending: false },
+  }),
+  useTimeEntryMutations: () => ({
+    startTimer: { mutateAsync: vi.fn(), isPending: false },
+    stopTimer: { mutateAsync: vi.fn(), isPending: false },
+    addManual: { mutateAsync: vi.fn(), isPending: false },
+  }),
+  workSessionBounds: () => null,
+}));
+
+vi.mock('@/pages/TimetablePage/components/TaskDetailModal/TaskDetailModal', () => ({
+  TaskDetailModal: ({
+    block,
+    activityTitle,
+    onClose,
+    onEdit,
+  }: {
+    block: { title: string };
+    activityTitle?: string;
+    onClose: () => void;
+    onEdit: (block: { title: string }) => void;
+  }) => (
+    <div role="dialog" aria-label="Task details">
+      <h2>{block.title}</h2>
+      {activityTitle ? <p>{activityTitle}</p> : null}
+      <button type="button" onClick={() => onEdit(block)}>
+        Edit
+      </button>
+      <button type="button" onClick={onClose}>
+        Close details
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('@/pages/TimetablePage/components/ActivityForm/ActivityForm', () => ({
+  ActivityForm: ({
+    includeScheduleFields = true,
+  }: {
+    includeScheduleFields?: boolean;
+  }) => (
+    <div>
+      <label htmlFor="activity-notes">Notes</label>
+      <textarea id="activity-notes" />
+      {!includeScheduleFields ? <span>Task details only</span> : null}
+    </div>
+  ),
 }));
 
 vi.mock('@/features/activities', () => ({
@@ -188,11 +247,36 @@ vi.mock('@/features/activities', () => ({
   useConfirmAutoSchedule: () => mockConfirmAutoSchedule,
   useReorderActivities: () => mockReorderActivities,
   useReorderTasks: () => mockReorderTasks,
+  useRunningTimer: () => ({ data: null }),
+  useTimeEntriesByTask: () => ({ data: [] }),
+  useTimetableBlocksByTask: () => ({
+    data: [],
+    isLoading: false,
+    isFetching: false,
+  }),
+  useActivityMutations: () => ({
+    update: { mutateAsync: vi.fn(), isPending: false },
+    updateTask: { mutateAsync: vi.fn(), isPending: false },
+    remove: { mutateAsync: vi.fn(), isPending: false },
+    setStatus: { mutateAsync: vi.fn(), isPending: false },
+    complete: { mutateAsync: vi.fn(), isPending: false },
+  }),
+  useTimeEntryMutations: () => ({
+    startTimer: { mutateAsync: vi.fn(), isPending: false },
+    stopTimer: { mutateAsync: vi.fn(), isPending: false },
+    addManual: { mutateAsync: vi.fn(), isPending: false },
+  }),
+  workSessionBounds: () => null,
   canArchiveActivity: (tasks: Array<{ status: string }>) =>
     tasks.length > 0 && tasks.every((task) => task.status === 'done'),
   isActivityArchived: (archivedAt: string | null | undefined) =>
     typeof archivedAt === 'string' && archivedAt.length > 0,
   todayKey: () => '2026-07-21',
+  minutesToTime: (minutes: number) => {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  },
   manualScheduleSchema,
   autoScheduleSchema,
   createAutoScheduleSchema,
@@ -258,6 +342,37 @@ describe('ActivitiesPage', () => {
     expect(screen.getByText('Lesson 2')).toBeInTheDocument();
     expect(screen.getByText('Unplanned')).toBeInTheDocument();
     expect(screen.getByText('Done')).toBeInTheDocument();
+  });
+
+  it('opens task details when a task title is clicked', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(screen.getByText('Deep Learning'));
+    await user.click(screen.getByRole('button', { name: 'Lesson 1' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Task details' });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Lesson 1' })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('Deep Learning');
+
+    await user.click(screen.getByRole('button', { name: 'Close details' }));
+    expect(screen.queryByRole('dialog', { name: 'Task details' })).not.toBeInTheDocument();
+  });
+
+  it('opens the edit form with notes for an unplanned task', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    await user.click(screen.getByText('Deep Learning'));
+    await user.click(screen.getByRole('button', { name: 'Lesson 1' }));
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+
+    expect(screen.getByRole('dialog', { name: 'Edit task' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Notes')).toBeInTheDocument();
+    expect(screen.getByText('Task details only')).toBeInTheDocument();
   });
 
   it('collapses an expanded activity on second click', async () => {

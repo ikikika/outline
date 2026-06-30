@@ -34,6 +34,7 @@ interface ActivityPriorityListProps {
   onArchiveActivity?: (activity: IActivityWithTasks) => void;
   onRestoreActivity?: (activity: IActivityWithTasks) => void;
   onAutoScheduleActivity: (activity: IActivityWithTasks) => void;
+  onSelectTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onScheduleTask: (task: IActivityWithTasks['tasks'][number]) => void;
   onDeleteTask: (task: IActivityWithTasks['tasks'][number]) => void;
 }
@@ -49,6 +50,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
   onArchiveActivity,
   onRestoreActivity,
   onAutoScheduleActivity,
+  onSelectTask,
   onScheduleTask,
   onDeleteTask,
 }) => {
@@ -147,6 +149,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
               onRestoreActivity ? () => onRestoreActivity(activity) : undefined
             }
             onAutoScheduleActivity={() => onAutoScheduleActivity(activity)}
+            onSelectTask={onSelectTask}
             onScheduleTask={onScheduleTask}
             onDeleteTask={onDeleteTask}
           />

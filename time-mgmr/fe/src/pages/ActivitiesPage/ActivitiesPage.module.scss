@@ -362,6 +362,38 @@
   white-space: nowrap;
 }
 
+.taskTitleButton {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskTitleButton:hover:not(:disabled) {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.taskTitleButton:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+  border-radius: 0.2rem;
+}
+
+.taskTitleButton:disabled {
+  cursor: default;
+}
+
 .statusChip {
   display: inline-flex;
   align-items: center;
@@ -481,6 +513,23 @@
 .confirmPrimaryButton:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.formBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.formModal {
+  width: min(100%, 32rem);
+  max-height: min(90vh, 40rem);
+  overflow: auto;
 }
 
 @media (max-width: 36rem) {

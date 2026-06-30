@@ -10,6 +10,7 @@ import styles from '../../ActivitiesPage.module.scss';
 interface TaskPriorityListProps {
   tasks: IApiTask[];
   disabled?: boolean;
+  onSelectTask: (task: IApiTask) => void;
   onScheduleTask: (task: IApiTask) => void;
   onDeleteTask: (task: IApiTask) => void;
 }
@@ -17,6 +18,7 @@ interface TaskPriorityListProps {
 export const TaskPriorityList: React.FC<TaskPriorityListProps> = ({
   tasks,
   disabled = false,
+  onSelectTask,
   onScheduleTask,
   onDeleteTask,
 }) => {
@@ -30,6 +32,7 @@ export const TaskPriorityList: React.FC<TaskPriorityListProps> = ({
             key={task.id}
             task={task}
             disabled={disabled}
+            onSelect={() => onSelectTask(task)}
             onSchedule={() => onScheduleTask(task)}
             onDelete={() => onDeleteTask(task)}
           />
