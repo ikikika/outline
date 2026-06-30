@@ -36,7 +36,6 @@ interface TaskDetailModalProps {
   busy?: boolean;
   onClose: () => void;
   onEdit: (block: ITimetableBlock) => void;
-  onDelete: (block: ITimetableBlock) => void;
   onStatus: (taskId: string, status: ITimetableBlock['status']) => void;
   /** Start a timer for this block (parent ensures a taskId for breaks). */
   onStart: (block: ITimetableBlock) => void;
@@ -99,7 +98,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   busy = false,
   onClose,
   onEdit,
-  onDelete,
   onStatus,
   onStart,
   onStop,
@@ -546,13 +544,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           <Button size="sm" variant="ghost" disabled={busy} onClick={() => onEdit(block)}>
             Edit
           </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={busy}
-            onClick={() => onDelete(block)}
-          >
-            Delete
+          <Button size="sm" variant="outline" disabled={busy} onClick={onClose}>
+            Close
           </Button>
         </div>
 

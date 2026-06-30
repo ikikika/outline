@@ -96,7 +96,7 @@ export const TimetablePage: React.FC = () => {
     const total = scheduledFocusSeconds(blocks);
     return total > 0 ? total : undefined;
   }, [detailTaskBlocksQuery.data]);
-  const { update, updateBlock, remove, setStatus, complete } =
+  const { update, updateBlock, setStatus, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
@@ -130,7 +130,6 @@ export const TimetablePage: React.FC = () => {
   const busy =
     update.isPending ||
     updateBlock.isPending ||
-    remove.isPending ||
     setStatus.isPending ||
     complete.isPending ||
     startTimer.isPending ||
@@ -307,15 +306,6 @@ export const TimetablePage: React.FC = () => {
           busy={busy}
           onClose={closeDetails}
           onEdit={(block) => setEditing(block)}
-          onDelete={(block) =>
-            runAction(async () => {
-              await remove.mutateAsync({
-                blockId: block.id,
-                taskId: block.taskId,
-              });
-              closeDetails();
-            })
-          }
           onStatus={(taskId, status) =>
             runAction(async () => {
               if (status === 'done') {

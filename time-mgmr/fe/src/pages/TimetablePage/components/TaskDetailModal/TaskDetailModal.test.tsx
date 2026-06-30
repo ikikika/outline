@@ -61,7 +61,6 @@ const baseProps = {
   runningEntry: null as ITimeEntry | null,
   onClose: vi.fn(),
   onEdit: vi.fn(),
-  onDelete: vi.fn(),
   onStatus: vi.fn(),
   onStart: vi.fn(),
   onStop: vi.fn(),
