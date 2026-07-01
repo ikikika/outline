@@ -30,7 +30,10 @@ import {
   previewResizeStart,
   SNAP_MINUTES,
 } from '../../utils/timetableGrid/timetableGrid';
-import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
+import {
+  TIMETABLE_ZOOM_DEFAULT,
+  useFitPxPerMinute,
+} from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { useNowMinutes } from '../../hooks/useNowMinutes/useNowMinutes';
 import { useTimetableScrollAnchor } from '../../hooks/useTimetableScrollAnchor/useTimetableScrollAnchor';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
@@ -45,6 +48,8 @@ interface DayTimetableProps {
   dayEndMinutes: number;
   /** When false, use fixed density and allow vertical scrolling (all-hours mode). */
   fitToWindow?: boolean;
+  /** Multiplier over fit/fixed density; values >1 make the day taller and scrollable. */
+  zoom?: number;
   onReschedule: (id: string, plannedStart: string, plannedEnd: string) => void;
   onSelect?: (block: ITimetableBlock) => void;
   disabled?: boolean;
@@ -73,6 +78,7 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   dayStartMinutes,
   dayEndMinutes,
   fitToWindow = true,
+  zoom = TIMETABLE_ZOOM_DEFAULT,
   onReschedule,
   onSelect,
   disabled = false,
@@ -84,7 +90,13 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
   const [drag, setDrag] = useState<DragState | null>(null);
 
   const totalMinutes = Math.max(1, dayEndMinutes - dayStartMinutes);
-  const pxPerMinute = useFitPxPerMinute(scrollRef, totalMinutes, undefined, fitToWindow);
+  const pxPerMinute = useFitPxPerMinute(
+    scrollRef,
+    totalMinutes,
+    undefined,
+    fitToWindow,
+    zoom
+  );
   const hours = useMemo(
     () => hoursForDayBounds(dayStartMinutes, dayEndMinutes),
     [dayStartMinutes, dayEndMinutes]

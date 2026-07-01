@@ -31,7 +31,10 @@ import {
   previewResizeStart,
   SNAP_MINUTES,
 } from '../../utils/timetableGrid/timetableGrid';
-import { useFitPxPerMinute } from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
+import {
+  TIMETABLE_ZOOM_DEFAULT,
+  useFitPxPerMinute,
+} from '../../hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { useNowMinutes } from '../../hooks/useNowMinutes/useNowMinutes';
 import { useTimetableScrollAnchor } from '../../hooks/useTimetableScrollAnchor/useTimetableScrollAnchor';
 import { getTaskBlockColor } from '../../utils/taskBlockColor/taskBlockColor';
@@ -46,6 +49,8 @@ interface WeekTimetableProps {
   dayEndMinutes: number;
   /** When false, use fixed density and allow vertical scrolling (all-hours mode). */
   fitToWindow?: boolean;
+  /** Multiplier over fit/fixed density; values >1 make the day taller and scrollable. */
+  zoom?: number;
   selectedDate: string;
   onSelectDate?: (date: string) => void;
   onReschedule: (
@@ -86,6 +91,7 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
   dayStartMinutes,
   dayEndMinutes,
   fitToWindow = true,
+  zoom = TIMETABLE_ZOOM_DEFAULT,
   selectedDate,
   onSelectDate,
   onReschedule,
@@ -104,7 +110,8 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     scrollRef,
     totalMinutes,
     weekHeaderRef,
-    fitToWindow
+    fitToWindow,
+    zoom
   );
   const hours = useMemo(
     () => hoursForDayBounds(dayStartMinutes, dayEndMinutes),

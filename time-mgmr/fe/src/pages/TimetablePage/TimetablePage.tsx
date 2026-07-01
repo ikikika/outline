@@ -29,6 +29,7 @@ import { PomodoroBreakPrompt } from './components/PomodoroBreakPrompt/PomodoroBr
 import { TaskDetailModal } from './components/TaskDetailModal/TaskDetailModal';
 import { TimetableHeader, type TimetableView } from './components/TimetableHeader/TimetableHeader';
 import { WeekTimetable } from './components/WeekTimetable/WeekTimetable';
+import { TIMETABLE_ZOOM_DEFAULT } from './hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { usePomodoroReminder } from './hooks/usePomodoroReminder/usePomodoroReminder';
 import { blockDisplayWindow } from './utils/blockDisplayWindow/blockDisplayWindow';
 import {
@@ -42,6 +43,7 @@ export const TimetablePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [timetableView, setTimetableView] = useState<TimetableView>('day');
   const [showAllHours, setShowAllHours] = useState(false);
+  const [zoom, setZoom] = useState(TIMETABLE_ZOOM_DEFAULT);
   const [detailBlockId, setDetailBlockId] = useState<string | null>(null);
   const [editing, setEditing] = useState<ITimetableBlock | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -197,6 +199,8 @@ export const TimetablePage: React.FC = () => {
       dateLabel={dateLabel}
       showAllHours={showAllHours}
       onShowAllHoursChange={setShowAllHours}
+      zoom={zoom}
+      onZoomChange={setZoom}
     />
   );
 
@@ -264,6 +268,7 @@ export const TimetablePage: React.FC = () => {
           dayStartMinutes={dayStartMinutes}
           dayEndMinutes={dayEndMinutes}
           fitToWindow={!showAllHours}
+          zoom={zoom}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
           disabled={busy}
@@ -285,6 +290,7 @@ export const TimetablePage: React.FC = () => {
           dayStartMinutes={dayStartMinutes}
           dayEndMinutes={dayEndMinutes}
           fitToWindow={!showAllHours}
+          zoom={zoom}
           disabled={busy}
           toolbar={toolbar}
           onSelect={openDetails}
