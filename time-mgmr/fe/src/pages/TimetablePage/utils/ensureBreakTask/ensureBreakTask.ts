@@ -38,10 +38,10 @@ export function blockPlannedSeconds(block: ITimetableBlock): number {
   return Math.max(0, block.timeEstimationSeconds ?? 0);
 }
 
-/** Total scheduled focus seconds across all focus blocks for a task. */
+/** Total scheduled focus seconds across planned focus blocks for a task. */
 export function scheduledFocusSeconds(blocks: ITimetableBlock[]): number {
   return blocks
-    .filter((block) => block.blockType === 'focus')
+    .filter((block) => block.blockType === 'focus' && !block.actualStart)
     .reduce((sum, block) => sum + blockPlannedSeconds(block), 0);
 }
 

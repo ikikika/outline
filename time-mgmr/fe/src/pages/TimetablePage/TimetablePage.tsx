@@ -15,7 +15,8 @@ import {
   useTimeEntriesByTask,
   useTimeEntryMutations,
   weekDateKeys,
-  workSessionBounds,
+  closedWorkSessions,
+  visibleTimetableBlocks,
   type ActivityFormValues,
   type ITimetableBlock,
 } from '@/features/activities';
@@ -57,8 +58,8 @@ export const TimetablePage: React.FC = () => {
   const weekBlocksQuery = useTimetableBlocksByRange(week[0], week[week.length - 1], {
     enabled: timetableView === 'week' || detailOpen,
   });
-  const dayBlocks = dayBlocksQuery.data ?? [];
-  const weekBlocks = weekBlocksQuery.data ?? [];
+  const dayBlocks = visibleTimetableBlocks(dayBlocksQuery.data ?? []);
+  const weekBlocks = visibleTimetableBlocks(weekBlocksQuery.data ?? []);
 
   const { data: runningEntry = null } = useRunningTimer();
   const runningTaskQuery = useTaskById(runningEntry?.taskId ?? null);
@@ -315,22 +316,19 @@ export const TimetablePage: React.FC = () => {
           onStatus={(taskId, status) =>
             runAction(async () => {
               if (status === 'done') {
-                let sessions = detailEntries;
+                let entries = detailEntries;
                 if (runningEntry?.taskId === taskId) {
                   const stopped = await stopTimer.mutateAsync(runningEntry.id);
                   const endAt = stopped?.endAt ?? new Date().toISOString();
-                  sessions = detailEntries.some((e) => e.id === runningEntry.id)
+                  entries = detailEntries.some((e) => e.id === runningEntry.id)
                     ? detailEntries.map((e) =>
                         e.id === runningEntry.id ? { ...e, endAt } : e
                       )
                     : [...detailEntries, { ...runningEntry, endAt }];
                 }
-                const bounds = workSessionBounds(sessions);
                 await complete.mutateAsync({
                   taskId,
-                  blockId: detailBlock.id,
-                  sessionStartAt: bounds?.startAt,
-                  sessionEndAt: bounds?.endAt,
+                  sessions: closedWorkSessions(entries),
                 });
                 closeDetails();
                 return;

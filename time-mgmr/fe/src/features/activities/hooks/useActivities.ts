@@ -17,6 +17,8 @@ import {
 } from '../api/activitiesApi';
 import {
   deleteScheduleBlockApi,
+  createScheduleBlockApi,
+  fetchScheduleBlocks,
   fetchTimetableBlocksByDate,
   fetchTimetableBlocksByDateRange,
   fetchTimetableBlocksByTaskId,
@@ -28,11 +30,44 @@ import { timeEntryRepository } from '../repository/timeEntryRepository';
 import type {
   ActivityStatus,
   IActivityInput,
-  ITimeEntry,
   ITimetableBlock,
   TaskStatus,
 } from '../types';
 import { addDays, todayKey } from '../utils/dateUtils';
+
+import {
+  isWorkPeriodScheduleBlock,
+} from '../utils/workPeriodBlocks/workPeriodBlocks';
+
+export {
+  closedWorkSessions,
+  isWorkPeriodScheduleBlock,
+  visibleTimetableBlocks,
+  workSessionBounds,
+} from '../utils/workPeriodBlocks/workPeriodBlocks';
+
+/** Remove work-period clones and clear legacy consolidated actuals for a task. */
+async function clearDoneWorkPeriodBlocks(taskId: string): Promise<void> {
+  const blocks = await fetchScheduleBlocks({ taskId });
+  const workPeriodIds: string[] = [];
+  const legacyActualIds: string[] = [];
+  for (const block of blocks) {
+    if (isWorkPeriodScheduleBlock(block)) {
+      workPeriodIds.push(block.id);
+    } else if (block.actualStart || block.actualEnd) {
+      legacyActualIds.push(block.id);
+    }
+  }
+  await Promise.all(workPeriodIds.map((id) => deleteScheduleBlockApi(id)));
+  await Promise.all(
+    legacyActualIds.map((id) =>
+      patchScheduleBlockApi(id, {
+        actualStart: null,
+        actualEnd: null,
+      })
+    )
+  );
+}
 
 function findBlockInCache(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -47,24 +82,6 @@ function findBlockInCache(
     if (found) return found;
   }
   return undefined;
-}
-
-/** Earliest session start and latest session end across work sessions. */
-export function workSessionBounds(
-  entries: ITimeEntry[]
-): { startAt: string; endAt: string } | null {
-  let startAt: string | null = null;
-  let endAt: string | null = null;
-  for (const entry of entries) {
-    if (entry.startAt && (startAt === null || entry.startAt < startAt)) {
-      startAt = entry.startAt;
-    }
-    if (entry.endAt && (endAt === null || entry.endAt > endAt)) {
-      endAt = entry.endAt;
-    }
-  }
-  if (!startAt || !endAt) return null;
-  return { startAt, endAt };
 }
 
 export function useResolvedTimeZone(): string {
@@ -313,7 +330,12 @@ export function useActivityMutations(date: string) {
     }: {
       taskId: string;
       status: ActivityStatus | TaskStatus;
-    }) => patchTaskApi(taskId, { status }),
+    }) => {
+      if (status === 'in_progress') {
+        await clearDoneWorkPeriodBlocks(taskId);
+      }
+      return patchTaskApi(taskId, { status });
+    },
     onSuccess: async () => {
       await invalidateTaskRelated(queryClient);
     },
@@ -322,31 +344,24 @@ export function useActivityMutations(date: string) {
   const complete = useMutation({
     mutationFn: async ({
       taskId,
-      blockId,
-      sessionStartAt,
-      sessionEndAt,
+      sessions,
     }: {
       taskId: string;
-      blockId?: string;
-      /** Earliest work-session start (UTC ISO); stored as the actual start. */
-      sessionStartAt?: string;
-      /** Latest work-session end (UTC ISO); stored as the actual end. */
-      sessionEndAt?: string;
+      /** Closed work sessions (UTC ISO); each becomes its own timetable block. */
+      sessions?: Array<{ startAt: string; endAt: string }>;
     }) => {
-      // Persist the actual worked window separately from the original plan.
-      // Bounds are supplied by the caller (computed from in-hand entries) to avoid reading
-      // the eventually-consistent time-entry GSI right after stopping a timer.
-      if (blockId && sessionStartAt && sessionEndAt) {
-        // Guarantee a visible one-minute block for sub-minute sessions.
-        const startMs = new Date(sessionStartAt).getTime();
-        const endMs = new Date(sessionEndAt).getTime();
-        const safeEndAt =
-          endMs - startMs < 60_000
-            ? new Date(startMs + 60_000).toISOString()
-            : sessionEndAt;
-        await patchScheduleBlockApi(blockId, {
-          actualStart: sessionStartAt,
-          actualEnd: safeEndAt,
+      await clearDoneWorkPeriodBlocks(taskId);
+      const workSessions = sessions ?? [];
+      for (const session of workSessions) {
+        const created = await createScheduleBlockApi({
+          taskId,
+          blockType: 'focus',
+          plannedStart: session.startAt,
+          plannedEnd: session.endAt,
+        });
+        await patchScheduleBlockApi(created.id, {
+          actualStart: created.plannedStart,
+          actualEnd: created.plannedEnd,
         });
       }
       return patchTaskApi(taskId, { status: 'done' });

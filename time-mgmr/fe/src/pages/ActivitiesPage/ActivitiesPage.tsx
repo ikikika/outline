@@ -20,7 +20,7 @@ import {
   useTimetableBlocksByTask,
   isActivityArchived,
   todayKey,
-  workSessionBounds,
+  closedWorkSessions,
   type ActivityFormValues,
   type IActivityWithTasks,
   type IApiTask,
@@ -534,14 +534,9 @@ export const ActivitiesPage: React.FC = () => {
                       )
                     : [...detailEntries, { ...runningEntry, endAt }];
                 }
-                const bounds = workSessionBounds(sessions);
                 await complete.mutateAsync({
                   taskId,
-                  blockId: isUnscheduledDetailBlock(detailBlock)
-                    ? undefined
-                    : detailBlock.id,
-                  sessionStartAt: bounds?.startAt,
-                  sessionEndAt: bounds?.endAt,
+                  sessions: closedWorkSessions(sessions),
                 });
                 closeDetails();
                 return;

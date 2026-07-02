@@ -188,6 +188,8 @@ vi.mock('@/features/activities/hooks/useActivities', () => ({
     addManual: { mutateAsync: vi.fn(), isPending: false },
   }),
   workSessionBounds: () => null,
+  closedWorkSessions: () => [],
+  visibleTimetableBlocks: <T,>(blocks: T[]) => blocks,
 }));
 
 vi.mock('@/pages/TimetablePage/components/TaskDetailModal/TaskDetailModal', () => ({
@@ -267,6 +269,8 @@ vi.mock('@/features/activities', () => ({
     addManual: { mutateAsync: vi.fn(), isPending: false },
   }),
   workSessionBounds: () => null,
+  closedWorkSessions: () => [],
+  visibleTimetableBlocks: <T,>(blocks: T[]) => blocks,
   canArchiveActivity: (tasks: Array<{ status: string }>) =>
     tasks.length > 0 && tasks.every((task) => task.status === 'done'),
   isActivityArchived: (archivedAt: string | null | undefined) =>

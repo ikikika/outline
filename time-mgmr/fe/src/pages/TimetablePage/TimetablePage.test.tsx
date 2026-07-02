@@ -147,6 +147,13 @@ vi.mock('@/features/activities', () => ({
     }
     return startAt && endAt ? { startAt, endAt } : null;
   },
+  closedWorkSessions: (
+    entries: Array<{ startAt: string; endAt: string | null }>
+  ) =>
+    entries
+      .filter((e): e is { startAt: string; endAt: string } => Boolean(e.endAt))
+      .map((e) => ({ startAt: e.startAt, endAt: e.endAt })),
+  visibleTimetableBlocks: <T,>(blocks: T[]) => blocks,
   useRunningTimer: () => ({ data: mockRunningEntry }),
   useTimeEntriesByTask: () => ({
     data: mockRunningEntry ? [mockRunningEntry] : [],
@@ -271,9 +278,12 @@ describe('TimetablePage', () => {
     expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
     expect(mockCompleteMutation).toHaveBeenCalledWith({
       taskId: 'task-1',
-      blockId: 'block-1',
-      sessionStartAt: '2026-07-19T09:00:00.000Z',
-      sessionEndAt: '2026-07-19T10:00:00.000Z',
+      sessions: [
+        {
+          startAt: '2026-07-19T09:00:00.000Z',
+          endAt: '2026-07-19T10:00:00.000Z',
+        },
+      ],
     });
   });
 });
