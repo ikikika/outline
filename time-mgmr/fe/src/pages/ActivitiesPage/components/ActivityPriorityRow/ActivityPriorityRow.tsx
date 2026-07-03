@@ -16,6 +16,7 @@ interface ActivityPriorityRowProps {
   activity: IActivityWithTasks;
   expanded: boolean;
   archivedView?: boolean;
+  adhocView?: boolean;
   onToggle: () => void;
   onAddTask: (
     input: Pick<ICatalogTaskCreateInput, 'title' | 'timeEstimationSeconds'>
@@ -34,6 +35,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   activity,
   expanded,
   archivedView = false,
+  adhocView = false,
   onToggle,
   onAddTask,
   onDeleteActivity,
@@ -45,7 +47,8 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   onDeleteTask,
   disabled = false,
 }) => {
-  const readOnly = archivedView || disabled;
+  const activityLocked = archivedView || adhocView || disabled;
+  const tasksLocked = archivedView || disabled;
   const {
     attributes,
     listeners,
@@ -56,7 +59,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   } = useSortable({
     id: activity.id,
     data: { type: 'activity' },
-    disabled: readOnly,
+    disabled: activityLocked,
   });
 
   const style = {
@@ -70,7 +73,8 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
     (task) => task.status === 'done'
   ).length;
   const panelId = `activity-tasks-${activity.id}`;
-  const showArchive = !archivedView && canArchiveActivity(activity.tasks);
+  const showArchive =
+    !archivedView && !adhocView && canArchiveActivity(activity.tasks);
 
   return (
     <div
@@ -92,7 +96,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
           }
         }}
       >
-        {!archivedView ? (
+        {!activityLocked ? (
           <span
             className={styles.dragHandle}
             {...attributes}
@@ -122,7 +126,7 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
         <span className={styles.taskCount}>
           {completedTaskCount}/{taskCount} {taskCount === 1 ? 'task' : 'tasks'}
         </span>
-        {!archivedView ? (
+        {!archivedView && !adhocView ? (
           <button
             type="button"
             className={styles.autoScheduleButton}
@@ -167,19 +171,21 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
             <ArchiveRestore size={15} aria-hidden />
           </button>
         ) : null}
-        <button
-          type="button"
-          className={styles.iconButton}
-          aria-label={`Delete activity ${activity.title}`}
-          disabled={disabled}
-          onClick={(event) => {
-            event.stopPropagation();
-            onDeleteActivity();
-          }}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <Trash2 size={15} aria-hidden />
-        </button>
+        {!adhocView ? (
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label={`Delete activity ${activity.title}`}
+            disabled={disabled}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDeleteActivity();
+            }}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <Trash2 size={15} aria-hidden />
+          </button>
+        ) : null}
       </div>
 
       {expanded ? (
@@ -187,15 +193,19 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
           {taskCount > 0 ? (
             <TaskPriorityList
               tasks={activity.tasks}
-              disabled={readOnly}
+              disabled={tasksLocked}
               onSelectTask={onSelectTask}
               onScheduleTask={onScheduleTask}
               onDeleteTask={onDeleteTask}
             />
           ) : (
-            <p className={styles.emptyTasks}>No tasks yet</p>
+            <p className={styles.emptyTasks}>
+              {adhocView
+                ? 'No adhoc blocks yet. Add one from the timetable.'
+                : 'No tasks yet'}
+            </p>
           )}
-          {!archivedView ? (
+          {!archivedView && !adhocView ? (
             <AddTaskForm
               activityId={activity.id}
               disabled={disabled}

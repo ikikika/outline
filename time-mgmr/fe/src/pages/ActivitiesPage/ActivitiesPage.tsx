@@ -1,5 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import {
   useActivityCatalog,
   useActivityMutations,
   useArchiveActivity,
@@ -21,6 +30,7 @@ import {
   isActivityArchived,
   todayKey,
   closedWorkSessions,
+  ADHOC_BLOCKS_ACTIVITY_ID,
   type ActivityFormValues,
   type IActivityWithTasks,
   type IApiTask,
@@ -37,13 +47,14 @@ import { AutoScheduleModal } from './components/AutoScheduleModal/AutoScheduleMo
 import { ConfirmationModal } from './components/ConfirmationModal/ConfirmationModal';
 import { ImportActivityForm } from './components/ImportActivityForm/ImportActivityForm';
 import { ManualScheduleModal } from './components/ManualScheduleModal/ManualScheduleModal';
+import { TaskPriorityList } from './components/TaskPriorityList/TaskPriorityList';
 import {
   isUnscheduledDetailBlock,
   pickDetailBlockForTask,
 } from './utils/detailBlockForCatalogTask/detailBlockForCatalogTask';
 import styles from './ActivitiesPage.module.scss';
 
-type ListView = 'active' | 'archived';
+type ListView = 'active' | 'archived' | 'adhoc';
 
 type ConfirmTarget =
   | { kind: 'activity'; id: string; title: string; taskCount: number }
@@ -87,10 +98,21 @@ export const ActivitiesPage: React.FC = () => {
   const visibleActivities = useMemo(() => {
     if (!activities) return [];
     return activities.filter((activity) => {
+      const isAdhoc = activity.id === ADHOC_BLOCKS_ACTIVITY_ID;
       const archived = isActivityArchived(activity.archivedAt);
-      return listView === 'archived' ? archived : !archived;
+      if (listView === 'adhoc') return isAdhoc;
+      if (listView === 'archived') return archived && !isAdhoc;
+      return !archived && !isAdhoc;
     });
   }, [activities, listView]);
+
+  const adhocTasks = useMemo(
+    () =>
+      listView === 'adhoc'
+        ? visibleActivities.flatMap((activity) => activity.tasks)
+        : [],
+    [listView, visibleActivities]
+  );
 
   const detailContext = useMemo(() => {
     if (!detailTaskId || !activities) return null;
@@ -162,6 +184,13 @@ export const ActivitiesPage: React.FC = () => {
     confirmAutoSchedule.error ??
     reorderActivities.error ??
     reorderTasks.error;
+
+  const adhocSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const closeDetails = () => {
     setDetailTaskId(null);
@@ -310,7 +339,9 @@ export const ActivitiesPage: React.FC = () => {
             <p className={styles.subtitle}>
               {listView === 'active'
                 ? 'Drag to set priority. Expand to reorder tasks within an activity.'
-                : 'Review completed work. Restore an activity to edit or schedule again.'}
+                : listView === 'archived'
+                  ? 'Review completed work. Restore an activity to edit or schedule again.'
+                  : 'One-off timetable blockers. These are excluded from reports.'}
             </p>
           </div>
           <div className={styles.viewToggle} role="group" aria-label="Activity list">
@@ -321,6 +352,14 @@ export const ActivitiesPage: React.FC = () => {
               onClick={() => setListView('active')}
             >
               Active
+            </button>
+            <button
+              type="button"
+              className={listView === 'adhoc' ? styles.viewToggleActive : undefined}
+              aria-pressed={listView === 'adhoc'}
+              onClick={() => setListView('adhoc')}
+            >
+              Adhoc
             </button>
             <button
               type="button"
@@ -376,6 +415,40 @@ export const ActivitiesPage: React.FC = () => {
               ? error.message
               : 'Failed to load activities.'}
           </div>
+        ) : listView === 'adhoc' ? (
+          adhocTasks.length > 0 ? (
+            <DndContext
+              sensors={adhocSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={() => undefined}
+            >
+              <TaskPriorityList
+                tasks={adhocTasks}
+                flat
+                disabled={busy}
+                onSelectTask={(task) => {
+                  setDetailActionError(null);
+                  setEditingBlock(null);
+                  setDetailTaskId(task.id);
+                }}
+                onScheduleTask={(task) => {
+                  scheduleTask.reset();
+                  setScheduleTarget(task);
+                }}
+                onDeleteTask={(task) =>
+                  setConfirmTarget({
+                    kind: 'task',
+                    id: task.id,
+                    title: task.title,
+                  })
+                }
+              />
+            </DndContext>
+          ) : (
+            <p className={styles.empty}>
+              No adhoc blocks yet. Add one from the timetable with “Add adhoc”.
+            </p>
+          )
         ) : visibleActivities.length > 0 ? (
           <ActivityPriorityList
             activities={visibleActivities}

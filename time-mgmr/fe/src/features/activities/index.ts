@@ -20,6 +20,7 @@ export {
   SCHEDULE_BLOCK_QUERY_KEYS,
   TIME_ENTRY_QUERY_KEYS,
   ON_TARGET_TOLERANCE,
+  ADHOC_BLOCKS_ACTIVITY_ID,
 } from './constants';
 
 export {

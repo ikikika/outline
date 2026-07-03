@@ -87,6 +87,28 @@ const mockActivities = [
       },
     ],
   },
+  {
+    id: 'adhoc-blocks',
+    title: 'Adhoc blocks',
+    categoryId: 'personal' as const,
+    notes: '',
+    sortOrder: 99,
+    archivedAt: null,
+    createdAt: '2026-07-21T00:00:00.000Z',
+    updatedAt: '2026-07-21T00:00:00.000Z',
+    tasks: [
+      {
+        id: 'adhoc-task-1',
+        activityId: 'adhoc-blocks',
+        title: 'Doctor appointment',
+        categoryId: 'personal' as const,
+        notes: '',
+        status: 'planned' as const,
+        sortOrder: 0,
+        excludeFromReports: true,
+      },
+    ],
+  },
 ];
 
 const mockReorderActivities = { mutate: vi.fn(), isPending: false, error: null };
@@ -275,6 +297,7 @@ vi.mock('@/features/activities', () => ({
     tasks.length > 0 && tasks.every((task) => task.status === 'done'),
   isActivityArchived: (archivedAt: string | null | undefined) =>
     typeof archivedAt === 'string' && archivedAt.length > 0,
+  ADHOC_BLOCKS_ACTIVITY_ID: 'adhoc-blocks',
   todayKey: () => '2026-07-21',
   minutesToTime: (minutes: number) => {
     const h = Math.floor(minutes / 60);
@@ -510,6 +533,23 @@ describe('ActivitiesPage', () => {
       screen.getByRole('button', { name: /^Restore activity$/ })
     );
     expect(mockRestoreActivity.mutateAsync).toHaveBeenCalledWith('act-4');
+  });
+
+  it('shows adhoc blocks on their own tab and hides them from active', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    render(<ActivitiesPage />);
+
+    expect(screen.queryByText('Doctor appointment')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Adhoc' }));
+
+    expect(screen.getByText('Doctor appointment')).toBeInTheDocument();
+    expect(screen.queryByText('Adhoc blocks')).not.toBeInTheDocument();
+    expect(screen.queryByText('Deep Learning')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Delete task Doctor appointment' })
+    ).toBeEnabled();
   });
 
   it('can cancel or confirm task deletion', async () => {

@@ -8,6 +8,8 @@ import styles from '../../ActivitiesPage.module.scss';
 interface TaskPriorityRowProps {
   task: IApiTask;
   disabled?: boolean;
+  /** Flat top-level row — no drag handle, less indent. */
+  flat?: boolean;
   onSelect: () => void;
   onSchedule: () => void;
   onDelete: () => void;
@@ -40,6 +42,7 @@ function statusLabel(status: string): string {
 export const TaskPriorityRow: React.FC<TaskPriorityRowProps> = ({
   task,
   disabled = false,
+  flat = false,
   onSelect,
   onSchedule,
   onDelete,
@@ -54,7 +57,7 @@ export const TaskPriorityRow: React.FC<TaskPriorityRowProps> = ({
   } = useSortable({
     id: task.id,
     data: { type: 'task', activityId: task.activityId },
-    disabled,
+    disabled: disabled || flat,
   });
 
   const style = {
@@ -74,11 +77,15 @@ export const TaskPriorityRow: React.FC<TaskPriorityRowProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`${styles.taskRow} ${isDragging ? styles.dragging : ''}`}
+      className={`${styles.taskRow} ${flat ? styles.taskRowFlat : ''} ${
+        isDragging ? styles.dragging : ''
+      }`}
     >
-      <span className={styles.dragHandle} {...attributes} {...listeners}>
-        <GripVertical size={14} />
-      </span>
+      {flat ? null : (
+        <span className={styles.dragHandle} {...attributes} {...listeners}>
+          <GripVertical size={14} />
+        </span>
+      )}
       <button
         type="button"
         className={styles.taskTitleButton}

@@ -43,3 +43,6 @@ export const TIME_ENTRY_QUERY_KEYS = {
 
 /** Variance within ±10% counts as on-target */
 export const ON_TARGET_TOLERANCE = 0.1;
+
+/** Catalog activity for one-off timetable blockers excluded from reports. */
+export const ADHOC_BLOCKS_ACTIVITY_ID = 'adhoc-blocks';

@@ -23,6 +23,7 @@ import { ActivityPriorityRow } from '../ActivityPriorityRow/ActivityPriorityRow'
 interface ActivityPriorityListProps {
   activities: IActivityWithTasks[];
   archivedView?: boolean;
+  adhocView?: boolean;
   disabled?: boolean;
   onReorderActivities: (orderedIds: string[]) => void;
   onReorderTasks: (activityId: string, orderedTaskIds: string[]) => void;
@@ -42,6 +43,7 @@ interface ActivityPriorityListProps {
 export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
   activities,
   archivedView = false,
+  adhocView = false,
   disabled = false,
   onReorderActivities,
   onReorderTasks,
@@ -55,7 +57,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
   onDeleteTask,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const dndDisabled = disabled || archivedView;
+  const dndDisabled = disabled || archivedView || adhocView;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -137,6 +139,7 @@ export const ActivityPriorityList: React.FC<ActivityPriorityListProps> = ({
             key={activity.id}
             activity={activity}
             archivedView={archivedView}
+            adhocView={adhocView}
             expanded={expandedIds.has(activity.id)}
             onToggle={() => toggleExpand(activity.id)}
             disabled={disabled}

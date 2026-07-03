@@ -5,11 +5,12 @@ import {
   importActivityCatalogApi,
   plannedDurationMinutes,
   timetableTimesToIso,
+  ADHOC_BLOCKS_ACTIVITY_ID,
   type AdhocBlockValues,
   type IApiScheduleBlock,
 } from '@/features/activities';
 
-export const ADHOC_BLOCKS_ACTIVITY_ID = 'adhoc-blocks';
+export { ADHOC_BLOCKS_ACTIVITY_ID };
 
 async function ensureAdhocActivity(): Promise<void> {
   try {

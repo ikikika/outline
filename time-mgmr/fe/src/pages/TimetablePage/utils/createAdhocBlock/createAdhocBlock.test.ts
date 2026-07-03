@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAdhocBlock } from './createAdhocBlock';
 
 vi.mock('@/features/activities', () => ({
+  ADHOC_BLOCKS_ACTIVITY_ID: 'adhoc-blocks',
   createCatalogTaskApi: vi.fn(),
   createScheduleBlockApi: vi.fn(),
   fetchActivityById: vi.fn(),
