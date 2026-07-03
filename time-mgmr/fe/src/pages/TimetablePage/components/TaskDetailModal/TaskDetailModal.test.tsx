@@ -62,6 +62,7 @@ const baseProps = {
   onClose: vi.fn(),
   onEdit: vi.fn(),
   onStatus: vi.fn(),
+  onSkip: vi.fn(),
   onStart: vi.fn(),
   onStop: vi.fn(),
   onLogManual: vi.fn(),
@@ -164,6 +165,59 @@ describe('completed task actions', () => {
     await user.click(screen.getByRole('button', { name: 'Mark in progress' }));
 
     expect(onStatus).toHaveBeenCalledWith('task-1', 'in_progress');
+  });
+
+  it('replaces Skip with Restore for skipped tasks', async () => {
+    const user = userEvent.setup();
+    const onStatus = vi.fn();
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, status: 'skipped' }}
+        onStatus={onStatus}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Restore' }));
+
+    expect(onStatus).toHaveBeenCalledWith('task-1', 'unplanned');
+  });
+
+  it('calls onSkip for focus tasks', async () => {
+    const user = userEvent.setup();
+    const onSkip = vi.fn();
+
+    render(<TaskDetailModal {...baseProps} onSkip={onSkip} />);
+
+    await user.click(screen.getByRole('button', { name: 'Skip' }));
+
+    expect(onSkip).toHaveBeenCalledWith(block);
+  });
+
+  it('allows skipping a break without a task id', async () => {
+    const user = userEvent.setup();
+    const onSkip = vi.fn();
+    const breakBlock: ITimetableBlock = {
+      ...block,
+      id: 'break-1',
+      taskId: undefined,
+      blockType: 'short_break',
+      activityId: 'pomodoro-breaks',
+      title: 'Short Break',
+      categoryId: 'break',
+    };
+
+    render(
+      <TaskDetailModal {...baseProps} block={breakBlock} onSkip={onSkip} />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Skip' }));
+
+    expect(onSkip).toHaveBeenCalledWith(breakBlock);
   });
 
   it('does not allow a completed task to enter focus mode', async () => {

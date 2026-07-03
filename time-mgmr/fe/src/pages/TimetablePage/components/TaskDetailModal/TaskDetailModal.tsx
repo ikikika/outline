@@ -37,6 +37,8 @@ interface TaskDetailModalProps {
   onClose: () => void;
   onEdit: (block: ITimetableBlock) => void;
   onStatus: (taskId: string, status: ITimetableBlock['status']) => void;
+  /** Skip this block (focus → mark skipped + remove blocks; break → delete record). */
+  onSkip: (block: ITimetableBlock) => void;
   /** Start a timer for this block (parent ensures a taskId for breaks). */
   onStart: (block: ITimetableBlock) => void;
   onStop: (entryId: string) => void;
@@ -99,6 +101,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onClose,
   onEdit,
   onStatus,
+  onSkip,
   onStart,
   onStop,
   onLogManual,
@@ -128,7 +131,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     block.plannedEnd
   );
   const canTrackTime = Boolean(taskId) || isBreak;
-  const canEnterFocusMode = canTrackTime && block.status !== 'done';
+  const canEnterFocusMode =
+    canTrackTime && block.status !== 'done' && block.status !== 'skipped';
   const focusEyebrow = isBreak ? 'Break' : 'Focus';
 
   const {
@@ -324,7 +328,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </div>
               </div>
 
-              {taskId && block.status !== 'done' ? (
+              {taskId && block.status !== 'done' && block.status !== 'skipped' ? (
                 <button
                   type="button"
                   className={styles.focusDone}
@@ -377,7 +381,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               aria-label="Expand to full screen"
               disabled={!canEnterFocusMode}
               title={
-                block.status === 'done'
+                block.status === 'done' || block.status === 'skipped'
                   ? `Mark this ${isBreak ? 'break' : 'task'} in progress before entering focus mode`
                   : !canTrackTime
                     ? 'This block has no linked task'
@@ -481,7 +485,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         </section>
 
         <div className={styles.actions}>
-          {canTrackTime ? (
+          {canTrackTime && block.status !== 'skipped' ? (
             isRunningHere && runningEntry ? (
               <Button size="sm" disabled={busy} onClick={() => onStop(runningEntry.id)}>
                 Stop
@@ -510,7 +514,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               Log time
             </Button>
           ) : null}
-          {taskId ? (
+          {taskId && block.status !== 'skipped' ? (
             block.status === 'done' ? (
               <Button
                 size="sm"
@@ -531,12 +535,21 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               </Button>
             )
           ) : null}
-          {taskId ? (
+          {block.status === 'skipped' && taskId ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => onStatus(taskId, 'unplanned')}
+            >
+              Restore
+            </Button>
+          ) : block.status !== 'done' && (isBreak || taskId) ? (
             <Button
               size="sm"
               variant="ghost"
               disabled={busy}
-              onClick={() => onStatus(taskId, 'skipped')}
+              onClick={() => onSkip(block)}
             >
               Skip
             </Button>

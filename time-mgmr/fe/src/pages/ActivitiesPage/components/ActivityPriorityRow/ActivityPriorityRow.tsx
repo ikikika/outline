@@ -68,8 +68,11 @@ export const ActivityPriorityRow: React.FC<ActivityPriorityRowProps> = ({
   };
 
   const category = CATEGORY_MAP[activity.categoryId];
-  const taskCount = activity.tasks.length;
-  const completedTaskCount = activity.tasks.filter(
+  const countableTasks = activity.tasks.filter(
+    (task) => task.status !== 'skipped'
+  );
+  const taskCount = countableTasks.length;
+  const completedTaskCount = countableTasks.filter(
     (task) => task.status === 'done'
   ).length;
   const panelId = `activity-tasks-${activity.id}`;

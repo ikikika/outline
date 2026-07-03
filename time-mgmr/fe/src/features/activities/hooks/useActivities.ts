@@ -341,6 +341,40 @@ export function useActivityMutations(date: string) {
     },
   });
 
+  /**
+   * Focus/adhoc: remove all schedule blocks and mark the task skipped.
+   * Break: delete the break schedule block (and linked break task when present).
+   */
+  const skip = useMutation({
+    mutationFn: async (block: ITimetableBlock) => {
+      const isBreak =
+        block.blockType === 'short_break' ||
+        block.blockType === 'long_break' ||
+        block.categoryId === 'break';
+
+      if (isBreak) {
+        if (block.taskId) {
+          // Cascades time entries + schedule blocks for this break task.
+          await deleteTaskApi(block.taskId);
+        } else if (!block.id.startsWith('unscheduled:')) {
+          await deleteScheduleBlockApi(block.id);
+        }
+        return;
+      }
+
+      if (!block.taskId) {
+        throw new Error('Cannot skip a focus block without a task');
+      }
+
+      const blocks = await fetchScheduleBlocks({ taskId: block.taskId });
+      await Promise.all(blocks.map((item) => deleteScheduleBlockApi(item.id)));
+      await patchTaskApi(block.taskId, { status: 'skipped' });
+    },
+    onSuccess: async () => {
+      await invalidateTaskRelated(queryClient);
+    },
+  });
+
   const complete = useMutation({
     mutationFn: async ({
       taskId,
@@ -371,7 +405,7 @@ export function useActivityMutations(date: string) {
     },
   });
 
-  return { update, updateBlock, updateTask, remove, setStatus, complete };
+  return { update, updateBlock, updateTask, remove, setStatus, skip, complete };
 }
 
 export function useTimeEntryMutations(_date: string) {

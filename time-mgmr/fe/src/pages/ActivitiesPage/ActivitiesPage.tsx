@@ -92,7 +92,7 @@ export const ActivitiesPage: React.FC = () => {
   const { data: runningEntry = null } = useRunningTimer();
   const { data: detailEntries = [] } = useTimeEntriesByTask(detailTaskId);
   const detailBlocksQuery = useTimetableBlocksByTask(detailTaskId);
-  const { update, updateTask, setStatus, complete } = useActivityMutations(selectedDate);
+  const { update, updateTask, setStatus, skip, complete } = useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
   const visibleActivities = useMemo(() => {
@@ -161,6 +161,7 @@ export const ActivitiesPage: React.FC = () => {
     update.isPending ||
     updateTask.isPending ||
     setStatus.isPending ||
+    skip.isPending ||
     complete.isPending ||
     startTimer.isPending ||
     stopTimer.isPending ||
@@ -616,6 +617,15 @@ export const ActivitiesPage: React.FC = () => {
               }
 
               await setStatus.mutateAsync({ taskId, status });
+            })
+          }
+          onSkip={(block) =>
+            runDetailAction(async () => {
+              if (block.taskId && runningEntry?.taskId === block.taskId) {
+                await stopTimer.mutateAsync(runningEntry.id);
+              }
+              await skip.mutateAsync(block);
+              closeDetails();
             })
           }
           onStart={(block) =>
