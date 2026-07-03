@@ -1,4 +1,5 @@
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TimetablePage from './TimetablePage';
@@ -86,6 +87,8 @@ vi.mock('@/components/ui', () => ({
 }));
 
 vi.mock('@/features/activities', () => ({
+  ACTIVITY_QUERY_KEYS: { all: ['activities'] },
+  SCHEDULE_BLOCK_QUERY_KEYS: { all: ['schedule-blocks'] },
   addDays: (date: string, amount: number) => {
     const next = new Date(`${date}T12:00:00`);
     next.setDate(next.getDate() + amount);
@@ -174,6 +177,10 @@ vi.mock('./hooks/usePomodoroReminder/usePomodoroReminder', () => ({
   }),
 }));
 
+vi.mock('./components/AdhocBlockModal/AdhocBlockModal', () => ({
+  AdhocBlockModal: () => <div data-testid="adhoc-block-modal" />,
+}));
+
 vi.mock('./components/ActivityForm/ActivityForm', () => ({
   ActivityForm: () => <div data-testid="activity-form" />,
 }));
@@ -198,6 +205,17 @@ vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
 }));
 
 describe('TimetablePage', () => {
+  const renderPage = () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    return render(
+      <QueryClientProvider client={client}>
+        <TimetablePage />
+      </QueryClientProvider>
+    );
+  };
+
   beforeEach(() => {
     mockRunningEntry = null;
     mockShouldPrompt = false;
@@ -207,7 +225,7 @@ describe('TimetablePage', () => {
   });
 
   it('renders timetable blocks', () => {
-    render(<TimetablePage />);
+    renderPage();
 
     expect(screen.getByText('Deep work')).toBeInTheDocument();
     expect(screen.getByText('Short Break')).toBeInTheDocument();
@@ -225,7 +243,7 @@ describe('TimetablePage', () => {
       updatedAt: '2026-07-19T09:00:00.000Z',
     };
 
-    render(<TimetablePage />);
+    renderPage();
 
     expect(screen.getByText('Timer still running')).toBeInTheDocument();
     expect(screen.getByText(/Deep work started at/)).toBeInTheDocument();
@@ -246,7 +264,7 @@ describe('TimetablePage', () => {
       updatedAt: '2026-07-19T09:00:00.000Z',
     };
 
-    render(<TimetablePage />);
+    renderPage();
 
     expect(screen.getByText(/Ready for a short break/i)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Open break/i }));
@@ -270,7 +288,7 @@ describe('TimetablePage', () => {
       updatedAt: '2026-07-19T09:00:00.000Z',
     };
 
-    render(<TimetablePage />);
+    renderPage();
 
     await user.click(screen.getByRole('button', { name: 'Open task' }));
     await user.click(screen.getByRole('button', { name: 'Done' }));
@@ -285,5 +303,14 @@ describe('TimetablePage', () => {
         },
       ],
     });
+  });
+
+  it('opens the adhoc block modal from the header', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Add adhoc' }));
+    expect(screen.getByTestId('adhoc-block-modal')).toBeInTheDocument();
   });
 });

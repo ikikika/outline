@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DONE_TASK_BLOCK_COLOR,
+  ADHOC_TASK_BLOCK_COLOR,
   getTaskBlockColor,
 } from './taskBlockColor';
 
@@ -26,6 +27,12 @@ describe('getTaskBlockColor', () => {
   it('preserves a custom color for tasks that are not done', () => {
     expect(getTaskBlockColor('ai-agents', 'planned', '#2563eb')).toBe(
       '#2563eb'
+    );
+  });
+
+  it('uses slate for adhoc blockers excluded from reports', () => {
+    expect(getTaskBlockColor('adhoc-blocks', 'planned', undefined, true)).toBe(
+      ADHOC_TASK_BLOCK_COLOR
     );
   });
 });

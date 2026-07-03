@@ -56,6 +56,8 @@ export interface IApiTask {
   notes: string;
   status: TaskStatus;
   sortOrder?: number;
+  /** When true, omit from report metrics while still blocking the timetable. */
+  excludeFromReports?: boolean;
 }
 
 /**
@@ -80,6 +82,7 @@ export interface ITimetableBlock {
   color?: string;
   status: TaskStatus;
   sortOrder?: number;
+  excludeFromReports?: boolean;
   createdAt: string;
   updatedAt: string;
 }

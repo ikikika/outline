@@ -25,6 +25,7 @@ export {
 export {
   activityFormSchema,
   manualScheduleSchema,
+  adhocBlockSchema,
   manualTimeEntrySchema,
   autoScheduleSchema,
   createAutoScheduleSchema,
@@ -32,6 +33,7 @@ export {
   activityCatalogImportSchema,
   type ActivityFormValues,
   type ManualScheduleValues,
+  type AdhocBlockValues,
   type ManualTimeEntryFormValues,
   type AutoScheduleFormValues,
   type AutoScheduleSchemaContext,

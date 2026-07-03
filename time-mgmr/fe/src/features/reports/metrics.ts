@@ -201,6 +201,11 @@ function isBreakActivity(block: ITimetableBlock): boolean {
   );
 }
 
+/** Adhoc blockers and other tasks flagged to stay out of report totals. */
+export function isExcludedFromReports(block: ITimetableBlock): boolean {
+  return Boolean(block.excludeFromReports);
+}
+
 function topByVariance(
   metrics: IActivityMetrics[],
   direction: 'over' | 'under',
@@ -269,6 +274,7 @@ export function buildDayReport(
   entries: ITimeEntry[],
   now = new Date()
 ): IDayReport {
+  const reportBlocks = blocks.filter((block) => !isExcludedFromReports(block));
   const byTask = new Map<string, ITimeEntry[]>();
   for (const entry of entries) {
     const list = byTask.get(entry.taskId) ?? [];
@@ -276,7 +282,7 @@ export function buildDayReport(
     byTask.set(entry.taskId, list);
   }
 
-  const metrics = blocks.map((block) =>
+  const metrics = reportBlocks.map((block) =>
     buildActivityMetrics(
       block,
       block.taskId ? (byTask.get(block.taskId) ?? []) : [],
@@ -286,7 +292,7 @@ export function buildDayReport(
 
   const plannedMinutes = metrics.reduce((s, m) => s + m.plannedMinutes, 0);
   const actualMinutes = metrics.reduce((s, m) => s + m.actualMinutes, 0);
-  const doneCount = blocks.filter((a) => a.status === 'done').length;
+  const doneCount = reportBlocks.filter((a) => a.status === 'done').length;
   const trackedCount = metrics.filter((m) => m.actualMinutes > 0).length;
   const insights = buildSharedInsights(metrics, 5);
 
@@ -295,8 +301,8 @@ export function buildDayReport(
     plannedMinutes,
     actualMinutes,
     varianceMinutes: actualMinutes - plannedMinutes,
-    completionRate: blocks.length > 0 ? doneCount / blocks.length : 0,
-    coverageRate: blocks.length > 0 ? trackedCount / blocks.length : 0,
+    completionRate: reportBlocks.length > 0 ? doneCount / reportBlocks.length : 0,
+    coverageRate: reportBlocks.length > 0 ? trackedCount / reportBlocks.length : 0,
     accuracyRatio:
       plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null,
     activities: metrics,
@@ -312,8 +318,9 @@ export function buildRangeReport(
   dayKeys: string[],
   now = new Date()
 ): IRangeReport {
+  const reportBlocks = blocks.filter((block) => !isExcludedFromReports(block));
   const byDay = dayKeys.map((date) => {
-    const dayBlocks = blocks.filter((a) => a.date === date);
+    const dayBlocks = reportBlocks.filter((a) => a.date === date);
     const dayEntries = entries.filter((e) => {
       const d = new Date(e.startAt);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -325,7 +332,7 @@ export function buildRangeReport(
   const plannedMinutes = byDay.reduce((s, d) => s + d.plannedMinutes, 0);
   const actualMinutes = byDay.reduce((s, d) => s + d.actualMinutes, 0);
   const allMetrics = byDay.flatMap((d) => d.activities);
-  const doneCount = blocks.filter((a) => a.status === 'done').length;
+  const doneCount = reportBlocks.filter((a) => a.status === 'done').length;
   const trackedCount = allMetrics.filter((m) => m.actualMinutes > 0).length;
   const daysLogged = byDay.filter((d) => d.actualMinutes > 0 || d.activities.length > 0).length;
   const insights = buildSharedInsights(allMetrics, 8);
@@ -336,8 +343,8 @@ export function buildRangeReport(
     plannedMinutes,
     actualMinutes,
     varianceMinutes: actualMinutes - plannedMinutes,
-    completionRate: blocks.length > 0 ? doneCount / blocks.length : 0,
-    coverageRate: blocks.length > 0 ? trackedCount / blocks.length : 0,
+    completionRate: reportBlocks.length > 0 ? doneCount / reportBlocks.length : 0,
+    coverageRate: reportBlocks.length > 0 ? trackedCount / reportBlocks.length : 0,
     accuracyRatio:
       plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null,
     daysLogged,

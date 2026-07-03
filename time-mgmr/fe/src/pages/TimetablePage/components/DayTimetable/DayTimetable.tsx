@@ -423,7 +423,8 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                   background={getTaskBlockColor(
                     activity.activityId,
                     activity.status,
-                    activity.color
+                    activity.color,
+                    activity.excludeFromReports
                   )}
                   isCompact={isCompact}
                   isLocked={activity.status === 'done'}

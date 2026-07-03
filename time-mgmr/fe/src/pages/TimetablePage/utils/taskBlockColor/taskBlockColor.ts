@@ -8,14 +8,17 @@ function hashId(id: string): number {
 }
 
 export const DONE_TASK_BLOCK_COLOR = '#374151';
+export const ADHOC_TASK_BLOCK_COLOR = '#64748b';
 
 /** Same activityId → same color; different activities → different colors. */
 export function getTaskBlockColor(
   activityId: string,
   status?: string,
-  customColor?: string
+  customColor?: string,
+  excludeFromReports?: boolean
 ): string {
   if (status === 'done') return DONE_TASK_BLOCK_COLOR;
+  if (excludeFromReports) return ADHOC_TASK_BLOCK_COLOR;
   if (customColor) return customColor;
 
   const normalizedId = activityId.trim().toLowerCase();

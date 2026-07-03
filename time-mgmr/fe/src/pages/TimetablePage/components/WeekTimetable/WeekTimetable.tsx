@@ -532,7 +532,8 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                       background={getTaskBlockColor(
                         activity.activityId,
                         activity.status,
-                        activity.color
+                        activity.color,
+                        activity.excludeFromReports
                       )}
                       isCompact={isCompact}
                       isLocked={activity.status === 'done'}

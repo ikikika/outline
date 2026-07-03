@@ -85,6 +85,12 @@ export function parseTaskCreateInput(body: unknown): ITaskCreateInput | { error:
 	) {
 		return { error: 'timeEstimationSeconds must be a number when provided' };
 	}
+	if (
+		input.excludeFromReports !== undefined &&
+		typeof input.excludeFromReports !== 'boolean'
+	) {
+		return { error: 'excludeFromReports must be a boolean when provided' };
+	}
 	if (input.createdAt !== undefined || input.updatedAt !== undefined) {
 		return { error: 'createdAt and updatedAt are set by the server' };
 	}
@@ -105,6 +111,9 @@ export function parseTaskCreateInput(body: unknown): ITaskCreateInput | { error:
 		...(status !== undefined ? { status: status as TaskStatus } : {}),
 		...(timeEstimationSeconds !== undefined ? { timeEstimationSeconds } : {}),
 		...(typeof sortOrder === 'number' ? { sortOrder } : {}),
+		...(typeof input.excludeFromReports === 'boolean'
+			? { excludeFromReports: input.excludeFromReports }
+			: {}),
 	};
 }
 
@@ -164,6 +173,12 @@ export function parseTaskPatchInput(body: unknown): ITaskPatchInput | { error: s
 	if (typeof sortOrder === 'number') {
 		patch.sortOrder = sortOrder;
 	}
+	if (input.excludeFromReports !== undefined) {
+		if (typeof input.excludeFromReports !== 'boolean') {
+			return { error: 'excludeFromReports must be a boolean when provided' };
+		}
+		patch.excludeFromReports = input.excludeFromReports;
+	}
 
 	if (input.id !== undefined) {
 		return { error: 'id cannot be changed' };
@@ -200,6 +215,7 @@ export function toTaskResponse(record: ITaskRecord): ITask {
 		notes: record.notes,
 		status: record.status,
 		sortOrder: typeof record.sortOrder === 'number' ? record.sortOrder : 0,
+		...(record.excludeFromReports ? { excludeFromReports: true } : {}),
 	};
 }
 
@@ -216,6 +232,7 @@ export function taskInputToRecord(
 		status: input.status ?? 'unplanned',
 		timeEstimationSeconds: input.timeEstimationSeconds,
 		sortOrder: input.sortOrder,
+		...(input.excludeFromReports ? { excludeFromReports: true } : {}),
 	};
 }
 

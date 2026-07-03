@@ -56,6 +56,21 @@ export const manualScheduleSchema = z
     }
   );
 
+export const adhocBlockSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Enter a title.'),
+    date: z.string().regex(datePattern, 'Enter a valid date.'),
+    plannedStart: z.string().regex(timePattern, 'Use HH:mm format.'),
+    plannedEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
+  })
+  .refine(
+    (data) => timeToMinutes(data.plannedEnd) > timeToMinutes(data.plannedStart),
+    {
+      message: 'End time must be after start time.',
+      path: ['plannedEnd'],
+    }
+  );
+
 export const manualTimeEntrySchema = z.object({
   durationMinutes: z
     .number()
@@ -232,6 +247,7 @@ export const activityCatalogImportSchema = z
 
 export type ActivityFormValues = z.infer<typeof activityFormSchema>;
 export type ManualScheduleValues = z.infer<typeof manualScheduleSchema>;
+export type AdhocBlockValues = z.infer<typeof adhocBlockSchema>;
 export type ManualTimeEntryFormValues = z.infer<typeof manualTimeEntrySchema>;
 export type AutoScheduleFormValues = z.infer<typeof autoScheduleObjectSchema>;
 export type ActivityCatalogImportValues = z.infer<

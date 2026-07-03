@@ -379,6 +379,7 @@ export async function upsertTask(
 		status: task.status,
 		timeEstimationSeconds: task.timeEstimationSeconds,
 		sortOrder,
+		...(task.excludeFromReports ? { excludeFromReports: true } : {}),
 		createdAt: existing?.createdAt ?? now,
 		updatedAt: now,
 	};
@@ -423,6 +424,10 @@ export async function updateTask(
 				? patch.timeEstimationSeconds
 				: existing.timeEstimationSeconds,
 		sortOrder,
+		excludeFromReports:
+			patch.excludeFromReports !== undefined
+				? patch.excludeFromReports
+				: existing.excludeFromReports,
 	});
 }
 

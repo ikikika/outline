@@ -18,6 +18,22 @@ describe('parseTaskCreateInput', () => {
 		});
 	});
 
+	it('accepts excludeFromReports for adhoc blockers', () => {
+		const result = parseTaskCreateInput({
+			activityId: 'adhoc-blocks',
+			title: 'Doctor appointment',
+			status: 'planned',
+			excludeFromReports: true,
+		});
+
+		assert.deepEqual(result, {
+			activityId: 'adhoc-blocks',
+			title: 'Doctor appointment',
+			status: 'planned',
+			excludeFromReports: true,
+		});
+	});
+
 	it('rejects legacy scheduling fields', () => {
 		const result = parseTaskCreateInput({
 			activityId: 'activity-1',

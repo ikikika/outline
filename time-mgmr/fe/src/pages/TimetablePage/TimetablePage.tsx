@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthContext } from '@/app/providers/auth';
 import {
+  ACTIVITY_QUERY_KEYS,
+  SCHEDULE_BLOCK_QUERY_KEYS,
   formatDisplayDate,
   todayKey,
   useTimetableBlocksByDate,
@@ -18,6 +21,7 @@ import {
   closedWorkSessions,
   visibleTimetableBlocks,
   type ActivityFormValues,
+  type AdhocBlockValues,
   type ITimetableBlock,
 } from '@/features/activities';
 import {
@@ -25,6 +29,7 @@ import {
   resolveTimetableVisibleRange,
 } from '@/features/auth';
 import { ActivityForm } from './components/ActivityForm/ActivityForm';
+import { AdhocBlockModal } from './components/AdhocBlockModal/AdhocBlockModal';
 import { DayTimetable } from './components/DayTimetable/DayTimetable';
 import { PomodoroBreakPrompt } from './components/PomodoroBreakPrompt/PomodoroBreakPrompt';
 import { TaskDetailModal } from './components/TaskDetailModal/TaskDetailModal';
@@ -33,6 +38,7 @@ import { WeekTimetable } from './components/WeekTimetable/WeekTimetable';
 import { TIMETABLE_ZOOM_DEFAULT } from './hooks/useFitPxPerMinute/useFitPxPerMinute';
 import { usePomodoroReminder } from './hooks/usePomodoroReminder/usePomodoroReminder';
 import { blockDisplayWindow } from './utils/blockDisplayWindow/blockDisplayWindow';
+import { createAdhocBlock } from './utils/createAdhocBlock/createAdhocBlock';
 import {
   ensureBreakTaskForBlock,
   scheduledFocusSeconds,
@@ -41,12 +47,15 @@ import styles from './TimetablePage.module.scss';
 
 export const TimetablePage: React.FC = () => {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [timetableView, setTimetableView] = useState<TimetableView>('day');
   const [showAllHours, setShowAllHours] = useState(false);
   const [zoom, setZoom] = useState(TIMETABLE_ZOOM_DEFAULT);
   const [detailBlockId, setDetailBlockId] = useState<string | null>(null);
   const [editing, setEditing] = useState<ITimetableBlock | null>(null);
+  const [addingAdhoc, setAddingAdhoc] = useState(false);
+  const [adhocBusy, setAdhocBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const week = useMemo(() => weekDateKeys(selectedDate), [selectedDate]);
@@ -186,6 +195,28 @@ export const TimetablePage: React.FC = () => {
     }
   };
 
+  const handleAdhocSubmit = async (values: AdhocBlockValues) => {
+    setActionError(null);
+    setAdhocBusy(true);
+    try {
+      await createAdhocBlock(values, timeZone);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all }),
+      ]);
+      setAddingAdhoc(false);
+      if (values.date !== selectedDate) {
+        setSelectedDate(values.date);
+      }
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'Failed to add adhoc block.'
+      );
+    } finally {
+      setAdhocBusy(false);
+    }
+  };
+
   const dateLabel =
     timetableView === 'week'
       ? `${formatDisplayDate(week[0])} – ${formatDisplayDate(week[week.length - 1])}`
@@ -202,6 +233,10 @@ export const TimetablePage: React.FC = () => {
       onShowAllHoursChange={setShowAllHours}
       zoom={zoom}
       onZoomChange={setZoom}
+      onAddAdhoc={() => {
+        setActionError(null);
+        setAddingAdhoc(true);
+      }}
     />
   );
 
@@ -349,6 +384,19 @@ export const TimetablePage: React.FC = () => {
               addManual.mutateAsync({ activityId: taskId, durationMinutes: minutes })
             )
           }
+        />
+      ) : null}
+
+      {addingAdhoc ? (
+        <AdhocBlockModal
+          defaultDate={selectedDate}
+          busy={adhocBusy}
+          error={actionError}
+          onCancel={() => {
+            setAddingAdhoc(false);
+            setActionError(null);
+          }}
+          onSubmit={handleAdhocSubmit}
         />
       ) : null}
 

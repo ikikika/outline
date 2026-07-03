@@ -240,4 +240,50 @@ describe('buildDayReport', () => {
     ]);
     expect(report.breakPercent).toBeCloseTo((20 / 50) * 100);
   });
+
+  it('excludes adhoc blockers from totals and insights', () => {
+    const blocks = [
+      baseBlock({
+        id: 'adhoc-1',
+        taskId: 'adhoc-task',
+        title: 'Doctor appointment',
+        timeEstimationSeconds: 60 * 60,
+        excludeFromReports: true,
+        status: 'planned',
+      }),
+      baseBlock({
+        id: 'focus-1',
+        taskId: 't2',
+        title: 'Write docs',
+        timeEstimationSeconds: 60 * 60,
+        status: 'done',
+      }),
+    ];
+    const entries = [
+      entry({
+        id: 'e-adhoc',
+        taskId: 'adhoc-task',
+        source: 'manual',
+        durationMinutes: 90,
+        startAt: '2026-07-19T10:00:00.000Z',
+        endAt: '2026-07-19T11:30:00.000Z',
+      }),
+      entry({
+        id: 'e-focus',
+        taskId: 't2',
+        source: 'manual',
+        durationMinutes: 30,
+        startAt: '2026-07-19T09:00:00.000Z',
+        endAt: '2026-07-19T09:30:00.000Z',
+      }),
+    ];
+    const report = buildDayReport('2026-07-19', blocks, entries);
+
+    expect(report.plannedMinutes).toBe(60);
+    expect(report.actualMinutes).toBe(30);
+    expect(report.activities.map((m) => m.activity.title)).toEqual(['Write docs']);
+    expect(report.biggestUnderruns.map((m) => m.activity.title)).toEqual([
+      'Write docs',
+    ]);
+  });
 });

@@ -20,6 +20,7 @@ interface TimetableHeaderProps {
   onShowAllHoursChange: (showAllHours: boolean) => void;
   zoom: number;
   onZoomChange: (zoom: number) => void;
+  onAddAdhoc?: () => void;
 }
 
 function formatZoomLabel(zoom: number): string {
@@ -37,6 +38,7 @@ export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
   onShowAllHoursChange,
   zoom,
   onZoomChange,
+  onAddAdhoc,
 }) => {
   const stepDays = view === 'week' ? 7 : 1;
 
@@ -62,6 +64,11 @@ export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
             Week
           </button>
         </div>
+        {onAddAdhoc ? (
+          <Button variant="outline" size="sm" onClick={onAddAdhoc}>
+            Add adhoc
+          </Button>
+        ) : null}
         <button
           type="button"
           className={`${styles.hoursToggle} ${showAllHours ? styles.hoursToggleActive : ''}`}

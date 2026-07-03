@@ -56,6 +56,8 @@ export interface ITask {
 	status: TaskStatus;
 	/** Priority within the parent activity — lower values appear first. */
 	sortOrder: number;
+	/** When true, omit from report metrics while still blocking the timetable. */
+	excludeFromReports?: boolean;
 }
 
 /** Request body for POST /api/tasks — matches fe/public/tasks.json entries (+ categoryId, notes, status). */
@@ -68,6 +70,7 @@ export interface ITaskCreateInput {
 	notes?: string;
 	status?: TaskStatus;
 	sortOrder?: number;
+	excludeFromReports?: boolean;
 }
 
 /** Partial update for PATCH /api/tasks/:id */
@@ -79,6 +82,7 @@ export interface ITaskPatchInput {
 	notes?: string;
 	status?: TaskStatus;
 	sortOrder?: number;
+	excludeFromReports?: boolean;
 }
 
 export type ScheduleBlockType = 'focus' | 'short_break' | 'long_break';
@@ -172,6 +176,7 @@ export interface ITaskStorageFields {
 	status: TaskStatus;
 	timeEstimationSeconds?: number;
 	sortOrder: number;
+	excludeFromReports?: boolean;
 }
 
 export interface ITaskRecord extends IDynamoItem, ITaskStorageFields {

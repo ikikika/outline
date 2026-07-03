@@ -133,6 +133,7 @@ export function apiScheduleBlockToTimetableBlock(
     notes: task?.notes ?? '',
     status: (task?.status as TaskStatus | undefined) ?? 'planned',
     sortOrder: task?.sortOrder,
+    ...(task?.excludeFromReports ? { excludeFromReports: true } : {}),
     createdAt: now,
     updatedAt: now,
   };

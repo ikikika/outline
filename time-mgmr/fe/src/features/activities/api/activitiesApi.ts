@@ -29,6 +29,7 @@ export type ITaskPatch = Partial<
     | 'notes'
     | 'status'
     | 'sortOrder'
+    | 'excludeFromReports'
   >
 >;
 
@@ -45,6 +46,7 @@ export interface ICatalogTaskCreateInput {
   timeEstimationSeconds?: number;
   notes?: string;
   status?: TaskStatus;
+  excludeFromReports?: boolean;
 }
 
 export interface IActivityCatalogImportActivity {
@@ -207,6 +209,7 @@ export async function createCatalogTaskApi(
     categoryId: input.categoryId,
     notes: input.notes ?? '',
     status: input.status ?? 'unplanned',
+    ...(input.excludeFromReports ? { excludeFromReports: true } : {}),
   });
 }
 
