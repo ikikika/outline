@@ -62,6 +62,7 @@ export function isWorkPeriodScheduleBlock(block: {
 /**
  * When a done task has work-period blocks (with actuals), hide the original
  * planned blocks that have no actual window so only real work periods show.
+ * Prefer deleting superseded plans on complete; this remains a same-query safety net.
  */
 export function isHiddenDonePlaceholder(
   block: ITimetableBlock,
@@ -75,6 +76,19 @@ export function isHiddenDonePlaceholder(
       other.id !== block.id &&
       blockHasActualWindow(other)
   );
+}
+
+/**
+ * Original planned blocks to remove once work-period clones exist for the task.
+ * Used so plans on other days do not linger after complete.
+ */
+export function supersededPlannedBlockIds(
+  blocks: Array<{ id: string } & Parameters<typeof isWorkPeriodScheduleBlock>[0]>
+): string[] {
+  if (!blocks.some(isWorkPeriodScheduleBlock)) return [];
+  return blocks
+    .filter((block) => !isWorkPeriodScheduleBlock(block))
+    .map((block) => block.id);
 }
 
 /** Timetable blocks visible on the grid (excludes superseded planned placeholders). */

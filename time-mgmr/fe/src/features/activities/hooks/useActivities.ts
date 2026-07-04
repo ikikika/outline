@@ -37,6 +37,7 @@ import { addDays, todayKey } from '../utils/dateUtils';
 
 import {
   isWorkPeriodScheduleBlock,
+  supersededPlannedBlockIds,
 } from '../utils/workPeriodBlocks/workPeriodBlocks';
 
 export {
@@ -66,6 +67,17 @@ async function clearDoneWorkPeriodBlocks(taskId: string): Promise<void> {
         actualEnd: null,
       })
     )
+  );
+}
+
+/**
+ * After work-period clones exist, delete original planned blocks so they do not
+ * linger on other days (day/week fetches cannot see cross-day siblings).
+ */
+async function deleteSupersededPlannedBlocks(taskId: string): Promise<void> {
+  const blocks = await fetchScheduleBlocks({ taskId });
+  await Promise.all(
+    supersededPlannedBlockIds(blocks).map((id) => deleteScheduleBlockApi(id))
   );
 }
 
@@ -397,6 +409,9 @@ export function useActivityMutations(date: string) {
           actualStart: created.plannedStart,
           actualEnd: created.plannedEnd,
         });
+      }
+      if (workSessions.length > 0) {
+        await deleteSupersededPlannedBlocks(taskId);
       }
       return patchTaskApi(taskId, { status: 'done' });
     },

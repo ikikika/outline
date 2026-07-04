@@ -4,6 +4,7 @@ import {
   closedWorkSessions,
   isHiddenDonePlaceholder,
   isWorkPeriodScheduleBlock,
+  supersededPlannedBlockIds,
   visibleTimetableBlocks,
   workSessionBounds,
 } from './workPeriodBlocks';
@@ -155,5 +156,37 @@ describe('visibleTimetableBlocks', () => {
   it('keeps the planned block when done with no work-period blocks', () => {
     const planned = block({ id: 'planned' });
     expect(visibleTimetableBlocks([planned])).toEqual([planned]);
+  });
+});
+
+describe('supersededPlannedBlockIds', () => {
+  it('returns planned ids when work-period clones exist (including other days)', () => {
+    const plannedMon = {
+      id: 'planned-mon',
+      plannedStart: '2026-07-20T09:00:00.000Z',
+      plannedEnd: '2026-07-20T11:00:00.000Z',
+    };
+    const workedTue = {
+      id: 'worked-tue',
+      plannedStart: '2026-07-21T10:00:00.000Z',
+      plannedEnd: '2026-07-21T10:25:00.000Z',
+      actualStart: '2026-07-21T10:00:00.000Z',
+      actualEnd: '2026-07-21T10:25:00.000Z',
+    };
+    expect(supersededPlannedBlockIds([plannedMon, workedTue])).toEqual([
+      'planned-mon',
+    ]);
+  });
+
+  it('returns nothing when there are no work-period clones', () => {
+    expect(
+      supersededPlannedBlockIds([
+        {
+          id: 'planned',
+          plannedStart: '2026-07-20T09:00:00.000Z',
+          plannedEnd: '2026-07-20T11:00:00.000Z',
+        },
+      ])
+    ).toEqual([]);
   });
 });
