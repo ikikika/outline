@@ -4,6 +4,7 @@ import {
   closedWorkSessions,
   isHiddenDonePlaceholder,
   isWorkPeriodScheduleBlock,
+  pickActualWindowForBlock,
   supersededPlannedBlockIds,
   visibleTimetableBlocks,
   workSessionBounds,
@@ -188,5 +189,55 @@ describe('supersededPlannedBlockIds', () => {
         },
       ])
     ).toEqual([]);
+  });
+});
+
+describe('pickActualWindowForBlock', () => {
+  const planned = {
+    plannedStart: '2026-07-21T09:00:00.000Z',
+    plannedEnd: '2026-07-21T09:25:00.000Z',
+  };
+
+  it('uses overlapping sessions when present', () => {
+    expect(
+      pickActualWindowForBlock(planned, [
+        {
+          startAt: '2026-07-21T08:00:00.000Z',
+          endAt: '2026-07-21T08:20:00.000Z',
+        },
+        {
+          startAt: '2026-07-21T09:05:00.000Z',
+          endAt: '2026-07-21T09:20:00.000Z',
+        },
+      ])
+    ).toEqual({
+      startAt: '2026-07-21T09:05:00.000Z',
+      endAt: '2026-07-21T09:20:00.000Z',
+    });
+  });
+
+  it('falls back to the latest session when none overlap', () => {
+    expect(
+      pickActualWindowForBlock(planned, [
+        {
+          startAt: '2026-07-21T08:00:00.000Z',
+          endAt: '2026-07-21T08:20:00.000Z',
+        },
+        {
+          startAt: '2026-07-21T10:00:00.000Z',
+          endAt: '2026-07-21T10:15:00.000Z',
+        },
+      ])
+    ).toEqual({
+      startAt: '2026-07-21T10:00:00.000Z',
+      endAt: '2026-07-21T10:15:00.000Z',
+    });
+  });
+
+  it('falls back to the planned window when there are no sessions', () => {
+    expect(pickActualWindowForBlock(planned, [])).toEqual({
+      startAt: planned.plannedStart,
+      endAt: planned.plannedEnd,
+    });
   });
 });

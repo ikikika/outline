@@ -49,6 +49,30 @@ describe('pickDetailBlockForTask', () => {
     expect(picked.id).toBe('today');
   });
 
+  it('prefers today’s open focus block over a finished session', () => {
+    const picked = pickDetailBlockForTask(
+      task,
+      [
+        block({
+          id: 'finished',
+          date: '2026-07-21',
+          plannedStart: '09:00',
+          plannedEnd: '09:25',
+          actualStart: '09:00',
+          actualEnd: '09:25',
+        }),
+        block({
+          id: 'open',
+          date: '2026-07-21',
+          plannedStart: '09:30',
+          plannedEnd: '09:55',
+        }),
+      ],
+      '2026-07-21'
+    );
+    expect(picked.id).toBe('open');
+  });
+
   it('falls back to any focus block, then any block', () => {
     expect(
       pickDetailBlockForTask(

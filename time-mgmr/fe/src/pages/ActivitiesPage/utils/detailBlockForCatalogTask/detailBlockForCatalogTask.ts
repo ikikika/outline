@@ -19,10 +19,21 @@ export function pickDetailBlockForTask(
   date: string
 ): ITimetableBlock {
   const list = blocks ?? [];
+  const isOpenFocus = (block: ITimetableBlock) =>
+    block.blockType === 'focus' && !(block.actualStart && block.actualEnd);
+
+  const openFocusToday = list.find(
+    (block) => isOpenFocus(block) && block.date === date
+  );
+  if (openFocusToday) return openFocusToday;
+
   const focusToday = list.find(
     (block) => block.blockType === 'focus' && block.date === date
   );
   if (focusToday) return focusToday;
+
+  const openFocus = list.find(isOpenFocus);
+  if (openFocus) return openFocus;
 
   const focus = list.find((block) => block.blockType === 'focus');
   if (focus) return focus;

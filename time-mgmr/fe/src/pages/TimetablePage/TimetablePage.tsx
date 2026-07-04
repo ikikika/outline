@@ -108,7 +108,7 @@ export const TimetablePage: React.FC = () => {
     const total = scheduledFocusSeconds(blocks);
     return total > 0 ? total : undefined;
   }, [detailTaskBlocksQuery.data]);
-  const { update, updateBlock, setStatus, skip, complete } =
+  const { update, updateBlock, setStatus, skip, completeBlock, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
@@ -144,6 +144,7 @@ export const TimetablePage: React.FC = () => {
     updateBlock.isPending ||
     setStatus.isPending ||
     skip.isPending ||
+    completeBlock.isPending ||
     complete.isPending ||
     startTimer.isPending ||
     stopTimer.isPending ||
@@ -351,26 +352,47 @@ export const TimetablePage: React.FC = () => {
           onEdit={(block) => setEditing(block)}
           onStatus={(taskId, status) =>
             runAction(async () => {
-              if (status === 'done') {
-                let entries = detailEntries;
-                if (runningEntry?.taskId === taskId) {
-                  const stopped = await stopTimer.mutateAsync(runningEntry.id);
-                  const endAt = stopped?.endAt ?? new Date().toISOString();
-                  entries = detailEntries.some((e) => e.id === runningEntry.id)
-                    ? detailEntries.map((e) =>
-                        e.id === runningEntry.id ? { ...e, endAt } : e
-                      )
-                    : [...detailEntries, { ...runningEntry, endAt }];
-                }
-                await complete.mutateAsync({
-                  taskId,
-                  sessions: closedWorkSessions(entries),
-                });
-                closeDetails();
-                return;
-              }
-
               await setStatus.mutateAsync({ taskId, status });
+            })
+          }
+          onCompleteBlock={(block) =>
+            runAction(async () => {
+              if (!block.taskId) return;
+              let entries = detailEntries;
+              if (runningEntry?.taskId === block.taskId) {
+                const stopped = await stopTimer.mutateAsync(runningEntry.id);
+                const endAt = stopped?.endAt ?? new Date().toISOString();
+                entries = detailEntries.some((e) => e.id === runningEntry.id)
+                  ? detailEntries.map((e) =>
+                      e.id === runningEntry.id ? { ...e, endAt } : e
+                    )
+                  : [...detailEntries, { ...runningEntry, endAt }];
+              }
+              await completeBlock.mutateAsync({
+                blockId: block.id,
+                taskId: block.taskId,
+                sessions: closedWorkSessions(entries),
+              });
+              closeDetails();
+            })
+          }
+          onCompleteTask={(taskId) =>
+            runAction(async () => {
+              let entries = detailEntries;
+              if (runningEntry?.taskId === taskId) {
+                const stopped = await stopTimer.mutateAsync(runningEntry.id);
+                const endAt = stopped?.endAt ?? new Date().toISOString();
+                entries = detailEntries.some((e) => e.id === runningEntry.id)
+                  ? detailEntries.map((e) =>
+                      e.id === runningEntry.id ? { ...e, endAt } : e
+                    )
+                  : [...detailEntries, { ...runningEntry, endAt }];
+              }
+              await complete.mutateAsync({
+                taskId,
+                sessions: closedWorkSessions(entries),
+              });
+              closeDetails();
             })
           }
           onSkip={(block) =>

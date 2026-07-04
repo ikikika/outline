@@ -207,7 +207,13 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
     activity: ITimetableBlock,
     mode: DragState['mode'] = 'move'
   ) => {
-    if (disabled || activity.status === 'done' || event.button !== 0) return;
+    if (
+      disabled ||
+      activity.status === 'done' ||
+      Boolean(activity.actualStart && activity.actualEnd) ||
+      event.button !== 0
+    )
+      return;
     if (mode !== 'move') event.stopPropagation();
 
     const start = timeToMinutes(activity.plannedStart);
@@ -422,12 +428,18 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                   width={width}
                   background={getTaskBlockColor(
                     activity.activityId,
-                    activity.status,
+                    activity.status === 'done' ||
+                      Boolean(activity.actualStart && activity.actualEnd)
+                      ? 'done'
+                      : activity.status,
                     activity.color,
                     activity.excludeFromReports
                   )}
                   isCompact={isCompact}
-                  isLocked={activity.status === 'done'}
+                  isLocked={
+                    activity.status === 'done' ||
+                    Boolean(activity.actualStart && activity.actualEnd)
+                  }
                   isDragging={Boolean(isDragging)}
                   density="day"
                   onPointerDown={(e) => handlePointerDown(e, activity)}
@@ -438,7 +450,8 @@ export const DayTimetable: React.FC<DayTimetableProps> = ({
                     handlePointerDown(e, activity, 'resize-end')
                   }
                   onClick={
-                    activity.status === 'done'
+                    activity.status === 'done' ||
+                    Boolean(activity.actualStart && activity.actualEnd)
                       ? () => onSelect?.(activity)
                       : undefined
                   }

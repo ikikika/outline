@@ -257,7 +257,13 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
     activity: ITimetableBlock,
     mode: DragState['mode'] = 'move'
   ) => {
-    if (disabled || activity.status === 'done' || event.button !== 0) return;
+    if (
+      disabled ||
+      activity.status === 'done' ||
+      Boolean(activity.actualStart && activity.actualEnd) ||
+      event.button !== 0
+    )
+      return;
     if (mode !== 'move') event.stopPropagation();
 
     const start = timeToMinutes(activity.plannedStart);
@@ -531,12 +537,18 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                       width={width}
                       background={getTaskBlockColor(
                         activity.activityId,
-                        activity.status,
+                        activity.status === 'done' ||
+                          Boolean(activity.actualStart && activity.actualEnd)
+                          ? 'done'
+                          : activity.status,
                         activity.color,
                         activity.excludeFromReports
                       )}
                       isCompact={isCompact}
-                      isLocked={activity.status === 'done'}
+                      isLocked={
+                        activity.status === 'done' ||
+                        Boolean(activity.actualStart && activity.actualEnd)
+                      }
                       isDragging={Boolean(isDragging)}
                       density="week"
                       transform={
@@ -550,7 +562,8 @@ export const WeekTimetable: React.FC<WeekTimetableProps> = ({
                         handlePointerDown(e, activity, 'resize-end')
                       }
                       onClick={
-                        activity.status === 'done'
+                        activity.status === 'done' ||
+                        Boolean(activity.actualStart && activity.actualEnd)
                           ? () => onSelect?.(activity)
                           : undefined
                       }

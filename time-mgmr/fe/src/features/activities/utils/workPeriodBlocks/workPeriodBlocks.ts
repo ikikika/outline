@@ -97,3 +97,47 @@ export function visibleTimetableBlocks(
 ): ITimetableBlock[] {
   return blocks.filter((block) => !isHiddenDonePlaceholder(block, blocks));
 }
+
+/**
+ * Pick an actual window when finishing one focus block/session.
+ * Prefers sessions overlapping the block plan; else the latest session;
+ * else the block's planned window (so the session can be stamped with no timer).
+ */
+export function pickActualWindowForBlock(
+  block: {
+    plannedStart: string;
+    plannedEnd: string;
+    actualStart?: string;
+    actualEnd?: string;
+  },
+  sessions: Array<{ startAt: string; endAt: string }>
+): { startAt: string; endAt: string } {
+  const overlapping = sessions.filter(
+    (session) =>
+      session.startAt < block.plannedEnd && session.endAt > block.plannedStart
+  );
+  if (overlapping.length > 0) {
+    const sorted = [...overlapping].sort((a, b) =>
+      a.startAt.localeCompare(b.startAt)
+    );
+    const first = sorted[0]!;
+    return {
+      startAt: first.startAt,
+      endAt: sorted.reduce(
+        (latest, session) =>
+          session.endAt > latest ? session.endAt : latest,
+        first.endAt
+      ),
+    };
+  }
+
+  if (sessions.length > 0) {
+    const sorted = [...sessions].sort((a, b) =>
+      a.startAt.localeCompare(b.startAt)
+    );
+    const latest = sorted[sorted.length - 1]!;
+    return { startAt: latest.startAt, endAt: latest.endAt };
+  }
+
+  return { startAt: block.plannedStart, endAt: block.plannedEnd };
+}

@@ -48,6 +48,7 @@ let mockRunningEntry: {
   updatedAt: string;
 } | null = null;
 const mockCompleteMutation = vi.fn();
+const mockCompleteBlockMutation = vi.fn();
 const mockDismissReminder = vi.fn();
 let mockShouldPrompt = false;
 const mockStopTimerMutation = vi.fn(async (entryId: string) => ({
@@ -138,6 +139,7 @@ vi.mock('@/features/activities', () => ({
     remove: { isPending: false, mutateAsync: vi.fn() },
     setStatus: { isPending: false, mutateAsync: vi.fn() },
     skip: { isPending: false, mutateAsync: vi.fn() },
+    completeBlock: { isPending: false, mutateAsync: mockCompleteBlockMutation },
     complete: { isPending: false, mutateAsync: mockCompleteMutation },
   }),
   workSessionBounds: (
@@ -190,16 +192,26 @@ vi.mock('./components/TaskDetailModal/TaskDetailModal', () => ({
   TaskDetailModal: ({
     block,
     activityTitle,
-    onStatus,
+    onCompleteBlock,
+    onCompleteTask,
   }: {
     block: { id: string; taskId?: string; title: string };
     activityTitle?: string;
-    onStatus: (id: string, status: 'done') => void;
+    onCompleteBlock: (block: { id: string; taskId?: string; title: string }) => void;
+    onCompleteTask: (taskId: string) => void;
   }) => (
     <div data-testid="task-detail-modal">
       {activityTitle} · {block.title}
-      <button type="button" onClick={() => onStatus(block.taskId ?? block.id, 'done')}>
-        Done
+      <button type="button" onClick={() => onCompleteBlock(block)}>
+        Finish session
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (block.taskId) onCompleteTask(block.taskId);
+        }}
+      >
+        Finish task
       </button>
     </div>
   ),
@@ -221,6 +233,7 @@ describe('TimetablePage', () => {
     mockRunningEntry = null;
     mockShouldPrompt = false;
     mockCompleteMutation.mockClear();
+    mockCompleteBlockMutation.mockClear();
     mockDismissReminder.mockClear();
     mockStopTimerMutation.mockClear();
   });
@@ -275,7 +288,7 @@ describe('TimetablePage', () => {
     expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Short Break');
   });
 
-  it('marks done with task id and stops a running timer first', async () => {
+  it('finishes a session with block id and stops a running timer first', async () => {
     const { userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
     mockRunningEntry = {
@@ -292,7 +305,39 @@ describe('TimetablePage', () => {
     renderPage();
 
     await user.click(screen.getByRole('button', { name: 'Open task' }));
-    await user.click(screen.getByRole('button', { name: 'Done' }));
+    await user.click(screen.getByRole('button', { name: 'Finish session' }));
+
+    expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
+    expect(mockCompleteBlockMutation).toHaveBeenCalledWith({
+      blockId: 'block-1',
+      taskId: 'task-1',
+      sessions: [
+        {
+          startAt: '2026-07-19T09:00:00.000Z',
+          endAt: '2026-07-19T10:00:00.000Z',
+        },
+      ],
+    });
+  });
+
+  it('finishes the whole task and stops a running timer first', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    mockRunningEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Open task' }));
+    await user.click(screen.getByRole('button', { name: 'Finish task' }));
 
     expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
     expect(mockCompleteMutation).toHaveBeenCalledWith({

@@ -33,10 +33,16 @@ interface TaskDetailModalProps {
   runningEntry: ITimeEntry | null;
   /** Total scheduled focus seconds for this task (includes estimate buffer). */
   plannedFocusSeconds?: number;
+  /** True when this block is a catalog stand-in with no real schedule row. */
+  isUnscheduled?: boolean;
   busy?: boolean;
   onClose: () => void;
   onEdit: (block: ITimetableBlock) => void;
   onStatus: (taskId: string, status: ITimetableBlock['status']) => void;
+  /** Finish this focus block/session only; sibling plans stay. */
+  onCompleteBlock: (block: ITimetableBlock) => void;
+  /** Finish the whole catalog task (supersedes remaining plans). */
+  onCompleteTask: (taskId: string) => void;
   /** Skip this block (focus → mark skipped + remove blocks; break → delete record). */
   onSkip: (block: ITimetableBlock) => void;
   /** Start a timer for this block (parent ensures a taskId for breaks). */
@@ -97,10 +103,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   entries,
   runningEntry,
   plannedFocusSeconds,
+  isUnscheduled = false,
   busy = false,
   onClose,
   onEdit,
   onStatus,
+  onCompleteBlock,
+  onCompleteTask,
   onSkip,
   onStart,
   onStop,
@@ -133,6 +142,17 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const canTrackTime = Boolean(taskId) || isBreak;
   const canEnterFocusMode =
     canTrackTime && block.status !== 'done' && block.status !== 'skipped';
+  const sessionFinished = Boolean(block.actualStart && block.actualEnd);
+  const canFinishSession =
+    Boolean(taskId) &&
+    !isBreak &&
+    !isUnscheduled &&
+    block.blockType === 'focus' &&
+    block.status !== 'done' &&
+    block.status !== 'skipped' &&
+    !sessionFinished;
+  const canFinishTask =
+    Boolean(taskId) && block.status !== 'done' && block.status !== 'skipped';
   const focusEyebrow = isBreak ? 'Break' : 'Focus';
 
   const {
@@ -328,14 +348,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </div>
               </div>
 
-              {taskId && block.status !== 'done' && block.status !== 'skipped' ? (
+              {canFinishSession ? (
                 <button
                   type="button"
                   className={styles.focusDone}
                   disabled={busy}
-                  onClick={() => onStatus(taskId, 'done')}
+                  onClick={() => onCompleteBlock(block)}
                 >
-                  Done
+                  Finish session
                 </button>
               ) : null}
             </div>
@@ -525,14 +545,28 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 Mark in progress
               </Button>
             ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                onClick={() => onStatus(taskId, 'done')}
-              >
-                Done
-              </Button>
+              <>
+                {canFinishSession ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => onCompleteBlock(block)}
+                  >
+                    Finish session
+                  </Button>
+                ) : null}
+                {canFinishTask ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => onCompleteTask(taskId)}
+                  >
+                    Finish task
+                  </Button>
+                ) : null}
+              </>
             )
           ) : null}
           {block.status === 'skipped' && taskId ? (

@@ -1,0 +1,46 @@
+{
+  "activity": {
+    "title": "Up & Running with GitHub Spec Kit",
+    "categoryId": "admin",
+    "notes": "",
+    "id": "github-spec-kit"
+  },
+  "tasks": [
+    {
+      "title": "Intro & Setup",
+      "timeEstimationSeconds": 693
+    },
+    {
+      "title": "The /constitution Command",
+      "timeEstimationSeconds": 560
+    },
+    {
+      "title": "The /specify Command",
+      "timeEstimationSeconds": 600
+    },
+    {
+      "title": "The /clarify Command",
+      "timeEstimationSeconds": 300
+    },
+    {
+      "title": "The /plan Command",
+      "timeEstimationSeconds": 660
+    },
+    {
+      "title": "The /tasks Command",
+      "timeEstimationSeconds": 360
+    },
+    {
+      "title": "The /analyze Command",
+      "timeEstimationSeconds": 420
+    },
+    {
+      "title": "Implementing Tasks",
+      "timeEstimationSeconds": 660
+    },
+    {
+      "title": "Adding More Features",
+      "timeEstimationSeconds": 660
+    }
+  ]
+}

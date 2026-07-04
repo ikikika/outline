@@ -62,6 +62,8 @@ const baseProps = {
   onClose: vi.fn(),
   onEdit: vi.fn(),
   onStatus: vi.fn(),
+  onCompleteBlock: vi.fn(),
+  onCompleteTask: vi.fn(),
   onSkip: vi.fn(),
   onStart: vi.fn(),
   onStop: vi.fn(),
@@ -161,6 +163,12 @@ describe('completed task actions', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Finish session' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Finish task' })
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Mark in progress' }));
 
@@ -180,7 +188,12 @@ describe('completed task actions', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Finish session' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Finish task' })
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Restore' }));
 
@@ -344,7 +357,7 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
     expect(screen.getByText('Elapsed')).toBeInTheDocument();
     expect(screen.getByText('Remaining')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish session' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeInTheDocument();
   });
 
@@ -559,15 +572,49 @@ describe('TaskDetailModal focus mode', () => {
     expect(onStop).toHaveBeenCalledWith('entry-1');
   });
 
-  it('calls onStatus done from the focus Done button', async () => {
+  it('calls onCompleteBlock from the focus Finish session button', async () => {
     const user = userEvent.setup();
-    const onStatus = vi.fn();
-    render(<TaskDetailModal {...baseProps} onStatus={onStatus} />);
+    const onCompleteBlock = vi.fn();
+    render(<TaskDetailModal {...baseProps} onCompleteBlock={onCompleteBlock} />);
 
     await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
-    await user.click(screen.getByRole('button', { name: 'Done' }));
+    await user.click(screen.getByRole('button', { name: 'Finish session' }));
 
-    expect(onStatus).toHaveBeenCalledWith('task-1', 'done');
+    expect(onCompleteBlock).toHaveBeenCalledWith(block);
+  });
+
+  it('calls onCompleteBlock and onCompleteTask from detail actions', async () => {
+    const user = userEvent.setup();
+    const onCompleteBlock = vi.fn();
+    const onCompleteTask = vi.fn();
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        onCompleteBlock={onCompleteBlock}
+        onCompleteTask={onCompleteTask}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Finish session' }));
+    expect(onCompleteBlock).toHaveBeenCalledWith(block);
+
+    await user.click(screen.getByRole('button', { name: 'Finish task' }));
+    expect(onCompleteTask).toHaveBeenCalledWith('task-1');
+  });
+
+  it('hides Finish session for unscheduled catalog stand-ins', () => {
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={{ ...block, id: 'unscheduled:task-1' }}
+        isUnscheduled
+      />
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Finish session' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish task' })).toBeInTheDocument();
   });
 
   it('rings a soft tone when a running break reaches 10 seconds remaining', () => {

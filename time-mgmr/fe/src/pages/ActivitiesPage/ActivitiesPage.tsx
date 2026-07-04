@@ -92,7 +92,8 @@ export const ActivitiesPage: React.FC = () => {
   const { data: runningEntry = null } = useRunningTimer();
   const { data: detailEntries = [] } = useTimeEntriesByTask(detailTaskId);
   const detailBlocksQuery = useTimetableBlocksByTask(detailTaskId);
-  const { update, updateTask, setStatus, skip, complete } = useActivityMutations(selectedDate);
+  const { update, updateTask, setStatus, skip, completeBlock, complete } =
+    useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
   const visibleActivities = useMemo(() => {
@@ -162,6 +163,7 @@ export const ActivitiesPage: React.FC = () => {
     updateTask.isPending ||
     setStatus.isPending ||
     skip.isPending ||
+    completeBlock.isPending ||
     complete.isPending ||
     startTimer.isPending ||
     stopTimer.isPending ||
@@ -590,6 +592,7 @@ export const ActivitiesPage: React.FC = () => {
           entries={detailEntries}
           runningEntry={runningEntry}
           plannedFocusSeconds={detailPlannedFocusSeconds}
+          isUnscheduled={isUnscheduledDetailBlock(detailBlock)}
           busy={detailBusy}
           onClose={closeDetails}
           onEdit={(block) => {
@@ -597,26 +600,47 @@ export const ActivitiesPage: React.FC = () => {
           }}
           onStatus={(taskId, status) =>
             runDetailAction(async () => {
-              if (status === 'done') {
-                let sessions = detailEntries;
-                if (runningEntry?.taskId === taskId) {
-                  const stopped = await stopTimer.mutateAsync(runningEntry.id);
-                  const endAt = stopped?.endAt ?? new Date().toISOString();
-                  sessions = detailEntries.some((e) => e.id === runningEntry.id)
-                    ? detailEntries.map((e) =>
-                        e.id === runningEntry.id ? { ...e, endAt } : e
-                      )
-                    : [...detailEntries, { ...runningEntry, endAt }];
-                }
-                await complete.mutateAsync({
-                  taskId,
-                  sessions: closedWorkSessions(sessions),
-                });
-                closeDetails();
-                return;
-              }
-
               await setStatus.mutateAsync({ taskId, status });
+            })
+          }
+          onCompleteBlock={(block) =>
+            runDetailAction(async () => {
+              if (!block.taskId) return;
+              let sessions = detailEntries;
+              if (runningEntry?.taskId === block.taskId) {
+                const stopped = await stopTimer.mutateAsync(runningEntry.id);
+                const endAt = stopped?.endAt ?? new Date().toISOString();
+                sessions = detailEntries.some((e) => e.id === runningEntry.id)
+                  ? detailEntries.map((e) =>
+                      e.id === runningEntry.id ? { ...e, endAt } : e
+                    )
+                  : [...detailEntries, { ...runningEntry, endAt }];
+              }
+              await completeBlock.mutateAsync({
+                blockId: block.id,
+                taskId: block.taskId,
+                sessions: closedWorkSessions(sessions),
+              });
+              closeDetails();
+            })
+          }
+          onCompleteTask={(taskId) =>
+            runDetailAction(async () => {
+              let sessions = detailEntries;
+              if (runningEntry?.taskId === taskId) {
+                const stopped = await stopTimer.mutateAsync(runningEntry.id);
+                const endAt = stopped?.endAt ?? new Date().toISOString();
+                sessions = detailEntries.some((e) => e.id === runningEntry.id)
+                  ? detailEntries.map((e) =>
+                      e.id === runningEntry.id ? { ...e, endAt } : e
+                    )
+                  : [...detailEntries, { ...runningEntry, endAt }];
+              }
+              await complete.mutateAsync({
+                taskId,
+                sessions: closedWorkSessions(sessions),
+              });
+              closeDetails();
             })
           }
           onSkip={(block) =>

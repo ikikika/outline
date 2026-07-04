@@ -203,6 +203,7 @@ vi.mock('@/features/activities/hooks/useActivities', () => ({
     remove: { mutateAsync: vi.fn(), isPending: false },
     setStatus: { mutateAsync: vi.fn(), isPending: false },
     skip: { mutateAsync: vi.fn(), isPending: false },
+    completeBlock: { mutateAsync: vi.fn(), isPending: false },
     complete: { mutateAsync: vi.fn(), isPending: false },
   }),
   useTimeEntryMutations: () => ({
@@ -285,6 +286,7 @@ vi.mock('@/features/activities', () => ({
     remove: { mutateAsync: vi.fn(), isPending: false },
     setStatus: { mutateAsync: vi.fn(), isPending: false },
     skip: { mutateAsync: vi.fn(), isPending: false },
+    completeBlock: { mutateAsync: vi.fn(), isPending: false },
     complete: { mutateAsync: vi.fn(), isPending: false },
   }),
   useTimeEntryMutations: () => ({

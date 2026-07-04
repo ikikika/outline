@@ -37,12 +37,15 @@ import { addDays, todayKey } from '../utils/dateUtils';
 
 import {
   isWorkPeriodScheduleBlock,
+  pickActualWindowForBlock,
   supersededPlannedBlockIds,
 } from '../utils/workPeriodBlocks/workPeriodBlocks';
 
 export {
+  blockHasActualWindow,
   closedWorkSessions,
   isWorkPeriodScheduleBlock,
+  pickActualWindowForBlock,
   visibleTimetableBlocks,
   workSessionBounds,
 } from '../utils/workPeriodBlocks/workPeriodBlocks';
@@ -387,6 +390,77 @@ export function useActivityMutations(date: string) {
     },
   });
 
+  /**
+   * Finish one focus block/session: create a work-period clone for that window
+   * and remove only this planned block. Sibling plans stay; task stays in progress.
+   */
+  const completeBlock = useMutation({
+    mutationFn: async ({
+      blockId,
+      taskId,
+      sessions,
+    }: {
+      blockId: string;
+      taskId: string;
+      sessions?: Array<{ startAt: string; endAt: string }>;
+    }) => {
+      if (blockId.startsWith('unscheduled:')) {
+        throw new Error('Cannot finish a session on an unscheduled task');
+      }
+
+      const blocks = await fetchScheduleBlocks({ taskId });
+      const block = blocks.find((item) => item.id === blockId);
+      if (!block) {
+        throw new Error('Schedule block not found');
+      }
+      if (block.blockType !== 'focus') {
+        throw new Error('Only focus blocks can be finished as a session');
+      }
+      if (isWorkPeriodScheduleBlock(block) || (block.actualStart && block.actualEnd)) {
+        throw new Error('This session is already finished');
+      }
+
+      const claimedSessions = new Set(
+        blocks
+          .filter(isWorkPeriodScheduleBlock)
+          .map((item) => `${item.plannedStart}|${item.plannedEnd}`)
+      );
+      const availableSessions = (sessions ?? []).filter(
+        (session) => !claimedSessions.has(`${session.startAt}|${session.endAt}`)
+      );
+      const window = pickActualWindowForBlock(block, availableSessions);
+      const created = await createScheduleBlockApi({
+        taskId,
+        blockType: 'focus',
+        plannedStart: window.startAt,
+        plannedEnd: window.endAt,
+      });
+      await patchScheduleBlockApi(created.id, {
+        actualStart: created.plannedStart,
+        actualEnd: created.plannedEnd,
+      });
+      await deleteScheduleBlockApi(blockId);
+
+      const task = await fetchTaskById(taskId);
+      if (
+        task &&
+        task.status !== 'in_progress' &&
+        task.status !== 'done' &&
+        task.status !== 'skipped'
+      ) {
+        await patchTaskApi(taskId, { status: 'in_progress' });
+      }
+    },
+    onSuccess: async () => {
+      await invalidateTaskRelated(queryClient);
+    },
+  });
+
+  /**
+   * Finish the whole catalog task.
+   * With sessions: replace plans with work-period clones (existing behavior).
+   * Without sessions: keep any session work-periods already created, drop remaining plans.
+   */
   const complete = useMutation({
     mutationFn: async ({
       taskId,
@@ -396,22 +470,27 @@ export function useActivityMutations(date: string) {
       /** Closed work sessions (UTC ISO); each becomes its own timetable block. */
       sessions?: Array<{ startAt: string; endAt: string }>;
     }) => {
-      await clearDoneWorkPeriodBlocks(taskId);
       const workSessions = sessions ?? [];
-      for (const session of workSessions) {
-        const created = await createScheduleBlockApi({
-          taskId,
-          blockType: 'focus',
-          plannedStart: session.startAt,
-          plannedEnd: session.endAt,
-        });
-        await patchScheduleBlockApi(created.id, {
-          actualStart: created.plannedStart,
-          actualEnd: created.plannedEnd,
-        });
-      }
       if (workSessions.length > 0) {
+        await clearDoneWorkPeriodBlocks(taskId);
+        for (const session of workSessions) {
+          const created = await createScheduleBlockApi({
+            taskId,
+            blockType: 'focus',
+            plannedStart: session.startAt,
+            plannedEnd: session.endAt,
+          });
+          await patchScheduleBlockApi(created.id, {
+            actualStart: created.plannedStart,
+            actualEnd: created.plannedEnd,
+          });
+        }
         await deleteSupersededPlannedBlocks(taskId);
+      } else {
+        const blocks = await fetchScheduleBlocks({ taskId });
+        if (blocks.some(isWorkPeriodScheduleBlock)) {
+          await deleteSupersededPlannedBlocks(taskId);
+        }
       }
       return patchTaskApi(taskId, { status: 'done' });
     },
@@ -420,7 +499,16 @@ export function useActivityMutations(date: string) {
     },
   });
 
-  return { update, updateBlock, updateTask, remove, setStatus, skip, complete };
+  return {
+    update,
+    updateBlock,
+    updateTask,
+    remove,
+    setStatus,
+    skip,
+    completeBlock,
+    complete,
+  };
 }
 
 export function useTimeEntryMutations(_date: string) {

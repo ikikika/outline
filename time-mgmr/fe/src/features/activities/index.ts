@@ -120,7 +120,9 @@ export {
   useRunningTimer,
   useActivityMutations,
   useTimeEntryMutations,
+  blockHasActualWindow,
   closedWorkSessions,
+  pickActualWindowForBlock,
   visibleTimetableBlocks,
   workSessionBounds,
 } from './hooks/useActivities';
