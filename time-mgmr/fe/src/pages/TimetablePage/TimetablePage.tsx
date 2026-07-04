@@ -108,6 +108,13 @@ export const TimetablePage: React.FC = () => {
     const total = scheduledFocusSeconds(blocks);
     return total > 0 ? total : undefined;
   }, [detailTaskBlocksQuery.data]);
+  const detailOpenFocusBlockCount = useMemo(() => {
+    const blocks = detailTaskBlocksQuery.data ?? [];
+    return blocks.filter(
+      (item) =>
+        item.blockType === 'focus' && !(item.actualStart && item.actualEnd)
+    ).length;
+  }, [detailTaskBlocksQuery.data]);
   const { update, updateBlock, setStatus, skip, completeBlock, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
@@ -347,6 +354,7 @@ export const TimetablePage: React.FC = () => {
           entries={detailEntries}
           runningEntry={runningEntry}
           plannedFocusSeconds={detailPlannedFocusSeconds}
+          openFocusBlockCount={detailOpenFocusBlockCount}
           busy={busy}
           onClose={closeDetails}
           onEdit={(block) => setEditing(block)}

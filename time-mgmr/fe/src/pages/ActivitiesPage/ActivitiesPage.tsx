@@ -144,6 +144,14 @@ export const ActivitiesPage: React.FC = () => {
     return total > 0 ? total : undefined;
   }, [detailBlocksQuery.data]);
 
+  const detailOpenFocusBlockCount = useMemo(() => {
+    const blocks = detailBlocksQuery.data ?? [];
+    return blocks.filter(
+      (item) =>
+        item.blockType === 'focus' && !(item.actualStart && item.actualEnd)
+    ).length;
+  }, [detailBlocksQuery.data]);
+
   const catalogBusy =
     createActivity.isPending ||
     importActivityCatalog.isPending ||
@@ -592,6 +600,7 @@ export const ActivitiesPage: React.FC = () => {
           entries={detailEntries}
           runningEntry={runningEntry}
           plannedFocusSeconds={detailPlannedFocusSeconds}
+          openFocusBlockCount={detailOpenFocusBlockCount}
           isUnscheduled={isUnscheduledDetailBlock(detailBlock)}
           busy={detailBusy}
           onClose={closeDetails}

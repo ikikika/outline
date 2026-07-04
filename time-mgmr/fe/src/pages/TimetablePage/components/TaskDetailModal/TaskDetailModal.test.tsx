@@ -357,7 +357,7 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
     expect(screen.getByText('Elapsed')).toBeInTheDocument();
     expect(screen.getByText('Remaining')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Finish session' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish task' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeInTheDocument();
   });
 
@@ -572,10 +572,33 @@ describe('TaskDetailModal focus mode', () => {
     expect(onStop).toHaveBeenCalledWith('entry-1');
   });
 
-  it('calls onCompleteBlock from the focus Finish session button', async () => {
+  it('calls onCompleteTask from focus mode when the task has a single open block', async () => {
+    const user = userEvent.setup();
+    const onCompleteTask = vi.fn();
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        openFocusBlockCount={1}
+        onCompleteTask={onCompleteTask}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+    await user.click(screen.getByRole('button', { name: 'Finish task' }));
+
+    expect(onCompleteTask).toHaveBeenCalledWith('task-1');
+  });
+
+  it('calls onCompleteBlock from focus mode when the task is split across blocks', async () => {
     const user = userEvent.setup();
     const onCompleteBlock = vi.fn();
-    render(<TaskDetailModal {...baseProps} onCompleteBlock={onCompleteBlock} />);
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        openFocusBlockCount={3}
+        onCompleteBlock={onCompleteBlock}
+      />
+    );
 
     await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
     await user.click(screen.getByRole('button', { name: 'Finish session' }));

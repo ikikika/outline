@@ -33,6 +33,11 @@ interface TaskDetailModalProps {
   runningEntry: ITimeEntry | null;
   /** Total scheduled focus seconds for this task (includes estimate buffer). */
   plannedFocusSeconds?: number;
+  /**
+   * Open (not yet finished) focus blocks for this task.
+   * Focus mode shows Finish session when > 1, otherwise Finish task.
+   */
+  openFocusBlockCount?: number;
   /** True when this block is a catalog stand-in with no real schedule row. */
   isUnscheduled?: boolean;
   busy?: boolean;
@@ -103,6 +108,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   entries,
   runningEntry,
   plannedFocusSeconds,
+  openFocusBlockCount = 1,
   isUnscheduled = false,
   busy = false,
   onClose,
@@ -153,6 +159,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     !sessionFinished;
   const canFinishTask =
     Boolean(taskId) && block.status !== 'done' && block.status !== 'skipped';
+  /** Split tasks: finish this block. Single open block: finish the whole task. */
+  const focusCompletesSession = canFinishSession && openFocusBlockCount > 1;
+  const focusCompletesTask = canFinishTask && !focusCompletesSession;
   const focusEyebrow = isBreak ? 'Break' : 'Focus';
 
   const {
@@ -348,7 +357,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </div>
               </div>
 
-              {canFinishSession ? (
+              {focusCompletesSession ? (
                 <button
                   type="button"
                   className={styles.focusDone}
@@ -356,6 +365,15 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   onClick={() => onCompleteBlock(block)}
                 >
                   Finish session
+                </button>
+              ) : focusCompletesTask && taskId ? (
+                <button
+                  type="button"
+                  className={styles.focusDone}
+                  disabled={busy}
+                  onClick={() => onCompleteTask(taskId)}
+                >
+                  Finish task
                 </button>
               ) : null}
             </div>
