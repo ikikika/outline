@@ -188,10 +188,9 @@ export function AutoScheduleModal({
   const handleTaskToggle = (
     taskId: string,
     index: number,
-    shiftKey: boolean
+    shiftKey: boolean,
+    nextChecked: boolean
   ) => {
-    const nextChecked = !selectedTaskIds.includes(taskId);
-
     if (shiftKey && lastClickedTaskIndexRef.current != null) {
       const from = Math.min(lastClickedTaskIndexRef.current, index);
       const to = Math.max(lastClickedTaskIndexRef.current, index);
@@ -207,7 +206,9 @@ export function AutoScheduleModal({
     } else {
       setSelectedTaskIds((current) =>
         nextChecked
-          ? [...current, taskId]
+          ? current.includes(taskId)
+            ? current
+            : [...current, taskId]
           : current.filter((id) => id !== taskId)
       );
     }
@@ -277,25 +278,19 @@ export function AutoScheduleModal({
                       : 'No estimate';
                     return (
                       <li key={task.id}>
-                        <label
-                          className={styles.taskOption}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            handleTaskToggle(task.id, index, event.shiftKey);
-                          }}
-                        >
+                        <label className={styles.taskOption}>
                           <input
                             type="checkbox"
                             checked={checked}
-                            readOnly
-                            tabIndex={0}
-                            aria-checked={checked}
-                            onKeyDown={(event) => {
-                              if (event.key !== ' ' && event.key !== 'Enter') {
-                                return;
-                              }
-                              event.preventDefault();
-                              handleTaskToggle(task.id, index, event.shiftKey);
+                            onChange={(event) => {
+                              handleTaskToggle(
+                                task.id,
+                                index,
+                                event.nativeEvent instanceof MouseEvent
+                                  ? event.nativeEvent.shiftKey
+                                  : false,
+                                event.target.checked
+                              );
                             }}
                           />
                           <span className={styles.taskOptionTitle}>{task.title}</span>
