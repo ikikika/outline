@@ -229,13 +229,24 @@ function mostFragmentedActivities(
   metrics: IActivityMetrics[],
   limit: number
 ): IActivityMetrics[] {
-  return [...metrics]
+  const sorted = [...metrics]
     .filter((m) => m.entryCount >= 2)
     .sort(
       (a, b) =>
         b.entryCount - a.entryCount || b.actualMinutes - a.actualMinutes
-    )
-    .slice(0, limit);
+    );
+
+  // One entry per task — keep the most fragmented occurrence.
+  const seenTasks = new Set<string>();
+  const unique: IActivityMetrics[] = [];
+  for (const m of sorted) {
+    const key = m.activity.taskId ?? m.activity.id;
+    if (seenTasks.has(key)) continue;
+    seenTasks.add(key);
+    unique.push(m);
+    if (unique.length >= limit) break;
+  }
+  return unique;
 }
 
 function busyButUnfinishedActivities(
@@ -253,7 +264,9 @@ function busyButUnfinishedActivities(
     .slice(0, limit);
 }
 
-function buildSharedInsights(metrics: IActivityMetrics[], overrunLimit: number) {
+const INSIGHT_TOP_N = 3;
+
+function buildSharedInsights(metrics: IActivityMetrics[], busyLimit = INSIGHT_TOP_N) {
   const categoryMix = buildCategoryMix(metrics);
   return {
     varianceBreakdown: buildVarianceBreakdown(metrics),
@@ -261,10 +274,10 @@ function buildSharedInsights(metrics: IActivityMetrics[], overrunLimit: number) 
     adminPercent: categoryActualPercent(categoryMix, 'admin'),
     breakPercent: categoryActualPercent(categoryMix, 'break'),
     categoryMix,
-    biggestOverruns: topByVariance(metrics, 'over', overrunLimit),
-    biggestUnderruns: topByVariance(metrics, 'under', overrunLimit),
-    mostFragmented: mostFragmentedActivities(metrics, overrunLimit),
-    busyButUnfinished: busyButUnfinishedActivities(metrics, overrunLimit),
+    biggestOverruns: topByVariance(metrics, 'over', INSIGHT_TOP_N),
+    biggestUnderruns: topByVariance(metrics, 'under', INSIGHT_TOP_N),
+    mostFragmented: mostFragmentedActivities(metrics, INSIGHT_TOP_N),
+    busyButUnfinished: busyButUnfinishedActivities(metrics, busyLimit),
   };
 }
 
@@ -294,7 +307,7 @@ export function buildDayReport(
   const actualMinutes = metrics.reduce((s, m) => s + m.actualMinutes, 0);
   const doneCount = reportBlocks.filter((a) => a.status === 'done').length;
   const trackedCount = metrics.filter((m) => m.actualMinutes > 0).length;
-  const insights = buildSharedInsights(metrics, 5);
+  const insights = buildSharedInsights(metrics);
 
   return {
     date,
@@ -335,7 +348,7 @@ export function buildRangeReport(
   const doneCount = reportBlocks.filter((a) => a.status === 'done').length;
   const trackedCount = allMetrics.filter((m) => m.actualMinutes > 0).length;
   const daysLogged = byDay.filter((d) => d.actualMinutes > 0 || d.activities.length > 0).length;
-  const insights = buildSharedInsights(allMetrics, 8);
+  const insights = buildSharedInsights(allMetrics);
 
   return {
     from,

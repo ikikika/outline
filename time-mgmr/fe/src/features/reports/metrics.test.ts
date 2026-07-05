@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildActivityMetrics,
   buildDayReport,
+  buildRangeReport,
   classifyVariance,
 } from './metrics';
 import type { ITimetableBlock, ITimeEntry } from '@/features/activities';
@@ -285,5 +286,196 @@ describe('buildDayReport', () => {
     expect(report.biggestUnderruns.map((m) => m.activity.title)).toEqual([
       'Write docs',
     ]);
+  });
+});
+
+describe('buildRangeReport insights', () => {
+  it('limits overruns/underruns to top 3 and dedupes fragmented by task', () => {
+    const makeFocus = (
+      id: string,
+      taskId: string,
+      title: string,
+      date: string,
+      estimateMin: number
+    ) =>
+      baseBlock({
+        id,
+        taskId,
+        activityId: id,
+        title,
+        date,
+        timeEstimationSeconds: estimateMin * 60,
+        status: 'done',
+      });
+
+    const blocks = [
+      makeFocus('b1', 't1', 'Task A', '2026-07-20', 60),
+      makeFocus('b2', 't1', 'Task A', '2026-07-21', 60),
+      makeFocus('b3', 't2', 'Task B', '2026-07-20', 60),
+      makeFocus('b4', 't3', 'Task C', '2026-07-20', 60),
+      makeFocus('b5', 't4', 'Task D', '2026-07-20', 60),
+      makeFocus('b6', 't5', 'Over 1', '2026-07-20', 30),
+      makeFocus('b7', 't6', 'Over 2', '2026-07-20', 30),
+      makeFocus('b8', 't7', 'Over 3', '2026-07-20', 30),
+      makeFocus('b9', 't8', 'Over 4', '2026-07-20', 30),
+    ];
+
+    const entries: ITimeEntry[] = [
+      // Task A fragmented on both days — should collapse to one insight (keep higher count)
+      entry({
+        id: 'e1a',
+        taskId: 't1',
+        source: 'manual',
+        durationMinutes: 15,
+        startAt: '2026-07-20T01:00:00.000Z',
+        endAt: '2026-07-20T01:15:00.000Z',
+      }),
+      entry({
+        id: 'e1b',
+        taskId: 't1',
+        source: 'manual',
+        durationMinutes: 15,
+        startAt: '2026-07-20T03:00:00.000Z',
+        endAt: '2026-07-20T03:15:00.000Z',
+      }),
+      entry({
+        id: 'e1c',
+        taskId: 't1',
+        source: 'manual',
+        durationMinutes: 15,
+        startAt: '2026-07-20T05:00:00.000Z',
+        endAt: '2026-07-20T05:15:00.000Z',
+      }),
+      entry({
+        id: 'e1d',
+        taskId: 't1',
+        source: 'manual',
+        durationMinutes: 15,
+        startAt: '2026-07-20T07:00:00.000Z',
+        endAt: '2026-07-20T07:15:00.000Z',
+      }),
+      entry({
+        id: 'e1e',
+        taskId: 't1',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-21T01:00:00.000Z',
+        endAt: '2026-07-21T01:20:00.000Z',
+      }),
+      entry({
+        id: 'e1f',
+        taskId: 't1',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-21T03:00:00.000Z',
+        endAt: '2026-07-21T03:20:00.000Z',
+      }),
+      // Other fragmented tasks
+      entry({
+        id: 'e2a',
+        taskId: 't2',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-20T02:00:00.000Z',
+        endAt: '2026-07-20T02:20:00.000Z',
+      }),
+      entry({
+        id: 'e2b',
+        taskId: 't2',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-20T04:00:00.000Z',
+        endAt: '2026-07-20T04:20:00.000Z',
+      }),
+      entry({
+        id: 'e3a',
+        taskId: 't3',
+        source: 'manual',
+        durationMinutes: 25,
+        startAt: '2026-07-20T02:00:00.000Z',
+        endAt: '2026-07-20T02:25:00.000Z',
+      }),
+      entry({
+        id: 'e3b',
+        taskId: 't3',
+        source: 'manual',
+        durationMinutes: 25,
+        startAt: '2026-07-20T04:00:00.000Z',
+        endAt: '2026-07-20T04:25:00.000Z',
+      }),
+      entry({
+        id: 'e4a',
+        taskId: 't4',
+        source: 'manual',
+        durationMinutes: 30,
+        startAt: '2026-07-20T02:00:00.000Z',
+        endAt: '2026-07-20T02:30:00.000Z',
+      }),
+      entry({
+        id: 'e4b',
+        taskId: 't4',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-20T04:00:00.000Z',
+        endAt: '2026-07-20T04:20:00.000Z',
+      }),
+      // Overruns (actual > planned)
+      entry({
+        id: 'o1',
+        taskId: 't5',
+        source: 'manual',
+        durationMinutes: 90,
+        startAt: '2026-07-20T01:00:00.000Z',
+        endAt: '2026-07-20T02:30:00.000Z',
+      }),
+      entry({
+        id: 'o2',
+        taskId: 't6',
+        source: 'manual',
+        durationMinutes: 80,
+        startAt: '2026-07-20T01:00:00.000Z',
+        endAt: '2026-07-20T02:20:00.000Z',
+      }),
+      entry({
+        id: 'o3',
+        taskId: 't7',
+        source: 'manual',
+        durationMinutes: 70,
+        startAt: '2026-07-20T01:00:00.000Z',
+        endAt: '2026-07-20T02:10:00.000Z',
+      }),
+      entry({
+        id: 'o4',
+        taskId: 't8',
+        source: 'manual',
+        durationMinutes: 60,
+        startAt: '2026-07-20T01:00:00.000Z',
+        endAt: '2026-07-20T02:00:00.000Z',
+      }),
+    ];
+
+    const report = buildRangeReport(
+      '2026-07-20',
+      '2026-07-21',
+      blocks,
+      entries,
+      ['2026-07-20', '2026-07-21']
+    );
+
+    expect(report.biggestOverruns).toHaveLength(3);
+    expect(report.biggestOverruns.map((m) => m.activity.title)).toEqual([
+      'Over 1',
+      'Over 2',
+      'Over 3',
+    ]);
+
+    // Task A appears on two days but only once; top 3 unique tasks
+    expect(report.mostFragmented).toHaveLength(3);
+    expect(report.mostFragmented.map((m) => m.activity.title)).toEqual([
+      'Task A',
+      'Task C',
+      'Task D',
+    ]);
+    expect(report.mostFragmented[0]?.entryCount).toBe(4);
   });
 });
