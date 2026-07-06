@@ -35,6 +35,7 @@ import type {
 } from '../types';
 import { addDays, todayKey } from '../utils/dateUtils';
 
+import { breakIdsFollowingFocuses } from '../utils/scheduleBlockCascade/scheduleBlockCascade';
 import {
   isWorkPeriodScheduleBlock,
   pickActualWindowForBlock,
@@ -74,14 +75,42 @@ async function clearDoneWorkPeriodBlocks(taskId: string): Promise<void> {
 }
 
 /**
- * After work-period clones exist, delete original planned blocks so they do not
- * linger on other days (day/week fetches cannot see cross-day siblings).
+ * After work-period clones exist, delete original planned focus blocks and any
+ * pomodoro rests that followed them so unused breaks do not linger.
  */
 async function deleteSupersededPlannedBlocks(taskId: string): Promise<void> {
   const blocks = await fetchScheduleBlocks({ taskId });
-  await Promise.all(
-    supersededPlannedBlockIds(blocks).map((id) => deleteScheduleBlockApi(id))
+  const supersededIds = supersededPlannedBlockIds(blocks);
+  if (supersededIds.length === 0) return;
+
+  const supersededIdSet = new Set(supersededIds);
+  const supersededFocuses = blocks.filter((block) =>
+    supersededIdSet.has(block.id)
   );
+  // Breaks use a separate (or missing) taskId, so scan all blocks for adjacency.
+  const allBlocks = await fetchScheduleBlocks({});
+  const followingBreakIds = breakIdsFollowingFocuses(
+    supersededFocuses,
+    allBlocks
+  );
+  const ids = [...new Set([...supersededIds, ...followingBreakIds])];
+  await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
+}
+
+/** Delete every focus block for a task plus pomodoro rests that follow them. */
+async function deleteFocusBlocksAndFollowingBreaks(
+  taskId: string
+): Promise<void> {
+  const taskBlocks = await fetchScheduleBlocks({ taskId });
+  const allBlocks = await fetchScheduleBlocks({});
+  const followingBreakIds = breakIdsFollowingFocuses(taskBlocks, allBlocks);
+  const ids = [
+    ...new Set([
+      ...taskBlocks.map((block) => block.id),
+      ...followingBreakIds,
+    ]),
+  ];
+  await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
 }
 
 function findBlockInCache(
@@ -381,8 +410,7 @@ export function useActivityMutations(date: string) {
         throw new Error('Cannot skip a focus block without a task');
       }
 
-      const blocks = await fetchScheduleBlocks({ taskId: block.taskId });
-      await Promise.all(blocks.map((item) => deleteScheduleBlockApi(item.id)));
+      await deleteFocusBlocksAndFollowingBreaks(block.taskId);
       await patchTaskApi(block.taskId, { status: 'skipped' });
     },
     onSuccess: async () => {
