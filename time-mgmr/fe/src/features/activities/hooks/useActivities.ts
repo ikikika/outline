@@ -87,11 +87,11 @@ async function deleteSupersededPlannedBlocks(taskId: string): Promise<void> {
   const supersededFocuses = blocks.filter((block) =>
     supersededIdSet.has(block.id)
   );
-  // Breaks use a separate (or missing) taskId, so scan all blocks for adjacency.
-  const allBlocks = await fetchScheduleBlocks({});
+  // Breaks use a separate (or missing) taskId — fetch the window covering these focuses.
+  const nearbyBlocks = await fetchScheduleBlocksNearFocuses(supersededFocuses);
   const followingBreakIds = breakIdsFollowingFocuses(
     supersededFocuses,
-    allBlocks
+    nearbyBlocks
   );
   const ids = [...new Set([...supersededIds, ...followingBreakIds])];
   await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
@@ -102,8 +102,8 @@ async function deleteFocusBlocksAndFollowingBreaks(
   taskId: string
 ): Promise<void> {
   const taskBlocks = await fetchScheduleBlocks({ taskId });
-  const allBlocks = await fetchScheduleBlocks({});
-  const followingBreakIds = breakIdsFollowingFocuses(taskBlocks, allBlocks);
+  const nearbyBlocks = await fetchScheduleBlocksNearFocuses(taskBlocks);
+  const followingBreakIds = breakIdsFollowingFocuses(taskBlocks, nearbyBlocks);
   const ids = [
     ...new Set([
       ...taskBlocks.map((block) => block.id),
@@ -111,6 +111,31 @@ async function deleteFocusBlocksAndFollowingBreaks(
     ]),
   ];
   await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
+}
+
+/**
+ * Load schedule blocks in the UTC window that covers the given focuses so we can
+ * find adjacent pomodoro rests (API requires date, from+to, or taskId).
+ */
+async function fetchScheduleBlocksNearFocuses(
+  focuses: Array<{ plannedStart: string; plannedEnd: string }>
+): Promise<Awaited<ReturnType<typeof fetchScheduleBlocks>>> {
+  if (focuses.length === 0) return [];
+
+  let from = focuses[0]!.plannedStart;
+  let latestEnd = focuses[0]!.plannedEnd;
+  for (const block of focuses) {
+    if (block.plannedStart < from) from = block.plannedStart;
+    if (block.plannedEnd > latestEnd) latestEnd = block.plannedEnd;
+  }
+  // Range filter is exclusive on `to`; rests start at focus plannedEnd.
+  const endMs = Date.parse(latestEnd);
+  const to = Number.isFinite(endMs)
+    ? new Date(endMs + 1).toISOString()
+    : latestEnd;
+  if (Date.parse(to) <= Date.parse(from)) return [];
+
+  return fetchScheduleBlocks({ from, to });
 }
 
 function findBlockInCache(
