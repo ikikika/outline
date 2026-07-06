@@ -21,6 +21,9 @@ interface TimetableHeaderProps {
   zoom: number;
   onZoomChange: (zoom: number) => void;
   onAddAdhoc?: () => void;
+  onStartRest?: () => void;
+  startRestDisabled?: boolean;
+  startRestBusy?: boolean;
 }
 
 function formatZoomLabel(zoom: number): string {
@@ -39,6 +42,9 @@ export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
   zoom,
   onZoomChange,
   onAddAdhoc,
+  onStartRest,
+  startRestDisabled = false,
+  startRestBusy = false,
 }) => {
   const stepDays = view === 'week' ? 7 : 1;
 
@@ -64,6 +70,21 @@ export const TimetableHeader: React.FC<TimetableHeaderProps> = ({
             Week
           </button>
         </div>
+        {onStartRest ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onStartRest}
+            disabled={startRestDisabled || startRestBusy}
+            title={
+              startRestDisabled
+                ? 'Stop the current timer first'
+                : 'Start a 5-minute rest'
+            }
+          >
+            {startRestBusy ? 'Starting…' : 'Start rest'}
+          </Button>
+        ) : null}
         {onAddAdhoc ? (
           <Button variant="outline" size="sm" onClick={onAddAdhoc}>
             Add adhoc

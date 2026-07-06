@@ -39,6 +39,7 @@ import { TIMETABLE_ZOOM_DEFAULT } from './hooks/useFitPxPerMinute/useFitPxPerMin
 import { usePomodoroReminder } from './hooks/usePomodoroReminder/usePomodoroReminder';
 import { blockDisplayWindow } from './utils/blockDisplayWindow/blockDisplayWindow';
 import { createAdhocBlock } from './utils/createAdhocBlock/createAdhocBlock';
+import { createAdhocRest } from './utils/createAdhocRest/createAdhocRest';
 import {
   ensureBreakTaskForBlock,
   scheduledFocusSeconds,
@@ -53,9 +54,12 @@ export const TimetablePage: React.FC = () => {
   const [showAllHours, setShowAllHours] = useState(false);
   const [zoom, setZoom] = useState(TIMETABLE_ZOOM_DEFAULT);
   const [detailBlockId, setDetailBlockId] = useState<string | null>(null);
+  const [pendingDetailBlock, setPendingDetailBlock] =
+    useState<ITimetableBlock | null>(null);
   const [editing, setEditing] = useState<ITimetableBlock | null>(null);
   const [addingAdhoc, setAddingAdhoc] = useState(false);
   const [adhocBusy, setAdhocBusy] = useState(false);
+  const [startRestBusy, setStartRestBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const week = useMemo(() => weekDateKeys(selectedDate), [selectedDate]);
@@ -89,9 +93,10 @@ export const TimetablePage: React.FC = () => {
     return (
       dayBlocks.find((block) => block.id === detailBlockId) ??
       weekBlocks.find((block) => block.id === detailBlockId) ??
-      (runningBlock?.id === detailBlockId ? runningBlock : null)
+      (runningBlock?.id === detailBlockId ? runningBlock : null) ??
+      (pendingDetailBlock?.id === detailBlockId ? pendingDetailBlock : null)
     );
-  }, [detailBlockId, dayBlocks, weekBlocks, runningBlock]);
+  }, [detailBlockId, dayBlocks, weekBlocks, runningBlock, pendingDetailBlock]);
 
   const { data: detailActivity = null } = useActivityById(
     detailBlock?.activityId ?? null
@@ -166,11 +171,15 @@ export const TimetablePage: React.FC = () => {
 
   const openDetails = (item: ITimetableBlock) => {
     setSelectedDate(item.date);
+    setPendingDetailBlock(item);
     setDetailBlockId(item.id);
     setEditing(null);
   };
 
-  const closeDetails = () => setDetailBlockId(null);
+  const closeDetails = () => {
+    setDetailBlockId(null);
+    setPendingDetailBlock(null);
+  };
 
   const resolveTrackableTaskId = async (block: ITimetableBlock): Promise<string> =>
     ensureBreakTaskForBlock(block);
@@ -226,6 +235,30 @@ export const TimetablePage: React.FC = () => {
     }
   };
 
+  const handleStartRest = async () => {
+    if (runningEntry || startRestBusy) return;
+    setActionError(null);
+    setStartRestBusy(true);
+    try {
+      const block = await createAdhocRest(timeZone);
+      if (!block.taskId) {
+        throw new Error('Rest block is missing a task');
+      }
+      await startTimer.mutateAsync(block.taskId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all }),
+        queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all }),
+      ]);
+      openDetails(block);
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'Failed to start rest.'
+      );
+    } finally {
+      setStartRestBusy(false);
+    }
+  };
+
   const dateLabel =
     timetableView === 'week'
       ? `${formatDisplayDate(week[0])} – ${formatDisplayDate(week[week.length - 1])}`
@@ -242,6 +275,9 @@ export const TimetablePage: React.FC = () => {
       onShowAllHoursChange={setShowAllHours}
       zoom={zoom}
       onZoomChange={setZoom}
+      onStartRest={handleStartRest}
+      startRestDisabled={Boolean(runningEntry)}
+      startRestBusy={startRestBusy}
       onAddAdhoc={() => {
         setActionError(null);
         setAddingAdhoc(true);

@@ -51,6 +51,7 @@ const mockCompleteMutation = vi.fn();
 const mockCompleteBlockMutation = vi.fn();
 const mockDismissReminder = vi.fn();
 let mockShouldPrompt = false;
+const mockStartTimerMutation = vi.fn(async () => undefined);
 const mockStopTimerMutation = vi.fn(async (entryId: string) => ({
   ...mockRunningEntry!,
   id: entryId,
@@ -58,6 +59,7 @@ const mockStopTimerMutation = vi.fn(async (entryId: string) => ({
   durationMinutes: 60,
   updatedAt: '2026-07-19T10:00:00.000Z',
 }));
+const mockCreateAdhocRest = vi.fn();
 
 vi.mock('@/app/providers/auth', () => ({
   useAuthContext: () => ({
@@ -165,7 +167,7 @@ vi.mock('@/features/activities', () => ({
     data: mockRunningEntry ? [mockRunningEntry] : [],
   }),
   useTimeEntryMutations: () => ({
-    startTimer: { isPending: false, mutateAsync: vi.fn() },
+    startTimer: { isPending: false, mutateAsync: mockStartTimerMutation },
     stopTimer: { isPending: false, mutateAsync: mockStopTimerMutation },
     pauseTimer: { isPending: false, mutateAsync: vi.fn() },
     addManual: { isPending: false, mutateAsync: vi.fn() },
@@ -178,6 +180,10 @@ vi.mock('./hooks/usePomodoroReminder/usePomodoroReminder', () => ({
     shouldPrompt: mockShouldPrompt,
     dismiss: mockDismissReminder,
   }),
+}));
+
+vi.mock('./utils/createAdhocRest/createAdhocRest', () => ({
+  createAdhocRest: (...args: unknown[]) => mockCreateAdhocRest(...args),
 }));
 
 vi.mock('./components/AdhocBlockModal/AdhocBlockModal', () => ({
@@ -235,7 +241,24 @@ describe('TimetablePage', () => {
     mockCompleteMutation.mockClear();
     mockCompleteBlockMutation.mockClear();
     mockDismissReminder.mockClear();
+    mockStartTimerMutation.mockClear();
     mockStopTimerMutation.mockClear();
+    mockCreateAdhocRest.mockReset();
+    mockCreateAdhocRest.mockResolvedValue({
+      id: 'rest-block',
+      taskId: 'rest-task',
+      blockType: 'short_break',
+      activityId: 'pomodoro-breaks',
+      title: 'Rest',
+      date: '2026-07-19',
+      plannedStart: '15:00',
+      plannedEnd: '15:05',
+      categoryId: 'break',
+      notes: '',
+      status: 'planned',
+      createdAt: '2026-07-19T00:00:00.000Z',
+      updatedAt: '2026-07-19T00:00:00.000Z',
+    });
   });
 
   it('renders timetable blocks', () => {
@@ -358,5 +381,33 @@ describe('TimetablePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Add adhoc' }));
     expect(screen.getByTestId('adhoc-block-modal')).toBeInTheDocument();
+  });
+
+  it('starts an adhoc rest from the header', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Start rest' }));
+
+    expect(mockCreateAdhocRest).toHaveBeenCalledWith('UTC');
+    expect(mockStartTimerMutation).toHaveBeenCalledWith('rest-task');
+    expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Rest');
+  });
+
+  it('disables start rest while another timer is running', () => {
+    mockRunningEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Start rest' })).toBeDisabled();
   });
 });
