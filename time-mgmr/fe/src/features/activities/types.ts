@@ -58,6 +58,8 @@ export interface IApiTask {
   sortOrder?: number;
   /** When true, omit from report metrics while still blocking the timetable. */
   excludeFromReports?: boolean;
+  /** True when work began while the task was still unplanned (reactive work). */
+  startedFromUnplanned?: boolean;
 }
 
 /**
@@ -83,6 +85,7 @@ export interface ITimetableBlock {
   status: TaskStatus;
   sortOrder?: number;
   excludeFromReports?: boolean;
+  startedFromUnplanned?: boolean;
   createdAt: string;
   updatedAt: string;
 }

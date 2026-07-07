@@ -4,6 +4,8 @@ import type {
   ITimetableBlock,
   ITimeEntry,
 } from '@/features/activities/types';
+import { timeToMinutes } from '@/features/activities/utils/dateUtils';
+import { isWorkPeriodScheduleBlock } from '@/features/activities/utils/workPeriodBlocks/workPeriodBlocks';
 
 export type VarianceKind = 'over' | 'under' | 'on_target' | 'untracked';
 
@@ -15,6 +17,21 @@ export interface IActivityMetrics {
   accuracyRatio: number | null;
   varianceKind: VarianceKind;
   entryCount: number;
+  /** Length of the timetable planned window (minutes). */
+  slotMinutes: number;
+  /** Logged minutes that overlap the planned window. */
+  inSlotMinutes: number;
+  /** Logged minutes outside the planned window. */
+  outOfSlotMinutes: number;
+  /**
+   * Share of actual work done inside the planned window (0–1).
+   * Null when there is no distinct plan (work-period clones) or no actuals.
+   */
+  scheduleAdherenceRatio: number | null;
+  /** Actual start minus planned start (minutes); null when unknown. */
+  startDriftMinutes: number | null;
+  /** Work that began while the task was still unplanned. */
+  startedFromUnplanned: boolean;
 }
 
 export interface ICategoryMixItem {
@@ -35,6 +52,17 @@ export interface IVarianceBreakdown {
   untracked: number;
 }
 
+export interface IScheduleAdherenceSummary {
+  /** Activities with a measurable planned-vs-actual schedule relationship. */
+  measuredCount: number;
+  /** Mean share of actual work done inside the planned window (0–100). */
+  averageAdherencePercent: number | null;
+  /** Total logged minutes inside planned windows. */
+  inSlotMinutes: number;
+  /** Total logged minutes outside planned windows. */
+  outOfSlotMinutes: number;
+}
+
 export interface IDayReport {
   date: string;
   plannedMinutes: number;
@@ -50,6 +78,10 @@ export interface IDayReport {
   adminPercent: number;
   /** Break share of actual time (0–100) */
   breakPercent: number;
+  /** Share of actual time from tasks started while unplanned (0–100). */
+  unplannedPercent: number;
+  unplannedActualMinutes: number;
+  scheduleAdherence: IScheduleAdherenceSummary;
   activities: IActivityMetrics[];
   categoryMix: ICategoryMixItem[];
   biggestOverruns: IActivityMetrics[];
@@ -58,6 +90,10 @@ export interface IDayReport {
   mostFragmented: IActivityMetrics[];
   /** Time logged but not marked done */
   busyButUnfinished: IActivityMetrics[];
+  /** Finished (or tracked) work that began outside the plan. */
+  unplannedWork: IActivityMetrics[];
+  /** Planned activities whose logged time drifted farthest from the slot. */
+  biggestScheduleDrifts: IActivityMetrics[];
 }
 
 export interface IRangeReport {
@@ -75,11 +111,16 @@ export interface IRangeReport {
   deepWorkPercent: number;
   adminPercent: number;
   breakPercent: number;
+  unplannedPercent: number;
+  unplannedActualMinutes: number;
+  scheduleAdherence: IScheduleAdherenceSummary;
   categoryMix: ICategoryMixItem[];
   biggestOverruns: IActivityMetrics[];
   biggestUnderruns: IActivityMetrics[];
   mostFragmented: IActivityMetrics[];
   busyButUnfinished: IActivityMetrics[];
+  unplannedWork: IActivityMetrics[];
+  biggestScheduleDrifts: IActivityMetrics[];
   byDay: IDayReport[];
 }
 
@@ -95,6 +136,69 @@ function entryActualMinutes(entry: ITimeEntry, now: Date): number {
 
 function completedActualMinutes(entries: ITimeEntry[], now = new Date()): number {
   return entries.reduce((sum, entry) => sum + entryActualMinutes(entry, now), 0);
+}
+
+function localDateKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function minutesOfDayFromIso(iso: string): number {
+  const d = new Date(iso);
+  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+}
+
+function overlapMinutes(
+  startA: number,
+  endA: number,
+  startB: number,
+  endB: number
+): number {
+  return Math.max(0, Math.min(endA, endB) - Math.max(startA, startB));
+}
+
+/** Overlap between a block's planned HH:mm window and time entries on that date. */
+export function scheduleOverlapForBlock(
+  block: Pick<ITimetableBlock, 'date' | 'plannedStart' | 'plannedEnd'>,
+  entries: ITimeEntry[],
+  now = new Date()
+): { inSlotMinutes: number; outOfSlotMinutes: number; startDriftMinutes: number | null } {
+  const slotStart = timeToMinutes(block.plannedStart);
+  const slotEnd = timeToMinutes(block.plannedEnd);
+  let inSlotMinutes = 0;
+  let outOfSlotMinutes = 0;
+  let earliestStart: number | null = null;
+
+  for (const entry of entries) {
+    const actual = entryActualMinutes(entry, now);
+    if (actual <= 0) continue;
+
+    if (localDateKey(entry.startAt) !== block.date) {
+      outOfSlotMinutes += actual;
+      continue;
+    }
+
+    const entryStart = minutesOfDayFromIso(entry.startAt);
+    const entryEnd = entry.endAt
+      ? minutesOfDayFromIso(entry.endAt)
+      : minutesOfDayFromIso(now.toISOString());
+    const safeEnd = entryEnd > entryStart ? entryEnd : entryStart + actual;
+
+    if (earliestStart === null || entryStart < earliestStart) {
+      earliestStart = entryStart;
+    }
+
+    const overlap = overlapMinutes(slotStart, slotEnd, entryStart, safeEnd);
+    inSlotMinutes += overlap;
+    outOfSlotMinutes += Math.max(0, actual - overlap);
+  }
+
+  return {
+    inSlotMinutes,
+    outOfSlotMinutes,
+    startDriftMinutes:
+      earliestStart === null ? null : earliestStart - slotStart,
+  };
 }
 
 export function classifyVariance(
@@ -121,6 +225,18 @@ export function buildActivityMetrics(
   const accuracyRatio =
     plannedMinutes > 0 && actualMinutes > 0 ? actualMinutes / plannedMinutes : null;
 
+  const slotMinutes = Math.max(
+    0,
+    timeToMinutes(block.plannedEnd) - timeToMinutes(block.plannedStart)
+  );
+  const isWorkPeriod = isWorkPeriodScheduleBlock(block);
+  const overlap = scheduleOverlapForBlock(block, entries, now);
+  // Work-period clones rewrite the plan to the session, so slot adherence is not meaningful.
+  const scheduleAdherenceRatio =
+    !isWorkPeriod && actualMinutes > 0
+      ? Math.min(1, overlap.inSlotMinutes / actualMinutes)
+      : null;
+
   return {
     activity: block,
     plannedMinutes,
@@ -129,6 +245,12 @@ export function buildActivityMetrics(
     accuracyRatio,
     varianceKind: classifyVariance(plannedMinutes, actualMinutes),
     entryCount: entries.length,
+    slotMinutes,
+    inSlotMinutes: isWorkPeriod ? 0 : overlap.inSlotMinutes,
+    outOfSlotMinutes: isWorkPeriod ? 0 : overlap.outOfSlotMinutes,
+    scheduleAdherenceRatio,
+    startDriftMinutes: isWorkPeriod ? null : overlap.startDriftMinutes,
+    startedFromUnplanned: Boolean(block.startedFromUnplanned),
   };
 }
 
@@ -264,20 +386,103 @@ function busyButUnfinishedActivities(
     .slice(0, limit);
 }
 
+function unplannedWorkActivities(
+  metrics: IActivityMetrics[],
+  limit: number
+): IActivityMetrics[] {
+  const sorted = [...metrics]
+    .filter((m) => m.startedFromUnplanned && m.actualMinutes > 0)
+    .sort((a, b) => b.actualMinutes - a.actualMinutes);
+
+  const seenTasks = new Set<string>();
+  const unique: IActivityMetrics[] = [];
+  for (const m of sorted) {
+    const key = m.activity.taskId ?? m.activity.id;
+    if (seenTasks.has(key)) continue;
+    seenTasks.add(key);
+    unique.push(m);
+    if (unique.length >= limit) break;
+  }
+  return unique;
+}
+
+function biggestScheduleDrifts(
+  metrics: IActivityMetrics[],
+  limit: number
+): IActivityMetrics[] {
+  return [...metrics]
+    .filter(
+      (m) =>
+        !isBreakActivity(m.activity) &&
+        m.scheduleAdherenceRatio != null &&
+        m.actualMinutes > 0
+    )
+    .sort((a, b) => {
+      const aOut = a.outOfSlotMinutes;
+      const bOut = b.outOfSlotMinutes;
+      if (bOut !== aOut) return bOut - aOut;
+      const aAdh = a.scheduleAdherenceRatio ?? 1;
+      const bAdh = b.scheduleAdherenceRatio ?? 1;
+      return aAdh - bAdh;
+    })
+    .slice(0, limit);
+}
+
+function buildScheduleAdherenceSummary(
+  metrics: IActivityMetrics[]
+): IScheduleAdherenceSummary {
+  const measured = metrics.filter((m) => m.scheduleAdherenceRatio != null);
+  const inSlotMinutes = measured.reduce((s, m) => s + m.inSlotMinutes, 0);
+  const outOfSlotMinutes = measured.reduce((s, m) => s + m.outOfSlotMinutes, 0);
+  const averageAdherencePercent =
+    measured.length > 0
+      ? (measured.reduce((s, m) => s + (m.scheduleAdherenceRatio ?? 0), 0) /
+          measured.length) *
+        100
+      : null;
+
+  return {
+    measuredCount: measured.length,
+    averageAdherencePercent,
+    inSlotMinutes,
+    outOfSlotMinutes,
+  };
+}
+
+function dedupeActualMinutesByTask(metrics: IActivityMetrics[]): number {
+  const byTask = new Map<string, number>();
+  for (const m of metrics) {
+    if (!m.startedFromUnplanned || m.actualMinutes <= 0) continue;
+    const key = m.activity.taskId ?? m.activity.id;
+    const prev = byTask.get(key) ?? 0;
+    if (m.actualMinutes > prev) byTask.set(key, m.actualMinutes);
+  }
+  return [...byTask.values()].reduce((s, n) => s + n, 0);
+}
+
 const INSIGHT_TOP_N = 3;
 
 function buildSharedInsights(metrics: IActivityMetrics[], busyLimit = INSIGHT_TOP_N) {
   const categoryMix = buildCategoryMix(metrics);
+  const unplannedActualMinutes = dedupeActualMinutesByTask(metrics);
+  // Day/range actualMinutes may double-count multi-block tasks; use sum of metrics
+  // for percent denominator consistency with existing report totals.
+  const actualSum = metrics.reduce((s, m) => s + m.actualMinutes, 0);
   return {
     varianceBreakdown: buildVarianceBreakdown(metrics),
     deepWorkPercent: categoryActualPercent(categoryMix, 'deep_work'),
     adminPercent: categoryActualPercent(categoryMix, 'admin'),
     breakPercent: categoryActualPercent(categoryMix, 'break'),
+    unplannedPercent: actualSum > 0 ? (unplannedActualMinutes / actualSum) * 100 : 0,
+    unplannedActualMinutes,
+    scheduleAdherence: buildScheduleAdherenceSummary(metrics),
     categoryMix,
     biggestOverruns: topByVariance(metrics, 'over', INSIGHT_TOP_N),
     biggestUnderruns: topByVariance(metrics, 'under', INSIGHT_TOP_N),
     mostFragmented: mostFragmentedActivities(metrics, INSIGHT_TOP_N),
     busyButUnfinished: busyButUnfinishedActivities(metrics, busyLimit),
+    unplannedWork: unplannedWorkActivities(metrics, INSIGHT_TOP_N),
+    biggestScheduleDrifts: biggestScheduleDrifts(metrics, INSIGHT_TOP_N),
   };
 }
 

@@ -58,6 +58,8 @@ export interface ITask {
 	sortOrder: number;
 	/** When true, omit from report metrics while still blocking the timetable. */
 	excludeFromReports?: boolean;
+	/** True when work began while the task was still unplanned (reactive work). */
+	startedFromUnplanned?: boolean;
 }
 
 /** Request body for POST /api/tasks — matches fe/public/tasks.json entries (+ categoryId, notes, status). */
@@ -71,6 +73,7 @@ export interface ITaskCreateInput {
 	status?: TaskStatus;
 	sortOrder?: number;
 	excludeFromReports?: boolean;
+	startedFromUnplanned?: boolean;
 }
 
 /** Partial update for PATCH /api/tasks/:id */
@@ -83,6 +86,7 @@ export interface ITaskPatchInput {
 	status?: TaskStatus;
 	sortOrder?: number;
 	excludeFromReports?: boolean;
+	startedFromUnplanned?: boolean;
 }
 
 export type ScheduleBlockType = 'focus' | 'short_break' | 'long_break';
@@ -177,6 +181,7 @@ export interface ITaskStorageFields {
 	timeEstimationSeconds?: number;
 	sortOrder: number;
 	excludeFromReports?: boolean;
+	startedFromUnplanned?: boolean;
 }
 
 export interface ITaskRecord extends IDynamoItem, ITaskStorageFields {

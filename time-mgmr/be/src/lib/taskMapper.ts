@@ -91,6 +91,12 @@ export function parseTaskCreateInput(body: unknown): ITaskCreateInput | { error:
 	) {
 		return { error: 'excludeFromReports must be a boolean when provided' };
 	}
+	if (
+		input.startedFromUnplanned !== undefined &&
+		typeof input.startedFromUnplanned !== 'boolean'
+	) {
+		return { error: 'startedFromUnplanned must be a boolean when provided' };
+	}
 	if (input.createdAt !== undefined || input.updatedAt !== undefined) {
 		return { error: 'createdAt and updatedAt are set by the server' };
 	}
@@ -113,6 +119,9 @@ export function parseTaskCreateInput(body: unknown): ITaskCreateInput | { error:
 		...(typeof sortOrder === 'number' ? { sortOrder } : {}),
 		...(typeof input.excludeFromReports === 'boolean'
 			? { excludeFromReports: input.excludeFromReports }
+			: {}),
+		...(typeof input.startedFromUnplanned === 'boolean'
+			? { startedFromUnplanned: input.startedFromUnplanned }
 			: {}),
 	};
 }
@@ -179,6 +188,12 @@ export function parseTaskPatchInput(body: unknown): ITaskPatchInput | { error: s
 		}
 		patch.excludeFromReports = input.excludeFromReports;
 	}
+	if (input.startedFromUnplanned !== undefined) {
+		if (typeof input.startedFromUnplanned !== 'boolean') {
+			return { error: 'startedFromUnplanned must be a boolean when provided' };
+		}
+		patch.startedFromUnplanned = input.startedFromUnplanned;
+	}
 
 	if (input.id !== undefined) {
 		return { error: 'id cannot be changed' };
@@ -216,6 +231,7 @@ export function toTaskResponse(record: ITaskRecord): ITask {
 		status: record.status,
 		sortOrder: typeof record.sortOrder === 'number' ? record.sortOrder : 0,
 		...(record.excludeFromReports ? { excludeFromReports: true } : {}),
+		...(record.startedFromUnplanned ? { startedFromUnplanned: true } : {}),
 	};
 }
 
@@ -233,6 +249,7 @@ export function taskInputToRecord(
 		timeEstimationSeconds: input.timeEstimationSeconds,
 		sortOrder: input.sortOrder,
 		...(input.excludeFromReports ? { excludeFromReports: true } : {}),
+		...(input.startedFromUnplanned ? { startedFromUnplanned: true } : {}),
 	};
 }
 

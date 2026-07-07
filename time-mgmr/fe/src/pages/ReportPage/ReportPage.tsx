@@ -66,6 +66,14 @@ const METRIC_EXPLANATIONS = {
     'Activities split across multiple time entries. High fragmentation can indicate interruptions or costly context switching.',
   busyButUnfinished:
     'Activities with logged time that are not done. This highlights effort that has not yet produced closure.',
+  scheduleAdherence:
+    'Share of logged work that fell inside the planned timetable window. High adherence means you worked when you intended to.',
+  unplanned:
+    'Share of actual time from tasks started while still unplanned. Shows how much of the day was reactive rather than scheduled.',
+  unplannedWork:
+    'Tasks that began outside the plan (started while unplanned) and later had logged time. Review to see interrupt-driven work.',
+  biggestScheduleDrifts:
+    'Planned activities whose logged time fell farthest outside their timetable slot. Useful for spotting schedule slip.',
   byDay:
     'Compares daily plans and outcomes. It helps identify which days or routines consistently work better.',
   category:
@@ -300,6 +308,30 @@ export const ReportPage: React.FC = () => {
                   {Math.round(report.breakPercent)}%
                 </span>
               </div>
+              <div className={styles.summaryItem}>
+                <MetricLabel
+                  className={styles.summaryLabel}
+                  explanation={METRIC_EXPLANATIONS.scheduleAdherence}
+                >
+                  Schedule fit
+                </MetricLabel>
+                <span className={styles.summaryValue}>
+                  {report.scheduleAdherence.averageAdherencePercent == null
+                    ? '—'
+                    : `${Math.round(report.scheduleAdherence.averageAdherencePercent)}%`}
+                </span>
+              </div>
+              <div className={styles.summaryItem}>
+                <MetricLabel
+                  className={styles.summaryLabel}
+                  explanation={METRIC_EXPLANATIONS.unplanned}
+                >
+                  Unplanned
+                </MetricLabel>
+                <span className={styles.summaryValue}>
+                  {Math.round(report.unplannedPercent)}%
+                </span>
+              </div>
               {'daysLogged' in report && (
                 <div className={styles.summaryItem}>
                   <MetricLabel
@@ -494,6 +526,80 @@ export const ReportPage: React.FC = () => {
               )}
             </section>
 
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>
+                <MetricLabel explanation={METRIC_EXPLANATIONS.unplannedWork}>
+                  Unplanned work
+                </MetricLabel>
+              </h2>
+              <p className={styles.sectionHint}>
+                Started while unplanned —{' '}
+                {formatMinutes(report.unplannedActualMinutes)} actual (
+                {Math.round(report.unplannedPercent)}% of logged time)
+              </p>
+              {report.unplannedWork.length === 0 ? (
+                <p className={styles.muted}>No reactive unplanned work in this range.</p>
+              ) : (
+                <ul className={styles.overrunList}>
+                  {report.unplannedWork.map((m) => (
+                    <li key={m.activity.id} className={styles.overrunItem}>
+                      <div className={styles.mixRow}>
+                        <strong>{m.activity.title}</strong>
+                        <span>{formatMinutes(m.actualMinutes)}</span>
+                      </div>
+                      <span className={styles.muted}>
+                        {m.activity.date} · status {m.activity.status} · estimate{' '}
+                        {formatMinutes(m.plannedMinutes)}
+                        {m.entryCount > 1 ? ` · ${m.entryCount} entries` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>
+                <MetricLabel explanation={METRIC_EXPLANATIONS.biggestScheduleDrifts}>
+                  Schedule drift
+                </MetricLabel>
+              </h2>
+              <p className={styles.sectionHint}>
+                Planned slots vs when you actually logged time
+                {report.scheduleAdherence.measuredCount > 0
+                  ? ` · ${formatMinutes(report.scheduleAdherence.inSlotMinutes)} in-slot / ${formatMinutes(report.scheduleAdherence.outOfSlotMinutes)} outside`
+                  : ''}
+              </p>
+              {report.biggestScheduleDrifts.length === 0 ? (
+                <p className={styles.muted}>
+                  No planned activities with measurable schedule drift.
+                </p>
+              ) : (
+                <ul className={styles.overrunList}>
+                  {report.biggestScheduleDrifts.map((m) => (
+                    <li key={m.activity.id} className={styles.overrunItem}>
+                      <div className={styles.mixRow}>
+                        <strong>{m.activity.title}</strong>
+                        <span>
+                          {m.scheduleAdherenceRatio == null
+                            ? '—'
+                            : `${Math.round(m.scheduleAdherenceRatio * 100)}% in slot`}
+                        </span>
+                      </div>
+                      <span className={styles.muted}>
+                        {m.activity.date} · {m.activity.plannedStart}–{m.activity.plannedEnd} ·{' '}
+                        {formatMinutes(m.inSlotMinutes)} in / {formatMinutes(m.outOfSlotMinutes)}{' '}
+                        out
+                        {m.startDriftMinutes != null
+                          ? ` · started ${formatSignedMinutes(m.startDriftMinutes)}`
+                          : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
             {mode === 'week' && week.report && (
               <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>
@@ -526,8 +632,11 @@ export const ReportPage: React.FC = () => {
                       <span className={styles.muted}>
                         Variance {formatSignedMinutes(d.varianceMinutes)} · coverage{' '}
                         {Math.round(d.coverageRate * 100)}% · completion{' '}
-                        {Math.round(d.completionRate * 100)}% · deep work{' '}
-                        {Math.round(d.deepWorkPercent)}%
+                        {Math.round(d.completionRate * 100)}% · schedule fit{' '}
+                        {d.scheduleAdherence.averageAdherencePercent == null
+                          ? '—'
+                          : `${Math.round(d.scheduleAdherence.averageAdherencePercent)}%`}{' '}
+                        · unplanned {Math.round(d.unplannedPercent)}%
                       </span>
                     </li>
                   ))}

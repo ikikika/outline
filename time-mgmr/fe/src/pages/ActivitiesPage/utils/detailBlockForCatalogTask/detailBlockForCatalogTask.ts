@@ -61,6 +61,7 @@ export function pickDetailBlockForTask(
     notes: task.notes ?? '',
     status: task.status,
     sortOrder: task.sortOrder,
+    ...(task.startedFromUnplanned ? { startedFromUnplanned: true } : {}),
     createdAt: '',
     updatedAt: '',
   };

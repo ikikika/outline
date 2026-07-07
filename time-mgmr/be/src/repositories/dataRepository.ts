@@ -380,6 +380,7 @@ export async function upsertTask(
 		timeEstimationSeconds: task.timeEstimationSeconds,
 		sortOrder,
 		...(task.excludeFromReports ? { excludeFromReports: true } : {}),
+		...(task.startedFromUnplanned ? { startedFromUnplanned: true } : {}),
 		createdAt: existing?.createdAt ?? now,
 		updatedAt: now,
 	};
@@ -428,6 +429,10 @@ export async function updateTask(
 			patch.excludeFromReports !== undefined
 				? patch.excludeFromReports
 				: existing.excludeFromReports,
+		startedFromUnplanned:
+			patch.startedFromUnplanned !== undefined
+				? patch.startedFromUnplanned
+				: existing.startedFromUnplanned,
 	});
 }
 

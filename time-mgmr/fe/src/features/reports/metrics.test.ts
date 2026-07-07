@@ -479,3 +479,106 @@ describe('buildRangeReport insights', () => {
     expect(report.mostFragmented[0]?.entryCount).toBe(4);
   });
 });
+
+describe('schedule adherence and unplanned work', () => {
+  function localIso(year: number, monthIndex: number, day: number, h: number, m: number) {
+    return new Date(year, monthIndex, day, h, m, 0, 0).toISOString();
+  }
+
+  it('measures overlap between planned slot and actual entries', () => {
+    const metrics = buildActivityMetrics(
+      baseBlock({
+        plannedStart: '09:00',
+        plannedEnd: '11:00',
+        timeEstimationSeconds: 120 * 60,
+        status: 'in_progress',
+      }),
+      [
+        entry({
+          source: 'timer',
+          startAt: localIso(2026, 6, 19, 10, 0),
+          endAt: localIso(2026, 6, 19, 12, 0),
+          durationMinutes: null,
+        }),
+      ]
+    );
+
+    expect(metrics.slotMinutes).toBe(120);
+    expect(metrics.inSlotMinutes).toBe(60);
+    expect(metrics.outOfSlotMinutes).toBe(60);
+    expect(metrics.scheduleAdherenceRatio).toBeCloseTo(0.5);
+    expect(metrics.startDriftMinutes).toBe(60);
+  });
+
+  it('skips schedule adherence for work-period clones', () => {
+    const metrics = buildActivityMetrics(
+      baseBlock({
+        plannedStart: '10:00',
+        plannedEnd: '10:45',
+        actualStart: '10:00',
+        actualEnd: '10:45',
+        status: 'done',
+      }),
+      [
+        entry({
+          source: 'timer',
+          startAt: localIso(2026, 6, 19, 10, 0),
+          endAt: localIso(2026, 6, 19, 10, 45),
+          durationMinutes: null,
+        }),
+      ]
+    );
+
+    expect(metrics.scheduleAdherenceRatio).toBeNull();
+    expect(metrics.startDriftMinutes).toBeNull();
+  });
+
+  it('tracks unplanned work share and list', () => {
+    const blocks = [
+      baseBlock({
+        id: 'planned-1',
+        taskId: 'planned',
+        title: 'Planned focus',
+        status: 'done',
+        timeEstimationSeconds: 60 * 60,
+      }),
+      baseBlock({
+        id: 'react-1',
+        taskId: 'react',
+        title: 'Urgent ping',
+        status: 'done',
+        startedFromUnplanned: true,
+        timeEstimationSeconds: 30 * 60,
+        plannedStart: '14:00',
+        plannedEnd: '14:30',
+        actualStart: '14:00',
+        actualEnd: '14:30',
+      }),
+    ];
+    const entries = [
+      entry({
+        id: 'e-planned',
+        taskId: 'planned',
+        source: 'manual',
+        durationMinutes: 60,
+        startAt: localIso(2026, 6, 19, 9, 0),
+        endAt: localIso(2026, 6, 19, 10, 0),
+      }),
+      entry({
+        id: 'e-react',
+        taskId: 'react',
+        source: 'manual',
+        durationMinutes: 30,
+        startAt: localIso(2026, 6, 19, 14, 0),
+        endAt: localIso(2026, 6, 19, 14, 30),
+      }),
+    ];
+
+    const report = buildDayReport('2026-07-19', blocks, entries);
+
+    expect(report.unplannedActualMinutes).toBe(30);
+    expect(report.unplannedPercent).toBeCloseTo((30 / 90) * 100);
+    expect(report.unplannedWork.map((m) => m.activity.title)).toEqual(['Urgent ping']);
+    expect(report.scheduleAdherence.measuredCount).toBeGreaterThan(0);
+  });
+});

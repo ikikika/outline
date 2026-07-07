@@ -30,6 +30,7 @@ export type ITaskPatch = Partial<
     | 'status'
     | 'sortOrder'
     | 'excludeFromReports'
+    | 'startedFromUnplanned'
   >
 >;
 

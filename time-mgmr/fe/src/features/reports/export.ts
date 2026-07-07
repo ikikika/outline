@@ -27,6 +27,11 @@ export function exportDayReportCsv(report: IDayReport): void {
     'actual_minutes',
     'variance_minutes',
     'variance_kind',
+    'in_slot_minutes',
+    'out_of_slot_minutes',
+    'schedule_adherence',
+    'start_drift_minutes',
+    'started_from_unplanned',
     'entries',
   ];
   const rows = report.activities.map((m) =>
@@ -41,6 +46,13 @@ export function exportDayReportCsv(report: IDayReport): void {
       m.actualMinutes,
       m.varianceMinutes,
       m.varianceKind,
+      Math.round(m.inSlotMinutes * 10) / 10,
+      Math.round(m.outOfSlotMinutes * 10) / 10,
+      m.scheduleAdherenceRatio == null
+        ? ''
+        : Math.round(m.scheduleAdherenceRatio * 100),
+      m.startDriftMinutes == null ? '' : Math.round(m.startDriftMinutes),
+      m.startedFromUnplanned ? 'yes' : 'no',
       m.entryCount,
     ].join(',')
   );
@@ -53,6 +65,12 @@ export function exportDayReportCsv(report: IDayReport): void {
     `# deep_work=${Math.round(report.deepWorkPercent)}%`,
     `# admin=${Math.round(report.adminPercent)}%`,
     `# break=${Math.round(report.breakPercent)}%`,
+    `# unplanned=${Math.round(report.unplannedPercent)}%`,
+    `# schedule_adherence=${
+      report.scheduleAdherence.averageAdherencePercent == null
+        ? 'n/a'
+        : `${Math.round(report.scheduleAdherence.averageAdherencePercent)}%`
+    }`,
     `# over=${report.varianceBreakdown.over}`,
     `# under=${report.varianceBreakdown.under}`,
     `# on_target=${report.varianceBreakdown.on_target}`,

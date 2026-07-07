@@ -573,8 +573,13 @@ export function useTimeEntryMutations(_date: string) {
 
   const startTimer = useMutation({
     mutationFn: async (taskId: string) => {
+      const task = await fetchTaskById(taskId);
       const entry = await timeEntryRepository.startTimer(taskId);
-      await patchTaskApi(taskId, { status: 'in_progress' });
+      const patch: ITaskPatch = { status: 'in_progress' };
+      if (task?.status === 'unplanned' || task?.startedFromUnplanned) {
+        patch.startedFromUnplanned = true;
+      }
+      await patchTaskApi(taskId, patch);
       return entry;
     },
     onSuccess: refresh,
