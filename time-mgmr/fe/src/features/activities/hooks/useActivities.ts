@@ -37,6 +37,10 @@ import { addDays, todayKey } from '../utils/dateUtils';
 
 import { breakIdsFollowingFocuses } from '../utils/scheduleBlockCascade/scheduleBlockCascade';
 import {
+  adhocBlockIdsToDelete,
+  type AdhocDeleteMode,
+} from '../utils/adhocDelete/adhocDelete';
+import {
   isWorkPeriodScheduleBlock,
   pickActualWindowForBlock,
   supersededPlannedBlockIds,
@@ -392,6 +396,42 @@ export function useActivityMutations(date: string) {
     },
   });
 
+  /**
+   * Adhoc (possibly repeating): delete this occurrence, or this and all later
+   * occurrences. Removes the catalog task when no schedule blocks remain.
+   */
+  const deleteAdhoc = useMutation({
+    mutationFn: async ({
+      block,
+      mode,
+    }: {
+      block: ITimetableBlock;
+      mode: AdhocDeleteMode;
+    }) => {
+      if (block.id.startsWith('unscheduled:')) {
+        throw new Error('Cannot delete an unscheduled stand-in block');
+      }
+
+      if (!block.taskId) {
+        await deleteScheduleBlockApi(block.id);
+        return;
+      }
+
+      const taskBlocks = await fetchScheduleBlocks({ taskId: block.taskId });
+      const ids = adhocBlockIdsToDelete(taskBlocks, block.id, mode);
+      await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
+
+      const remaining = taskBlocks.filter((item) => !ids.includes(item.id));
+      if (remaining.length === 0) {
+        await timeEntryRepository.removeByTask(block.taskId);
+        await deleteTaskApi(block.taskId);
+      }
+    },
+    onSuccess: async () => {
+      await invalidateTimeTracking(queryClient);
+    },
+  });
+
   const setStatus = useMutation({
     mutationFn: async ({
       taskId,
@@ -557,6 +597,7 @@ export function useActivityMutations(date: string) {
     updateBlock,
     updateTask,
     remove,
+    deleteAdhoc,
     setStatus,
     skip,
     completeBlock,

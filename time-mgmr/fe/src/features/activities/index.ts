@@ -173,3 +173,9 @@ export {
   MAX_ADHOC_OCCURRENCES,
   type WeekdayIndex,
 } from './utils/adhocOccurrenceDates/adhocOccurrenceDates';
+
+export {
+  isAdhocTimetableBlock,
+  adhocBlockIdsToDelete,
+  type AdhocDeleteMode,
+} from './utils/adhocDelete/adhocDelete';

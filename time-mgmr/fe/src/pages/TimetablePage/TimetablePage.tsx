@@ -120,7 +120,7 @@ export const TimetablePage: React.FC = () => {
         item.blockType === 'focus' && !(item.actualStart && item.actualEnd)
     ).length;
   }, [detailTaskBlocksQuery.data]);
-  const { update, updateBlock, setStatus, skip, completeBlock, complete } =
+  const { update, updateBlock, setStatus, skip, deleteAdhoc, completeBlock, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
@@ -156,6 +156,7 @@ export const TimetablePage: React.FC = () => {
     updateBlock.isPending ||
     setStatus.isPending ||
     skip.isPending ||
+    deleteAdhoc.isPending ||
     completeBlock.isPending ||
     complete.isPending ||
     startTimer.isPending ||
@@ -445,6 +446,15 @@ export const TimetablePage: React.FC = () => {
                 await stopTimer.mutateAsync(runningEntry.id);
               }
               await skip.mutateAsync(block);
+              closeDetails();
+            })
+          }
+          onDeleteAdhoc={(block, mode) =>
+            runAction(async () => {
+              if (block.taskId && runningEntry?.taskId === block.taskId) {
+                await stopTimer.mutateAsync(runningEntry.id);
+              }
+              await deleteAdhoc.mutateAsync({ block, mode });
               closeDetails();
             })
           }

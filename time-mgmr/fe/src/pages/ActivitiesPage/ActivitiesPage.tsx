@@ -92,7 +92,7 @@ export const ActivitiesPage: React.FC = () => {
   const { data: runningEntry = null } = useRunningTimer();
   const { data: detailEntries = [] } = useTimeEntriesByTask(detailTaskId);
   const detailBlocksQuery = useTimetableBlocksByTask(detailTaskId);
-  const { update, updateTask, setStatus, skip, completeBlock, complete } =
+  const { update, updateTask, setStatus, skip, deleteAdhoc, completeBlock, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
 
@@ -171,6 +171,7 @@ export const ActivitiesPage: React.FC = () => {
     updateTask.isPending ||
     setStatus.isPending ||
     skip.isPending ||
+    deleteAdhoc.isPending ||
     completeBlock.isPending ||
     complete.isPending ||
     startTimer.isPending ||
@@ -658,6 +659,15 @@ export const ActivitiesPage: React.FC = () => {
                 await stopTimer.mutateAsync(runningEntry.id);
               }
               await skip.mutateAsync(block);
+              closeDetails();
+            })
+          }
+          onDeleteAdhoc={(block, mode) =>
+            runDetailAction(async () => {
+              if (block.taskId && runningEntry?.taskId === block.taskId) {
+                await stopTimer.mutateAsync(runningEntry.id);
+              }
+              await deleteAdhoc.mutateAsync({ block, mode });
               closeDetails();
             })
           }

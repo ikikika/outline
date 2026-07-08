@@ -141,6 +141,7 @@ vi.mock('@/features/activities', () => ({
     remove: { isPending: false, mutateAsync: vi.fn() },
     setStatus: { isPending: false, mutateAsync: vi.fn() },
     skip: { isPending: false, mutateAsync: vi.fn() },
+    deleteAdhoc: { isPending: false, mutateAsync: vi.fn() },
     completeBlock: { isPending: false, mutateAsync: mockCompleteBlockMutation },
     complete: { isPending: false, mutateAsync: mockCompleteMutation },
   }),

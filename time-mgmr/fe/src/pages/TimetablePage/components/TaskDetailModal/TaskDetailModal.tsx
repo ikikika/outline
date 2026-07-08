@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import { ModalShell } from '@/components/molecules/ModalShell/ModalShell';
 import { Button } from '@/components/ui';
 import {
@@ -9,8 +10,10 @@ import {
   formatDisplayDate,
   formatMinutes,
   formatSignedMinutes,
+  isAdhocTimetableBlock,
   manualTimeEntrySchema,
   plannedDurationMinutes,
+  type AdhocDeleteMode,
   type ITimetableBlock,
   type ITimeEntry,
   type ManualTimeEntryFormValues,
@@ -50,6 +53,8 @@ interface TaskDetailModalProps {
   onCompleteTask: (taskId: string) => void;
   /** Skip this block (focus → mark skipped + remove blocks; break → delete record). */
   onSkip: (block: ITimetableBlock) => void;
+  /** Adhoc only: delete this occurrence or this and later occurrences. */
+  onDeleteAdhoc?: (block: ITimetableBlock, mode: AdhocDeleteMode) => void;
   /** Start a timer for this block (parent ensures a taskId for breaks). */
   onStart: (block: ITimetableBlock) => void;
   onStop: (entryId: string) => void;
@@ -117,15 +122,23 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onCompleteBlock,
   onCompleteTask,
   onSkip,
+  onDeleteAdhoc,
   onStart,
   onStop,
   onLogManual,
 }) => {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const deleteTriggerRef = useRef<HTMLDivElement>(null);
+  const deleteMenuRef = useRef<HTMLDivElement>(null);
   const sidebarOpenRef = useRef(true);
   const prevBreakRemainingRef = useRef<number | null>(null);
   const [showManual, setShowManual] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
+  const [deleteMenuPos, setDeleteMenuPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [backdropCloseReady, setBackdropCloseReady] = useState(false);
   const { isOpen: sidebarOpen, open: openSidebar, close: closeSidebar } = useSidebarLayout();
@@ -134,6 +147,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const metrics = buildActivityMetrics(block, entries);
   const taskId = block.taskId;
   const isBreak = isBreakBlock(block);
+  const isAdhoc = isAdhocTimetableBlock(block);
+  const canDeleteAdhoc = isAdhoc && !isUnscheduled && Boolean(onDeleteAdhoc);
   const isRunningHere = Boolean(taskId && runningEntry?.taskId === taskId);
   const accent = getTaskBlockColor(block.activityId);
   const blockSeconds = blockPlannedSeconds(block);
@@ -177,6 +192,75 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   useEffect(() => {
     closeRef.current?.focus();
   }, []);
+
+  useLayoutEffect(() => {
+    if (!deleteMenuOpen) {
+      setDeleteMenuPos(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const trigger = deleteTriggerRef.current;
+      const menu = deleteMenuRef.current;
+      if (!trigger) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const menuWidth = menu?.offsetWidth ?? 200;
+      const menuHeight = menu?.offsetHeight ?? 88;
+      const gap = 6;
+      const padding = 8;
+
+      let top = rect.top - menuHeight - gap;
+      if (top < padding) {
+        top = rect.bottom + gap;
+      }
+      if (top + menuHeight > window.innerHeight - padding) {
+        top = Math.max(padding, window.innerHeight - menuHeight - padding);
+      }
+
+      let left = rect.right - menuWidth;
+      left = Math.min(
+        Math.max(padding, left),
+        window.innerWidth - menuWidth - padding
+      );
+
+      setDeleteMenuPos({ top, left });
+    };
+
+    updatePosition();
+    // Re-measure after paint once menu size is known.
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [deleteMenuOpen]);
+
+  useEffect(() => {
+    if (!deleteMenuOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        deleteMenuRef.current?.contains(target) ||
+        deleteTriggerRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setDeleteMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDeleteMenuOpen(false);
+    };
+    window.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [deleteMenuOpen]);
 
   // Ignore the compatibility click that follows a touch tap used to open this modal.
   useEffect(() => {
@@ -443,6 +527,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           </div>
         </div>
 
+        <div className={styles.body}>
         <dl className={styles.details}>
           {activityTitle ? (
             <div className={styles.row}>
@@ -521,7 +606,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             <p className={styles.sessionEmpty}>No work sessions recorded yet.</p>
           )}
         </section>
+        </div>
 
+        <div className={styles.footer}>
         <div className={styles.actions}>
           {canTrackTime && block.status !== 'skipped' ? (
             isRunningHere && runningEntry ? (
@@ -596,6 +683,63 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             >
               Restore
             </Button>
+          ) : canDeleteAdhoc ? (
+            <div className={styles.deleteMenu} ref={deleteTriggerRef}>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                aria-expanded={deleteMenuOpen}
+                aria-haspopup="menu"
+                onClick={() => setDeleteMenuOpen((open) => !open)}
+              >
+                Delete
+                <ChevronDown size={14} strokeWidth={2} aria-hidden />
+              </Button>
+              {deleteMenuOpen
+                ? createPortal(
+                    <div
+                      ref={deleteMenuRef}
+                      className={styles.deleteMenuPanel}
+                      role="menu"
+                      style={
+                        deleteMenuPos
+                          ? {
+                              top: deleteMenuPos.top,
+                              left: deleteMenuPos.left,
+                            }
+                          : { visibility: 'hidden', top: 0, left: 0 }
+                      }
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.deleteMenuItem}
+                        disabled={busy}
+                        onClick={() => {
+                          setDeleteMenuOpen(false);
+                          onDeleteAdhoc?.(block, 'this');
+                        }}
+                      >
+                        This block only
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.deleteMenuItem}
+                        disabled={busy}
+                        onClick={() => {
+                          setDeleteMenuOpen(false);
+                          onDeleteAdhoc?.(block, 'thisAndFuture');
+                        }}
+                      >
+                        This and future blocks
+                      </button>
+                    </div>,
+                    document.body
+                  )
+                : null}
+            </div>
           ) : block.status !== 'done' && (isBreak || taskId) ? (
             <Button
               size="sm"
@@ -632,6 +776,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             ) : null}
           </form>
         ) : null}
+        </div>
     </ModalShell>
   );
 };

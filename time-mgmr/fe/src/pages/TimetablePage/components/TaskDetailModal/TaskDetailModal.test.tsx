@@ -211,6 +211,56 @@ describe('completed task actions', () => {
     expect(onSkip).toHaveBeenCalledWith(block);
   });
 
+  it('shows a delete menu for adhoc blocks instead of Skip', async () => {
+    const user = userEvent.setup();
+    const onDeleteAdhoc = vi.fn();
+    const adhocBlock: ITimetableBlock = {
+      ...block,
+      activityId: 'adhoc-blocks',
+      excludeFromReports: true,
+      title: 'Standup',
+    };
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={adhocBlock}
+        onDeleteAdhoc={onDeleteAdhoc}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(
+      screen.getByRole('menuitem', { name: 'This and future blocks' })
+    );
+
+    expect(onDeleteAdhoc).toHaveBeenCalledWith(adhocBlock, 'thisAndFuture');
+  });
+
+  it('deletes only the current adhoc block from the menu', async () => {
+    const user = userEvent.setup();
+    const onDeleteAdhoc = vi.fn();
+    const adhocBlock: ITimetableBlock = {
+      ...block,
+      excludeFromReports: true,
+      title: 'Doctor',
+    };
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        block={adhocBlock}
+        onDeleteAdhoc={onDeleteAdhoc}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('menuitem', { name: 'This block only' }));
+
+    expect(onDeleteAdhoc).toHaveBeenCalledWith(adhocBlock, 'this');
+  });
+
   it('allows skipping a break without a task id', async () => {
     const user = userEvent.setup();
     const onSkip = vi.fn();
