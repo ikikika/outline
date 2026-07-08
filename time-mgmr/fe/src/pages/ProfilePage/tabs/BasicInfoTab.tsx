@@ -1,11 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui';
+import { changePasswordRequest } from '@/features/auth';
 import { useProfileContext } from '../context';
 import { PROFILE_FORM_FIELDS } from '../validation/fields';
-import { basicInfoSchema, type BasicInfoFormValues } from '../validation/schemas';
+import {
+  basicInfoSchema,
+  changePasswordSchema,
+  type BasicInfoFormValues,
+  type ChangePasswordFormValues,
+} from '../validation/schemas';
 import styles from '../ProfilePage.module.scss';
+
+const AUTH_DISABLED = import.meta.env.VITE_DISABLE_AUTH === 'true';
 
 export const BasicInfoTab: React.FC = () => {
   const {
@@ -77,27 +85,31 @@ export const BasicInfoTab: React.FC = () => {
 
   // Display mode
   return (
-    <Card className={styles.section}>
-      <CardHeader>
-        <CardTitle>Basic Information</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className={styles.infoField}>
-          <label className={styles.label}>Name</label>
-          <p className={styles.value}>{basic.name}</p>
-        </div>
+    <div className={styles.basicInfoStack}>
+      <Card className={styles.section}>
+        <CardHeader>
+          <CardTitle>Basic Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className={styles.infoField}>
+            <label className={styles.label}>Name</label>
+            <p className={styles.value}>{basic.name}</p>
+          </div>
 
-        <div className={styles.infoField}>
-          <label className={styles.label}>Email</label>
-          <p className={styles.value}>{basic.email}</p>
-        </div>
+          <div className={styles.infoField}>
+            <label className={styles.label}>Email</label>
+            <p className={styles.value}>{basic.email}</p>
+          </div>
 
-        <div className={styles.infoField}>
-          <label className={styles.label}>Phone</label>
-          <p className={styles.value}>{basic.phone}</p>
-        </div>
-      </CardContent>
-    </Card>
+          <div className={styles.infoField}>
+            <label className={styles.label}>Phone</label>
+            <p className={styles.value}>{basic.phone}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {!AUTH_DISABLED ? <ChangePasswordForm /> : null}
+    </div>
   );
 };
 
@@ -171,7 +183,7 @@ const EditForm: React.FC<EditFormProps> = ({ basic, onUpdate, onNext, onCancel }
             : null}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
+        <div className={styles.formActions}>
           <Button type="button" onClick={onCancel} variant="outline">
             Cancel
           </Button>
@@ -226,7 +238,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ current, original, onConfirm, o
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
+        <div className={styles.formActions}>
           <Button onClick={onCancel} variant="outline">
             Cancel
           </Button>
@@ -254,6 +266,114 @@ const SuccessScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           Your profile changes have been saved.
         </p>
         <Button onClick={onClose}>Done</Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ChangePasswordForm: React.FC = () => {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+    mode: 'onBlur',
+  });
+
+  const onSubmit = async (values: ChangePasswordFormValues) => {
+    setSubmitError(null);
+    setMessage(null);
+    setBusy(true);
+
+    try {
+      await changePasswordRequest({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      });
+      reset();
+      setMessage('Password updated successfully.');
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to change password.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className={styles.section}>
+      <CardHeader>
+        <CardTitle>Change Password</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className={styles.infoField}>
+            <label className={styles.label} htmlFor="current-password">
+              Current password
+            </label>
+            <Input
+              id="current-password"
+              type="password"
+              autoComplete="current-password"
+              disabled={busy}
+              {...register(PROFILE_FORM_FIELDS.password.currentPassword)}
+            />
+            {errors.currentPassword
+              ? <p className={styles.value}>{errors.currentPassword.message}</p>
+              : null}
+          </div>
+
+          <div className={styles.infoField}>
+            <label className={styles.label} htmlFor="new-password">
+              New password
+            </label>
+            <Input
+              id="new-password"
+              type="password"
+              autoComplete="new-password"
+              disabled={busy}
+              {...register(PROFILE_FORM_FIELDS.password.newPassword)}
+            />
+            {errors.newPassword
+              ? <p className={styles.value}>{errors.newPassword.message}</p>
+              : null}
+          </div>
+
+          <div className={styles.infoField}>
+            <label className={styles.label} htmlFor="confirm-password">
+              Confirm new password
+            </label>
+            <Input
+              id="confirm-password"
+              type="password"
+              autoComplete="new-password"
+              disabled={busy}
+              {...register(PROFILE_FORM_FIELDS.password.confirmPassword)}
+            />
+            {errors.confirmPassword
+              ? <p className={styles.value}>{errors.confirmPassword.message}</p>
+              : null}
+          </div>
+
+          {submitError ? <p className={styles.statusError}>{submitError}</p> : null}
+          {message ? <p className={styles.statusOk}>{message}</p> : null}
+
+          <div className={styles.formActions}>
+            <Button type="submit" disabled={busy}>
+              {busy ? 'Updating…' : 'Update password'}
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );

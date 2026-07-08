@@ -319,6 +319,8 @@ CORS must allow credentials (`credentials: true` / `allowCredentials: true`) wit
 | `POST /api/auth/login`, `POST /api/auth/refresh` | No (sets/rotates cookies) |
 | `POST /api/auth/logout` | Cookie or Bearer (clears cookies) |
 | `GET /api/auth/me` | Cookie or Bearer |
+| `PATCH /api/auth/me` | Cookie or Bearer |
+| `POST /api/auth/change-password` | Cookie or Bearer |
 | All `/api/activities/*`, `/api/tasks/*`, `/api/schedule-blocks/*`, and `/api/time-entries/*` | Cookie or Bearer |
 
 **Security notes**
@@ -406,6 +408,31 @@ Verifies DynamoDB connectivity (scan limit 1).
 Sends cookies automatically (browser) or `Authorization: Bearer <access_token>`.
 
 **Response `200`** — `IUser` object (same shape as `user` in login response)
+
+---
+
+#### `POST /api/auth/change-password`
+
+Requires an authenticated session (cookie or Bearer).
+
+**Request body**
+
+```json
+{
+  "currentPassword": "yourpassword",
+  "newPassword": "yournewpassword"
+}
+```
+
+**Response `200`**
+
+```json
+{
+  "ok": true
+}
+```
+
+**Errors:** `400` / `401` with `{ "error": "message" }` (e.g. incorrect current password, new password too short)
 
 ---
 

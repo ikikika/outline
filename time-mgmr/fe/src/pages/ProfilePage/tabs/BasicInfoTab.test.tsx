@@ -1,13 +1,18 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { BasicInfoTab } from './BasicInfoTab';
 import type { IProfileContext } from '../context';
 
 const mockUseProfileContext = vi.hoisted(() => vi.fn());
+const mockChangePasswordRequest = vi.hoisted(() => vi.fn());
 
 vi.mock('../context', () => ({
   useProfileContext: mockUseProfileContext,
+}));
+
+vi.mock('@/features/auth', () => ({
+  changePasswordRequest: mockChangePasswordRequest,
 }));
 
 const mockProfile = {
@@ -35,6 +40,10 @@ const baseContext: IProfileContext = {
 };
 
 describe('BasicInfoTab', () => {
+  beforeEach(() => {
+    mockChangePasswordRequest.mockReset();
+  });
+
   describe('display mode', () => {
     it('renders profile field values', () => {
       mockUseProfileContext.mockReturnValue(baseContext);
@@ -44,6 +53,17 @@ describe('BasicInfoTab', () => {
       expect(screen.getByText('Jane D.')).toBeInTheDocument();
       expect(screen.getByText('jane@example.com')).toBeInTheDocument();
       expect(screen.getByText('555-0001')).toBeInTheDocument();
+    });
+
+    it('renders the change password form', () => {
+      mockUseProfileContext.mockReturnValue(baseContext);
+
+      render(<BasicInfoTab />);
+
+      expect(screen.getByText('Change Password')).toBeInTheDocument();
+      expect(screen.getByLabelText('Current password')).toBeInTheDocument();
+      expect(screen.getByLabelText('New password')).toBeInTheDocument();
+      expect(screen.getByLabelText('Confirm new password')).toBeInTheDocument();
     });
 
     it('shows a loading message while loading', () => {
@@ -64,6 +84,54 @@ describe('BasicInfoTab', () => {
       render(<BasicInfoTab />);
 
       expect(screen.getByText('Unable to load profile data.')).toBeInTheDocument();
+    });
+  });
+
+  describe('change password', () => {
+    it('validates that passwords match', async () => {
+      mockUseProfileContext.mockReturnValue(baseContext);
+
+      render(<BasicInfoTab />);
+
+      await userEvent.type(screen.getByLabelText('Current password'), 'oldpassword');
+      await userEvent.type(screen.getByLabelText('New password'), 'newpassword');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'mismatch');
+      await userEvent.click(screen.getByRole('button', { name: 'Update password' }));
+
+      expect(screen.getByText('Passwords do not match.')).toBeInTheDocument();
+      expect(mockChangePasswordRequest).not.toHaveBeenCalled();
+    });
+
+    it('submits a valid password change', async () => {
+      mockChangePasswordRequest.mockResolvedValue(undefined);
+      mockUseProfileContext.mockReturnValue(baseContext);
+
+      render(<BasicInfoTab />);
+
+      await userEvent.type(screen.getByLabelText('Current password'), 'oldpassword');
+      await userEvent.type(screen.getByLabelText('New password'), 'newpassword');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'newpassword');
+      await userEvent.click(screen.getByRole('button', { name: 'Update password' }));
+
+      expect(mockChangePasswordRequest).toHaveBeenCalledWith({
+        currentPassword: 'oldpassword',
+        newPassword: 'newpassword',
+      });
+      expect(await screen.findByText('Password updated successfully.')).toBeInTheDocument();
+    });
+
+    it('shows an API error message on failure', async () => {
+      mockChangePasswordRequest.mockRejectedValue(new Error('Current password is incorrect'));
+      mockUseProfileContext.mockReturnValue(baseContext);
+
+      render(<BasicInfoTab />);
+
+      await userEvent.type(screen.getByLabelText('Current password'), 'wrongpassword');
+      await userEvent.type(screen.getByLabelText('New password'), 'newpassword');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'newpassword');
+      await userEvent.click(screen.getByRole('button', { name: 'Update password' }));
+
+      expect(await screen.findByText('Current password is incorrect')).toBeInTheDocument();
     });
   });
 

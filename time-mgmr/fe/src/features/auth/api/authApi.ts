@@ -131,6 +131,21 @@ export async function updateCurrentUserRequest(
 	return user;
 }
 
+export async function changePasswordRequest(
+	input: { currentPassword: string; newPassword: string },
+	options: IAuthApiRequestOptions = {}
+): Promise<void> {
+	try {
+		await postJson<{ ok: boolean }>(`${AUTH_BASE_URL}/change-password`, input, {
+			...options,
+			includeCredentials: options.includeCredentials ?? true,
+			auth: options.auth ?? true,
+		});
+	} catch (error) {
+		throw mapAuthError(error);
+	}
+}
+
 /** Persist browser IANA timezone when the profile has none yet. */
 export async function ensureProfileTimeZone(
 	user: IUser,

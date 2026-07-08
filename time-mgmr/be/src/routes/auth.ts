@@ -9,6 +9,7 @@ import {
 import { verifyAccessToken } from '../lib/jwt.js';
 import {
 	AuthError,
+	changePassword,
 	getCurrentUser,
 	login,
 	logout,
@@ -87,6 +88,25 @@ export function registerAuthRoutes(app: Hono): void {
 					: {}),
 			});
 			return c.json(user);
+		} catch (error) {
+			if (error instanceof AuthError) {
+				return c.json({ error: error.message }, error.status as 400 | 401);
+			}
+			throw error;
+		}
+	});
+
+	app.post('/auth/change-password', authMiddleware, async (c) => {
+		try {
+			const body = await c.req.json<{
+				currentPassword?: string;
+				newPassword?: string;
+			}>();
+			await changePassword(c.get('userId'), {
+				currentPassword: typeof body.currentPassword === 'string' ? body.currentPassword : '',
+				newPassword: typeof body.newPassword === 'string' ? body.newPassword : '',
+			});
+			return c.json({ ok: true });
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, error.status as 400 | 401);

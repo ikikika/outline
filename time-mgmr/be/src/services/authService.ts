@@ -7,6 +7,7 @@ import {
 	getUserProfile,
 	saveRefreshToken,
 	toUser,
+	updateUserPassword,
 	updateUserProfile,
 } from '../repositories/userRepository.js';
 import {
@@ -14,7 +15,7 @@ import {
 	signRefreshToken,
 	verifyRefreshToken,
 } from '../lib/jwt.js';
-import { verifyPassword } from '../lib/password.js';
+import { hashPassword, verifyPassword } from '../lib/password.js';
 import { isValidTimeZone } from '../lib/timezone.js';
 import type {
 	IAuthCredentials,
@@ -153,6 +154,47 @@ export async function logout(
 		}
 	} catch {
 		// Ignore invalid refresh tokens on logout
+	}
+}
+
+export async function changePassword(
+	userId: string,
+	input: { currentPassword: string; newPassword: string }
+): Promise<void> {
+	const { currentPassword, newPassword } = input;
+
+	if (!currentPassword || !newPassword) {
+		throw new AuthError('Current password and new password are required', 400);
+	}
+
+	if (newPassword.length < 8) {
+		throw new AuthError('Password must be at least 8 characters', 400);
+	}
+
+	if (currentPassword === newPassword) {
+		throw new AuthError('New password must be different from current password', 400);
+	}
+
+	const storedCredentials = await getUserCredentials(userId);
+	if (!storedCredentials) {
+		throw new AuthError('User not found', 401);
+	}
+
+	const passwordValid = await verifyPassword(
+		currentPassword,
+		storedCredentials.passwordHash
+	);
+
+	if (!passwordValid) {
+		throw new AuthError('Current password is incorrect', 401);
+	}
+
+	const passwordHash = await hashPassword(newPassword);
+
+	try {
+		await updateUserPassword(userId, passwordHash);
+	} catch {
+		throw new AuthError('User not found', 401);
 	}
 }
 

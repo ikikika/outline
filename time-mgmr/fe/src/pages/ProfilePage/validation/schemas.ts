@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VALIDATION_RULES } from '@/core/constants/app';
 
 const phonePattern = /^[+\d\s().-]{7,20}$/;
 
@@ -14,3 +15,25 @@ export const basicInfoSchema = z.object({
 });
 
 export type BasicInfoFormValues = z.infer<typeof basicInfoSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required.'),
+    newPassword: z
+      .string()
+      .min(
+        VALIDATION_RULES.PASSWORD_MIN_LENGTH,
+        `Password must be at least ${VALIDATION_RULES.PASSWORD_MIN_LENGTH} characters.`
+      ),
+    confirmPassword: z.string().min(1, 'Confirm your new password.'),
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    message: 'Passwords do not match.',
+    path: ['confirmPassword'],
+  })
+  .refine((values) => values.currentPassword !== values.newPassword, {
+    message: 'New password must be different from current password.',
+    path: ['newPassword'],
+  });
+
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

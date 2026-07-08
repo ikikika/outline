@@ -16,11 +16,11 @@ export class HttpClientError extends Error {
 	statusText: string;
 	url: string;
 
-	constructor(response: Response) {
-		super(response.statusText || 'HTTP request failed');
+	constructor(response: Response, message?: string) {
+		super(message || response.statusText || 'HTTP request failed');
 		this.name = 'HttpClientError';
 		this.status = response.status;
-		this.statusText = response.statusText;
+		this.statusText = message || response.statusText;
 		this.url = response.url;
 	}
 }
@@ -54,7 +54,21 @@ function buildRequestInit(
 
 async function ensureOk(response: Response): Promise<Response> {
 	if (!response.ok) {
-		throw new HttpClientError(response);
+		let message: string | undefined;
+		try {
+			const data: unknown = await response.clone().json();
+			if (
+				data &&
+				typeof data === 'object' &&
+				'error' in data &&
+				typeof (data as { error: unknown }).error === 'string'
+			) {
+				message = (data as { error: string }).error;
+			}
+		} catch {
+			// Keep default statusText when body is not JSON
+		}
+		throw new HttpClientError(response, message);
 	}
 	return response;
 }

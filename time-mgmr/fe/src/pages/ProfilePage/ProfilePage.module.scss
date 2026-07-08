@@ -134,3 +134,16 @@
   color: #047857;
   margin: 0 0 1rem;
 }
+
+.basicInfoStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  justify-content: flex-end;
+}

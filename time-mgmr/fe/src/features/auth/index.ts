@@ -22,4 +22,4 @@ export {
 	writeStoredTimetableVisibleRange,
 	type ITimetableVisibleRange,
 } from './preferences/timetableVisibleRange';
-export { updateCurrentUserRequest } from './api/authApi';
+export { updateCurrentUserRequest, changePasswordRequest } from './api/authApi';

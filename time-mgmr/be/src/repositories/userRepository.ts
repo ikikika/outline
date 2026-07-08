@@ -170,6 +170,31 @@ export async function createUser(input: {
 	return toUser(profile);
 }
 
+export async function updateUserPassword(
+	userId: string,
+	passwordHash: string
+): Promise<void> {
+	const existing = await getUserCredentials(userId);
+	if (!existing) {
+		throw new Error('User credentials not found');
+	}
+
+	const now = new Date().toISOString();
+	const credentials: IUserCredentialsRecord = {
+		...existing,
+		passwordHash,
+		updatedAt: now,
+	};
+
+	const client = getDocumentClient();
+	await client.send(
+		new PutCommand({
+			TableName: getTableName(),
+			Item: credentials,
+		})
+	);
+}
+
 export async function updateUserProfile(
 	userId: string,
 	patch: {
