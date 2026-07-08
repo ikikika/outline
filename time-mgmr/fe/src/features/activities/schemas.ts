@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  adhocOccurrenceDates,
+  MAX_ADHOC_OCCURRENCES,
+} from './utils/adhocOccurrenceDates/adhocOccurrenceDates';
 
 const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -62,6 +66,15 @@ export const adhocBlockSchema = z
     date: z.string().regex(datePattern, 'Enter a valid date.'),
     plannedStart: z.string().regex(timePattern, 'Use HH:mm format.'),
     plannedEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
+    repeating: z.boolean().default(false),
+    repeatEndDate: z
+      .string()
+      .regex(datePattern, 'Enter a valid end date.')
+      .optional()
+      .or(z.literal('')),
+    repeatWeekdays: z
+      .array(z.number().int().min(0).max(6))
+      .default([]),
   })
   .refine(
     (data) => timeToMinutes(data.plannedEnd) > timeToMinutes(data.plannedStart),
@@ -69,7 +82,55 @@ export const adhocBlockSchema = z
       message: 'End time must be after start time.',
       path: ['plannedEnd'],
     }
-  );
+  )
+  .superRefine((data, ctx) => {
+    if (!data.repeating) return;
+
+    if (!data.repeatEndDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Choose when the repeat ends.',
+        path: ['repeatEndDate'],
+      });
+      return;
+    }
+
+    if (data.repeatEndDate < data.date) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'End date must be on or after the start date.',
+        path: ['repeatEndDate'],
+      });
+    }
+
+    if (data.repeatWeekdays.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Select at least one day of the week.',
+        path: ['repeatWeekdays'],
+      });
+      return;
+    }
+
+    const occurrences = adhocOccurrenceDates(
+      data.date,
+      data.repeatEndDate,
+      data.repeatWeekdays
+    );
+    if (occurrences.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'No dates match the selected days in that range.',
+        path: ['repeatWeekdays'],
+      });
+    } else if (occurrences.length > MAX_ADHOC_OCCURRENCES) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Too many repeats (max ${MAX_ADHOC_OCCURRENCES}). Shorten the range or fewer days.`,
+        path: ['repeatEndDate'],
+      });
+    }
+  });
 
 export const manualTimeEntrySchema = z.object({
   durationMinutes: z

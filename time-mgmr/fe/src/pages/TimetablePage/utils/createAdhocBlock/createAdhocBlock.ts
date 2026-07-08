@@ -1,4 +1,5 @@
 import {
+  adhocOccurrenceDates,
   createCatalogTaskApi,
   createScheduleBlockApi,
   fetchActivityById,
@@ -28,12 +29,32 @@ async function ensureAdhocActivity(): Promise<void> {
   }
 }
 
-/** Create an adhoc task + focus block that reserves time but is excluded from reports. */
+function datesForAdhoc(values: AdhocBlockValues): string[] {
+  if (
+    values.repeating &&
+    values.repeatEndDate &&
+    values.repeatWeekdays.length > 0
+  ) {
+    return adhocOccurrenceDates(
+      values.date,
+      values.repeatEndDate,
+      values.repeatWeekdays
+    );
+  }
+  return [values.date];
+}
+
+/** Create an adhoc task + focus block(s) that reserve time but are excluded from reports. */
 export async function createAdhocBlock(
   values: AdhocBlockValues,
   timeZone: string
-): Promise<IApiScheduleBlock> {
+): Promise<IApiScheduleBlock[]> {
   await ensureAdhocActivity();
+
+  const dates = datesForAdhoc(values);
+  if (dates.length === 0) {
+    throw new Error('No dates match the selected repeat days.');
+  }
 
   const durationMinutes = plannedDurationMinutes(
     values.plannedStart,
@@ -48,17 +69,23 @@ export async function createAdhocBlock(
     excludeFromReports: true,
   });
 
-  const times = timetableTimesToIso(
-    values.date,
-    values.plannedStart,
-    values.plannedEnd,
-    timeZone
-  );
+  const blocks: IApiScheduleBlock[] = [];
+  for (const date of dates) {
+    const times = timetableTimesToIso(
+      date,
+      values.plannedStart,
+      values.plannedEnd,
+      timeZone
+    );
+    blocks.push(
+      await createScheduleBlockApi({
+        taskId: task.id,
+        blockType: 'focus',
+        plannedStart: times.plannedStart,
+        plannedEnd: times.plannedEnd,
+      })
+    );
+  }
 
-  return createScheduleBlockApi({
-    taskId: task.id,
-    blockType: 'focus',
-    plannedStart: times.plannedStart,
-    plannedEnd: times.plannedEnd,
-  });
+  return blocks;
 }

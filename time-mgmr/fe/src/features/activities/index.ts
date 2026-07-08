@@ -166,3 +166,10 @@ export {
   formatMinutes,
   formatSignedMinutes,
 } from './utils/dateUtils';
+
+export {
+  adhocOccurrenceDates,
+  ADHOC_WEEKDAY_OPTIONS,
+  MAX_ADHOC_OCCURRENCES,
+  type WeekdayIndex,
+} from './utils/adhocOccurrenceDates/adhocOccurrenceDates';
