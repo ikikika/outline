@@ -66,15 +66,14 @@ export const adhocBlockSchema = z
     date: z.string().regex(datePattern, 'Enter a valid date.'),
     plannedStart: z.string().regex(timePattern, 'Use HH:mm format.'),
     plannedEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
-    repeating: z.boolean().default(false),
+    // Required (no .default) so Zod input/output match useForm + zodResolver.
+    repeating: z.boolean(),
     repeatEndDate: z
       .string()
       .regex(datePattern, 'Enter a valid end date.')
       .optional()
       .or(z.literal('')),
-    repeatWeekdays: z
-      .array(z.number().int().min(0).max(6))
-      .default([]),
+    repeatWeekdays: z.array(z.number().int().min(0).max(6)),
   })
   .refine(
     (data) => timeToMinutes(data.plannedEnd) > timeToMinutes(data.plannedStart),
