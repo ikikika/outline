@@ -139,3 +139,34 @@ See `config-webpack/` for shared Webpack config. Day-to-day development uses Vit
 - TanStack Query, React Hook Form + Zod
 - SCSS modules, Tailwind 4, shadcn/ui
 - Vitest + Testing Library
+
+## Future ideas
+
+Ideas that extend the existing plan → track → replan → learn loop. Prefer these over unrelated product directions (teams/sharing, generic AI chat coach) until that loop is tighter. Differentiator today: **schedule fit** and **unplanned work**.
+
+### Highest leverage
+
+1. **Real daily dashboard** — Replace the `/dashboard` redirect with a “today” briefing: next focus, open unplanned, today’s fit/unplanned share, one CTA to start or replan.
+2. **Replanning when you’re behind** — If a session runs long or you skip blocks, propose shifting the rest of the day (slip remaining auto-scheduled focus + rests).
+3. **Estimate coaching** — Surface chronic over/under patterns from existing calibration metrics; suggest buffer or session-length tweaks per activity/task.
+4. **Interruptions as a first-class flow** — One-tap “log interruption” → unplanned work with clear report attribution (builds on `startedFromUnplanned`).
+5. **Self-serve onboarding** — Signup + guided first week using existing activity/course import packs instead of seed-only users.
+
+### Product depth
+
+6. **Calendar sync** — ICS or Google/Outlook in/out so blockers and real life stay aligned with adhoc blocks.
+7. **Longer-range reports** — Month/quarter trends, consistency streaks, category mix over time (reports are currently day/week and client-only).
+8. **Richer rest policy** — User-configurable Pomodoro lengths, long-break rules, and lunch as a first-class constraint outside auto-schedule defaults.
+9. **Recurring tasks / templates** — Beyond repeating adhoc blockers: weekly review templates, standing deep-work slots tied to activities.
+10. **Smarter notifications** — Beyond first-focus reminders: break-end, “session overrun,” “you have unplanned backlog,” quiet hours.
+
+### Polish that compounds
+
+11. **Mobile / PWA UX** — Faster timer controls and today’s agenda as the primary phone surface.
+12. **Manual time entry UX** — Quick backfill for work done off-timer without fighting the timetable.
+13. **Server-side reports** — Persist/export metrics so history doesn’t depend on client recomputation.
+14. **Goals / capacity** — Weekly hour budgets per category (“10h deep work”) with live burn-down against the timetable.
+
+### Suggested next pair
+
+**Daily dashboard + replanning** — uses data already collected and closes the gap when the day doesn’t go as planned.
