@@ -42,7 +42,6 @@ import { createAdhocBlock } from './utils/createAdhocBlock/createAdhocBlock';
 import { createAdhocRest } from './utils/createAdhocRest/createAdhocRest';
 import {
   ensureBreakTaskForBlock,
-  scheduledFocusSeconds,
 } from './utils/ensureBreakTask/ensureBreakTask';
 import styles from './TimetablePage.module.scss';
 
@@ -107,12 +106,6 @@ export const TimetablePage: React.FC = () => {
   const detailTaskBlocksQuery = useTimetableBlocksByTask(
     detailBlock?.taskId ?? null
   );
-  const detailPlannedFocusSeconds = useMemo(() => {
-    const blocks = detailTaskBlocksQuery.data;
-    if (!blocks || blocks.length === 0) return undefined;
-    const total = scheduledFocusSeconds(blocks);
-    return total > 0 ? total : undefined;
-  }, [detailTaskBlocksQuery.data]);
   const detailOpenFocusBlockCount = useMemo(() => {
     const blocks = detailTaskBlocksQuery.data ?? [];
     return blocks.filter(
@@ -390,7 +383,6 @@ export const TimetablePage: React.FC = () => {
           activityTitle={detailActivity?.title}
           entries={detailEntries}
           runningEntry={runningEntry}
-          plannedFocusSeconds={detailPlannedFocusSeconds}
           openFocusBlockCount={detailOpenFocusBlockCount}
           busy={busy}
           onClose={closeDetails}

@@ -40,7 +40,6 @@ import {
 } from '@/features/activities';
 import { TaskDetailModal } from '@/pages/TimetablePage/components/TaskDetailModal/TaskDetailModal';
 import { ActivityForm } from '@/pages/TimetablePage/components/ActivityForm/ActivityForm';
-import { scheduledFocusSeconds } from '@/pages/TimetablePage/utils/ensureBreakTask/ensureBreakTask';
 import { AddActivityForm } from './components/AddActivityForm/AddActivityForm';
 import { ActivityPriorityList } from './components/ActivityPriorityList/ActivityPriorityList';
 import { AutoScheduleModal } from './components/AutoScheduleModal/AutoScheduleModal';
@@ -136,13 +135,6 @@ export const ActivitiesPage: React.FC = () => {
       selectedDate
     );
   }, [detailContext, detailBlocksQuery.data, detailBlocksQuery.isLoading, selectedDate]);
-
-  const detailPlannedFocusSeconds = useMemo(() => {
-    const blocks = detailBlocksQuery.data;
-    if (!blocks || blocks.length === 0) return undefined;
-    const total = scheduledFocusSeconds(blocks);
-    return total > 0 ? total : undefined;
-  }, [detailBlocksQuery.data]);
 
   const detailOpenFocusBlockCount = useMemo(() => {
     const blocks = detailBlocksQuery.data ?? [];
@@ -600,7 +592,6 @@ export const ActivitiesPage: React.FC = () => {
           activityTitle={detailContext.activity.title}
           entries={detailEntries}
           runningEntry={runningEntry}
-          plannedFocusSeconds={detailPlannedFocusSeconds}
           openFocusBlockCount={detailOpenFocusBlockCount}
           isUnscheduled={isUnscheduledDetailBlock(detailBlock)}
           busy={detailBusy}

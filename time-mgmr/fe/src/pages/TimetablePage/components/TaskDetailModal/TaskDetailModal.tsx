@@ -34,8 +34,6 @@ interface TaskDetailModalProps {
   activityTitle?: string;
   entries: ITimeEntry[];
   runningEntry: ITimeEntry | null;
-  /** Total scheduled focus seconds for this task (includes estimate buffer). */
-  plannedFocusSeconds?: number;
   /**
    * Open (not yet finished) focus blocks for this task.
    * Focus mode shows Finish session when > 1, otherwise Finish task.
@@ -112,7 +110,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   activityTitle,
   entries,
   runningEntry,
-  plannedFocusSeconds,
   openFocusBlockCount = 1,
   isUnscheduled = false,
   busy = false,
@@ -152,10 +149,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const isRunningHere = Boolean(taskId && runningEntry?.taskId === taskId);
   const accent = getTaskBlockColor(block.activityId);
   const blockSeconds = blockPlannedSeconds(block);
-  const plannedSeconds =
-    plannedFocusSeconds != null && plannedFocusSeconds > 0
-      ? plannedFocusSeconds
-      : blockSeconds;
+  const plannedSeconds = blockSeconds;
   const scheduledBlockMinutes = plannedDurationMinutes(
     block.plannedStart,
     block.plannedEnd
@@ -303,11 +297,20 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     () => Math.floor(elapsedSecondsForEntries(entries, nowMs)),
     [entries, nowMs]
   );
+  const focusElapsedSeconds = useMemo(() => {
+    if (openFocusBlockCount > 1) {
+      if (isRunningHere && runningEntry) {
+        return Math.floor(sessionDurationSeconds(runningEntry, nowMs));
+      }
+      return 0;
+    }
+    return elapsedSeconds;
+  }, [openFocusBlockCount, isRunningHere, runningEntry, elapsedSeconds, nowMs]);
   const sessionEntries = useMemo(
     () => [...entries].sort((a, b) => b.startAt.localeCompare(a.startAt)),
     [entries]
   );
-  const remainingSeconds = Math.max(0, plannedSeconds - elapsedSeconds);
+  const remainingSeconds = Math.max(0, plannedSeconds - focusElapsedSeconds);
   const remainingFraction =
     plannedSeconds > 0 ? Math.min(1, remainingSeconds / plannedSeconds) : 0;
   const showRemainingRing = isRunningHere && plannedSeconds > 0;
@@ -433,7 +436,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <div className={styles.focusTimes}>
                 <div className={styles.focusTimeItem}>
                   <span className={styles.focusTimeLabel}>Elapsed</span>
-                  <span className={styles.focusTimeValue}>{formatClock(elapsedSeconds)}</span>
+                  <span className={styles.focusTimeValue}>{formatClock(focusElapsedSeconds)}</span>
                 </div>
                 <div className={styles.focusTimeItem}>
                   <span className={styles.focusTimeLabel}>Remaining</span>

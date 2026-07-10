@@ -430,24 +430,37 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByText('45:00')).toBeInTheDocument();
   });
 
-  it('uses plannedFocusSeconds when provided (buffered multi-block total)', async () => {
+  it('uses the scheduled block window for split tasks instead of total task time', async () => {
     const user = userEvent.setup();
     render(
       <TaskDetailModal
         {...baseProps}
-        plannedFocusSeconds={60 * 60}
+        openFocusBlockCount={3}
         block={{
           ...block,
           plannedStart: '09:00',
           plannedEnd: '09:25',
           timeEstimationSeconds: 40 * 60,
         }}
+        entries={[
+          {
+            id: 'entry-1',
+            taskId: 'task-1',
+            startAt: '2026-07-19T08:00:00.000Z',
+            endAt: '2026-07-19T08:25:00.000Z',
+            durationMinutes: 25,
+            source: 'timer',
+            createdAt: '2026-07-19T08:00:00.000Z',
+            updatedAt: '2026-07-19T08:25:00.000Z',
+          },
+        ]}
       />
     );
 
     await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
 
-    expect(screen.getByText('1:00:00')).toBeInTheDocument();
+    expect(screen.getByText('25:00')).toBeInTheDocument();
+    expect(screen.getByText('0:00')).toBeInTheDocument();
   });
 
   it('exits focus mode back to the detail modal', async () => {
