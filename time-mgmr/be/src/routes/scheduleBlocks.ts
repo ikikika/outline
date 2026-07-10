@@ -7,6 +7,7 @@ import {
 	toScheduleBlockResponse,
 	validateScheduleBlockPatchRange,
 } from '../lib/scheduleBlockMapper.js';
+import { markTaskPlannedWhenScheduled } from '../lib/taskScheduleStatus.js';
 import { getUserId } from '../middleware/auth.js';
 import { getTask, updateTask } from '../repositories/dataRepository.js';
 import {
@@ -18,16 +19,6 @@ import {
 	updateScheduleBlock,
 	upsertScheduleBlock,
 } from '../repositories/scheduleBlockRepository.js';
-
-async function markTaskPlannedIfNeeded(
-	userId: string,
-	taskId: string
-): Promise<void> {
-	const task = await getTask(userId, taskId);
-	if (task?.status === 'unplanned') {
-		await updateTask(userId, taskId, { status: 'planned' });
-	}
-}
 
 async function markTaskUnplannedIfNoBlocks(
 	userId: string,
@@ -101,7 +92,7 @@ export function registerScheduleBlockRoutes(app: Hono): void {
 			id: parsed.id ?? randomUUID(),
 		});
 		if (block.blockType === 'focus' && block.taskId) {
-			await markTaskPlannedIfNeeded(userId, block.taskId);
+			await markTaskPlannedWhenScheduled(userId, block.taskId);
 		}
 		return c.json(block, 201);
 	});
@@ -131,7 +122,7 @@ export function registerScheduleBlockRoutes(app: Hono): void {
 			await markTaskUnplannedIfNoBlocks(userId, existing.taskId);
 		}
 		if (block.blockType === 'focus' && block.taskId) {
-			await markTaskPlannedIfNeeded(userId, block.taskId);
+			await markTaskPlannedWhenScheduled(userId, block.taskId);
 		}
 		return c.json(block);
 	});

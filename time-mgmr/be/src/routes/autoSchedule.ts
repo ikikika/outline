@@ -10,13 +10,13 @@ import {
 	validateFirstDayStartAgainstNow,
 	type IAutoScheduleRequest,
 } from '../lib/autoScheduleMapper.js';
+import { markTaskPlannedWhenScheduled } from '../lib/taskScheduleStatus.js';
 import { getUserId } from '../middleware/auth.js';
 import { isActivityArchived } from '../lib/activityArchive.js';
 import {
 	getActivity,
 	getTask,
 	listTasksByActivityId,
-	updateTask,
 	upsertActivity,
 	upsertTask,
 } from '../repositories/dataRepository.js';
@@ -242,12 +242,9 @@ export function registerAutoScheduleRoutes(app: Hono): void {
 		);
 
 		await Promise.all(
-			[...scheduledTaskIds].map(async (taskId) => {
-				const task = await getTask(userId, taskId);
-				if (task?.status === 'unplanned') {
-					await updateTask(userId, taskId, { status: 'planned' });
-				}
-			})
+			[...scheduledTaskIds].map((taskId) =>
+				markTaskPlannedWhenScheduled(userId, taskId)
+			)
 		);
 
 		return c.json({
