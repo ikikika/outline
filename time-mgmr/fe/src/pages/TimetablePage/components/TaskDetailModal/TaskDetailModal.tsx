@@ -25,6 +25,7 @@ import {
   blockPlannedSeconds,
   isBreakBlock,
 } from '../../utils/ensureBreakTask/ensureBreakTask';
+import { focusElapsedSecondsForBlock } from '../../utils/focusBlockElapsed/focusBlockElapsed';
 import { playSoftTone } from '../../utils/playSoftTone/playSoftTone';
 import { shouldPlayBreakEndingTone } from '../../utils/playSoftTone/shouldPlayBreakEndingTone';
 import styles from './TaskDetailModal.module.scss';
@@ -39,6 +40,10 @@ interface TaskDetailModalProps {
    * Focus mode shows Finish session when > 1, otherwise Finish task.
    */
   openFocusBlockCount?: number;
+  /** All schedule blocks for this task (used to attribute split-block elapsed). */
+  taskBlocks?: ITimetableBlock[];
+  /** IANA timezone for comparing entries to block windows. */
+  timeZone?: string;
   /** True when this block is a catalog stand-in with no real schedule row. */
   isUnscheduled?: boolean;
   busy?: boolean;
@@ -111,6 +116,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   entries,
   runningEntry,
   openFocusBlockCount = 1,
+  taskBlocks = [],
+  timeZone = 'UTC',
   isUnscheduled = false,
   busy = false,
   onClose,
@@ -299,13 +306,24 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   );
   const focusElapsedSeconds = useMemo(() => {
     if (openFocusBlockCount > 1) {
-      if (isRunningHere && runningEntry) {
-        return Math.floor(sessionDurationSeconds(runningEntry, nowMs));
-      }
-      return 0;
+      return focusElapsedSecondsForBlock({
+        block,
+        taskBlocks: taskBlocks.length > 0 ? taskBlocks : [block],
+        entries,
+        nowMs,
+        timeZone,
+      });
     }
     return elapsedSeconds;
-  }, [openFocusBlockCount, isRunningHere, runningEntry, elapsedSeconds, nowMs]);
+  }, [
+    openFocusBlockCount,
+    block,
+    taskBlocks,
+    entries,
+    nowMs,
+    timeZone,
+    elapsedSeconds,
+  ]);
   const sessionEntries = useMemo(
     () => [...entries].sort((a, b) => b.startAt.localeCompare(a.startAt)),
     [entries]

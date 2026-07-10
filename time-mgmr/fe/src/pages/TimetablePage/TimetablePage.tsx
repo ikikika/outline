@@ -384,6 +384,8 @@ export const TimetablePage: React.FC = () => {
           entries={detailEntries}
           runningEntry={runningEntry}
           openFocusBlockCount={detailOpenFocusBlockCount}
+          taskBlocks={detailTaskBlocksQuery.data ?? []}
+          timeZone={timeZone}
           busy={busy}
           onClose={closeDetails}
           onEdit={(block) => setEditing(block)}

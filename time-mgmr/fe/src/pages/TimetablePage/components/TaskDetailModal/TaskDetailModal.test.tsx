@@ -432,26 +432,37 @@ describe('TaskDetailModal focus mode', () => {
 
   it('uses the scheduled block window for split tasks instead of total task time', async () => {
     const user = userEvent.setup();
+    const firstBlock = {
+      ...block,
+      id: 'block-1',
+      plannedStart: '09:00',
+      plannedEnd: '09:25',
+      timeEstimationSeconds: 40 * 60,
+    };
+    const secondBlock = {
+      ...block,
+      id: 'block-2',
+      plannedStart: '09:30',
+      plannedEnd: '09:55',
+      timeEstimationSeconds: 40 * 60,
+    };
     render(
       <TaskDetailModal
         {...baseProps}
-        openFocusBlockCount={3}
-        block={{
-          ...block,
-          plannedStart: '09:00',
-          plannedEnd: '09:25',
-          timeEstimationSeconds: 40 * 60,
-        }}
+        openFocusBlockCount={2}
+        block={secondBlock}
+        taskBlocks={[firstBlock, secondBlock]}
+        timeZone="UTC"
         entries={[
           {
             id: 'entry-1',
             taskId: 'task-1',
-            startAt: '2026-07-19T08:00:00.000Z',
-            endAt: '2026-07-19T08:25:00.000Z',
+            startAt: '2026-07-19T09:00:00.000Z',
+            endAt: '2026-07-19T09:25:00.000Z',
             durationMinutes: 25,
             source: 'timer',
-            createdAt: '2026-07-19T08:00:00.000Z',
-            updatedAt: '2026-07-19T08:25:00.000Z',
+            createdAt: '2026-07-19T09:00:00.000Z',
+            updatedAt: '2026-07-19T09:25:00.000Z',
           },
         ]}
       />
@@ -461,6 +472,50 @@ describe('TaskDetailModal focus mode', () => {
 
     expect(screen.getByText('25:00')).toBeInTheDocument();
     expect(screen.getByText('0:00')).toBeInTheDocument();
+  });
+
+  it('keeps elapsed time after stopping a split-block focus session', async () => {
+    const user = userEvent.setup();
+    const firstBlock = {
+      ...block,
+      id: 'block-1',
+      plannedStart: '09:00',
+      plannedEnd: '09:25',
+      timeEstimationSeconds: 75 * 60,
+    };
+    const secondBlock = {
+      ...block,
+      id: 'block-2',
+      plannedStart: '09:30',
+      plannedEnd: '09:55',
+      timeEstimationSeconds: 75 * 60,
+    };
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        openFocusBlockCount={2}
+        block={firstBlock}
+        taskBlocks={[firstBlock, secondBlock]}
+        timeZone="UTC"
+        entries={[
+          {
+            id: 'entry-1',
+            taskId: 'task-1',
+            startAt: '2026-07-19T09:00:00.000Z',
+            endAt: '2026-07-19T09:10:00.000Z',
+            durationMinutes: 10,
+            source: 'timer',
+            createdAt: '2026-07-19T09:00:00.000Z',
+            updatedAt: '2026-07-19T09:10:00.000Z',
+          },
+        ]}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+
+    expect(screen.getByText('10:00')).toBeInTheDocument();
+    expect(screen.getByText('15:00')).toBeInTheDocument();
   });
 
   it('exits focus mode back to the detail modal', async () => {

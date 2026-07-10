@@ -27,6 +27,7 @@ import {
   useTimeEntriesByTask,
   useTimeEntryMutations,
   useTimetableBlocksByTask,
+  useResolvedTimeZone,
   isActivityArchived,
   todayKey,
   closedWorkSessions,
@@ -91,6 +92,7 @@ export const ActivitiesPage: React.FC = () => {
   const { data: runningEntry = null } = useRunningTimer();
   const { data: detailEntries = [] } = useTimeEntriesByTask(detailTaskId);
   const detailBlocksQuery = useTimetableBlocksByTask(detailTaskId);
+  const timeZone = useResolvedTimeZone();
   const { update, updateTask, setStatus, skip, deleteAdhoc, completeBlock, complete } =
     useActivityMutations(selectedDate);
   const { startTimer, stopTimer, addManual } = useTimeEntryMutations(selectedDate);
@@ -594,6 +596,8 @@ export const ActivitiesPage: React.FC = () => {
           entries={detailEntries}
           runningEntry={runningEntry}
           openFocusBlockCount={detailOpenFocusBlockCount}
+          taskBlocks={detailBlocksQuery.data ?? []}
+          timeZone={timeZone}
           isUnscheduled={isUnscheduledDetailBlock(detailBlock)}
           busy={detailBusy}
           onClose={closeDetails}
