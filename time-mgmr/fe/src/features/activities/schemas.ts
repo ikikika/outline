@@ -39,6 +39,11 @@ export const activityFormSchema = z
     plannedStart: z.string().regex(timePattern, 'Use HH:mm format.'),
     plannedEnd: z.string().regex(timePattern, 'Use HH:mm format.'),
     categoryId: activityCategorySchema,
+    estimatedMinutes: z
+      .number()
+      .int('Use whole minutes.')
+      .min(1, 'At least 1 minute.')
+      .max(24 * 60, 'Cannot exceed 24 hours.'),
     notes: z.string().max(500, 'Notes are too long.'),
   })
   .refine((data) => timeToMinutes(data.plannedEnd) > timeToMinutes(data.plannedStart), {

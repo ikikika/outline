@@ -335,7 +335,7 @@ export function useActivityMutations(date: string) {
     }: {
       blockId: string;
       taskId?: string;
-      patch: Partial<IActivityInput>;
+      patch: Partial<IActivityInput> & { estimatedMinutes?: number };
     }) => {
       if (taskId) {
         const taskPatch: ITaskPatch = {};
@@ -343,6 +343,9 @@ export function useActivityMutations(date: string) {
         if (patch.categoryId !== undefined) taskPatch.categoryId = patch.categoryId;
         if (patch.notes !== undefined) taskPatch.notes = patch.notes;
         if (patch.status !== undefined) taskPatch.status = patch.status;
+        if (patch.estimatedMinutes !== undefined) {
+          taskPatch.timeEstimationSeconds = Math.max(60, patch.estimatedMinutes * 60);
+        }
         if (Object.keys(taskPatch).length > 0) {
           await updateTaskApi(taskId, taskPatch);
         }

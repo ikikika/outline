@@ -265,6 +265,7 @@ export const ActivitiesPage: React.FC = () => {
             title: values.title,
             categoryId: values.categoryId,
             notes: values.notes,
+            timeEstimationSeconds: Math.max(60, values.estimatedMinutes * 60),
           },
         });
       } else {

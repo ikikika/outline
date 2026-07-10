@@ -16,6 +16,7 @@ describe('activityFormSchema', () => {
       plannedStart: '09:00',
       plannedEnd: '10:30',
       categoryId: 'work',
+      estimatedMinutes: 90,
       notes: '',
     });
     expect(result.success).toBe(true);
@@ -28,6 +29,20 @@ describe('activityFormSchema', () => {
       plannedStart: '11:00',
       plannedEnd: '10:00',
       categoryId: 'work',
+      estimatedMinutes: 30,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects estimated minutes below 1', () => {
+    const result = activityFormSchema.safeParse({
+      title: 'Write report',
+      date: '2026-07-19',
+      plannedStart: '09:00',
+      plannedEnd: '10:30',
+      categoryId: 'work',
+      estimatedMinutes: 0,
+      notes: '',
     });
     expect(result.success).toBe(false);
   });

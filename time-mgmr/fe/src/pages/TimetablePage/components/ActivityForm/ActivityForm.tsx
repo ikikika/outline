@@ -5,10 +5,22 @@ import { Button, Input } from '@/components/ui';
 import {
   ACTIVITY_CATEGORIES,
   activityFormSchema,
+  plannedDurationMinutes,
   type ActivityFormValues,
   type ITimetableBlock,
 } from '@/features/activities';
 import styles from './ActivityForm.module.scss';
+
+function defaultEstimatedMinutes(initial?: ITimetableBlock | null): number {
+  if (initial?.timeEstimationSeconds != null && initial.timeEstimationSeconds > 0) {
+    return Math.max(1, Math.round(initial.timeEstimationSeconds / 60));
+  }
+  if (initial?.plannedStart && initial?.plannedEnd) {
+    const scheduled = plannedDurationMinutes(initial.plannedStart, initial.plannedEnd);
+    if (scheduled > 0) return scheduled;
+  }
+  return 25;
+}
 
 interface ActivityFormProps {
   date: string;
@@ -40,6 +52,7 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({
       plannedStart: initial?.plannedStart ?? '09:00',
       plannedEnd: initial?.plannedEnd ?? '10:00',
       categoryId: initial?.categoryId ?? 'work',
+      estimatedMinutes: defaultEstimatedMinutes(initial),
       notes: initial?.notes ?? '',
     },
   });
@@ -116,6 +129,29 @@ export const ActivityForm: React.FC<ActivityFormProps> = ({
             <input type="hidden" {...register('plannedStart')} />
             <input type="hidden" {...register('plannedEnd')} />
           </>
+        )}
+
+        {initial?.taskId ? (
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="activity-estimate">
+              Estimated minutes
+            </label>
+            <Input
+              id="activity-estimate"
+              type="number"
+              min={1}
+              step={1}
+              {...register('estimatedMinutes', { valueAsNumber: true })}
+            />
+            {errors.estimatedMinutes && (
+              <span className={styles.error}>{errors.estimatedMinutes.message}</span>
+            )}
+          </div>
+        ) : (
+          <input
+            type="hidden"
+            {...register('estimatedMinutes', { valueAsNumber: true })}
+          />
         )}
 
         <div className={`${styles.field} ${styles.full}`}>
