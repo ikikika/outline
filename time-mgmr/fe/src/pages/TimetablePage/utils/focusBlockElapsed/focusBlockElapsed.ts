@@ -136,6 +136,13 @@ export function focusElapsedSecondsForBlock({
     const entryMs = entryWindowMs(entry, nowMs);
     if (!entryMs) continue;
 
+    // Active timer always counts for the block whose focus UI is open,
+    // even when "now" falls inside a sibling block's planned window.
+    if (!entry.endAt) {
+      seconds += sessionDurationSeconds(entry, nowMs);
+      continue;
+    }
+
     const overlapsCurrent =
       currentWindow != null && windowsOverlap(entryMs, currentWindow);
     const overlapsSibling = siblingWindows.some(
@@ -147,12 +154,6 @@ export function focusElapsedSecondsForBlock({
       continue;
     }
     if (overlapsSibling) continue;
-
-    // Active timer: attribute to the block whose focus UI is open.
-    if (!entry.endAt) {
-      seconds += sessionDurationSeconds(entry, nowMs);
-      continue;
-    }
 
     // Orphan closed sessions (outside any open window) belong to the earliest open block.
     if (block.id === earliestOpenId) {

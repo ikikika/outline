@@ -300,16 +300,31 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     }
   }, [canEnterFocusMode, focusMode]);
 
+  /** Prefer the live running entry so elapsed ticks immediately after Start. */
+  const timerEntries = useMemo(() => {
+    if (!taskId || !runningEntry || runningEntry.taskId !== taskId) {
+      return entries;
+    }
+    if (entries.some((entry) => entry.id === runningEntry.id)) {
+      return entries.map((entry) =>
+        entry.id === runningEntry.id
+          ? { ...entry, ...runningEntry, endAt: runningEntry.endAt }
+          : entry
+      );
+    }
+    return [...entries, runningEntry];
+  }, [entries, runningEntry, taskId]);
+
   const elapsedSeconds = useMemo(
-    () => Math.floor(elapsedSecondsForEntries(entries, nowMs)),
-    [entries, nowMs]
+    () => Math.floor(elapsedSecondsForEntries(timerEntries, nowMs)),
+    [timerEntries, nowMs]
   );
   const focusElapsedSeconds = useMemo(() => {
     if (openFocusBlockCount > 1) {
       return focusElapsedSecondsForBlock({
         block,
         taskBlocks: taskBlocks.length > 0 ? taskBlocks : [block],
-        entries,
+        entries: timerEntries,
         nowMs,
         timeZone,
       });
@@ -319,14 +334,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     openFocusBlockCount,
     block,
     taskBlocks,
-    entries,
+    timerEntries,
     nowMs,
     timeZone,
     elapsedSeconds,
   ]);
   const sessionEntries = useMemo(
-    () => [...entries].sort((a, b) => b.startAt.localeCompare(a.startAt)),
-    [entries]
+    () => [...timerEntries].sort((a, b) => b.startAt.localeCompare(a.startAt)),
+    [timerEntries]
   );
   const remainingSeconds = Math.max(0, plannedSeconds - focusElapsedSeconds);
   const remainingFraction =

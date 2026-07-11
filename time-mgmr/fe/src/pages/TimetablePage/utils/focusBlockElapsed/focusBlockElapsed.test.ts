@@ -132,6 +132,37 @@ describe('focusElapsedSecondsForBlock', () => {
     ).toBe(10 * 60);
   });
 
+  it('counts a running timer even when now falls in a sibling block window', () => {
+    const first = baseBlock({ id: 'block-1' });
+    const second = baseBlock({
+      id: 'block-2',
+      plannedStart: '09:30',
+      plannedEnd: '09:55',
+    });
+    const entries: ITimeEntry[] = [
+      {
+        id: 'entry-running',
+        taskId: 'task-1',
+        startAt: '2026-07-19T09:35:00.000Z',
+        endAt: null,
+        durationMinutes: null,
+        source: 'timer',
+        createdAt: '2026-07-19T09:35:00.000Z',
+        updatedAt: '2026-07-19T09:35:00.000Z',
+      },
+    ];
+
+    expect(
+      focusElapsedSecondsForBlock({
+        block: first,
+        taskBlocks: [first, second],
+        entries,
+        nowMs: Date.parse('2026-07-19T09:35:40.000Z'),
+        timeZone,
+      })
+    ).toBe(40);
+  });
+
   it('sums all entries for a single open focus block', () => {
     const block = baseBlock({ id: 'block-1' });
     const entries: ITimeEntry[] = [

@@ -518,6 +518,41 @@ describe('TaskDetailModal focus mode', () => {
     expect(screen.getByText('15:00')).toBeInTheDocument();
   });
 
+  it('ticks elapsed from runningEntry even before entries refetch', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const runningEntry: ITimeEntry = {
+      id: 'entry-running',
+      taskId: 'task-1',
+      startAt: new Date().toISOString(),
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    render(
+      <TaskDetailModal
+        {...baseProps}
+        entries={[]}
+        runningEntry={runningEntry}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Expand to full screen' }));
+
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument();
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(screen.getByText('0:03')).toBeInTheDocument();
+    expect(screen.getByText('1:59:57')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it('exits focus mode back to the detail modal', async () => {
     const user = userEvent.setup();
     render(<TaskDetailModal {...baseProps} />);
