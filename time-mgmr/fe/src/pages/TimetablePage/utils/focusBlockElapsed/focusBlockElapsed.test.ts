@@ -132,6 +132,122 @@ describe('focusElapsedSecondsForBlock', () => {
     ).toBe(10 * 60);
   });
 
+  it('starts the next block at zero after finishing a session off-plan', () => {
+    // Session ran outside every planned window, so the work-period clone
+    // window does not line up with any remaining plan.
+    const workPeriod = baseBlock({
+      id: 'wp-1',
+      plannedStart: '22:10',
+      plannedEnd: '22:23',
+      actualStart: '22:10',
+      actualEnd: '22:23',
+    });
+    const second = baseBlock({ id: 'block-2' });
+    const third = baseBlock({
+      id: 'block-3',
+      plannedStart: '09:30',
+      plannedEnd: '09:55',
+    });
+    const entries: ITimeEntry[] = [
+      {
+        id: 'entry-1',
+        taskId: 'task-1',
+        startAt: '2026-07-19T22:10:12.000Z',
+        endAt: '2026-07-19T22:23:10.000Z',
+        durationMinutes: 13,
+        source: 'timer',
+        createdAt: '2026-07-19T22:10:12.000Z',
+        updatedAt: '2026-07-19T22:23:10.000Z',
+      },
+    ];
+
+    expect(
+      focusElapsedSecondsForBlock({
+        block: second,
+        taskBlocks: [workPeriod, second, third],
+        entries,
+        nowMs: Date.parse('2026-07-19T22:24:00.000Z'),
+        timeZone,
+      })
+    ).toBe(0);
+  });
+
+  it('starts the last open block at zero after finishing a session', () => {
+    const workPeriod = baseBlock({
+      id: 'wp-1',
+      plannedStart: '22:10',
+      plannedEnd: '22:23',
+      actualStart: '22:10',
+      actualEnd: '22:23',
+    });
+    const remaining = baseBlock({ id: 'block-2' });
+    const entries: ITimeEntry[] = [
+      {
+        id: 'entry-1',
+        taskId: 'task-1',
+        startAt: '2026-07-19T22:10:12.000Z',
+        endAt: '2026-07-19T22:23:10.000Z',
+        durationMinutes: 13,
+        source: 'timer',
+        createdAt: '2026-07-19T22:10:12.000Z',
+        updatedAt: '2026-07-19T22:23:10.000Z',
+      },
+    ];
+
+    expect(
+      focusElapsedSecondsForBlock({
+        block: remaining,
+        taskBlocks: [workPeriod, remaining],
+        entries,
+        nowMs: Date.parse('2026-07-19T22:24:00.000Z'),
+        timeZone,
+      })
+    ).toBe(0);
+  });
+
+  it('counts a new session started after a finished session', () => {
+    const workPeriod = baseBlock({
+      id: 'wp-1',
+      plannedStart: '22:10',
+      plannedEnd: '22:23',
+      actualStart: '22:10',
+      actualEnd: '22:23',
+    });
+    const remaining = baseBlock({ id: 'block-2' });
+    const entries: ITimeEntry[] = [
+      {
+        id: 'entry-1',
+        taskId: 'task-1',
+        startAt: '2026-07-19T22:10:12.000Z',
+        endAt: '2026-07-19T22:23:10.000Z',
+        durationMinutes: 13,
+        source: 'timer',
+        createdAt: '2026-07-19T22:10:12.000Z',
+        updatedAt: '2026-07-19T22:23:10.000Z',
+      },
+      {
+        id: 'entry-2',
+        taskId: 'task-1',
+        startAt: '2026-07-19T22:25:00.000Z',
+        endAt: null,
+        durationMinutes: null,
+        source: 'timer',
+        createdAt: '2026-07-19T22:25:00.000Z',
+        updatedAt: '2026-07-19T22:25:00.000Z',
+      },
+    ];
+
+    expect(
+      focusElapsedSecondsForBlock({
+        block: remaining,
+        taskBlocks: [workPeriod, remaining],
+        entries,
+        nowMs: Date.parse('2026-07-19T22:26:00.000Z'),
+        timeZone,
+      })
+    ).toBe(60);
+  });
+
   it('counts a running timer even when now falls in a sibling block window', () => {
     const first = baseBlock({ id: 'block-1' });
     const second = baseBlock({

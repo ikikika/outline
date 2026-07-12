@@ -274,6 +274,7 @@ vi.mock('@/features/activities', () => ({
   useConfirmAutoSchedule: () => mockConfirmAutoSchedule,
   useReorderActivities: () => mockReorderActivities,
   useReorderTasks: () => mockReorderTasks,
+  useResolvedTimeZone: () => 'UTC',
   useRunningTimer: () => ({ data: null }),
   useTimeEntriesByTask: () => ({ data: [] }),
   useTimetableBlocksByTask: () => ({

@@ -67,9 +67,23 @@ function blockSortKey(block: ITimetableBlock): string {
 }
 
 /**
+ * Latest end of a finished session (work-period block) for this task.
+ * Sessions that started before this point are already accounted for.
+ */
+function finishedThroughMs(
+  taskBlocks: ITimetableBlock[],
+  timeZone: string
+): number {
+  return taskBlocks.filter(isWorkPeriodScheduleBlock).reduce((latest, period) => {
+    const window = blockWindowMs(period, timeZone);
+    return window ? Math.max(latest, window.endMs) : latest;
+  }, Number.NEGATIVE_INFINITY);
+}
+
+/**
  * Elapsed seconds for focus mode on one block of a multi-block task.
- * Keeps stopped sessions for this block; excludes earlier siblings and
- * finished work-period time.
+ * Keeps stopped sessions for this block; excludes earlier siblings and any
+ * work already banked by a finished session.
  */
 export function focusElapsedSecondsForBlock({
   block,
@@ -91,34 +105,15 @@ export function focusElapsedSecondsForBlock({
     )
     .sort((a, b) => blockSortKey(a).localeCompare(blockSortKey(b)));
 
-  const workPeriods = taskBlocks.filter(isWorkPeriodScheduleBlock);
+  const bankedThroughMs = finishedThroughMs(taskBlocks, timeZone);
+  const openEntries = entries.filter((entry) => {
+    if (!entry.endAt) return true;
+    const entryMs = entryWindowMs(entry, nowMs);
+    return entryMs != null && entryMs.startMs >= bankedThroughMs;
+  });
 
-  if (openFocusBlocks.length <= 1 && workPeriods.length === 0) {
-    return Math.floor(totalElapsedSeconds(entries, nowMs));
-  }
-
-  const claimedIds = new Set<string>();
-
-  for (const period of workPeriods) {
-    const periodWindow = blockWindowMs(period, timeZone);
-    if (!periodWindow) continue;
-    for (const entry of entries) {
-      if (!entry.endAt || claimedIds.has(entry.id)) continue;
-      const entryMs = entryWindowMs(entry, nowMs);
-      if (entryMs && windowsOverlap(entryMs, periodWindow)) {
-        claimedIds.add(entry.id);
-      }
-    }
-  }
-
-  // Single remaining open block: everything not claimed by finished sessions.
   if (openFocusBlocks.length <= 1) {
-    return Math.floor(
-      entries.reduce((sum, entry) => {
-        if (claimedIds.has(entry.id)) return sum;
-        return sum + sessionDurationSeconds(entry, nowMs);
-      }, 0)
-    );
+    return Math.floor(totalElapsedSeconds(openEntries, nowMs));
   }
 
   const currentWindow = blockWindowMs(block, timeZone);
@@ -131,8 +126,7 @@ export function focusElapsedSecondsForBlock({
   const earliestOpenId = openFocusBlocks[0]?.id;
   let seconds = 0;
 
-  for (const entry of entries) {
-    if (claimedIds.has(entry.id)) continue;
+  for (const entry of openEntries) {
     const entryMs = entryWindowMs(entry, nowMs);
     if (!entryMs) continue;
 
