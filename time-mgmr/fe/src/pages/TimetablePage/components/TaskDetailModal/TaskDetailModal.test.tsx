@@ -848,7 +848,7 @@ describe('TaskDetailModal focus mode', () => {
     }
   });
 
-  it('does not ring the ending tone for a running focus block', () => {
+  it('rings a soft tone when a running focus block reaches 10 seconds remaining', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-19T10:59:49.000Z'));
     vi.mocked(playSoftTone).mockClear();
@@ -878,12 +878,14 @@ describe('TaskDetailModal focus mode', () => {
         />
       );
 
+      expect(playSoftTone).not.toHaveBeenCalled();
+
       act(() => {
         vi.setSystemTime(new Date('2026-07-19T10:59:50.000Z'));
         vi.advanceTimersByTime(1000);
       });
 
-      expect(playSoftTone).not.toHaveBeenCalled();
+      expect(playSoftTone).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
     }

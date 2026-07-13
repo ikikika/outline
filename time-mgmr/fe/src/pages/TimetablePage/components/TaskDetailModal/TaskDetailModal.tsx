@@ -27,7 +27,7 @@ import {
 } from '../../utils/ensureBreakTask/ensureBreakTask';
 import { focusElapsedSecondsForBlock } from '../../utils/focusBlockElapsed/focusBlockElapsed';
 import { playSoftTone } from '../../utils/playSoftTone/playSoftTone';
-import { shouldPlayBreakEndingTone } from '../../utils/playSoftTone/shouldPlayBreakEndingTone';
+import { shouldPlayEndingTone } from '../../utils/playSoftTone/shouldPlayBreakEndingTone';
 import styles from './TaskDetailModal.module.scss';
 
 interface TaskDetailModalProps {
@@ -135,7 +135,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const deleteTriggerRef = useRef<HTMLDivElement>(null);
   const deleteMenuRef = useRef<HTMLDivElement>(null);
   const sidebarOpenRef = useRef(true);
-  const prevBreakRemainingRef = useRef<number | null>(null);
+  const prevRemainingRef = useRef<number | null>(null);
   const [showManual, setShowManual] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
@@ -349,12 +349,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const showRemainingRing = isRunningHere && plannedSeconds > 0;
 
   useEffect(() => {
-    const previous = prevBreakRemainingRef.current;
-    prevBreakRemainingRef.current = isBreak && isRunningHere ? remainingSeconds : null;
+    const previous = prevRemainingRef.current;
+    prevRemainingRef.current = isRunningHere ? remainingSeconds : null;
 
     if (
-      shouldPlayBreakEndingTone({
-        isBreak,
+      shouldPlayEndingTone({
         isRunning: isRunningHere,
         previousRemainingSeconds: previous,
         remainingSeconds,
@@ -362,7 +361,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     ) {
       playSoftTone();
     }
-  }, [isBreak, isRunningHere, remainingSeconds]);
+  }, [isRunningHere, remainingSeconds]);
 
   const submitManual = handleSubmit(async (values) => {
     if (!taskId) return;

@@ -1,37 +1,24 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { playSoftTone } from './playSoftTone';
 import {
-  BREAK_ENDING_TONE_SECONDS,
-  shouldPlayBreakEndingTone,
+  ENDING_TONE_SECONDS,
+  shouldPlayEndingTone,
 } from './shouldPlayBreakEndingTone';
 
-describe('shouldPlayBreakEndingTone', () => {
-  it('plays when a running break crosses the threshold', () => {
+describe('shouldPlayEndingTone', () => {
+  it('plays when a running timer crosses the threshold', () => {
     expect(
-      shouldPlayBreakEndingTone({
-        isBreak: true,
+      shouldPlayEndingTone({
         isRunning: true,
-        previousRemainingSeconds: BREAK_ENDING_TONE_SECONDS + 1,
-        remainingSeconds: BREAK_ENDING_TONE_SECONDS,
+        previousRemainingSeconds: ENDING_TONE_SECONDS + 1,
+        remainingSeconds: ENDING_TONE_SECONDS,
       })
     ).toBe(true);
   });
 
-  it('does not play for focus blocks', () => {
+  it('does not play when the timer is not running', () => {
     expect(
-      shouldPlayBreakEndingTone({
-        isBreak: false,
-        isRunning: true,
-        previousRemainingSeconds: 11,
-        remainingSeconds: 10,
-      })
-    ).toBe(false);
-  });
-
-  it('does not play when the break is not running', () => {
-    expect(
-      shouldPlayBreakEndingTone({
-        isBreak: true,
+      shouldPlayEndingTone({
         isRunning: false,
         previousRemainingSeconds: 11,
         remainingSeconds: 10,
@@ -41,8 +28,7 @@ describe('shouldPlayBreakEndingTone', () => {
 
   it('does not play on the first remaining sample', () => {
     expect(
-      shouldPlayBreakEndingTone({
-        isBreak: true,
+      shouldPlayEndingTone({
         isRunning: true,
         previousRemainingSeconds: null,
         remainingSeconds: 10,
@@ -52,11 +38,20 @@ describe('shouldPlayBreakEndingTone', () => {
 
   it('does not replay while still under the threshold', () => {
     expect(
-      shouldPlayBreakEndingTone({
-        isBreak: true,
+      shouldPlayEndingTone({
         isRunning: true,
         previousRemainingSeconds: 10,
         remainingSeconds: 9,
+      })
+    ).toBe(false);
+  });
+
+  it('does not play after remaining hits zero', () => {
+    expect(
+      shouldPlayEndingTone({
+        isRunning: true,
+        previousRemainingSeconds: 1,
+        remainingSeconds: 0,
       })
     ).toBe(false);
   });
