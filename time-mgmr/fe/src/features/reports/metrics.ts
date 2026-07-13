@@ -328,40 +328,14 @@ export function isExcludedFromReports(block: ITimetableBlock): boolean {
   return Boolean(block.excludeFromReports);
 }
 
-function topByVariance(
-  metrics: IActivityMetrics[],
-  direction: 'over' | 'under',
-  limit: number
-): IActivityMetrics[] {
-  const withoutBreaks = metrics.filter((m) => !isBreakActivity(m.activity));
-  const filtered =
-    direction === 'over'
-      ? withoutBreaks.filter((m) => m.varianceMinutes > 0)
-      : withoutBreaks.filter((m) => m.varianceMinutes < 0 && m.actualMinutes > 0);
-  return [...filtered]
-    .sort((a, b) =>
-      direction === 'over'
-        ? b.varianceMinutes - a.varianceMinutes
-        : a.varianceMinutes - b.varianceMinutes
-    )
-    .slice(0, limit);
-}
-
-function mostFragmentedActivities(
+/** Keep first occurrence per task (assumes input is already sorted by priority). */
+function takeUniqueByTask(
   metrics: IActivityMetrics[],
   limit: number
 ): IActivityMetrics[] {
-  const sorted = [...metrics]
-    .filter((m) => m.entryCount >= 2)
-    .sort(
-      (a, b) =>
-        b.entryCount - a.entryCount || b.actualMinutes - a.actualMinutes
-    );
-
-  // One entry per task — keep the most fragmented occurrence.
   const seenTasks = new Set<string>();
   const unique: IActivityMetrics[] = [];
-  for (const m of sorted) {
+  for (const m of metrics) {
     const key = m.activity.taskId ?? m.activity.id;
     if (seenTasks.has(key)) continue;
     seenTasks.add(key);
@@ -371,19 +345,52 @@ function mostFragmentedActivities(
   return unique;
 }
 
+function topByVariance(
+  metrics: IActivityMetrics[],
+  direction: 'over' | 'under',
+  limit: number
+): IActivityMetrics[] {
+  const completed = metrics.filter(
+    (m) => m.activity.status === 'done' && !isBreakActivity(m.activity)
+  );
+  const filtered =
+    direction === 'over'
+      ? completed.filter((m) => m.varianceMinutes > 0)
+      : completed.filter((m) => m.varianceMinutes < 0 && m.actualMinutes > 0);
+  const sorted = [...filtered].sort((a, b) =>
+    direction === 'over'
+      ? b.varianceMinutes - a.varianceMinutes
+      : a.varianceMinutes - b.varianceMinutes
+  );
+  return takeUniqueByTask(sorted, limit);
+}
+
+function mostFragmentedActivities(
+  metrics: IActivityMetrics[],
+  limit: number
+): IActivityMetrics[] {
+  const sorted = [...metrics]
+    .filter((m) => m.activity.status === 'done' && m.entryCount >= 2)
+    .sort(
+      (a, b) =>
+        b.entryCount - a.entryCount || b.actualMinutes - a.actualMinutes
+    );
+  return takeUniqueByTask(sorted, limit);
+}
+
 function busyButUnfinishedActivities(
   metrics: IActivityMetrics[],
   limit: number
 ): IActivityMetrics[] {
-  return [...metrics]
+  const sorted = [...metrics]
     .filter(
       (m) =>
         m.actualMinutes > 0 &&
         m.activity.status !== 'done' &&
         m.activity.status !== 'skipped'
     )
-    .sort((a, b) => b.actualMinutes - a.actualMinutes)
-    .slice(0, limit);
+    .sort((a, b) => b.actualMinutes - a.actualMinutes);
+  return takeUniqueByTask(sorted, limit);
 }
 
 function unplannedWorkActivities(
@@ -393,17 +400,7 @@ function unplannedWorkActivities(
   const sorted = [...metrics]
     .filter((m) => m.startedFromUnplanned && m.actualMinutes > 0)
     .sort((a, b) => b.actualMinutes - a.actualMinutes);
-
-  const seenTasks = new Set<string>();
-  const unique: IActivityMetrics[] = [];
-  for (const m of sorted) {
-    const key = m.activity.taskId ?? m.activity.id;
-    if (seenTasks.has(key)) continue;
-    seenTasks.add(key);
-    unique.push(m);
-    if (unique.length >= limit) break;
-  }
-  return unique;
+  return takeUniqueByTask(sorted, limit);
 }
 
 function biggestScheduleDrifts(

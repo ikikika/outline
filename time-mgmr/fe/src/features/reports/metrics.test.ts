@@ -162,11 +162,18 @@ describe('buildDayReport', () => {
     ];
     const entries = [
       entry({
-        id: 'e1',
+        id: 'e1a',
         source: 'manual',
-        durationMinutes: 60,
+        durationMinutes: 30,
         startAt: '2026-07-19T09:00:00.000Z',
-        endAt: '2026-07-19T10:00:00.000Z',
+        endAt: '2026-07-19T09:30:00.000Z',
+      }),
+      entry({
+        id: 'e1b',
+        source: 'manual',
+        durationMinutes: 30,
+        startAt: '2026-07-19T10:00:00.000Z',
+        endAt: '2026-07-19T10:30:00.000Z',
       }),
       entry({
         id: 'e2',
@@ -188,7 +195,8 @@ describe('buildDayReport', () => {
     const report = buildDayReport('2026-07-19', blocks, entries);
 
     expect(report.biggestUnderruns[0]?.activity.title).toBe('Deep work');
-    expect(report.mostFragmented[0]?.activity.title).toBe('Admin batch');
+    // Fragmentation only includes completed tasks — unfinished Admin is excluded
+    expect(report.mostFragmented[0]?.activity.title).toBe('Deep work');
     expect(report.mostFragmented[0]?.entryCount).toBe(2);
     expect(report.busyButUnfinished[0]?.activity.title).toBe('Admin batch');
     expect(report.deepWorkPercent).toBeCloseTo((60 / 105) * 100);
@@ -290,13 +298,14 @@ describe('buildDayReport', () => {
 });
 
 describe('buildRangeReport insights', () => {
-  it('limits overruns/underruns to top 3 and dedupes fragmented by task', () => {
+  it('limits insight lists to top 3 unique tasks', () => {
     const makeFocus = (
       id: string,
       taskId: string,
       title: string,
       date: string,
-      estimateMin: number
+      estimateMin: number,
+      status: ITimetableBlock['status'] = 'done'
     ) =>
       baseBlock({
         id,
@@ -305,7 +314,7 @@ describe('buildRangeReport insights', () => {
         title,
         date,
         timeEstimationSeconds: estimateMin * 60,
-        status: 'done',
+        status,
       });
 
     const blocks = [
@@ -315,9 +324,15 @@ describe('buildRangeReport insights', () => {
       makeFocus('b4', 't3', 'Task C', '2026-07-20', 60),
       makeFocus('b5', 't4', 'Task D', '2026-07-20', 60),
       makeFocus('b6', 't5', 'Over 1', '2026-07-20', 30),
+      // Same overrun task on day 2 — must not appear twice in biggest overruns
+      makeFocus('b6b', 't5', 'Over 1', '2026-07-21', 30),
       makeFocus('b7', 't6', 'Over 2', '2026-07-20', 30),
       makeFocus('b8', 't7', 'Over 3', '2026-07-20', 30),
       makeFocus('b9', 't8', 'Over 4', '2026-07-20', 30),
+      makeFocus('b10', 't9', 'Open A', '2026-07-20', 30, 'in_progress'),
+      makeFocus('b10b', 't9', 'Open A', '2026-07-21', 30, 'in_progress'),
+      makeFocus('b11', 't10', 'Open B', '2026-07-20', 30, 'in_progress'),
+      makeFocus('b12', 't11', 'Open C', '2026-07-20', 30, 'in_progress'),
     ];
 
     const entries: ITimeEntry[] = [
@@ -452,6 +467,48 @@ describe('buildRangeReport insights', () => {
         startAt: '2026-07-20T01:00:00.000Z',
         endAt: '2026-07-20T02:00:00.000Z',
       }),
+      // Over 1 day 2 (same task) — smaller overrun, should be dropped by dedupe
+      entry({
+        id: 'o1b',
+        taskId: 't5',
+        source: 'manual',
+        durationMinutes: 50,
+        startAt: '2026-07-21T01:00:00.000Z',
+        endAt: '2026-07-21T01:50:00.000Z',
+      }),
+      // Busy but unfinished — Open A on both days
+      entry({
+        id: 'open1a',
+        taskId: 't9',
+        source: 'manual',
+        durationMinutes: 45,
+        startAt: '2026-07-20T05:00:00.000Z',
+        endAt: '2026-07-20T05:45:00.000Z',
+      }),
+      entry({
+        id: 'open1b',
+        taskId: 't9',
+        source: 'manual',
+        durationMinutes: 20,
+        startAt: '2026-07-21T05:00:00.000Z',
+        endAt: '2026-07-21T05:20:00.000Z',
+      }),
+      entry({
+        id: 'open2',
+        taskId: 't10',
+        source: 'manual',
+        durationMinutes: 35,
+        startAt: '2026-07-20T05:00:00.000Z',
+        endAt: '2026-07-20T05:35:00.000Z',
+      }),
+      entry({
+        id: 'open3',
+        taskId: 't11',
+        source: 'manual',
+        durationMinutes: 25,
+        startAt: '2026-07-20T05:00:00.000Z',
+        endAt: '2026-07-20T05:25:00.000Z',
+      }),
     ];
 
     const report = buildRangeReport(
@@ -462,12 +519,14 @@ describe('buildRangeReport insights', () => {
       ['2026-07-20', '2026-07-21']
     );
 
+    // Over 1 appears on two days but only once (keep larger variance)
     expect(report.biggestOverruns).toHaveLength(3);
     expect(report.biggestOverruns.map((m) => m.activity.title)).toEqual([
       'Over 1',
       'Over 2',
       'Over 3',
     ]);
+    expect(report.biggestOverruns[0]?.varianceMinutes).toBe(60);
 
     // Task A appears on two days but only once; top 3 unique tasks
     expect(report.mostFragmented).toHaveLength(3);
@@ -477,6 +536,15 @@ describe('buildRangeReport insights', () => {
       'Task D',
     ]);
     expect(report.mostFragmented[0]?.entryCount).toBe(4);
+
+    // Open A on two days collapses to one
+    expect(report.busyButUnfinished).toHaveLength(3);
+    expect(report.busyButUnfinished.map((m) => m.activity.title)).toEqual([
+      'Open A',
+      'Open B',
+      'Open C',
+    ]);
+    expect(report.busyButUnfinished[0]?.actualMinutes).toBe(45);
   });
 });
 

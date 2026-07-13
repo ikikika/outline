@@ -59,11 +59,11 @@ const METRIC_EXPLANATIONS = {
   categoryMix:
     'Compares planned and actual time by category. It reveals whether your real allocation matched your priorities.',
   biggestOverruns:
-    'The activities that exceeded their estimates by the most time. Reviewing them exposes recurring time sinks.',
+    'Completed activities that exceeded their estimates by the most time. Reviewing them exposes recurring time sinks.',
   biggestUnderruns:
-    'The activities that used much less time than planned. Reviewing them helps recover excess buffer in future plans.',
+    'Completed activities that used much less time than planned. Reviewing them helps recover excess buffer in future plans.',
   mostFragmented:
-    'Activities split across multiple time entries. High fragmentation can indicate interruptions or costly context switching.',
+    'Completed activities split across multiple time entries. High fragmentation can indicate interruptions or costly context switching.',
   busyButUnfinished:
     'Activities with logged time that are not done. This highlights effort that has not yet produced closure.',
   scheduleAdherence:
