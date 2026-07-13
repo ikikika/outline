@@ -51,6 +51,7 @@ const mockCompleteMutation = vi.fn();
 const mockCompleteBlockMutation = vi.fn();
 const mockDismissReminder = vi.fn();
 let mockShouldPrompt = false;
+let mockReminderBreakBlock: (typeof mockBlocks)[number] | null = null;
 const mockStartTimerMutation = vi.fn(async () => undefined);
 const mockStopTimerMutation = vi.fn(async (entryId: string) => ({
   ...mockRunningEntry!,
@@ -177,7 +178,7 @@ vi.mock('@/features/activities', () => ({
 
 vi.mock('./hooks/usePomodoroReminder/usePomodoroReminder', () => ({
   usePomodoroReminder: () => ({
-    breakBlock: mockShouldPrompt ? mockBlocks[1] : null,
+    breakBlock: mockReminderBreakBlock,
     shouldPrompt: mockShouldPrompt,
     dismiss: mockDismissReminder,
   }),
@@ -239,6 +240,7 @@ describe('TimetablePage', () => {
   beforeEach(() => {
     mockRunningEntry = null;
     mockShouldPrompt = false;
+    mockReminderBreakBlock = null;
     mockCompleteMutation.mockClear();
     mockCompleteBlockMutation.mockClear();
     mockDismissReminder.mockClear();
@@ -291,6 +293,7 @@ describe('TimetablePage', () => {
     const { userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
     mockShouldPrompt = true;
+    mockReminderBreakBlock = mockBlocks[1];
     mockRunningEntry = {
       id: 'entry-1',
       taskId: 'task-1',
@@ -304,12 +307,38 @@ describe('TimetablePage', () => {
 
     renderPage();
 
-    expect(screen.getByText(/Ready for a short break/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Open break/i }));
+    expect(screen.getByText(/Time for a short break/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Take a short break/i }));
 
     expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
     expect(mockDismissReminder).toHaveBeenCalled();
+    expect(mockCreateAdhocRest).not.toHaveBeenCalled();
     expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Short Break');
+  });
+
+  it('creates an adhoc rest when taking a break with no planned break', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    mockShouldPrompt = true;
+    mockReminderBreakBlock = null;
+    mockRunningEntry = {
+      id: 'entry-1',
+      taskId: 'task-1',
+      startAt: '2026-07-19T09:00:00.000Z',
+      endAt: null,
+      durationMinutes: null,
+      source: 'timer',
+      createdAt: '2026-07-19T09:00:00.000Z',
+      updatedAt: '2026-07-19T09:00:00.000Z',
+    };
+
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: /Take a short break/i }));
+
+    expect(mockStopTimerMutation).toHaveBeenCalledWith('entry-1');
+    expect(mockCreateAdhocRest).toHaveBeenCalled();
+    expect(screen.getByTestId('task-detail-modal')).toHaveTextContent('Rest');
   });
 
   it('finishes a session with block id and stops a running timer first', async () => {

@@ -84,7 +84,6 @@ export const TimetablePage: React.FC = () => {
     runningBlock,
     runningEntry,
     blocks: blockCatalogQuery.data ?? [],
-    timeZone,
   });
 
   const detailBlock = useMemo(() => {
@@ -308,20 +307,33 @@ export const TimetablePage: React.FC = () => {
           </button>
         </aside>
       ) : null}
-      {pomodoroReminder.shouldPrompt &&
-      runningTask &&
-      runningEntry &&
-      pomodoroReminder.breakBlock ? (
+      {pomodoroReminder.shouldPrompt && runningTask && runningEntry ? (
         <PomodoroBreakPrompt
           focusTitle={runningTask.title}
-          breakTitle={pomodoroReminder.breakBlock.title}
-          isOpening={stopTimer.isPending}
+          isOpening={stopTimer.isPending || startRestBusy}
           onContinueWorking={pomodoroReminder.dismiss}
-          onOpenBreak={() =>
+          onTakeBreak={() =>
             runAction(async () => {
               await stopTimer.mutateAsync(runningEntry.id);
               pomodoroReminder.dismiss();
-              openDetails(pomodoroReminder.breakBlock!);
+              let breakBlock = pomodoroReminder.breakBlock;
+              if (!breakBlock) {
+                setStartRestBusy(true);
+                try {
+                  breakBlock = await createAdhocRest(timeZone);
+                  await Promise.all([
+                    queryClient.invalidateQueries({
+                      queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all,
+                    }),
+                    queryClient.invalidateQueries({
+                      queryKey: ACTIVITY_QUERY_KEYS.all,
+                    }),
+                  ]);
+                } finally {
+                  setStartRestBusy(false);
+                }
+              }
+              openDetails(breakBlock);
             })
           }
         />

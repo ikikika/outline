@@ -2,17 +2,15 @@ import styles from './PomodoroBreakPrompt.module.scss';
 
 interface PomodoroBreakPromptProps {
   focusTitle: string;
-  breakTitle: string;
   isOpening: boolean;
-  onOpenBreak: () => void;
+  onTakeBreak: () => void;
   onContinueWorking: () => void;
 }
 
 export function PomodoroBreakPrompt({
   focusTitle,
-  breakTitle,
   isOpening,
-  onOpenBreak,
+  onTakeBreak,
   onContinueWorking,
 }: PomodoroBreakPromptProps) {
   return (
@@ -22,19 +20,20 @@ export function PomodoroBreakPrompt({
       aria-labelledby="pomodoro-break-title"
       aria-describedby="pomodoro-break-description"
     >
-      <p className={styles.eyebrow}>Pomodoro break prompt</p>
-      <h2 id="pomodoro-break-title">Ready for a {breakTitle.toLowerCase()}?</h2>
+      <p className={styles.eyebrow}>Focus break</p>
+      <h2 id="pomodoro-break-title">Time for a short break?</h2>
       <p id="pomodoro-break-description">
-        The planned focus period for “{focusTitle}” has ended.
+        You’ve been focusing on “{focusTitle}” for 25 minutes. Taking a break
+        ends this focus session.
       </p>
       <div className={styles.actions}>
         <button
           type="button"
           className={styles.primary}
-          onClick={onOpenBreak}
+          onClick={onTakeBreak}
           disabled={isOpening}
         >
-          {isOpening ? 'Opening…' : 'Open break'}
+          {isOpening ? 'Starting break…' : 'Take a short break'}
         </button>
         <button
           type="button"

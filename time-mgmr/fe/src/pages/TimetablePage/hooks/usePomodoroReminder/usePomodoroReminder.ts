@@ -1,25 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { zonedLocalToUtc } from '@/core/utils/timeZone/timeZone';
 import type { ITimetableBlock, ITimeEntry } from '@/features/activities';
 
 const POMODORO_BREAK_ACTIVITY_ID = 'pomodoro-breaks';
 const REMINDER_STORAGE_PREFIX = 'tempo:pomodoro-reminder:';
 
+/** Elapsed focus time before prompting for a short break. */
+export const FOCUS_BREAK_REMINDER_MINUTES = 25;
+export const FOCUS_BREAK_REMINDER_MS = FOCUS_BREAK_REMINDER_MINUTES * 60 * 1000;
+
 function blockScheduleKey(block: ITimetableBlock): string {
   return `${block.date}T${block.plannedStart}`;
+}
+
+function isFocusBlock(block: ITimetableBlock): boolean {
+  if (block.categoryId === 'break') return false;
+  if (block.blockType === 'short_break' || block.blockType === 'long_break') {
+    return false;
+  }
+  return true;
 }
 
 export function findFollowingPomodoroBreak(
   runningBlock: ITimetableBlock | null,
   blocks: ITimetableBlock[]
 ): ITimetableBlock | null {
-  if (!runningBlock || runningBlock.categoryId === 'break') return null;
-  if (
-    runningBlock.blockType === 'short_break' ||
-    runningBlock.blockType === 'long_break'
-  ) {
-    return null;
-  }
+  if (!runningBlock || !isFocusBlock(runningBlock)) return null;
 
   const ordered = [...blocks].sort(
     (a, b) =>
@@ -64,14 +69,12 @@ interface UsePomodoroReminderOptions {
   runningBlock: ITimetableBlock | null;
   runningEntry: ITimeEntry | null;
   blocks: ITimetableBlock[];
-  timeZone: string;
 }
 
 export function usePomodoroReminder({
   runningBlock,
   runningEntry,
   blocks,
-  timeZone,
 }: UsePomodoroReminderOptions) {
   const [activeReminderKey, setActiveReminderKey] = useState<string | null>(
     null
@@ -81,21 +84,17 @@ export function usePomodoroReminder({
     [runningBlock, blocks]
   );
   const reminderKey =
-    runningEntry && breakBlock
-      ? `${runningEntry.id}:${breakBlock.id}`
+    runningEntry && runningBlock && isFocusBlock(runningBlock)
+      ? runningEntry.id
       : null;
 
   useEffect(() => {
-    if (!runningBlock || !reminderKey) return;
+    if (!runningEntry || !reminderKey) return;
 
-    const plannedEndMs = new Date(
-      zonedLocalToUtc(
-        runningBlock.date,
-        `${runningBlock.plannedEnd}:00`,
-        timeZone
-      )
-    ).getTime();
-    const delayMs = Math.max(0, plannedEndMs - Date.now());
+    const startMs = Date.parse(runningEntry.startAt);
+    if (Number.isNaN(startMs)) return;
+
+    const delayMs = Math.max(0, startMs + FOCUS_BREAK_REMINDER_MS - Date.now());
 
     const showReminder = () => {
       const storageKey = `${REMINDER_STORAGE_PREFIX}${reminderKey}`;
@@ -107,7 +106,7 @@ export function usePomodoroReminder({
 
     const timeoutId = window.setTimeout(showReminder, delayMs);
     return () => window.clearTimeout(timeoutId);
-  }, [reminderKey, runningBlock, timeZone]);
+  }, [reminderKey, runningEntry]);
 
   const dismiss = useCallback(() => {
     setActiveReminderKey(null);

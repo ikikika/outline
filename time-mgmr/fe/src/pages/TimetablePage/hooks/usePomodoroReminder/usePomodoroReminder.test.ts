@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ITimetableBlock, ITimeEntry } from '@/features/activities';
 import {
   findFollowingPomodoroBreak,
+  FOCUS_BREAK_REMINDER_MS,
   usePomodoroReminder,
 } from './usePomodoroReminder';
 
@@ -40,7 +41,7 @@ describe('Pomodoro break reminder', () => {
   beforeEach(() => {
     sessionStorage.clear();
     vi.useFakeTimers();
-    vi.setSystemTime('2026-07-21T09:25:00.000Z');
+    vi.setSystemTime('2026-07-21T09:00:00.000Z');
   });
 
   afterEach(() => {
@@ -75,29 +76,23 @@ describe('Pomodoro break reminder', () => {
     ).toEqual(breakBlock);
   });
 
-  it('prompts once when the running focus block reaches its planned end', () => {
+  it('prompts once after 25 minutes of focus, even without a following break', () => {
     const focus = block();
-    const breakBlock = block({
-      id: 'break-1',
-      taskId: undefined,
-      blockType: 'short_break',
-      activityId: 'pomodoro-breaks',
-      title: 'Short Break',
-      plannedStart: '09:25',
-      plannedEnd: '09:30',
-      categoryId: 'break',
-      status: 'planned',
-    });
     const options = {
       runningBlock: focus,
       runningEntry,
-      blocks: [focus, breakBlock],
-      timeZone: 'UTC',
+      blocks: [focus],
     };
     const { result, unmount } = renderHook(() => usePomodoroReminder(options));
 
-    act(() => vi.advanceTimersByTime(0));
+    expect(result.current.shouldPrompt).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(FOCUS_BREAK_REMINDER_MS);
+    });
     expect(result.current.shouldPrompt).toBe(true);
+    expect(result.current.breakBlock).toBeNull();
+
     act(() => result.current.dismiss());
     expect(result.current.shouldPrompt).toBe(false);
 
@@ -106,8 +101,7 @@ describe('Pomodoro break reminder', () => {
     expect(secondRender.result.current.shouldPrompt).toBe(false);
   });
 
-  it('does not prompt before plannedEnd', () => {
-    vi.setSystemTime('2026-07-21T09:24:59.000Z');
+  it('does not prompt before 25 minutes of focus elapsed', () => {
     const focus = block();
     const breakBlock = block({
       id: 'break-1',
@@ -125,15 +119,50 @@ describe('Pomodoro break reminder', () => {
         runningBlock: focus,
         runningEntry,
         blocks: [focus, breakBlock],
-        timeZone: 'UTC',
       })
     );
 
     expect(result.current.shouldPrompt).toBe(false);
 
     act(() => {
+      vi.advanceTimersByTime(FOCUS_BREAK_REMINDER_MS - 1000);
+    });
+    expect(result.current.shouldPrompt).toBe(false);
+
+    act(() => {
       vi.advanceTimersByTime(1000);
     });
     expect(result.current.shouldPrompt).toBe(true);
+    expect(result.current.breakBlock).toEqual(breakBlock);
+  });
+
+  it('does not prompt while a break timer is running', () => {
+    const breakBlock = block({
+      id: 'break-1',
+      taskId: 'task-break-1',
+      blockType: 'short_break',
+      activityId: 'pomodoro-breaks',
+      title: 'Short Break',
+      categoryId: 'break',
+      status: 'in_progress',
+    });
+    const breakEntry: ITimeEntry = {
+      ...runningEntry,
+      id: 'entry-break',
+      taskId: 'task-break-1',
+    };
+
+    const { result } = renderHook(() =>
+      usePomodoroReminder({
+        runningBlock: breakBlock,
+        runningEntry: breakEntry,
+        blocks: [breakBlock],
+      })
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(FOCUS_BREAK_REMINDER_MS);
+    });
+    expect(result.current.shouldPrompt).toBe(false);
   });
 });
