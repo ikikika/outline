@@ -246,47 +246,23 @@
 }
 
 .board-surface {
-  position: relative;
   flex: 1;
   min-height: 200px;
   margin-top: 20px;
-  overflow: hidden;
+  overflow: auto;
   border: 1px solid #d4e0dc;
   border-radius: 4px;
-  background-color: #e6f0ee;
-  background-image: radial-gradient(#c6d8d3 0.75px, transparent 0.75px);
-  background-size: 18px 18px;
+  background: #e6f0ee;
 }
 
-.surface-mark {
-  position: absolute;
-  width: 42px;
-  aspect-ratio: 1;
-  border: 1px solid rgba(63, 119, 110, 0.28);
-  background: rgba(255, 255, 255, 0.14);
-  transform: rotate(30deg) skewY(30deg) scaleX(0.866);
+.board-svg {
+  display: block;
+  flex: none;
+  max-width: none;
 }
 
-.surface-mark-one {
-  top: 24%;
-  left: 30%;
-}
-
-.surface-mark-two {
-  top: 43%;
-  left: 38%;
-}
-
-.surface-mark-three {
-  top: 62%;
-  left: 46%;
-}
-
-.surface-label {
-  position: absolute;
-  right: 14px;
-  bottom: 12px;
-  color: #66817b;
+.board-cell {
+  stroke-linejoin: round;
 }
 
 .app-footer {

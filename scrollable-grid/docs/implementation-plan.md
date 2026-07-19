@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 3 are complete; Phase 4 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
+This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 4 are complete; Phase 5 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
 
 | Phase | Objective | Dependencies |
 |---|---|---|
@@ -68,13 +68,15 @@ This plan is phased and gated. A phase is complete only after its listed accepta
 
 **Objective:** Render complete rectangular and hexagonal logical boards using shared geometry.
 
-**Expected files/modules:** SVG board, cell and grid components; application shell styling.
+**Expected files/modules:** `src/components/BoardSvg.tsx`; board-bounds utility in `src/geometry/board-layout.ts`; application shell styling.
 
 **Deliverables:** Fixed logical cell radius, aligned pointy-top hex cells, board shape controls/configuration, complete board-space SVG bounds, grid rendering.
 
 **Acceptance:** Correct cell counts and positions render for both shapes at configured size; no auto-fit changes logical size; objects added later can share the same cell centers; rendering remains clipped by the viewport rather than changing the board model.
 
-**Verification:** Run build/type and lint checks; manually inspect cell counts, positions, and shape boundaries for representative boards.
+**Status:** Complete. `npm run build` and `npm run lint` pass. Browser checks confirmed 280 rendered cells for the 20x14 rectangle, 19 cells for radius 2, and 217 cells for radius 8. A radius-2 board at cell size 20 rendered a 175.2 by 162 SVG; the default 32-unit board remained 1,138 pixels wide inside a 301-pixel scroll viewport, confirming cells are not auto-fitted.
+
+**Verification:** Build/typecheck and lint passed; manually inspected rectangle and hex renders, cell counts, fixed cell dimensions, and scrollable bounds. Pan/zoom and viewport centering remain Phase 5 work.
 
 **Risks and mitigation:** Large SVG trees can be costly; begin with simple rendering and profile at documented maximum sizes before considering culling.
 

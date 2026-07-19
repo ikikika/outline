@@ -4,8 +4,17 @@ import {
   rectangularToAxial,
   type RectangularCoordinate,
 } from './coordinates'
-import { pointToAxial } from './hex'
+import { getHexVertices, pointToAxial } from './hex'
 import type { CartesianPoint } from './coordinates'
+
+export interface BoardBounds {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+  width: number
+  height: number
+}
 
 export function getBoardCoordinates(
   configuration: BoardConfig,
@@ -55,6 +64,38 @@ export function isCoordinateWithinBoard(
     Math.abs(coordinate.r) <= configuration.radius &&
     Math.abs(coordinate.q + coordinate.r) <= configuration.radius
   )
+}
+
+export function getBoardBounds(
+  configuration: BoardConfig,
+  cellRadius: number,
+  padding = 0,
+): BoardBounds {
+  if (!Number.isFinite(padding) || padding < 0) {
+    throw new RangeError('Board bounds padding must be a finite non-negative number.')
+  }
+
+  const coordinates = getBoardCoordinates(configuration)
+  if (coordinates.length === 0) {
+    throw new RangeError('Cannot calculate bounds for an empty board.')
+  }
+
+  const vertices = coordinates.flatMap((coordinate) =>
+    getHexVertices(coordinate, cellRadius),
+  )
+  const minX = Math.min(...vertices.map((vertex) => vertex.x)) - padding
+  const minY = Math.min(...vertices.map((vertex) => vertex.y)) - padding
+  const maxX = Math.max(...vertices.map((vertex) => vertex.x)) + padding
+  const maxY = Math.max(...vertices.map((vertex) => vertex.y)) + padding
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: maxX - minX,
+    height: maxY - minY,
+  }
 }
 
 export function hitTestBoard(

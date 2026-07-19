@@ -7,6 +7,7 @@ import {
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
 import type { BoardConfig, BoardShape } from './domain/types'
+import { BoardSvg } from './components/BoardSvg'
 
 interface BoardFormValues {
   shape: BoardShape
@@ -73,7 +74,7 @@ function App() {
           <p className="eyebrow">WORLD WORKSHOP</p>
           <h1>Hexboard</h1>
         </div>
-        <span className="phase-tag">Phase 02 / Domain</span>
+        <span className="phase-tag">Phase 04 / Render</span>
       </header>
 
       <main className="workspace">
@@ -225,11 +226,8 @@ function App() {
             </div>
           </dl>
 
-          <div className="board-surface" aria-hidden="true">
-            <span className="surface-mark surface-mark-one" />
-            <span className="surface-mark surface-mark-two" />
-            <span className="surface-mark surface-mark-three" />
-            <span className="surface-label">Board view follows</span>
+          <div className="board-surface" role="region" aria-label="Board grid" tabIndex={0}>
+            <BoardSvg board={board} />
           </div>
         </section>
       </main>
