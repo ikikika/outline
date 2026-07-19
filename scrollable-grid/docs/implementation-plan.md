@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 and 2 are complete; Phase 3 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
+This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 3 are complete; Phase 4 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
 
 | Phase | Objective | Dependencies |
 |---|---|---|
@@ -50,7 +50,7 @@ This plan is phased and gated. A phase is complete only after its listed accepta
 
 ## Phase 3: Hexagonal geometry
 
-**Objective:** Establish one tested source of truth for logical board geometry.
+**Objective:** Establish one shared, verified source of truth for logical board geometry.
 
 **Expected files/modules:** `src/geometry/coordinates.ts`, `hex.ts`, `board-layout.ts`, `transforms.ts` as appropriate.
 
@@ -58,7 +58,9 @@ This plan is phased and gated. A phase is complete only after its listed accepta
 
 **Acceptance:** Both generators produce complete expected sets; conversions preserve valid cells; neighbor direction/opposite relationships are consistent; hexes have the documented dimensions and no layout gaps; out-of-board hits are rejected. Build/type and lint checks pass.
 
-**Verification:** Manually inspect known center/vertex spacing, all six neighbor directions, rectangular and hex layouts, board boundaries, coordinate conversions, and hit-testing.
+**Status:** Complete. `npm run build` and `npm run lint` pass. One-off geometry smoke checks confirmed rectangular conversion round-trips, 20-cell 4x5 and 19-cell radius-2 layouts, 217 cells at radius 8, correct pointy-top vertices and shared edges in all six directions, reciprocal neighbors, in-board center hit-tests, out-of-board rejection, and board/screen transform inversion. No unit tests or test dependencies were added.
+
+**Verification:** Build/typecheck and lint passed; geometry acceptance checks were run manually through Vite's module loader.
 
 **Risks and mitigation:** Offset-row convention mistakes can corrupt all later work; manually check odd/even rows and known neighbor locations before rendering.
 

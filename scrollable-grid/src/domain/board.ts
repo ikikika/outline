@@ -5,6 +5,7 @@ import type {
   BoardModel,
   Terrain,
 } from './types'
+import { getBoardCoordinates } from '../geometry/board-layout'
 
 export const BOARD_LIMITS = {
   maxColumns: 80,
@@ -92,32 +93,6 @@ export function validateConfiguration(configuration: BoardConfig): void {
   }
 
   throw new RangeError('Unsupported board shape.')
-}
-
-function getBoardCoordinates(configuration: BoardConfig): AxialCoordinate[] {
-  if (configuration.shape === 'rectangular') {
-    const coordinates: AxialCoordinate[] = []
-    for (let row = 0; row < configuration.rows; row += 1) {
-      for (let column = 0; column < configuration.columns; column += 1) {
-        coordinates.push({
-          q: column - Math.floor(row / 2),
-          r: row,
-        })
-      }
-    }
-    return coordinates
-  }
-
-  const coordinates: AxialCoordinate[] = []
-  const { radius } = configuration
-  for (let q = -radius; q <= radius; q += 1) {
-    for (let r = -radius; r <= radius; r += 1) {
-      if (Math.abs(q + r) <= radius) {
-        coordinates.push({ q, r })
-      }
-    }
-  }
-  return coordinates
 }
 
 export function createTerrain(type: Terrain['type']): Terrain {
