@@ -1,121 +1,244 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useReducer, useState, type FormEvent } from 'react'
 import './App.css'
+import {
+  BOARD_LIMITS,
+  DEFAULT_RECTANGULAR_BOARD,
+  createBoard,
+} from './domain/board'
+import { boardReducer } from './domain/boardReducer'
+import type { BoardConfig, BoardShape } from './domain/types'
+
+interface BoardFormValues {
+  shape: BoardShape
+  columns: string
+  rows: string
+  radius: string
+  cellSize: string
+}
+
+const INITIAL_FORM: BoardFormValues = {
+  shape: 'rectangular',
+  columns: '20',
+  rows: '14',
+  radius: '8',
+  cellSize: '32',
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [board, dispatch] = useReducer(
+    boardReducer,
+    DEFAULT_RECTANGULAR_BOARD,
+    createBoard,
+  )
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  const cells = Object.values(board.cells)
+  const waterCellCount = cells.filter(
+    (cell) => cell.terrain.type === 'water',
+  ).length
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const cellSize = Number(form.cellSize)
+    const configuration: BoardConfig =
+      form.shape === 'rectangular'
+        ? {
+            shape: 'rectangular',
+            columns: Number(form.columns),
+            rows: Number(form.rows),
+            cellSize,
+          }
+        : {
+            shape: 'hexagonal',
+            radius: Number(form.radius),
+            cellSize,
+          }
+
+    try {
+      dispatch({ type: 'replace-board', board: createBoard(configuration) })
+      setErrorMessage('')
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Unable to create this board.',
+      )
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <div className="app-shell">
+      <header className="app-header">
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+          <p className="eyebrow">WORLD WORKSHOP</p>
+          <h1>Hexboard</h1>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        <span className="phase-tag">Phase 02 / Domain</span>
+      </header>
 
-      <div className="ticks"></div>
+      <main className="workspace">
+        <section className="setup-panel" aria-labelledby="setup-title">
+          <div className="section-heading">
+            <span className="section-index">01</span>
+            <h2 id="setup-title">Board setup</h2>
+          </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <form onSubmit={handleSubmit}>
+            <label className="field">
+              <span>Shape</span>
+              <select
+                value={form.shape}
+                onChange={(event) =>
+                  setForm({ ...form, shape: event.target.value as BoardShape })
+                }
+              >
+                <option value="rectangular">Rectangle</option>
+                <option value="hexagonal">Hexagon</option>
+              </select>
+            </label>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+            {form.shape === 'rectangular' ? (
+              <div className="field-pair">
+                <label className="field">
+                  <span>Columns</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={BOARD_LIMITS.maxColumns}
+                    step="1"
+                    value={form.columns}
+                    onChange={(event) =>
+                      setForm({ ...form, columns: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span>Rows</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={BOARD_LIMITS.maxRows}
+                    step="1"
+                    value={form.rows}
+                    onChange={(event) =>
+                      setForm({ ...form, rows: event.target.value })
+                    }
+                  />
+                </label>
+              </div>
+            ) : (
+              <label className="field">
+                <span>Radius</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={BOARD_LIMITS.maxHexRadius}
+                  step="1"
+                  value={form.radius}
+                  onChange={(event) =>
+                    setForm({ ...form, radius: event.target.value })
+                  }
+                />
+              </label>
+            )}
+
+            <label className="field">
+              <span>Cell size</span>
+              <input
+                type="number"
+                min="0.01"
+                step="any"
+                value={form.cellSize}
+                onChange={(event) =>
+                  setForm({ ...form, cellSize: event.target.value })
+                }
+              />
+            </label>
+
+            {errorMessage && (
+              <p className="form-error" role="alert">
+                {errorMessage}
+              </p>
+            )}
+
+            <button className="primary-button" type="submit">
+              Create board
+            </button>
+          </form>
+        </section>
+
+        <section className="board-panel" aria-labelledby="board-title">
+          <div className="board-panel-topline">
+            <span>Logical board</span>
+            <span className="status-label">
+              <span className="status-dot" aria-hidden="true" />
+              Initialized
+            </span>
+          </div>
+          <div className="board-heading">
+            <div>
+              <p className="eyebrow">CURRENT CONFIGURATION</p>
+              <h2 id="board-title">
+                {board.configuration.shape === 'rectangular'
+                  ? 'Rectangular board'
+                  : 'Hexagonal board'}
+              </h2>
+            </div>
+            <span className="cell-size-badge">
+              {board.configuration.cellSize} <small>unit cell</small>
+            </span>
+          </div>
+
+          <dl className="board-facts">
+            {board.configuration.shape === 'rectangular' ? (
+              <>
+                <div>
+                  <dt>Columns</dt>
+                  <dd>{board.configuration.columns}</dd>
+                </div>
+                <div>
+                  <dt>Rows</dt>
+                  <dd>{board.configuration.rows}</dd>
+                </div>
+              </>
+            ) : (
+              <div>
+                <dt>Radius</dt>
+                <dd>{board.configuration.radius}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Cells</dt>
+              <dd>{cells.length.toLocaleString()}</dd>
+            </div>
+            <div>
+              <dt>Water</dt>
+              <dd>{waterCellCount.toLocaleString()}</dd>
+            </div>
+            <div>
+              <dt>Objects</dt>
+              <dd>{board.objects.length}</dd>
+            </div>
+            <div>
+              <dt>Vehicles</dt>
+              <dd>{board.vehicles.length}</dd>
+            </div>
+          </dl>
+
+          <div className="board-surface" aria-hidden="true">
+            <span className="surface-mark surface-mark-one" />
+            <span className="surface-mark surface-mark-two" />
+            <span className="surface-mark surface-mark-three" />
+            <span className="surface-label">Board view follows</span>
+          </div>
+        </section>
+      </main>
+
+      <footer className="app-footer">
+        <span>HEXBOARD / EDITOR</span>
+        <span>Logical state is independent of the viewport.</span>
+      </footer>
+    </div>
   )
 }
 

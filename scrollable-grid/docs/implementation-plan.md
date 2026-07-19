@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified; no phase is marked complete yet. Read [context.md](context.md) before implementation. Keep each phase focused, update the context when a design decision changes, and stop for review at the end of Phase 1. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
+This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 and 2 are complete; Phase 3 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
 
 | Phase | Objective | Dependencies |
 |---|---|---|
@@ -26,6 +26,8 @@ This plan is phased and gated. A phase is complete only after its listed accepta
 
 **Acceptance:** Both documents exist, are consistent with the actual starter, cover the requested requirements at an actionable level, and do not claim unverified implementation. Present a concise architecture and unresolved assumptions, then wait for explicit Phase 2 approval.
 
+**Status:** Complete; documents were created and reviewed before Phase 2 approval.
+
 **Automated tests:** None; documentation-only phase. Inspect existing project files and ensure no existing docs are overwritten.
 
 **Risks and mitigations:** Requirements may imply choices not fully specified. Make defaults visible as proposals, capture open questions, and defer consequential alternatives for review.
@@ -40,7 +42,9 @@ This plan is phased and gated. A phase is complete only after its listed accepta
 
 **Acceptance:** A valid rectangular or hexagonal configuration can be represented; valid cells initialize as water; invalid configuration is rejected; production type/build and lint checks pass, and behavior is manually verified.
 
-**Verification:** Run production type/build and lint checks; manually inspect board initialization, default water, invalid dimensions, and representative state updates.
+**Status:** Complete. The production build and lint pass. Browser checks confirmed a 20x14 board initializes with 280 water cells; radius 8 initializes with 217 water cells; invalid radius 41 is rejected by both browser constraints and domain validation without replacing the existing board. The responsive shell has no horizontal overflow at a 390px viewport.
+
+**Verification:** Production build/typecheck and lint passed; manually inspected default board initialization, hexagonal initialization, invalid dimensions, atomic rejection, and mobile-width layout.
 
 **Risks and mitigation:** Premature coupling to UI makes later behavior hard to test; keep business rules framework-independent and defer UI-specific state to components.
 

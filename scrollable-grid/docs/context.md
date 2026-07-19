@@ -1,6 +1,6 @@
 # Hexagonal Game Board Editor: Project Context
 
-This document is the architectural source of truth. It describes the intended application, not features already implemented. The repository currently contains the default React 19, TypeScript, and Vite starter; no board behavior or automated test framework is in place yet.
+This document is the architectural source of truth. It describes both the intended application and verified implementation status. The repository uses React 19, TypeScript, and Vite. Phase 2 provides typed board/domain models, rectangular and hexagonal board initialization with water defaults, configuration validation, immutable board actions, and a minimal responsive setup/status shell. Hex geometry utilities, SVG board rendering, editing workflows, and automated test tooling are not implemented yet.
 
 ## Purpose and experience
 
