@@ -1,0 +1,50 @@
+.card {
+  border-radius: 0.5rem;
+  background-color: var(--color-surface);
+
+  &.variant-outlined {
+    border: 1px solid var(--color-border);
+  }
+
+  &.variant-elevated {
+    box-shadow: var(--shadow-card-elevated);
+  }
+
+  &.variant-filled {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  &.hoverable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: var(--shadow-card-hover);
+      transform: translateY(-2px);
+    }
+
+    &:focus {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.content {
+  padding: 1.5rem;
+  color: var(--color-text);
+}
+
+.footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}

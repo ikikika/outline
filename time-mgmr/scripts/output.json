@@ -1,0 +1,1054 @@
+{
+  "version": 1,
+  "exportedAt": "2026-07-20T05:35:43.464Z",
+  "tasks": [
+    {
+      "id": "11482928",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Mapping Existing Knowledge",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 457
+    },
+    {
+      "id": "19125114",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Quick Note to Prevent an Error",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 37
+    },
+    {
+      "id": "11482930",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Adding Configuration Files",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 411
+    },
+    {
+      "id": "11482932",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Object Types and API Versions",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 415
+    },
+    {
+      "id": "11482934",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Running Containers in Pods",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 558
+    },
+    {
+      "id": "11482938",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Service Config Files in Depth",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 817
+    },
+    {
+      "id": "41990270",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Connecting to Running Containers",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 624
+    },
+    {
+      "id": "11482942",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The Entire Deployment Flow",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 782
+    },
+    {
+      "id": "11482946",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Imperative vs Declarative Deployments",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 816
+    },
+    {
+      "id": "11482954",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Updating Existing Objects",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 370
+    },
+    {
+      "id": "11482956",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Declarative Updates in Action",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 424
+    },
+    {
+      "id": "11482958",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Limitations in Config Updates",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 175
+    },
+    {
+      "id": "11482960",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Running Containers with Deployments",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 363
+    },
+    {
+      "id": "19125388",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Quick Note to Prevent an Error",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 9
+    },
+    {
+      "id": "11482964",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Deployment Configuration Files",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 198
+    },
+    {
+      "id": "11482966",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Walking Through the Deployment Config",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 263
+    },
+    {
+      "id": "11482968",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Applying a Deployment",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 382
+    },
+    {
+      "id": "11482970",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Why Use Services?",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 319
+    },
+    {
+      "id": "11482974",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Scaling and Changing Deployments",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 391
+    },
+    {
+      "id": "11482978",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Updating Deployment Images",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 237
+    },
+    {
+      "id": "11482980",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Rebuilding the Client Image",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 179
+    },
+    {
+      "id": "11482982",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Triggering Deployment Updates",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 744
+    },
+    {
+      "id": "11482984",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Imperatively Updating a Deployment's Image",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 444
+    },
+    {
+      "id": "22875417",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Reminder for Docker Desktop's Kubernetes Users",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 12
+    },
+    {
+      "id": "11500786",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Multiple Docker Installations",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 337
+    },
+    {
+      "id": "11500788",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Reconfiguring Docker CLI",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 357
+    },
+    {
+      "id": "11500790",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Why Mess with Docker in the Node?",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 305
+    },
+    {
+      "id": "11500808",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The Path to Production",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 312
+    },
+    {
+      "id": "11500810",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Checkpoint Files",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 42
+    },
+    {
+      "id": "11500814",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "A Quick Checkpoint",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 275
+    },
+    {
+      "id": "11500816",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Recreating the Deployment",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 329
+    },
+    {
+      "id": "11500820",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "NodePort vs ClusterIP Services",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 221
+    },
+    {
+      "id": "11500824",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The ClusterIP Config",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 232
+    },
+    {
+      "id": "11500828",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Applying Multiple Files with Kubectl",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 258
+    },
+    {
+      "id": "11514726",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Express API Deployment Config",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 362
+    },
+    {
+      "id": "11514728",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Cluster IP for the Express API",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 188
+    },
+    {
+      "id": "11514730",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Combining Config Into Single Files",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 359
+    },
+    {
+      "id": "11514734",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The Worker Deployment",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 276
+    },
+    {
+      "id": "11514736",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Reapplying a Batch of Config Files",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 291
+    },
+    {
+      "id": "11514740",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Creating and Applying Redis Config",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 446
+    },
+    {
+      "id": "19399692",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Important Note about Expected Postgres Error",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 59
+    },
+    {
+      "id": "11514744",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Last Set of Boring Config!",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 374
+    },
+    {
+      "id": "11514746",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The Need for Volumes with Databases",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 438
+    },
+    {
+      "id": "11514748",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Kubernetes Volumes",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 317
+    },
+    {
+      "id": "11582308",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Volumes vs Persistent Volumes",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 179
+    },
+    {
+      "id": "11582334",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Persistent Volumes vs Persistent Volume Claims",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 561
+    },
+    {
+      "id": "11582310",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Claim Config Files",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 176
+    },
+    {
+      "id": "11582312",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Persistent Volume Access Modes",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 211
+    },
+    {
+      "id": "11582314",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Where Does Kubernetes Allocate Persistent Volumes?",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 462
+    },
+    {
+      "id": "52982499",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Designating a PVC in a Pod Template",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 369
+    },
+    {
+      "id": "11582320",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Applying a PVC",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 142
+    },
+    {
+      "id": "11582322",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Defining Environment Variables",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 248
+    },
+    {
+      "id": "11582324",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Adding Environment Variables to Config",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 344
+    },
+    {
+      "id": "11582326",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Creating an Encoded Secret",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 565
+    },
+    {
+      "id": "18122883",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Postgres Environment Variable Fix",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 14
+    },
+    {
+      "id": "11582328",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Passing Secrets as Environment Variables",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 353
+    },
+    {
+      "id": "11582330",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Environment Variables as Strings",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 137
+    },
+    {
+      "id": "11582340",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Load Balancer Services",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 254
+    },
+    {
+      "id": "11582342",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "A Quick Note on Ingresses",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 212
+    },
+    {
+      "id": "11582344",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "One Other Quick Note!",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 97
+    },
+    {
+      "id": "11582346",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Behind the Scenes of Ingress",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 317
+    },
+    {
+      "id": "11582348",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "More Behind the Scenes of Ingress",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 397
+    },
+    {
+      "id": "11639804",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Optional Reading on Ingress Nginx",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 9
+    },
+    {
+      "id": "21475302",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Docker Driver  and Ingress - IMPORTANT",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 37
+    },
+    {
+      "id": "42750686",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Setting Up Ingress Locally with Docker Desktop",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "id": "42750318",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Setting  Up Ingress Locally with Minikube",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 126
+    },
+    {
+      "id": "14520632",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Ingress API Update + \"this.state.seenIndexes.map...\" + 404 errors",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 52
+    },
+    {
+      "id": "11582352",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Creating the Ingress Configuration",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 420
+    },
+    {
+      "id": "41990902",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Testing Ingress Locally",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 170
+    },
+    {
+      "id": "11628194",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The Deployment Process",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 349
+    },
+    {
+      "id": "11628196",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Google Cloud vs AWS for Kubernetes",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 293
+    },
+    {
+      "id": "11628200",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Creating a Git Repo",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 239
+    },
+    {
+      "id": "11628202",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Linking the Github Repo to Travis",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 95
+    },
+    {
+      "id": "12084242",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Free Google Cloud Trial and Credits",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "id": "11628204",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Creating a Google Cloud Project",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 119
+    },
+    {
+      "id": "11628206",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Linking a Billing Account",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 131
+    },
+    {
+      "id": "52432781",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "GKE Creation Steps Using Autopilot",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 84
+    },
+    {
+      "id": "11628314",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Kubernetes Dashboard on Google Cloud",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 273
+    },
+    {
+      "id": "11628214",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Travis Deployment Overview",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 304
+    },
+    {
+      "id": "50723123",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Installing the Google Cloud SDK",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 344
+    },
+    {
+      "id": "25408376",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Updated Service Account steps for new GCP UI",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 49
+    },
+    {
+      "id": "11628218",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Generating a Service Account",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 329
+    },
+    {
+      "id": "18296716",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Ruby Version Fix",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "id": "11628220",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Running Travis CLI in a Container",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 557
+    },
+    {
+      "id": "17886124",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Travis Login Issues, \"iv undefined\" or \"repository not known\"",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 54
+    },
+    {
+      "id": "11628228",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Encrypting a Service Account File",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 474
+    },
+    {
+      "id": "52448957",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "More Google Cloud CLI Config",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 279
+    },
+    {
+      "id": "50725299",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Running Tests with Travis",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 378
+    },
+    {
+      "id": "11628234",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Custom Deployment Providers",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 229
+    },
+    {
+      "id": "11628252",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Unique Deployment Images",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 513
+    },
+    {
+      "id": "11628236",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Unique Tags for Built Images",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 467
+    },
+    {
+      "id": "11628262",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Updating the Deployment Script",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 470
+    },
+    {
+      "id": "52449043",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Configuring the GCloud CLI on Cloud Console",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 334
+    },
+    {
+      "id": "11628268",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Creating a Secret on Google Cloud",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 144
+    },
+    {
+      "id": "40954462",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Helm Setup",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 374
+    },
+    {
+      "id": "40955164",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Important - Updated Ingress Installation with Helm",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 16
+    },
+    {
+      "id": "40956610",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Ingress-Nginx with Helm",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 116
+    },
+    {
+      "id": "40954804",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The Result of Ingress-Nginx",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 227
+    },
+    {
+      "id": "11628286",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Finally - Deployment!",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 210
+    },
+    {
+      "id": "11628290",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Did I Really Type That?",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 45
+    },
+    {
+      "id": "11628292",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Verifying Deployment",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 320
+    },
+    {
+      "id": "11628294",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "A Workflow for Changing in Prod",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 269
+    },
+    {
+      "id": "11628296",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Merging a PR for Deployment",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 61
+    },
+    {
+      "id": "11628302",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "That's It!  What's Next?",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 97
+    },
+    {
+      "id": "25408280",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Completed Code For Google Cloud Deployment",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 3
+    },
+    {
+      "id": "11628340",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "HTTPS Setup Overview",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 335
+    },
+    {
+      "id": "11628344",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Domain Purchase",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 137
+    },
+    {
+      "id": "11628346",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Domain Name Setup",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 210
+    },
+    {
+      "id": "25482916",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Required Updates for Cert Manager Install",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 25
+    },
+    {
+      "id": "11628348",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Cert Manager Install",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 117
+    },
+    {
+      "id": "11628352",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "How to Wire Up Cert Manager",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 358
+    },
+    {
+      "id": "25482794",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Required Update for Issuer",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 13
+    },
+    {
+      "id": "11628354",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Issuer Config File",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 307
+    },
+    {
+      "id": "25482936",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Required Update for the Certificate",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 17
+    },
+    {
+      "id": "11628356",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Certificate Config File",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 318
+    },
+    {
+      "id": "11628360",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Deploying Changes",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 195
+    },
+    {
+      "id": "25483088",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "No Resources Found?",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 12
+    },
+    {
+      "id": "11628362",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Verifying the Certificate",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 234
+    },
+    {
+      "id": "25483166",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Required Update for the HTTPS Ingress",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 4
+    },
+    {
+      "id": "11628364",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Ingress Config for HTTPS",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 409
+    },
+    {
+      "id": "11628366",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "It Worked!",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 171
+    },
+    {
+      "id": "11684242",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Google Cloud Cleanup",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 20
+    },
+    {
+      "id": "11684298",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Local Environment Cleanup",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 38
+    },
+    {
+      "id": "15271340",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Awkward Local Development",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 234
+    },
+    {
+      "id": "15271344",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Installing Skaffold",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 119
+    },
+    {
+      "id": "15271346",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "The Skaffold Config File",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 403
+    },
+    {
+      "id": "45818207",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Skaffold Sync Update and Example Source Code",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 114
+    },
+    {
+      "id": "15271348",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Live Sync Changes",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 302
+    },
+    {
+      "id": "15271350",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Automatic Shutdown",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 306
+    },
+    {
+      "id": "15271356",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Testing Live Sync with the API Server",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 329
+    },
+    {
+      "id": "16727404",
+      "activityId": "docker-and-kubernetes-the-complete-guide",
+      "title": "Bonus!",
+      "plannedStart": "",
+      "plannedEnd": "",
+      "timeEstimationSeconds": 33
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+.timetable {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.75rem;
+  background: var(--color-surface, #fff);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.header {
+  padding: 0;
+}
+
+.scroll {
+  overflow: auto;
+  max-height: min(70vh, 720px);
+  overscroll-behavior: contain;
+}
+
+.grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  min-width: 280px;
+}
+
+.hourLabel {
+  height: var(--slot-height);
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #6b7280);
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: 0.2rem;
+}
+
+.track {
+  position: relative;
+  border-left: 1px solid var(--color-border, #e5e7eb);
+}
+
+.hourLine {
+  height: var(--slot-height);
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  box-sizing: border-box;
+}
+
+.nowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #dc2626;
+  z-index: 4;
+  pointer-events: none;
+  transform: translateY(-1px);
+}
+
+.nowDot {
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #dc2626;
+  transform: translateY(-50%);
+}
+
+.block {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  color: #fff;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.block:active {
+  cursor: grabbing;
+}
+
+.blockDragging {
+  opacity: 0.85;
+  z-index: 5;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.blockTitle {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blockMeta {
+  margin: 0.15rem 0 0;
+  font-size: 0.7rem;
+  opacity: 0.95;
+}
+
+.empty {
+  padding: 1.25rem 1rem 1.5rem;
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.9rem;
+}
