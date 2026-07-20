@@ -1,7 +1,6 @@
 # Implementation Plan
 
-This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 6 are complete; Phase 7 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
-
+This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 7 are complete; Phase 8 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
 | Phase | Objective | Dependencies |
 |---|---|---|
 | 1. Context and architecture | Record requirements, conventions, risks, and this staged plan. Stop for review and approval. | None |
@@ -133,9 +132,15 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 
 **Expected files/modules:** `src/assets/objects/` SVGs or reusable SVG components; typed gallery definitions; placement/footprint/occupancy domain utilities; gallery, preview, and board object components.
 
+**Road preset orientation:** Straight segments cover NE-SW and NW-SE; corners cover NE-SE, NW-SW, SE-SW, and NE-NW. Artwork and typed ports must match.
+
 **Deliverables:** Original local art for terrain/bridge, decorative grass, tree variants, 2x2 and 2x3 buildings, road variants, and top-down car; scrollable desktop gallery and compact mobile presentation; definitions for IDs, layers, footprints and constraints; valid/invalid preview and removal.
 
 **Acceptance:** Gallery selection only enters placement mode; valid click/tap commits exactly one instance; pan does not place; invalid placement changes nothing; multi-cell render/validation/removal use the same derived footprint; controls are keyboard accessible.
+
+**Status:** Complete. `npm run build` and `npm run lint` pass. Browser checks confirmed the bundled gallery, valid/invalid terrain placement, valid/invalid previews, duplicate/overlapping placement rejection, 2x2 and 2x3 footprints, out-of-bounds rejection, removal from any footprint cell, road placement, valid car placement on a road, and rejection of cars on ordinary ground/grass and when a second car is attempted. Mobile gallery sizing and pan-versus-tap behavior were checked. Autonomous car movement remains Phase 9.
+
+**Additional verification:** The NW-SE straight road and NE-NW/SE-SW corner artwork loads from local SVG assets; a car placed on the NW-SE road faces NW. No Phase 7 items remain pending.
 
 **Verification:** Run build/type and lint checks; manually verify grass placement on ground, rejection on water/bridges and occupied cells, vehicle traversal over grass, other footprints, board edges, terrain compatibility, removal, preview feedback, placement under pan/zoom, and the selection-to-placement workflow.
 

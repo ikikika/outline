@@ -4,7 +4,9 @@ This document is the architectural source of truth. It describes both the intend
 
 ## Purpose and experience
 
-**Current implementation status:** Phase 6 adds working ground/bridge terrain brushes, validated terrain changes, explicit bridge direction pairs, and a temporary grid-outline toggle. These are implemented. Gallery/object placement, roads, simulation, and persistence remain for later phases.
+**Status note:** The opening summary above reflects the project through Phase 5. Phases 6 and 7 have since added terrain editing, grid visibility, the object gallery, local artwork, placement previews, validation, and object/car placement and removal. See the current implementation status below.
+
+**Current implementation status:** Phase 6 adds working ground/bridge terrain brushes, validated terrain changes, explicit bridge direction pairs, and a temporary grid-outline toggle. Phase 7 adds a bundled typed gallery, footprint-aware object placement/removal, and valid car placement/removal. Road editing, autonomous driving, and persistence remain for later phases.
 
 Build a browser-based editor for designing a hexagonal world. Users configure a board, paint water/ground/bridges, place grass, trees, buildings and explicitly connected roads, then place and run an autonomous car. Users can pan and zoom a large board, work on desktop or mobile, and exchange logical board designs as portable versioned JSON. The interface should feel like a practical creative tool: board workspace, responsive object gallery, concise controls, clear placement feedback, and accessible interaction.
 
@@ -60,6 +62,7 @@ Gallery definitions are typed and stable: ID/type, display name, category/layer,
 Placement is a selection-preview-commit workflow. Convert pointer screen coordinates through the shared viewport transform to board coordinates and axial cell; derive full footprint; validate bounds, terrain, occupancy, and road/bridge constraints; show valid/invalid feedback; commit only a valid placement. Distinguish a click/tap from a pan gesture. Make removal and editing (including road sides and terrain) available without bypassing domain validation.
 
 ## Roads and vehicles
+The gallery provides straight roads on both diagonal axes (NE-SW and NW-SE) and corner presets for NE-SE, NW-SW, SE-SW, and NE-NW. Each road illustration matches its explicit connection ports. A newly placed car faces the first configured port of its road.
 
 Represent road connections as explicit direction sets. A road graph has drivable cells as nodes; an edge exists only when neighboring cells both expose matching opposite ports, with bridge port/transition rules applied. Blocking objects and buildings cannot be traversed. Keep graph construction and route decisions independent from SVG and viewport state.
 

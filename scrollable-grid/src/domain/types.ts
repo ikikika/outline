@@ -58,7 +58,16 @@ export type ObjectType =
   | 'tree-conifer'
   | 'building-2x2'
   | 'building-2x3'
-  | 'road'
+  | 'road-straight'
+  | 'road-straight-nw-se'
+  | 'road-corner'
+  | 'road-corner-left'
+  | 'road-corner-se-sw'
+  | 'road-corner-ne-nw'
+  | 'road-t-junction'
+  | 'road-crossroad'
+
+export type ObjectCategory = 'vegetation' | 'buildings' | 'roads'
 
 export type ObjectFootprint =
   | { type: 'single' }
@@ -67,10 +76,12 @@ export type ObjectFootprint =
 export interface ObjectDefinition {
   type: ObjectType
   displayName: string
+  category: ObjectCategory
   layer: 3
   footprint: ObjectFootprint
   permittedTerrain: readonly TerrainType[]
   blocksVehicles: boolean
+  connections?: readonly HexDirection[]
 }
 
 interface PlacedObjectBase {
@@ -91,7 +102,15 @@ export interface BuildingObject extends PlacedObjectBase {
 }
 
 export interface RoadObject extends PlacedObjectBase {
-  type: 'road'
+  type:
+    | 'road-straight'
+    | 'road-straight-nw-se'
+    | 'road-corner'
+    | 'road-corner-left'
+    | 'road-corner-se-sw'
+    | 'road-corner-ne-nw'
+    | 'road-t-junction'
+    | 'road-crossroad'
   connections: HexDirection[]
 }
 
@@ -119,6 +138,7 @@ export const OBJECT_DEFINITIONS: readonly ObjectDefinition[] = [
   {
     type: 'grass',
     displayName: 'Grass',
+    category: 'vegetation',
     layer: 3,
     footprint: { type: 'single' },
     permittedTerrain: ['ground'],
@@ -127,6 +147,7 @@ export const OBJECT_DEFINITIONS: readonly ObjectDefinition[] = [
   {
     type: 'tree-deciduous',
     displayName: 'Deciduous tree',
+    category: 'vegetation',
     layer: 3,
     footprint: { type: 'single' },
     permittedTerrain: ['ground'],
@@ -135,6 +156,7 @@ export const OBJECT_DEFINITIONS: readonly ObjectDefinition[] = [
   {
     type: 'tree-conifer',
     displayName: 'Conifer tree',
+    category: 'vegetation',
     layer: 3,
     footprint: { type: 'single' },
     permittedTerrain: ['ground'],
@@ -143,6 +165,7 @@ export const OBJECT_DEFINITIONS: readonly ObjectDefinition[] = [
   {
     type: 'building-2x2',
     displayName: '2 x 2 building',
+    category: 'buildings',
     layer: 3,
     footprint: { type: 'parallelogram', columns: 2, rows: 2 },
     permittedTerrain: ['ground'],
@@ -151,17 +174,90 @@ export const OBJECT_DEFINITIONS: readonly ObjectDefinition[] = [
   {
     type: 'building-2x3',
     displayName: '2 x 3 building',
+    category: 'buildings',
     layer: 3,
     footprint: { type: 'parallelogram', columns: 2, rows: 3 },
     permittedTerrain: ['ground'],
     blocksVehicles: true,
   },
   {
-    type: 'road',
-    displayName: 'Road',
+    type: 'road-straight',
+    displayName: 'Straight road',
+    category: 'roads',
     layer: 3,
     footprint: { type: 'single' },
     permittedTerrain: ['ground'],
     blocksVehicles: false,
+    connections: ['northEast', 'southWest'],
+  },
+  {
+    type: 'road-straight-nw-se',
+    displayName: 'Straight road NW-SE',
+    category: 'roads',
+    layer: 3,
+    footprint: { type: 'single' },
+    permittedTerrain: ['ground'],
+    blocksVehicles: false,
+    connections: ['northWest', 'southEast'],
+  },
+  {
+    type: 'road-corner',
+    displayName: 'Road corner',
+    category: 'roads',
+    layer: 3,
+    footprint: { type: 'single' },
+    permittedTerrain: ['ground'],
+    blocksVehicles: false,
+    connections: ['northEast', 'southEast'],
+  },
+  {
+    type: 'road-corner-left',
+    displayName: 'Road corner NW-SW',
+    category: 'roads',
+    layer: 3,
+    footprint: { type: 'single' },
+    permittedTerrain: ['ground'],
+    blocksVehicles: false,
+    connections: ['northWest', 'southWest'],
+  },
+  {
+    type: 'road-corner-se-sw',
+    displayName: 'Road corner SE-SW',
+    category: 'roads',
+    layer: 3,
+    footprint: { type: 'single' },
+    permittedTerrain: ['ground'],
+    blocksVehicles: false,
+    connections: ['southEast', 'southWest'],
+  },
+  {
+    type: 'road-corner-ne-nw',
+    displayName: 'Road corner NE-NW',
+    category: 'roads',
+    layer: 3,
+    footprint: { type: 'single' },
+    permittedTerrain: ['ground'],
+    blocksVehicles: false,
+    connections: ['northEast', 'northWest'],
+  },
+  {
+    type: 'road-t-junction',
+    displayName: 'T-junction',
+    category: 'roads',
+    layer: 3,
+    footprint: { type: 'single' },
+    permittedTerrain: ['ground'],
+    blocksVehicles: false,
+    connections: ['northEast', 'southWest', 'northWest'],
+  },
+  {
+    type: 'road-crossroad',
+    displayName: 'Four-way junction',
+    category: 'roads',
+    layer: 3,
+    footprint: { type: 'single' },
+    permittedTerrain: ['ground'],
+    blocksVehicles: false,
+    connections: ['northEast', 'southWest', 'northWest', 'southEast'],
   },
 ]

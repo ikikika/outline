@@ -1,5 +1,6 @@
 import { cellKey } from './board'
 import { HEX_DIRECTIONS, type AxialCoordinate, type BoardModel, type HexDirection, type Terrain } from './types'
+import { getObjectFootprint } from './placement'
 
 export function getTerrainChangeError(
   board: BoardModel,
@@ -31,9 +32,11 @@ export function getTerrainChangeError(
   if (cell.terrain.type === terrain.type) return null
 
   if (terrain.type === 'water') {
-    const hasObject = board.objects.some(
-      (object) =>
-        object.anchor.q === coordinate.q && object.anchor.r === coordinate.r,
+    const hasObject = board.objects.some((object) =>
+      getObjectFootprint(object.type, object.anchor).some(
+        (occupied) =>
+          occupied.q === coordinate.q && occupied.r === coordinate.r,
+      ),
     )
     const hasVehicle = board.vehicles.some(
       (vehicle) =>

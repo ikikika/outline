@@ -6,11 +6,14 @@ import {
   createBoard,
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
-import type { AxialCoordinate, BoardConfig, BoardShape, Terrain } from './domain/types'
+import type { AxialCoordinate, BoardConfig, BoardShape, HexDirection, ObjectType, Terrain } from './domain/types'
 import { ViewportController } from './components/ViewportController'
 import type { ViewportTransform } from './geometry/transforms'
 import { BoardPage } from './pages/BoardPage'
 import { getTerrainChangeError } from './domain/terrain'
+import { createPlacedObject, createVehicle, getObjectAtCoordinate, getVehicleInitialHeading, validateObjectPlacement, validateVehiclePlacement } from './domain/placement'
+import type { GallerySelection } from './gallery/catalogue'
+import { ObjectGallery } from './components/ObjectGallery'
 
 interface BoardFormValues {
   shape: BoardShape
@@ -37,6 +40,12 @@ function App() {
   const [form, setForm] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState('')
   const [gridVisible, setGridVisible] = useState(true)
+  const [selection, setSelection] = useState<GallerySelection>({
+    kind: 'terrain',
+    terrain: 'ground',
+  })
+  const [bridgeEntry, setBridgeEntry] = useState<HexDirection>('east')
+  const [bridgeExit, setBridgeExit] = useState<HexDirection>('west')
   const [currentPage, setCurrentPage] = useState(() =>
     window.location.pathname === '/board' ? 'board' : 'setup',
   )
@@ -69,6 +78,55 @@ function App() {
 
     dispatch({ type: 'set-cell-terrain', coordinate, terrain })
     return null
+  }
+
+  function handleObjectPlacement(
+    type: ObjectType,
+    coordinate: AxialCoordinate,
+  ): string | null {
+    const validation = validateObjectPlacement(board, type, coordinate)
+    if (!validation.valid) return validation.reason
+
+    dispatch({
+      type: 'place-object',
+      object: createPlacedObject(type, coordinate, crypto.randomUUID()),
+    })
+    return null
+  }
+
+  function handleVehiclePlacement(coordinate: AxialCoordinate): string | null {
+    const validation = validateVehiclePlacement(board, coordinate)
+    if (!validation.valid) return validation.reason
+
+    dispatch({
+      type: 'place-vehicle',
+      vehicle: createVehicle(
+        coordinate,
+        getVehicleInitialHeading(board, coordinate),
+        crypto.randomUUID(),
+      ),
+    })
+    return null
+  }
+
+  function handleRemoveAt(coordinate: AxialCoordinate): string | null {
+    const vehicle = board.vehicles.find(
+      (item) =>
+        item.coordinate.q === coordinate.q &&
+        item.coordinate.r === coordinate.r,
+    )
+    if (vehicle) {
+      dispatch({ type: 'remove-vehicle', id: vehicle.id })
+      return null
+    }
+
+    const object = getObjectAtCoordinate(board.objects, coordinate)
+    if (object) {
+      dispatch({ type: 'remove-object', id: object.id })
+      return null
+    }
+
+    return 'There is no object or car in this cell to remove.'
   }
 
   const cells = Object.values(board.cells)
@@ -114,6 +172,15 @@ function App() {
         gridVisible={gridVisible}
         onGridVisibleChange={setGridVisible}
         onTerrainChange={handleTerrainChange}
+        selection={selection}
+        bridgeEntry={bridgeEntry}
+        bridgeExit={bridgeExit}
+        onSelectionChange={setSelection}
+        onBridgeEntryChange={setBridgeEntry}
+        onBridgeExitChange={setBridgeExit}
+        onPlaceObject={handleObjectPlacement}
+        onPlaceVehicle={handleVehiclePlacement}
+        onRemoveAt={handleRemoveAt}
         onReturnToSetup={() => navigate('/', true)}
       />
     )
@@ -126,7 +193,7 @@ function App() {
           <p className="eyebrow">WORLD WORKSHOP</p>
           <h1>Hexboard</h1>
         </div>
-        <span className="phase-tag">Phase 05 / Viewport</span>
+        <span className="phase-tag">Board editor</span>
       </header>
 
       <main className="workspace">
@@ -285,14 +352,30 @@ function App() {
             </div>
           </dl>
 
-          <ViewportController
-            board={board}
-            initialTransform={viewportTransform}
-            onTransformChange={setViewportTransform}
-            gridVisible={gridVisible}
-            onGridVisibleChange={setGridVisible}
-            onTerrainChange={handleTerrainChange}
-          />
+          <div className="board-workspace">
+            <ObjectGallery
+              selection={selection}
+              bridgeEntry={bridgeEntry}
+              bridgeExit={bridgeExit}
+              onSelectionChange={setSelection}
+              onBridgeEntryChange={setBridgeEntry}
+              onBridgeExitChange={setBridgeExit}
+            />
+            <ViewportController
+              board={board}
+              initialTransform={viewportTransform}
+              onTransformChange={setViewportTransform}
+              gridVisible={gridVisible}
+              onGridVisibleChange={setGridVisible}
+              onTerrainChange={handleTerrainChange}
+              selection={selection}
+              bridgeEntry={bridgeEntry}
+              bridgeExit={bridgeExit}
+              onPlaceObject={handleObjectPlacement}
+              onPlaceVehicle={handleVehiclePlacement}
+              onRemoveAt={handleRemoveAt}
+            />
+          </div>
         </section>
       </main>
 

@@ -5,7 +5,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { HEX_DIRECTIONS, type AxialCoordinate, type BoardModel, type HexDirection, type Terrain, type TerrainType } from '../domain/types'
+import type { AxialCoordinate, BoardModel, HexDirection, ObjectType, Terrain } from '../domain/types'
 import { getBoardBounds } from '../geometry/board-layout'
 import type { CartesianPoint } from '../geometry/coordinates'
 import { hitTestBoard } from '../geometry/board-layout'
@@ -18,6 +18,8 @@ import {
   type ViewportTransform,
 } from '../geometry/transforms'
 import { BoardSvg } from './BoardSvg'
+import { PlacementOverlay } from './PlacementOverlay'
+import type { GallerySelection } from '../gallery/catalogue'
 
 interface ViewportControllerProps {
   board: BoardModel
@@ -26,6 +28,12 @@ interface ViewportControllerProps {
   gridVisible: boolean
   onGridVisibleChange: (visible: boolean) => void
   onTerrainChange: (coordinate: AxialCoordinate, terrain: Terrain) => string | null
+  selection: GallerySelection
+  bridgeEntry: HexDirection
+  bridgeExit: HexDirection
+  onPlaceObject: (type: ObjectType, coordinate: AxialCoordinate) => string | null
+  onPlaceVehicle: (coordinate: AxialCoordinate) => string | null
+  onRemoveAt: (coordinate: AxialCoordinate) => string | null
 }
 
 interface PointerPosition extends CartesianPoint {
@@ -63,10 +71,6 @@ function clampZoom(zoom: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom))
 }
 
-function formatDirection(direction: HexDirection): string {
-  return direction.replace(/([A-Z])/g, ' $1').toLowerCase()
-}
-
 export function ViewportController({
   board,
   initialTransform = null,
@@ -74,6 +78,12 @@ export function ViewportController({
   gridVisible,
   onGridVisibleChange,
   onTerrainChange,
+  selection,
+  bridgeEntry,
+  bridgeExit,
+  onPlaceObject,
+  onPlaceVehicle,
+  onRemoveAt,
 }: ViewportControllerProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const pointersRef = useRef(new Map<number, PointerPosition>())
@@ -86,9 +96,7 @@ export function ViewportController({
   const [transform, setTransform] = useState<ViewportTransform>(
     () => initialTransform ?? { panX: 0, panY: 0, zoom: DEFAULT_ZOOM },
   )
-  const [selectedTerrain, setSelectedTerrain] = useState<TerrainType>('ground')
-  const [bridgeEntry, setBridgeEntry] = useState<HexDirection>('east')
-  const [bridgeExit, setBridgeExit] = useState<HexDirection>('west')
+  const [hoverCoordinate, setHoverCoordinate] = useState<AxialCoordinate | null>(null)
   const [terrainFeedback, setTerrainFeedback] = useState('')
   const transformRef = useRef(transform)
   const initialTransformRef = useRef(initialTransform)
@@ -292,9 +300,23 @@ export function ViewportController({
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const point = getLocalPoint(event)
+    const target = event.target
+    const overControl =
+      target instanceof Element &&
+      target.closest('.viewport-toolbar, .terrain-toolbar, .object-gallery, .board-page-back')
+    setHoverCoordinate(
+      overControl
+        ? null
+        : hitTestBoard(
+            screenToBoard(point, transformRef.current),
+            board.configuration.cellSize,
+            board.configuration,
+          ),
+    )
+
     if (!pointersRef.current.has(event.pointerId)) return
 
-    const point = getLocalPoint(event)
     const pointer = pointersRef.current.get(event.pointerId)
     pointersRef.current.set(event.pointerId, {
       ...point,
@@ -362,8 +384,10 @@ export function ViewportController({
         board.configuration,
       )
       if (coordinate) {
-        const terrain: Terrain =
-          selectedTerrain === 'bridge'
+        let error: string | null
+        if (selection.kind === 'terrain') {
+          const terrain: Terrain =
+            selection.terrain === 'bridge'
             ? {
                 type: 'bridge',
                 ports: [bridgeEntry, bridgeExit],
@@ -372,11 +396,27 @@ export function ViewportController({
                   { entry: bridgeExit, exit: bridgeEntry },
                 ],
               }
-            : { type: selectedTerrain }
-        const error = onTerrainChange(coordinate, terrain)
-        setTerrainFeedback(
-          error ?? `${selectedTerrain[0].toUpperCase()}${selectedTerrain.slice(1)} applied to cell ${coordinate.q}, ${coordinate.r}.`,
-        )
+              : { type: selection.terrain }
+          error = onTerrainChange(coordinate, terrain)
+          setTerrainFeedback(
+            error ?? `${selection.terrain[0].toUpperCase()}${selection.terrain.slice(1)} applied to cell ${coordinate.q}, ${coordinate.r}.`,
+          )
+        } else if (selection.kind === 'object') {
+          error = onPlaceObject(selection.objectType, coordinate)
+          setTerrainFeedback(
+            error ?? `${selection.objectType.replaceAll('-', ' ')} placed at ${coordinate.q}, ${coordinate.r}.`,
+          )
+        } else if (selection.kind === 'vehicle') {
+          error = onPlaceVehicle(coordinate)
+          setTerrainFeedback(
+            error ?? `Car placed at ${coordinate.q}, ${coordinate.r}.`,
+          )
+        } else {
+          error = onRemoveAt(coordinate)
+          setTerrainFeedback(
+            error ?? `Item removed from ${coordinate.q}, ${coordinate.r}.`,
+          )
+        }
       }
     }
 
@@ -474,6 +514,9 @@ export function ViewportController({
       onPointerUp={(event) => handlePointerEnd(event, true)}
       onPointerCancel={handlePointerEnd}
       onLostPointerCapture={handlePointerEnd}
+      onPointerLeave={() => {
+        if (pointersRef.current.size === 0) setHoverCoordinate(null)
+      }}
       onKeyDown={handleKeyDown}
     >
       <div className="viewport-toolbar" role="group" aria-label="Viewport controls">
@@ -504,17 +547,7 @@ export function ViewportController({
           Center
         </button>
       </div>
-      <div className="terrain-toolbar" role="group" aria-label="Terrain tools">
-        {(['water', 'ground', 'bridge'] as const).map((terrain) => (
-          <button
-            key={terrain}
-            type="button"
-            aria-pressed={selectedTerrain === terrain}
-            onClick={() => setSelectedTerrain(terrain)}
-          >
-            {terrain[0].toUpperCase() + terrain.slice(1)}
-          </button>
-        ))}
+      <div className="terrain-toolbar" role="group" aria-label="Grid controls">
         <button
           type="button"
           aria-pressed={gridVisible}
@@ -522,38 +555,6 @@ export function ViewportController({
         >
           Grid
         </button>
-        {selectedTerrain === 'bridge' && (
-          <>
-            <label>
-              Entry
-              <select
-                aria-label="Bridge entry direction"
-                value={bridgeEntry}
-                onChange={(event) => setBridgeEntry(event.target.value as HexDirection)}
-              >
-                {HEX_DIRECTIONS.map((direction) => (
-                  <option key={direction} value={direction} disabled={direction === bridgeExit}>
-                    {formatDirection(direction)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Exit
-              <select
-                aria-label="Bridge exit direction"
-                value={bridgeExit}
-                onChange={(event) => setBridgeExit(event.target.value as HexDirection)}
-              >
-                {HEX_DIRECTIONS.map((direction) => (
-                  <option key={direction} value={direction} disabled={direction === bridgeEntry}>
-                    {formatDirection(direction)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </>
-        )}
       </div>
       {terrainFeedback && (
         <output className="terrain-feedback" aria-live="polite">
@@ -562,6 +563,14 @@ export function ViewportController({
       )}
       <div className="board-stage" style={stageStyle}>
         <BoardSvg board={board} bounds={bounds} gridVisible={gridVisible} />
+        <PlacementOverlay
+          board={board}
+          bounds={bounds}
+          selection={selection}
+          coordinate={hoverCoordinate}
+          bridgeEntry={bridgeEntry}
+          bridgeExit={bridgeExit}
+        />
       </div>
     </div>
   )

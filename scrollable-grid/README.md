@@ -1,38 +1,18 @@
-# React + TypeScript + Vite
+# Hexboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A browser-based hexagonal game-board editor built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```sh
+npm install
+npm run dev
+```
 
-## React Compiler
+Run the production typecheck/build with `npm run build` and lint with `npm run lint`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Current scope
 
-## Expanding the ESLint configuration
+The app supports rectangular and hexagonal water boards, pointy-top SVG rendering, pan/zoom, a full-viewport `/board` page, terrain painting, bridge direction configuration, grid visibility, a bundled object gallery, placement previews, and placement/removal for terrain, objects, and cars. Autonomous vehicle movement, road editing, persistence, and JSON import/export remain planned for later phases. Unit tests and test-framework dependencies are deferred.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  # Hexboard
-
-  A browser-based hexagonal game-board editor built with React, TypeScript, and Vite.
-
-  ## Development
-
-  ```sh
-  npm install
-  npm run dev
-  ```
-
-  Run the production typecheck/build with `npm run build` and lint with `npm run lint`.
-
-  ## Current scope
-
-  Phase 2 establishes the typed logical board model, rectangular and hexagonal board initialization, water defaults, configuration validation, and immutable board state updates. SVG board geometry and interactive editing are planned for later phases. Unit tests and test-framework dependencies are deferred.
-
-  See [docs/context.md](docs/context.md) for the architecture and [docs/implementation-plan.md](docs/implementation-plan.md) for phase scope and acceptance criteria.
-        tsconfigRootDir: import.meta.dirname,
+See [docs/context.md](docs/context.md) for architecture and [docs/implementation-plan.md](docs/implementation-plan.md) for phase scope and acceptance criteria.

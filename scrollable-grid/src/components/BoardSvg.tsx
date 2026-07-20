@@ -1,7 +1,9 @@
 import { memo } from 'react'
-import type { BoardModel } from '../domain/types'
+import { HEX_DIRECTIONS, type BoardModel } from '../domain/types'
 import type { BoardBounds } from '../geometry/board-layout'
-import { getHexVertices } from '../geometry/hex'
+import { getHexCenter, getHexVertices } from '../geometry/hex'
+import { getGalleryArtForObject, getGalleryArtForTerrain, CAR_ART } from '../gallery/catalogue'
+import { getFootprintBounds, getObjectFootprint } from '../domain/placement'
 
 interface BoardSvgProps {
   board: BoardModel
@@ -44,15 +46,77 @@ export const BoardSvg = memo(function BoardSvg({
           .join(' ')
 
         return (
-          <polygon
-            key={`${cell.coordinate.q},${cell.coordinate.r}`}
-            className="board-cell"
-            data-coordinate={`${cell.coordinate.q},${cell.coordinate.r}`}
-            points={points}
-            fill={getTerrainFill(cell.terrain.type)}
-            stroke={gridVisible ? '#e4f2eb' : 'none'}
-            strokeWidth="1.25"
-            vectorEffect="non-scaling-stroke"
+          <g key={`${cell.coordinate.q},${cell.coordinate.r}`}>
+            <polygon
+              className="board-cell"
+              data-coordinate={`${cell.coordinate.q},${cell.coordinate.r}`}
+              points={points}
+              fill={getTerrainFill(cell.terrain.type)}
+              stroke={gridVisible ? '#e4f2eb' : 'none'}
+              strokeWidth="1.25"
+              vectorEffect="non-scaling-stroke"
+            />
+            {cell.terrain.type === 'bridge' && (
+              <image
+                className="board-art"
+                href={getGalleryArtForTerrain('bridge')}
+                x={getHexCenter(cell.coordinate, cellRadius).x - cellRadius}
+                y={getHexCenter(cell.coordinate, cellRadius).y - cellRadius}
+                width={cellRadius * 2}
+                height={cellRadius * 2}
+                preserveAspectRatio="xMidYMid meet"
+              />
+            )}
+          </g>
+        )
+      })}
+      {board.objects.map((object) => {
+        const footprint = getObjectFootprint(object.type, object.anchor)
+        const definitionBounds = getFootprintBounds(footprint, cellRadius)
+        const anchorCenter = getHexCenter(object.anchor, cellRadius)
+        const isMultiCell = footprint.length > 1
+        const width = isMultiCell ? definitionBounds?.width ?? cellRadius * 2 : cellRadius * 2.1
+        const height = isMultiCell ? definitionBounds?.height ?? cellRadius * 2 : cellRadius * 2.1
+        const x = isMultiCell
+          ? definitionBounds?.minX ?? anchorCenter.x - width / 2
+          : anchorCenter.x - width / 2
+        const y = isMultiCell
+          ? definitionBounds?.minY ?? anchorCenter.y - height / 2
+          : anchorCenter.y - height / 2
+
+        return (
+          <image
+            key={object.id}
+            className="board-art board-object"
+            data-object-id={object.id}
+            data-object-type={object.type}
+            href={getGalleryArtForObject(object.type)}
+            x={x}
+            y={y}
+            width={width}
+            height={height}
+            preserveAspectRatio="xMidYMid meet"
+          />
+        )
+      })}
+      {board.vehicles.map((vehicle) => {
+        const center = getHexCenter(vehicle.coordinate, cellRadius)
+        const directionIndex = HEX_DIRECTIONS.indexOf(vehicle.heading)
+        const headingAngle = [90, 30, -30, -90, -150, 150][directionIndex]
+        const iconSize = cellRadius * 1.55
+
+        return (
+          <image
+            key={vehicle.id}
+            className="board-art board-vehicle"
+            data-vehicle-id={vehicle.id}
+            href={CAR_ART}
+            x={center.x - iconSize / 2}
+            y={center.y - iconSize / 2}
+            width={iconSize}
+            height={iconSize}
+            transform={`rotate(${headingAngle} ${center.x} ${center.y})`}
+            preserveAspectRatio="xMidYMid meet"
           />
         )
       })}
