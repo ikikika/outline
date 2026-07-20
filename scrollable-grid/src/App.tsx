@@ -1,4 +1,4 @@
-import { useReducer, useState, type FormEvent } from 'react'
+import { useEffect, useReducer, useState, type FormEvent } from 'react'
 import './App.css'
 import {
   BOARD_LIMITS,
@@ -7,7 +7,9 @@ import {
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
 import type { BoardConfig, BoardShape } from './domain/types'
-import { BoardSvg } from './components/BoardSvg'
+import { ViewportController } from './components/ViewportController'
+import type { ViewportTransform } from './geometry/transforms'
+import { BoardPage } from './pages/BoardPage'
 
 interface BoardFormValues {
   shape: BoardShape
@@ -33,6 +35,28 @@ function App() {
   )
   const [form, setForm] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState('')
+  const [currentPage, setCurrentPage] = useState(() =>
+    window.location.pathname === '/board' ? 'board' : 'setup',
+  )
+  const [viewportTransform, setViewportTransform] =
+    useState<ViewportTransform | null>(null)
+
+  useEffect(() => {
+    function handlePopState() {
+      setCurrentPage(window.location.pathname === '/board' ? 'board' : 'setup')
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  function navigate(path: '/' | '/board', replace = false) {
+    if (window.location.pathname !== path) {
+      const method = replace ? 'replaceState' : 'pushState'
+      window.history[method]({}, '', path)
+    }
+    setCurrentPage(path === '/board' ? 'board' : 'setup')
+  }
 
   const cells = Object.values(board.cells)
   const waterCellCount = cells.filter(
@@ -59,12 +83,24 @@ function App() {
 
     try {
       dispatch({ type: 'replace-board', board: createBoard(configuration) })
+      setViewportTransform(null)
       setErrorMessage('')
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Unable to create this board.',
       )
     }
+  }
+
+  if (currentPage === 'board') {
+    return (
+      <BoardPage
+        board={board}
+        viewportTransform={viewportTransform}
+        onViewportTransformChange={setViewportTransform}
+        onReturnToSetup={() => navigate('/', true)}
+      />
+    )
   }
 
   return (
@@ -74,7 +110,7 @@ function App() {
           <p className="eyebrow">WORLD WORKSHOP</p>
           <h1>Hexboard</h1>
         </div>
-        <span className="phase-tag">Phase 04 / Render</span>
+        <span className="phase-tag">Phase 05 / Viewport</span>
       </header>
 
       <main className="workspace">
@@ -171,6 +207,13 @@ function App() {
         <section className="board-panel" aria-labelledby="board-title">
           <div className="board-panel-topline">
             <span>Logical board</span>
+            <button
+              className="open-board-page-button"
+              type="button"
+              onClick={() => navigate('/board')}
+            >
+              Open board page
+            </button>
             <span className="status-label">
               <span className="status-dot" aria-hidden="true" />
               Initialized
@@ -226,9 +269,11 @@ function App() {
             </div>
           </dl>
 
-          <div className="board-surface" role="region" aria-label="Board grid" tabIndex={0}>
-            <BoardSvg board={board} />
-          </div>
+          <ViewportController
+            board={board}
+            initialTransform={viewportTransform}
+            onTransformChange={setViewportTransform}
+          />
         </section>
       </main>
 

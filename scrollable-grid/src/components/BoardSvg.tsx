@@ -1,9 +1,11 @@
+import { memo } from 'react'
 import type { BoardModel } from '../domain/types'
-import { getBoardBounds } from '../geometry/board-layout'
+import type { BoardBounds } from '../geometry/board-layout'
 import { getHexVertices } from '../geometry/hex'
 
 interface BoardSvgProps {
   board: BoardModel
+  bounds: BoardBounds
 }
 
 function getTerrainFill(type: string): string {
@@ -17,9 +19,11 @@ function getTerrainFill(type: string): string {
   }
 }
 
-export function BoardSvg({ board }: BoardSvgProps) {
+export const BoardSvg = memo(function BoardSvg({
+  board,
+  bounds,
+}: BoardSvgProps) {
   const cellRadius = board.configuration.cellSize
-  const bounds = getBoardBounds(board.configuration, cellRadius, 1)
   const cells = Object.values(board.cells)
 
   return (
@@ -52,4 +56,4 @@ export function BoardSvg({ board }: BoardSvgProps) {
       })}
     </svg>
   )
-}
+})

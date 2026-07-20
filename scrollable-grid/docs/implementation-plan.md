@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 4 are complete; Phase 5 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
+This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 5 are complete; Phase 6 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
 
 | Phase | Objective | Dependencies |
 |---|---|---|
@@ -84,15 +84,31 @@ This plan is phased and gated. A phase is complete only after its listed accepta
 
 **Objective:** Make a large board navigable while keeping interaction transforms consistent.
 
-**Expected files/modules:** Viewport component/controller and transform utilities.
+**Expected files/modules:** `src/components/ViewportController.tsx`, `src/geometry/transforms.ts`, and viewport styles.
 
 **Deliverables:** Geometric initial centering; pointer-captured mouse/one-finger pan; wheel and pinch zoom anchored to pointer/midpoint; pan bounds; resize handling; grid-hit conversion.
 
 **Acceptance:** Pan and zoom never modify logical data; input and rendering share transforms; board cannot be dragged entirely out of reach; gallery/control gestures do not affect viewport; touch gestures do not scroll the page while actively used.
 
-**Verification:** Run build/type and lint checks; manually verify initial centering, coordinate conversions, pan/zoom anchors and bounds, resize preservation, pointer cancellation, mouse, and touch behavior.
+**Status:** Complete. `npm run build` and `npm run lint` pass. Browser checks confirmed initial and new-board geometric centering; 30x25 mouse pan and 25x20 touch pan; pan clamping at board bounds; wheel and pinch anchor preservation; pinch zoom to 200%; zoom limits of 35%-300%; center/reset; resize preservation when a resize event is delivered; toolbar gesture isolation; and no page-wide overflow at mobile width. A canceled pointer was followed by a working pan. Wheel input is non-passive and prevented default page scrolling over the board. The dedicated `/board` route, full-viewport page, back navigation, and shared board/zoom state are also verified. The browser harness does not emit resize events when changing its emulated viewport, so resize preservation was checked by dispatching the browser resize event after changing the viewport size.
+
+**Verification:** Production build/typecheck and lint passed; viewport acceptance behavior was manually checked in the browser. No unit tests or test dependencies were added.
 
 **Risks and mitigation:** Gesture/browser differences; use pointer events and explicit touch-action on the board, then verify on mobile browsers.
+
+**Required follow-up before Phase 6: Dedicated full-viewport board page**
+
+**Objective:** Add a separate board page where the board viewport container occupies the entire browser viewport and renders the game board.
+
+**Expected files/modules:** `src/pages/BoardPage.tsx`; application route/page selection and navigation; shared `ViewportController` integration; responsive full-viewport styles.
+
+**Deliverables:** A dedicated route (proposed `/board`) reachable from the setup/workspace page; a viewport-sized page container; the existing board SVG and viewport controls rendered inside it; one canonical board model shared across the setup and board pages. This is not browser fullscreen and must not use the Fullscreen API.
+
+**Acceptance:** Navigating to the board page fills the available viewport on desktop and mobile; the board renders within the full-page viewport using the existing configured cell size and pan/zoom behavior; the document does not gain unintended scrollbars; navigating from setup does not reset or duplicate the logical board; browser back/navigation returns to the prior page appropriately.
+
+**Verification:** Run build/typecheck and lint; manually check route entry, page sizing, board rendering, pan/zoom, navigation/back behavior, and no document overflow at desktop and mobile widths.
+
+**Status:** Complete. Build/typecheck and lint pass. Manual browser checks confirmed direct `/board` loading; 1440x900 desktop and 390x844 mobile viewport fill; 280 rendered cells with no document overflow; setup-to-board navigation; browser Back; and preservation of board cells and 120% zoom across navigation.
 
 ## Phase 6: Terrain and grid controls
 

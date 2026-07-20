@@ -1,6 +1,6 @@
 # Hexagonal Game Board Editor: Project Context
 
-This document is the architectural source of truth. It describes both the intended application and verified implementation status. The repository uses React 19, TypeScript, and Vite. Phases 2 through 4 provide typed board/domain models, rectangular and hexagonal board initialization with water defaults, configuration validation, immutable board actions, a responsive setup/status shell, shared hex coordinate/layout/geometry/hit-test/viewport-transform utilities, and SVG rendering of complete boards at the configured logical cell size. Interactive editing, pan/zoom viewport controls, and automated test tooling are not implemented yet.
+This document is the architectural source of truth. It describes both the intended application and verified implementation status. The repository uses React 19, TypeScript, and Vite. Phases 2 through 5 provide typed board/domain models, rectangular and hexagonal board initialization with water defaults, configuration validation, immutable board actions, a responsive setup/status shell, shared hex coordinate/layout/geometry/hit-test utilities, complete SVG board rendering at the configured logical cell size, and a viewport controller for centering, bounded pan, anchored wheel/pinch/button zoom, resize preservation, and keyboard navigation. A dedicated `/board` page renders the canonical board inside a full-viewport container and shares board and viewport state with the setup page. Terrain/object editing, gallery workflows, simulation, persistence, and automated test tooling are not implemented yet.
 
 ## Purpose and experience
 
@@ -15,6 +15,7 @@ Build a browser-based editor for designing a hexagonal world. Users configure a 
 - Reject invalid placements/imports without mutating the existing board. Use stable object IDs and a single source of truth for footprints and occupancy.
 - Bundle original local SVG artwork. No remote assets, backend, accounts, networking, or cloud persistence.
 - Keep geometry, placement validation, road graph, simulation, and persistence as pure domain modules where practical. React owns presentation and user interaction; SVG renders the board and its contents.
+- Provide a separate board-editor page at a dedicated route (proposed `/board`), distinct from the setup/workspace page. Its board viewport container occupies the full browser viewport, with the game board rendered inside. This is a normal application page, not the browser Fullscreen API or a fullscreen toggle.
 - Bound the initial implementation at 80 columns x 80 rows for rectangular boards, radius 40 for hexagonal boards (at most 6,400 and 4,921 cells respectively), and at most one placed vehicle initially. Validate limits at creation and import. Keep rendering responsive and avoid whole-board updates for every animation frame.
 
 ## Technology and architecture
@@ -29,6 +30,7 @@ Proposed module boundaries (exact paths may follow the existing `src/` conventio
 - `roads/` and `simulation/`: explicit connection graph and deterministic vehicle step/route decisions, independent of React and viewport.
 - `persistence/`: versioned schema parsing, validation, migration, serialization, and atomic replacement.
 - `components/`: application shell, toolbar/settings, gallery, viewport controller, SVG board/cells/layers, placement feedback, and vehicle controls.
+- `pages/`: setup/workspace page and dedicated full-viewport board page; the board page reuses the shared viewport controller and receives the canonical board model rather than maintaining a second copy.
 - `assets/`: locally bundled original SVG artwork or small reusable SVG components, indexed by typed gallery definitions.
 
 The logical board model is authoritative for rendering, validation, and export. Keep transient state (selection, preview, grid toggle, pan/zoom, pointer state, import dialog, animation frame and interpolated position) out of the persisted model. Use immutable updates and derive occupancy/road graph from canonical object/cell data rather than maintaining redundant copies.
@@ -66,6 +68,8 @@ Vehicle persistent data includes ID/type, logical cell, and initial heading; sim
 The bounded viewport owns screen-space pan and zoom, separate from base cell size. Render a board-space SVG group under one shared transform; use inverse transforms for hit-testing. On board creation/import, center its geometric bounds in the measured viewport at default zoom. On resize, preserve the viewed logical point where practical and clamp pan. Mouse wheel over the viewport and two-pointer pinch zoom around the pointer/midpoint; one pointer pans. Capture pointers and handle release/cancellation outside the viewport. Prevent page scrolling only while an active board gesture requires it. Apply reasonable pan bounds that keep board content reachable, including when the board is smaller than the viewport. Gallery and controls must not trigger board gestures or zoom. Hide-grid changes outlines only, never terrain, hit-testing, or logical data.
 
 Desktop uses a main board workspace and independently scrollable adjacent gallery. Mobile uses a compact or collapsible gallery while preserving board area and touch-friendly controls. Use semantic controls, keyboard access, visible focus, accessible icon labels, and sufficient contrast for grid/placement states.
+
+The dedicated board page is a separate route from the setup/workspace screen. Its viewport container fills the available viewport (`100dvh` with a sensible fallback), avoids document-level scrolling, and renders the existing SVG board using the shared viewport controller. Board setup/navigation controls may be compact overlays or a page header, but the board viewport remains the full-page workspace. Reuse the current pan/zoom state and board model across entry to the page; do not introduce browser fullscreen APIs.
 
 ## Persistence format
 
