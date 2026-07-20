@@ -6,10 +6,11 @@ import {
   createBoard,
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
-import type { BoardConfig, BoardShape } from './domain/types'
+import type { AxialCoordinate, BoardConfig, BoardShape, Terrain } from './domain/types'
 import { ViewportController } from './components/ViewportController'
 import type { ViewportTransform } from './geometry/transforms'
 import { BoardPage } from './pages/BoardPage'
+import { getTerrainChangeError } from './domain/terrain'
 
 interface BoardFormValues {
   shape: BoardShape
@@ -35,6 +36,7 @@ function App() {
   )
   const [form, setForm] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState('')
+  const [gridVisible, setGridVisible] = useState(true)
   const [currentPage, setCurrentPage] = useState(() =>
     window.location.pathname === '/board' ? 'board' : 'setup',
   )
@@ -56,6 +58,17 @@ function App() {
       window.history[method]({}, '', path)
     }
     setCurrentPage(path === '/board' ? 'board' : 'setup')
+  }
+
+  function handleTerrainChange(
+    coordinate: AxialCoordinate,
+    terrain: Terrain,
+  ): string | null {
+    const error = getTerrainChangeError(board, coordinate, terrain)
+    if (error) return error
+
+    dispatch({ type: 'set-cell-terrain', coordinate, terrain })
+    return null
   }
 
   const cells = Object.values(board.cells)
@@ -98,6 +111,9 @@ function App() {
         board={board}
         viewportTransform={viewportTransform}
         onViewportTransformChange={setViewportTransform}
+        gridVisible={gridVisible}
+        onGridVisibleChange={setGridVisible}
+        onTerrainChange={handleTerrainChange}
         onReturnToSetup={() => navigate('/', true)}
       />
     )
@@ -273,6 +289,9 @@ function App() {
             board={board}
             initialTransform={viewportTransform}
             onTransformChange={setViewportTransform}
+            gridVisible={gridVisible}
+            onGridVisibleChange={setGridVisible}
+            onTerrainChange={handleTerrainChange}
           />
         </section>
       </main>

@@ -6,6 +6,7 @@ import { getHexVertices } from '../geometry/hex'
 interface BoardSvgProps {
   board: BoardModel
   bounds: BoardBounds
+  gridVisible: boolean
 }
 
 function getTerrainFill(type: string): string {
@@ -22,6 +23,7 @@ function getTerrainFill(type: string): string {
 export const BoardSvg = memo(function BoardSvg({
   board,
   bounds,
+  gridVisible,
 }: BoardSvgProps) {
   const cellRadius = board.configuration.cellSize
   const cells = Object.values(board.cells)
@@ -48,7 +50,7 @@ export const BoardSvg = memo(function BoardSvg({
             data-coordinate={`${cell.coordinate.q},${cell.coordinate.r}`}
             points={points}
             fill={getTerrainFill(cell.terrain.type)}
-            stroke="#e4f2eb"
+            stroke={gridVisible ? '#e4f2eb' : 'none'}
             strokeWidth="1.25"
             vectorEffect="non-scaling-stroke"
           />

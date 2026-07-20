@@ -315,6 +315,23 @@
   box-shadow: 0 2px 8px rgba(34, 61, 55, 0.1);
 }
 
+.terrain-toolbar {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: calc(100% - 20px);
+  padding: 4px;
+  border: 1px solid #cbd8d1;
+  border-radius: 5px;
+  background: rgba(251, 252, 250, 0.96);
+  box-shadow: 0 2px 8px rgba(34, 61, 55, 0.1);
+}
+
 .viewport-toolbar button {
   min-width: 34px;
   height: 32px;
@@ -330,6 +347,59 @@
 .viewport-toolbar button:hover {
   border-color: #d5e1da;
   background: #edf4ef;
+}
+
+.terrain-toolbar button,
+.terrain-toolbar select {
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #284945;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.terrain-toolbar button:hover,
+.terrain-toolbar select:hover {
+  border-color: #d5e1da;
+  background: #edf4ef;
+}
+
+.terrain-toolbar button[aria-pressed='true'] {
+  border-color: #8eaaa0;
+  background: #e4efe8;
+  font-weight: 700;
+}
+
+.terrain-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #526b66;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.terrain-toolbar select {
+  border-color: #d5e1da;
+  background: #fff;
+}
+
+.terrain-feedback {
+  position: absolute;
+  z-index: 1;
+  bottom: 12px;
+  left: 12px;
+  max-width: min(480px, calc(100% - 24px));
+  padding: 7px 10px;
+  border: 1px solid #cbd8d1;
+  border-radius: 4px;
+  color: #284945;
+  background: rgba(251, 252, 250, 0.96);
+  font-size: 12px;
+  pointer-events: none;
 }
 
 .viewport-toolbar .center-button {
@@ -459,5 +529,10 @@
   .cell-size-badge {
     padding: 7px;
     font-size: 13px;
+  }
+
+  .terrain-toolbar {
+    top: 54px;
+    right: 10px;
   }
 }

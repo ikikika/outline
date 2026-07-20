@@ -4,6 +4,8 @@ This document is the architectural source of truth. It describes both the intend
 
 ## Purpose and experience
 
+**Current implementation status:** Phase 6 adds working ground/bridge terrain brushes, validated terrain changes, explicit bridge direction pairs, and a temporary grid-outline toggle. These are implemented. Gallery/object placement, roads, simulation, and persistence remain for later phases.
+
 Build a browser-based editor for designing a hexagonal world. Users configure a board, paint water/ground/bridges, place grass, trees, buildings and explicitly connected roads, then place and run an autonomous car. Users can pan and zoom a large board, work on desktop or mobile, and exchange logical board designs as portable versioned JSON. The interface should feel like a practical creative tool: board workspace, responsive object gallery, concise controls, clear placement feedback, and accessible interaction.
 
 ## Requirements and constraints

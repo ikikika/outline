@@ -5,9 +5,10 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import type { BoardModel } from '../domain/types'
+import { HEX_DIRECTIONS, type AxialCoordinate, type BoardModel, type HexDirection, type Terrain, type TerrainType } from '../domain/types'
 import { getBoardBounds } from '../geometry/board-layout'
 import type { CartesianPoint } from '../geometry/coordinates'
+import { hitTestBoard } from '../geometry/board-layout'
 import {
   centerBoardInViewport,
   clampViewportTransform,
@@ -22,10 +23,14 @@ interface ViewportControllerProps {
   board: BoardModel
   initialTransform?: ViewportTransform | null
   onTransformChange?: (transform: ViewportTransform) => void
+  gridVisible: boolean
+  onGridVisibleChange: (visible: boolean) => void
+  onTerrainChange: (coordinate: AxialCoordinate, terrain: Terrain) => string | null
 }
 
 interface PointerPosition extends CartesianPoint {
   pointerId: number
+  startPoint: CartesianPoint
 }
 
 type GestureState =
@@ -58,10 +63,17 @@ function clampZoom(zoom: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom))
 }
 
+function formatDirection(direction: HexDirection): string {
+  return direction.replace(/([A-Z])/g, ' $1').toLowerCase()
+}
+
 export function ViewportController({
   board,
   initialTransform = null,
   onTransformChange,
+  gridVisible,
+  onGridVisibleChange,
+  onTerrainChange,
 }: ViewportControllerProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const pointersRef = useRef(new Map<number, PointerPosition>())
@@ -74,6 +86,10 @@ export function ViewportController({
   const [transform, setTransform] = useState<ViewportTransform>(
     () => initialTransform ?? { panX: 0, panY: 0, zoom: DEFAULT_ZOOM },
   )
+  const [selectedTerrain, setSelectedTerrain] = useState<TerrainType>('ground')
+  const [bridgeEntry, setBridgeEntry] = useState<HexDirection>('east')
+  const [bridgeExit, setBridgeExit] = useState<HexDirection>('west')
+  const [terrainFeedback, setTerrainFeedback] = useState('')
   const transformRef = useRef(transform)
   const initialTransformRef = useRef(initialTransform)
   const onTransformChangeRef = useRef(onTransformChange)
@@ -175,7 +191,12 @@ export function ViewportController({
 
     const handleWheel = (event: WheelEvent) => {
       const target = event.target
-      if (target instanceof Element && target.closest('.viewport-toolbar')) return
+      if (
+        target instanceof Element &&
+        target.closest('.viewport-toolbar, .terrain-toolbar')
+      ) {
+        return
+      }
 
       event.preventDefault()
       const rect = viewport.getBoundingClientRect()
@@ -240,10 +261,19 @@ export function ViewportController({
     }
 
     const target = event.target
-    if (target instanceof Element && target.closest('.viewport-toolbar')) return
+    if (
+      target instanceof Element &&
+      target.closest('.viewport-toolbar, .terrain-toolbar')
+    ) {
+      return
+    }
 
     const point = getLocalPoint(event)
-    pointersRef.current.set(event.pointerId, { ...point, pointerId: event.pointerId })
+    pointersRef.current.set(event.pointerId, {
+      ...point,
+      pointerId: event.pointerId,
+      startPoint: point,
+    })
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
     } catch {
@@ -265,7 +295,12 @@ export function ViewportController({
     if (!pointersRef.current.has(event.pointerId)) return
 
     const point = getLocalPoint(event)
-    pointersRef.current.set(event.pointerId, { ...point, pointerId: event.pointerId })
+    const pointer = pointersRef.current.get(event.pointerId)
+    pointersRef.current.set(event.pointerId, {
+      ...point,
+      pointerId: event.pointerId,
+      startPoint: pointer?.startPoint ?? point,
+    })
     const gesture = gestureRef.current
     const current = transformRef.current
 
@@ -304,8 +339,47 @@ export function ViewportController({
     }
   }
 
-  function handlePointerEnd(event: ReactPointerEvent<HTMLDivElement>) {
+  function handlePointerEnd(
+    event: ReactPointerEvent<HTMLDivElement>,
+    allowCellActivation = false,
+  ) {
     if (!pointersRef.current.has(event.pointerId)) return
+    const pointer = pointersRef.current.get(event.pointerId)
+    const releasePoint = getLocalPoint(event)
+
+    if (
+      allowCellActivation &&
+      pointer &&
+      pointersRef.current.size === 1 &&
+      gestureRef.current?.type === 'pan' &&
+      gestureRef.current.pointerId === event.pointerId &&
+      distanceBetween(pointer.startPoint, releasePoint) <= 5
+    ) {
+      const boardPoint = screenToBoard(releasePoint, transformRef.current)
+      const coordinate = hitTestBoard(
+        boardPoint,
+        board.configuration.cellSize,
+        board.configuration,
+      )
+      if (coordinate) {
+        const terrain: Terrain =
+          selectedTerrain === 'bridge'
+            ? {
+                type: 'bridge',
+                ports: [bridgeEntry, bridgeExit],
+                transitions: [
+                  { entry: bridgeEntry, exit: bridgeExit },
+                  { entry: bridgeExit, exit: bridgeEntry },
+                ],
+              }
+            : { type: selectedTerrain }
+        const error = onTerrainChange(coordinate, terrain)
+        setTerrainFeedback(
+          error ?? `${selectedTerrain[0].toUpperCase()}${selectedTerrain.slice(1)} applied to cell ${coordinate.q}, ${coordinate.r}.`,
+        )
+      }
+    }
+
     pointersRef.current.delete(event.pointerId)
 
     const remaining = Array.from(pointersRef.current.values())
@@ -397,7 +471,7 @@ export function ViewportController({
       tabIndex={0}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerEnd}
+      onPointerUp={(event) => handlePointerEnd(event, true)}
       onPointerCancel={handlePointerEnd}
       onLostPointerCapture={handlePointerEnd}
       onKeyDown={handleKeyDown}
@@ -430,8 +504,64 @@ export function ViewportController({
           Center
         </button>
       </div>
+      <div className="terrain-toolbar" role="group" aria-label="Terrain tools">
+        {(['water', 'ground', 'bridge'] as const).map((terrain) => (
+          <button
+            key={terrain}
+            type="button"
+            aria-pressed={selectedTerrain === terrain}
+            onClick={() => setSelectedTerrain(terrain)}
+          >
+            {terrain[0].toUpperCase() + terrain.slice(1)}
+          </button>
+        ))}
+        <button
+          type="button"
+          aria-pressed={gridVisible}
+          onClick={() => onGridVisibleChange(!gridVisible)}
+        >
+          Grid
+        </button>
+        {selectedTerrain === 'bridge' && (
+          <>
+            <label>
+              Entry
+              <select
+                aria-label="Bridge entry direction"
+                value={bridgeEntry}
+                onChange={(event) => setBridgeEntry(event.target.value as HexDirection)}
+              >
+                {HEX_DIRECTIONS.map((direction) => (
+                  <option key={direction} value={direction} disabled={direction === bridgeExit}>
+                    {formatDirection(direction)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Exit
+              <select
+                aria-label="Bridge exit direction"
+                value={bridgeExit}
+                onChange={(event) => setBridgeExit(event.target.value as HexDirection)}
+              >
+                {HEX_DIRECTIONS.map((direction) => (
+                  <option key={direction} value={direction} disabled={direction === bridgeEntry}>
+                    {formatDirection(direction)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+      </div>
+      {terrainFeedback && (
+        <output className="terrain-feedback" aria-live="polite">
+          {terrainFeedback}
+        </output>
+      )}
       <div className="board-stage" style={stageStyle}>
-        <BoardSvg board={board} bounds={bounds} />
+        <BoardSvg board={board} bounds={bounds} gridVisible={gridVisible} />
       </div>
     </div>
   )

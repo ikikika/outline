@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 5 are complete; Phase 6 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
+This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 6 are complete; Phase 7 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
 
 | Phase | Objective | Dependencies |
 |---|---|---|
@@ -120,7 +120,9 @@ This plan is phased and gated. A phase is complete only after its listed accepta
 
 **Acceptance:** Invalid terrain changes leave the board unchanged; grid toggle removes outlines only; terrain remains aligned under pan/zoom and is exported later from the model.
 
-**Verification:** Run build/type and lint checks; manually verify water initialization, valid/invalid ground and bridge changes, bridge directions, and grid visibility without changing interaction.
+**Status:** Complete. `npm run build` and `npm run lint` pass. Browser checks confirmed ground and bridge painting, configured east/west bridge directions, rejection of a direct ground-to-bridge change, restoring water before changing terrain, grid visibility hiding outlines without changing fills, tap-to-paint versus drag-to-pan, and terrain/grid state retained across setup and `/board` navigation. No unit tests or test dependencies were added.
+
+**Verification:** Production build/typecheck and lint passed; phase behavior was manually checked in the browser.
 
 **Risks and mitigation:** Ambiguous bridge behavior; retain explicit direction-pair data and use the documented undirected default unless review establishes another policy.
 
