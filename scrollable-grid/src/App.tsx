@@ -16,6 +16,7 @@ import type { GallerySelection } from './gallery/catalogue'
 import { ObjectGallery } from './components/ObjectGallery'
 import { getRoadConnectionIssues } from './domain/roads'
 import { isRoadType } from './domain/placement'
+import { PersistenceControls } from './components/PersistenceControls'
 
 interface BoardFormValues {
   shape: BoardShape
@@ -193,10 +194,32 @@ function App() {
     }
   }
 
+  function handleImportBoard(importedBoard: typeof board) {
+    dispatch({ type: 'replace-board', board: importedBoard })
+    setViewportTransform(null)
+    setSelectedRoadId(null)
+    setSelection({ kind: 'terrain', terrain: 'ground' })
+    setForm({
+      ...form,
+      shape: importedBoard.configuration.shape,
+      columns: importedBoard.configuration.shape === 'rectangular'
+        ? String(importedBoard.configuration.columns)
+        : form.columns,
+      rows: importedBoard.configuration.shape === 'rectangular'
+        ? String(importedBoard.configuration.rows)
+        : form.rows,
+      radius: importedBoard.configuration.shape === 'hexagonal'
+        ? String(importedBoard.configuration.radius)
+        : form.radius,
+      cellSize: String(importedBoard.configuration.cellSize),
+    })
+  }
+
   if (currentPage === 'board') {
     return (
       <BoardPage
         board={board}
+        onImportBoard={handleImportBoard}
         viewportTransform={viewportTransform}
         onViewportTransformChange={setViewportTransform}
         gridVisible={gridVisible}
@@ -331,6 +354,7 @@ function App() {
             >
               Open board page
             </button>
+            <PersistenceControls board={board} onImport={handleImportBoard} />
             <span className="status-label">
               <span className="status-dot" aria-hidden="true" />
               Initialized

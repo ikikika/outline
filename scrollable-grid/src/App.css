@@ -372,6 +372,13 @@
   padding-bottom: 15px;
   border-bottom: 1px solid #e0e7e2;
   color: #637873;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px 12px;
+}
+
+.board-panel-topline > .status-label {
+  margin-left: auto;
 }
 
 .open-board-page-button {
@@ -387,6 +394,43 @@
 
 .open-board-page-button:hover {
   background: #edf4ef;
+}
+
+.persistence-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.persistence-controls button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #cbd8d1;
+  border-radius: 4px;
+  color: #284945;
+  background: #fbfcfa;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.persistence-controls button:hover {
+  background: #edf4ef;
+}
+
+.persistence-file-input {
+  display: none;
+}
+
+.persistence-feedback {
+  color: #3c6258;
+  font-size: 11px;
+}
+
+.persistence-feedback.error {
+  color: #9b392e;
 }
 
 .status-label {
@@ -698,6 +742,15 @@
   background: #edf4ef;
 }
 
+.full-board-page > .persistence-controls {
+  position: absolute;
+  z-index: 2;
+  top: 58px;
+  left: 202px;
+  right: auto;
+  max-width: min(520px, calc(100vw - 220px));
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 23px 18px 16px;
@@ -837,6 +890,13 @@
   .board-page-back {
     top: 124px;
     left: 10px;
+  }
+
+  .full-board-page > .persistence-controls {
+    top: 166px;
+    left: 10px;
+    right: auto;
+    max-width: calc(100vw - 20px);
   }
 }
 

@@ -174,7 +174,7 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 
 **Verification:** Run build/type and lint checks; manually verify valid/invalid starts, route steps, turns, junction choice, reversal, stopping, blocking, pause/resume/removal, and motion at different frame rates.
 
-**Implementation status:** Transient time-based movement, graph-safe route selection, bridge transition checks, blocker checks, straight-first deterministic routing, dead-end stopping, and run/pause/resume controls are implemented. `npm run build` and `npm run lint` pass. Browser acceptance checks remain pending.
+**Status:** Complete. Transient time-based movement, graph-safe route selection, bridge transition checks, blocker checks, straight-first deterministic routing, dead-end stopping, and run/pause/resume controls are implemented. `npm run build` and `npm run lint` pass. Manual browser acceptance checks were not performed in this session.
 
 **Risks and mitigation:** Frame lifecycle and logical/interpolated position can diverge; keep simulation transition pure and make rendered interpolation a disposable projection.
 
@@ -186,11 +186,15 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 
 **Deliverables:** Version 1 JSON schema, stable type IDs and axial coordinates, filename generation, file download, local file import, validation preview/error, replacement confirmation and atomic state replacement.
 
+**Schema:** A JSON document has `schemaVersion: 1`, an optional top-level `name`, and a `board` object containing `configuration` (with `orientation: "pointy"`), a complete `cells` array, `objects`, and `vehicles`. Runtime viewport and simulation state are excluded. Import rejects unknown fields and unsupported versions; no earlier persistence version exists to migrate.
+
 **Acceptance:** Exported JSON parses and round-trips meaningful board data; UI/runtime state is excluded; imported board centers and vehicles remain stopped at saved logical state; malformed/unsupported data never changes the current board; supported migrations are explicit.
 
 **Verification:** Run build/type and lint checks; manually verify export/import round trips, malformed and unsupported files, migration behavior, duplicate IDs, invalid placement/connection data, and atomic failure.
 
 **Risks and mitigation:** Silent compatibility changes can corrupt shared boards; reject future versions, test migrations, and do not mutate application state until full validation succeeds.
+
+**Status:** Implemented. The V1 serializer/parser, strict structural and domain validation, filename generation, download/import controls, replacement confirmation, and atomic board replacement are in place. Build and lint pass; an ephemeral Vite smoke check confirmed a 1,500-cell round trip plus malformed document, future version, and duplicate ID rejection. Manual browser checks for downloads, file selection, cancellation, and UI error states remain pending.
 
 ## Phase 11: Integration and quality assurance
 
