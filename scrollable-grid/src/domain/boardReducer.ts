@@ -2,6 +2,7 @@ import { cellKey } from './board'
 import type {
   AxialCoordinate,
   BoardModel,
+  HexDirection,
   PlacedObject,
   Terrain,
   VehicleInstance,
@@ -11,6 +12,7 @@ export type BoardAction =
   | { type: 'replace-board'; board: BoardModel }
   | { type: 'place-object'; object: PlacedObject }
   | { type: 'remove-object'; id: string }
+  | { type: 'set-road-connections'; id: string; connections: HexDirection[] }
   | { type: 'place-vehicle'; vehicle: VehicleInstance }
   | { type: 'remove-vehicle'; id: string }
   | {
@@ -35,6 +37,22 @@ export function boardReducer(
         ...board,
         objects: board.objects.filter((object) => object.id !== action.id),
       }
+
+    case 'set-road-connections': {
+      const road = board.objects.find(
+        (object) => object.id === action.id && object.type.startsWith('road-'),
+      )
+      if (!road || !('connections' in road)) return board
+
+      return {
+        ...board,
+        objects: board.objects.map((object) =>
+          object.id === action.id && 'connections' in object
+            ? { ...object, connections: [...new Set(action.connections)] }
+            : object,
+        ),
+      }
+    }
 
     case 'place-vehicle':
       return { ...board, vehicles: [...board.vehicles, action.vehicle] }

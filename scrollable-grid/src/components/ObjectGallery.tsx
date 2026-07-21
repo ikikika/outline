@@ -1,4 +1,4 @@
-import { HEX_DIRECTIONS, type HexDirection } from '../domain/types'
+import { HEX_DIRECTIONS, type HexDirection, type RoadObject } from '../domain/types'
 import {
   GALLERY_GROUPS,
   GALLERY_ITEMS,
@@ -13,6 +13,9 @@ interface ObjectGalleryProps {
   onSelectionChange: (selection: GallerySelection) => void
   onBridgeEntryChange: (direction: HexDirection) => void
   onBridgeExitChange: (direction: HexDirection) => void
+  selectedRoad: RoadObject | null
+  unconnectedRoadDirections: readonly HexDirection[]
+  onToggleRoadConnection: (direction: HexDirection) => void
 }
 
 function selectionsMatch(
@@ -63,6 +66,9 @@ export function ObjectGallery({
   onSelectionChange,
   onBridgeEntryChange,
   onBridgeExitChange,
+  selectedRoad,
+  unconnectedRoadDirections,
+  onToggleRoadConnection,
 }: ObjectGalleryProps) {
   return (
     <aside className="object-gallery" aria-label="Object gallery">
@@ -141,6 +147,56 @@ export function ObjectGallery({
           </label>
         </div>
       )}
+      {selection.kind === 'road-edit' && (
+        <section className="road-connection-editor" aria-label="Road connection editor">
+          <h3>Road connections</h3>
+          {selectedRoad ? (
+            <>
+              <p className="road-edit-name">
+                {selectedRoad.type.replaceAll('road-', '').replaceAll('-', ' ')}
+              </p>
+              <div className="road-direction-buttons">
+                {HEX_DIRECTIONS.map((direction) => {
+                  const connected = selectedRoad.connections.includes(direction)
+                  const isUnmatched =
+                    connected && unconnectedRoadDirections.includes(direction)
+                  return (
+                    <button
+                      key={direction}
+                      type="button"
+                      className={isUnmatched ? 'is-unmatched' : undefined}
+                      aria-label={`${formatDirection(direction)} road side`}
+                      aria-pressed={connected}
+                      title={isUnmatched ? 'No reciprocal neighbor connection' : undefined}
+                      onClick={() => onToggleRoadConnection(direction)}
+                    >
+                      {directionLabel(direction)}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="road-edit-help">
+                {unconnectedRoadDirections.length
+                  ? `${unconnectedRoadDirections.length} selected side${unconnectedRoadDirections.length === 1 ? '' : 's'} lack reciprocal connections.`
+                  : 'All selected sides connect to neighboring roads or bridges.'}
+              </p>
+            </>
+          ) : (
+            <p className="road-edit-help">Select Edit road, then tap a placed road cell.</p>
+          )}
+        </section>
+      )}
     </aside>
   )
+}
+
+function directionLabel(direction: HexDirection): string {
+  switch (direction) {
+    case 'northEast': return 'NE'
+    case 'northWest': return 'NW'
+    case 'southEast': return 'SE'
+    case 'southWest': return 'SW'
+    case 'east': return 'E'
+    case 'west': return 'W'
+  }
 }

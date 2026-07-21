@@ -1,9 +1,11 @@
 import { memo } from 'react'
-import { HEX_DIRECTIONS, type BoardModel } from '../domain/types'
+import { HEX_DIRECTIONS, type BoardModel, type HexDirection } from '../domain/types'
 import type { BoardBounds } from '../geometry/board-layout'
 import { getHexCenter, getHexVertices } from '../geometry/hex'
-import { getGalleryArtForObject, getGalleryArtForTerrain, CAR_ART } from '../gallery/catalogue'
-import { getFootprintBounds, getObjectFootprint } from '../domain/placement'
+import { getGalleryArtForObject, CAR_ART } from '../gallery/catalogue'
+import { getFootprintBounds, getObjectFootprint, isRoadType } from '../domain/placement'
+import { getRoadConnectionIssues } from '../domain/roads'
+import { RoadGlyph } from './RoadGlyph'
 
 interface BoardSvgProps {
   board: BoardModel
@@ -29,6 +31,12 @@ export const BoardSvg = memo(function BoardSvg({
 }: BoardSvgProps) {
   const cellRadius = board.configuration.cellSize
   const cells = Object.values(board.cells)
+  const unconnectedPorts = new Map<string, HexDirection[]>()
+  for (const issue of getRoadConnectionIssues(board)) {
+    const directions = unconnectedPorts.get(issue.objectId) ?? []
+    directions.push(issue.direction)
+    unconnectedPorts.set(issue.objectId, directions)
+  }
 
   return (
     <svg
@@ -56,21 +64,32 @@ export const BoardSvg = memo(function BoardSvg({
               strokeWidth="1.25"
               vectorEffect="non-scaling-stroke"
             />
-            {cell.terrain.type === 'bridge' && (
-              <image
-                className="board-art"
-                href={getGalleryArtForTerrain('bridge')}
-                x={getHexCenter(cell.coordinate, cellRadius).x - cellRadius}
-                y={getHexCenter(cell.coordinate, cellRadius).y - cellRadius}
-                width={cellRadius * 2}
-                height={cellRadius * 2}
-                preserveAspectRatio="xMidYMid meet"
-              />
-            )}
           </g>
         )
       })}
+      {cells.filter((cell) => cell.terrain.type === 'bridge').map((cell) => (
+        <RoadGlyph
+          key={`bridge-${cell.coordinate.q},${cell.coordinate.r}`}
+          coordinate={cell.coordinate}
+          cellRadius={cellRadius}
+          connections={cell.terrain.type === 'bridge' ? cell.terrain.ports : []}
+          unconnectedConnections={unconnectedPorts.get(`bridge:${cell.coordinate.q},${cell.coordinate.r}`) ?? []}
+          variant="bridge"
+        />
+      ))}
       {board.objects.map((object) => {
+        if (isRoadType(object.type) && 'connections' in object) {
+          return (
+            <RoadGlyph
+              key={object.id}
+              coordinate={object.anchor}
+              cellRadius={cellRadius}
+              connections={object.connections}
+              unconnectedConnections={unconnectedPorts.get(object.id) ?? []}
+            />
+          )
+        }
+
         const footprint = getObjectFootprint(object.type, object.anchor)
         const definitionBounds = getFootprintBounds(footprint, cellRadius)
         const anchorCenter = getHexCenter(object.anchor, cellRadius)

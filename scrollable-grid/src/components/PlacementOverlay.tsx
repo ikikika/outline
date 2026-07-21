@@ -5,6 +5,8 @@ import { getFootprintBounds, getObjectAtCoordinate, getObjectFootprint, validate
 import { getGalleryArtForObject, getGalleryArtForTerrain, CAR_ART, REMOVE_ART } from '../gallery/catalogue'
 import type { GallerySelection } from '../gallery/catalogue'
 import { getTerrainChangeError } from '../domain/terrain'
+import { getRoadObjectAt, getUnconnectedRoadPorts } from '../domain/roads'
+import { RoadGlyph } from './RoadGlyph'
 
 interface PlacementOverlayProps {
   board: BoardModel
@@ -34,6 +36,39 @@ export function PlacementOverlay({
   )
   const footprint = validation.footprint
   const cellRadius = board.configuration.cellSize
+
+  if (selection.kind === 'road-edit') {
+    const road = getRoadObjectAt(board, coordinate)
+    const center = getHexCenter(coordinate, cellRadius)
+    return (
+      <svg
+        className="placement-overlay"
+        width={bounds.width}
+        height={bounds.height}
+        viewBox={`${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}`}
+        aria-hidden="true"
+      >
+        <polygon
+          points={getHexVertices(coordinate, cellRadius).map(({ x, y }) => `${x},${y}`).join(' ')}
+          fill={road ? 'rgba(91, 164, 103, 0.16)' : 'rgba(207, 87, 73, 0.18)'}
+          stroke={road ? '#d5f0c2' : '#ed826e'}
+          strokeWidth="2"
+          vectorEffect="non-scaling-stroke"
+        />
+        {road ? (
+          <RoadGlyph
+            coordinate={road.anchor}
+            cellRadius={cellRadius}
+            connections={road.connections}
+            unconnectedConnections={getUnconnectedRoadPorts(board, road.anchor)}
+          />
+        ) : (
+          <circle cx={center.x} cy={center.y} r={cellRadius * 0.18} fill="#ed826e" />
+        )}
+      </svg>
+    )
+  }
+
   const stroke = validation.valid ? '#d5f0c2' : '#ed826e'
   const fill = validation.valid ? 'rgba(91, 164, 103, 0.28)' : 'rgba(207, 87, 73, 0.3)'
 
@@ -126,6 +161,11 @@ function getPreviewValidation(
       valid: !getTerrainChangeError(board, coordinate, terrain),
       footprint: [coordinate],
     }
+  }
+
+  if (selection.kind === 'road-edit') {
+    const road = getRoadObjectAt(board, coordinate)
+    return { valid: Boolean(road), footprint: road ? [road.anchor] : [coordinate] }
   }
 
   const canRemove =

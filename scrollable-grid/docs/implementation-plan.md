@@ -1,6 +1,6 @@
 # Implementation Plan
 
-This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 7 are complete; Phase 8 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
+This plan is phased and gated. A phase is complete only after its listed acceptance criteria have been implemented and verified. Phases 1 through 8 are complete; Phase 9 is next. Read [context.md](context.md) before implementation. Keep each phase focused and update the context when a design decision changes. Per the current instruction, do not add unit tests or testing-framework dependencies for now. Use build/typecheck/lint and manual browser acceptance checks; revisit automated tests only with user approval.
 | Phase | Objective | Dependencies |
 |---|---|---|
 | 1. Context and architecture | Record requirements, conventions, risks, and this staged plan. Stop for review and approval. | None |
@@ -156,7 +156,9 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 
 **Acceptance:** Adjacent cells without reciprocal configured connections are disconnected; bridge traversal respects configured transitions; incompatible terrain/objects are rejected; graph is independent of viewport state.
 
-**Verification:** Run build/type and lint checks; manually verify direction/opposite mapping, common junctions, mismatched/disconnected sides, bridge transitions, and blocking objects.
+**Status:** Complete. `npm run build` and `npm run lint` pass. Browser checks confirmed road-side editing in six directions, reciprocal neighbors and unmatched-side indicators, visible directions matching straight/corner/junction road art, and bridge road endpoints. One-off graph checks confirmed mismatched sides remain disconnected, reciprocal road sides create edges, valid reciprocal bridge transitions connect, and bridges without valid transitions remain disconnected. No unit tests or test dependencies were added.
+
+**Verification:** Production build/typecheck and lint passed; road-editor interactions were manually checked in the browser, with graph rules checked through an ephemeral Vite module-loader smoke run.
 
 **Risks and mitigation:** Visuals can imply connectivity not present in data; derive visible road marks from the exact graph/connection data and test reciprocal cases.
 

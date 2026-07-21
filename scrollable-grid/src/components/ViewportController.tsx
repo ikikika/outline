@@ -20,6 +20,7 @@ import {
 import { BoardSvg } from './BoardSvg'
 import { PlacementOverlay } from './PlacementOverlay'
 import type { GallerySelection } from '../gallery/catalogue'
+import { getRoadObjectAt } from '../domain/roads'
 
 interface ViewportControllerProps {
   board: BoardModel
@@ -34,6 +35,7 @@ interface ViewportControllerProps {
   onPlaceObject: (type: ObjectType, coordinate: AxialCoordinate) => string | null
   onPlaceVehicle: (coordinate: AxialCoordinate) => string | null
   onRemoveAt: (coordinate: AxialCoordinate) => string | null
+  onSelectRoad: (id: string | null) => void
 }
 
 interface PointerPosition extends CartesianPoint {
@@ -84,6 +86,7 @@ export function ViewportController({
   onPlaceObject,
   onPlaceVehicle,
   onRemoveAt,
+  onSelectRoad,
 }: ViewportControllerProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const pointersRef = useRef(new Map<number, PointerPosition>())
@@ -385,7 +388,15 @@ export function ViewportController({
       )
       if (coordinate) {
         let error: string | null
-        if (selection.kind === 'terrain') {
+        if (selection.kind === 'road-edit') {
+          const road = getRoadObjectAt(board, coordinate)
+          onSelectRoad(road?.id ?? null)
+          setTerrainFeedback(
+            road
+              ? `Selected road at ${coordinate.q}, ${coordinate.r}.`
+              : 'No road in this cell. Select a placed road to edit its sides.',
+          )
+        } else if (selection.kind === 'terrain') {
           const terrain: Terrain =
             selection.terrain === 'bridge'
             ? {

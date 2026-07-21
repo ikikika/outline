@@ -14,6 +14,7 @@ import southCornerRoadArt from '../assets/objects/road-corner-se-sw.svg'
 import northCornerRoadArt from '../assets/objects/road-corner-ne-nw.svg'
 import tJunctionRoadArt from '../assets/objects/road-t-junction.svg'
 import crossroadArt from '../assets/objects/road-crossroad.svg'
+import roadEditArt from '../assets/objects/road-edit.svg'
 import carArt from '../assets/objects/car.svg'
 import removeArt from '../assets/objects/remove.svg'
 import type { ObjectType, TerrainType } from '../domain/types'
@@ -23,6 +24,7 @@ export type GallerySelection =
   | { kind: 'object'; objectType: ObjectType }
   | { kind: 'vehicle' }
   | { kind: 'remove' }
+  | { kind: 'road-edit' }
 
 export interface GalleryItem {
   id: string
@@ -69,6 +71,7 @@ export const GALLERY_GROUPS = [
       { id: 'road-corner-ne-nw', name: 'Road corner NE-NW', art: northCornerRoadArt, selection: { kind: 'object', objectType: 'road-corner-ne-nw' } },
       { id: 'road-t-junction', name: 'T-junction', art: tJunctionRoadArt, selection: { kind: 'object', objectType: 'road-t-junction' } },
       { id: 'road-crossroad', name: 'Four-way junction', art: crossroadArt, selection: { kind: 'object', objectType: 'road-crossroad' } },
+      { id: 'road-edit', name: 'Edit road', art: roadEditArt, selection: { kind: 'road-edit' } },
     ],
   },
   {

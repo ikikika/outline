@@ -1,4 +1,4 @@
-import type { AxialCoordinate, BoardModel, HexDirection, ObjectType, Terrain } from '../domain/types'
+import type { AxialCoordinate, BoardModel, HexDirection, ObjectType, RoadObject, Terrain } from '../domain/types'
 import type { ViewportTransform } from '../geometry/transforms'
 import { ViewportController } from '../components/ViewportController'
 import { ObjectGallery } from '../components/ObjectGallery'
@@ -17,9 +17,13 @@ interface BoardPageProps {
   onSelectionChange: (selection: GallerySelection) => void
   onBridgeEntryChange: (direction: HexDirection) => void
   onBridgeExitChange: (direction: HexDirection) => void
+  selectedRoad: RoadObject | null
+  unconnectedRoadDirections: readonly HexDirection[]
+  onToggleRoadConnection: (direction: HexDirection) => void
   onPlaceObject: (type: ObjectType, coordinate: AxialCoordinate) => string | null
   onPlaceVehicle: (coordinate: AxialCoordinate) => string | null
   onRemoveAt: (coordinate: AxialCoordinate) => string | null
+  onSelectRoad: (id: string | null) => void
   onReturnToSetup: () => void
 }
 
@@ -36,9 +40,13 @@ export function BoardPage({
   onSelectionChange,
   onBridgeEntryChange,
   onBridgeExitChange,
+  selectedRoad,
+  unconnectedRoadDirections,
+  onToggleRoadConnection,
   onPlaceObject,
   onPlaceVehicle,
   onRemoveAt,
+  onSelectRoad,
   onReturnToSetup,
 }: BoardPageProps) {
   return (
@@ -50,6 +58,9 @@ export function BoardPage({
         onSelectionChange={onSelectionChange}
         onBridgeEntryChange={onBridgeEntryChange}
         onBridgeExitChange={onBridgeExitChange}
+        selectedRoad={selectedRoad}
+        unconnectedRoadDirections={unconnectedRoadDirections}
+        onToggleRoadConnection={onToggleRoadConnection}
       />
       <ViewportController
         board={board}
@@ -64,6 +75,7 @@ export function BoardPage({
         onPlaceObject={onPlaceObject}
         onPlaceVehicle={onPlaceVehicle}
         onRemoveAt={onRemoveAt}
+        onSelectRoad={onSelectRoad}
       />
       <button
         className="board-page-back"

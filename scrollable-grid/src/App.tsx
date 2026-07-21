@@ -6,7 +6,7 @@ import {
   createBoard,
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
-import type { AxialCoordinate, BoardConfig, BoardShape, HexDirection, ObjectType, Terrain } from './domain/types'
+import type { AxialCoordinate, BoardConfig, BoardShape, HexDirection, ObjectType, RoadObject, Terrain } from './domain/types'
 import { ViewportController } from './components/ViewportController'
 import type { ViewportTransform } from './geometry/transforms'
 import { BoardPage } from './pages/BoardPage'
@@ -14,6 +14,8 @@ import { getTerrainChangeError } from './domain/terrain'
 import { createPlacedObject, createVehicle, getObjectAtCoordinate, getVehicleInitialHeading, validateObjectPlacement, validateVehiclePlacement } from './domain/placement'
 import type { GallerySelection } from './gallery/catalogue'
 import { ObjectGallery } from './components/ObjectGallery'
+import { getRoadConnectionIssues } from './domain/roads'
+import { isRoadType } from './domain/placement'
 
 interface BoardFormValues {
   shape: BoardShape
@@ -46,11 +48,21 @@ function App() {
   })
   const [bridgeEntry, setBridgeEntry] = useState<HexDirection>('east')
   const [bridgeExit, setBridgeExit] = useState<HexDirection>('west')
+  const [selectedRoadId, setSelectedRoadId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(() =>
     window.location.pathname === '/board' ? 'board' : 'setup',
   )
   const [viewportTransform, setViewportTransform] =
     useState<ViewportTransform | null>(null)
+  const selectedRoad = board.objects.find(
+    (object): object is RoadObject =>
+      object.id === selectedRoadId && isRoadType(object.type) && 'connections' in object,
+  ) ?? null
+  const unconnectedRoadDirections = selectedRoad
+    ? getRoadConnectionIssues(board)
+        .filter((issue) => issue.objectId === selectedRoad.id)
+        .map((issue) => issue.direction)
+    : []
 
   useEffect(() => {
     function handlePopState() {
@@ -123,10 +135,28 @@ function App() {
     const object = getObjectAtCoordinate(board.objects, coordinate)
     if (object) {
       dispatch({ type: 'remove-object', id: object.id })
+      if (object.id === selectedRoadId) setSelectedRoadId(null)
       return null
     }
 
     return 'There is no object or car in this cell to remove.'
+  }
+
+  function handleRoadConnectionsToggle(direction: HexDirection) {
+    if (!selectedRoad) return
+    const connections = selectedRoad.connections.includes(direction)
+      ? selectedRoad.connections.filter((connection) => connection !== direction)
+      : [...selectedRoad.connections, direction]
+    dispatch({
+      type: 'set-road-connections',
+      id: selectedRoad.id,
+      connections,
+    })
+  }
+
+  function handleGallerySelectionChange(nextSelection: GallerySelection) {
+    setSelection(nextSelection)
+    if (nextSelection.kind !== 'road-edit') setSelectedRoadId(null)
   }
 
   const cells = Object.values(board.cells)
@@ -175,12 +205,16 @@ function App() {
         selection={selection}
         bridgeEntry={bridgeEntry}
         bridgeExit={bridgeExit}
-        onSelectionChange={setSelection}
+        onSelectionChange={handleGallerySelectionChange}
         onBridgeEntryChange={setBridgeEntry}
         onBridgeExitChange={setBridgeExit}
+        selectedRoad={selectedRoad}
+        unconnectedRoadDirections={unconnectedRoadDirections}
+        onToggleRoadConnection={handleRoadConnectionsToggle}
         onPlaceObject={handleObjectPlacement}
         onPlaceVehicle={handleVehiclePlacement}
         onRemoveAt={handleRemoveAt}
+        onSelectRoad={setSelectedRoadId}
         onReturnToSetup={() => navigate('/', true)}
       />
     )
@@ -357,9 +391,12 @@ function App() {
               selection={selection}
               bridgeEntry={bridgeEntry}
               bridgeExit={bridgeExit}
-              onSelectionChange={setSelection}
+              onSelectionChange={handleGallerySelectionChange}
               onBridgeEntryChange={setBridgeEntry}
               onBridgeExitChange={setBridgeExit}
+              selectedRoad={selectedRoad}
+              unconnectedRoadDirections={unconnectedRoadDirections}
+              onToggleRoadConnection={handleRoadConnectionsToggle}
             />
             <ViewportController
               board={board}
@@ -374,6 +411,7 @@ function App() {
               onPlaceObject={handleObjectPlacement}
               onPlaceVehicle={handleVehiclePlacement}
               onRemoveAt={handleRemoveAt}
+              onSelectRoad={setSelectedRoadId}
             />
           </div>
         </section>
