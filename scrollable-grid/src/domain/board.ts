@@ -6,6 +6,7 @@ import type {
   Terrain,
 } from './types'
 import { getBoardCoordinates } from '../geometry/board-layout'
+import { rectangularToAxial } from '../geometry/coordinates'
 
 export const BOARD_LIMITS = {
   maxColumns: 80,
@@ -15,15 +16,47 @@ export const BOARD_LIMITS = {
 
 export const DEFAULT_RECTANGULAR_BOARD: BoardConfig = {
   shape: 'rectangular',
-  columns: 20,
-  rows: 14,
+  columns: 50,
+  rows: 30,
   cellSize: 32,
 }
+
+export const DEFAULT_GROUND_PATCH = {
+  columns: 15,
+  rows: 10,
+} as const
 
 export const DEFAULT_HEXAGONAL_BOARD: BoardConfig = {
   shape: 'hexagonal',
   radius: 8,
   cellSize: 32,
+}
+
+export function createDefaultRectangularBoard(): BoardModel {
+  const board = createBoard(DEFAULT_RECTANGULAR_BOARD)
+  const startColumn = Math.floor(
+    (DEFAULT_RECTANGULAR_BOARD.columns - DEFAULT_GROUND_PATCH.columns) / 2,
+  )
+  const startRow = Math.floor(
+    (DEFAULT_RECTANGULAR_BOARD.rows - DEFAULT_GROUND_PATCH.rows) / 2,
+  )
+  const cells = { ...board.cells }
+
+  for (let row = startRow; row < startRow + DEFAULT_GROUND_PATCH.rows; row += 1) {
+    for (
+      let column = startColumn;
+      column < startColumn + DEFAULT_GROUND_PATCH.columns;
+      column += 1
+    ) {
+      const coordinate = rectangularToAxial({ column, row })
+      cells[cellKey(coordinate)] = {
+        ...cells[cellKey(coordinate)],
+        terrain: { type: 'ground' },
+      }
+    }
+  }
+
+  return { ...board, cells }
 }
 
 export function cellKey(coordinate: AxialCoordinate): string {

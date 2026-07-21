@@ -2,7 +2,7 @@ import { useEffect, useReducer, useState, type FormEvent } from 'react'
 import './App.css'
 import {
   BOARD_LIMITS,
-  DEFAULT_RECTANGULAR_BOARD,
+  createDefaultRectangularBoard,
   createBoard,
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
@@ -27,8 +27,8 @@ interface BoardFormValues {
 
 const INITIAL_FORM: BoardFormValues = {
   shape: 'rectangular',
-  columns: '20',
-  rows: '14',
+  columns: '50',
+  rows: '30',
   radius: '8',
   cellSize: '32',
 }
@@ -36,8 +36,8 @@ const INITIAL_FORM: BoardFormValues = {
 function App() {
   const [board, dispatch] = useReducer(
     boardReducer,
-    DEFAULT_RECTANGULAR_BOARD,
-    createBoard,
+    undefined,
+    createDefaultRectangularBoard,
   )
   const [form, setForm] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState('')
