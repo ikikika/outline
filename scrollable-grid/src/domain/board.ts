@@ -3,6 +3,7 @@ import type {
   BoardCell,
   BoardConfig,
   BoardModel,
+  RectangularBoardConfig,
   Terrain,
 } from './types'
 import { getBoardCoordinates } from '../geometry/board-layout'
@@ -14,7 +15,7 @@ export const BOARD_LIMITS = {
   maxHexRadius: 40,
 } as const
 
-export const DEFAULT_RECTANGULAR_BOARD: BoardConfig = {
+export const DEFAULT_RECTANGULAR_BOARD: RectangularBoardConfig = {
   shape: 'rectangular',
   columns: 50,
   rows: 30,

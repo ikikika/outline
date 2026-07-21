@@ -12,6 +12,7 @@ import {
 } from './types'
 import { getHexVertices } from '../geometry/hex'
 import type { BoardBounds } from '../geometry/board-layout'
+import { getRoadGraph } from './roads'
 
 export interface PlacementValidation {
   valid: boolean
@@ -173,6 +174,20 @@ export function validateVehiclePlacement(
         footprint,
       }
     }
+    const graph = getRoadGraph(board)
+    if (
+      !graph.edges.some(
+        (edge) =>
+          (edge.from.q === coordinate.q && edge.from.r === coordinate.r) ||
+          (edge.to.q === coordinate.q && edge.to.r === coordinate.r),
+      )
+    ) {
+      return {
+        valid: false,
+        reason: 'A car needs at least one connected road or bridge edge.',
+        footprint,
+      }
+    }
     return { valid: true, reason: null, footprint }
   }
 
@@ -181,6 +196,17 @@ export function validateVehiclePlacement(
       return {
         valid: false,
         reason: 'A car needs a road with at least one configured connection.',
+        footprint,
+      }
+    }
+    if (!getRoadGraph(board).edges.some(
+      (edge) =>
+        (edge.from.q === coordinate.q && edge.from.r === coordinate.r) ||
+        (edge.to.q === coordinate.q && edge.to.r === coordinate.r),
+    )) {
+      return {
+        valid: false,
+        reason: 'A car needs at least one connected road or bridge edge.',
         footprint,
       }
     }

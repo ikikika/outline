@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { HEX_DIRECTIONS, type BoardModel, type HexDirection } from '../domain/types'
+import { HEX_DIRECTIONS, type AxialCoordinate, type BoardModel, type HexDirection } from '../domain/types'
 import type { BoardBounds } from '../geometry/board-layout'
 import { getHexCenter, getHexVertices } from '../geometry/hex'
 import { getGalleryArtForObject, CAR_ART } from '../gallery/catalogue'
@@ -7,10 +7,19 @@ import { getFootprintBounds, getObjectFootprint, isRoadType } from '../domain/pl
 import { getRoadConnectionIssues } from '../domain/roads'
 import { RoadGlyph } from './RoadGlyph'
 
+export interface VehicleProjection {
+  vehicleId: string
+  from: AxialCoordinate
+  to: AxialCoordinate
+  direction: HexDirection
+  progress: number
+}
+
 interface BoardSvgProps {
   board: BoardModel
   bounds: BoardBounds
   gridVisible: boolean
+  vehicleProjection?: VehicleProjection | null
 }
 
 function getTerrainFill(type: string): string {
@@ -28,6 +37,7 @@ export const BoardSvg = memo(function BoardSvg({
   board,
   bounds,
   gridVisible,
+  vehicleProjection = null,
 }: BoardSvgProps) {
   const cellRadius = board.configuration.cellSize
   const cells = Object.values(board.cells)
@@ -119,8 +129,20 @@ export const BoardSvg = memo(function BoardSvg({
         )
       })}
       {board.vehicles.map((vehicle) => {
-        const center = getHexCenter(vehicle.coordinate, cellRadius)
-        const directionIndex = HEX_DIRECTIONS.indexOf(vehicle.heading)
+        const projection = vehicleProjection?.vehicleId === vehicle.id
+          ? vehicleProjection
+          : null
+        const from = projection?.from ?? vehicle.coordinate
+        const to = projection?.to ?? vehicle.coordinate
+        const fromCenter = getHexCenter(from, cellRadius)
+        const toCenter = getHexCenter(to, cellRadius)
+        const center = {
+          x: fromCenter.x + (toCenter.x - fromCenter.x) * (projection?.progress ?? 0),
+          y: fromCenter.y + (toCenter.y - fromCenter.y) * (projection?.progress ?? 0),
+        }
+        const directionIndex = HEX_DIRECTIONS.indexOf(
+          projection?.direction ?? vehicle.heading,
+        )
         const headingAngle = [90, 30, -30, -90, -150, 150][directionIndex]
         const iconSize = cellRadius * 1.55
 

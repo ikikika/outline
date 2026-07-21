@@ -138,7 +138,7 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 
 **Acceptance:** Gallery selection only enters placement mode; valid click/tap commits exactly one instance; pan does not place; invalid placement changes nothing; multi-cell render/validation/removal use the same derived footprint; controls are keyboard accessible.
 
-**Status:** Complete. `npm run build` and `npm run lint` pass. Browser checks confirmed the bundled gallery, valid/invalid terrain placement, valid/invalid previews, duplicate/overlapping placement rejection, 2x2 and 2x3 footprints, out-of-bounds rejection, removal from any footprint cell, road placement, valid car placement on a road, and rejection of cars on ordinary ground/grass and when a second car is attempted. Mobile gallery sizing and pan-versus-tap behavior were checked. Autonomous car movement remains Phase 9.
+**Status:** Complete. `npm run build` and `npm run lint` pass. Browser checks confirmed the bundled gallery, valid/invalid terrain placement, valid/invalid previews, duplicate/overlapping placement rejection, 2x2 and 2x3 footprints, out-of-bounds rejection, removal from any footprint cell, road placement, valid car placement on a road, and rejection of cars on ordinary ground/grass and when a second car is attempted. Mobile gallery sizing and pan-versus-tap behavior were checked. Phase 9 now implements autonomous car movement; its manual acceptance checks are listed below.
 
 **Additional verification:** The NW-SE straight road and NE-NW/SE-SW corner artwork loads from local SVG assets; a car placed on the NW-SE road faces NW. No Phase 7 items remain pending.
 
@@ -173,6 +173,8 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 **Acceptance:** Car never traverses disconnected edges or blocking objects; pan/zoom do not interrupt logical motion; start/pause/resume/remove work; no valid next edge means safely stopped.
 
 **Verification:** Run build/type and lint checks; manually verify valid/invalid starts, route steps, turns, junction choice, reversal, stopping, blocking, pause/resume/removal, and motion at different frame rates.
+
+**Implementation status:** Transient time-based movement, graph-safe route selection, bridge transition checks, blocker checks, straight-first deterministic routing, dead-end stopping, and run/pause/resume controls are implemented. `npm run build` and `npm run lint` pass. Browser acceptance checks remain pending.
 
 **Risks and mitigation:** Frame lifecycle and logical/interpolated position can diverge; keep simulation transition pure and make rendered interpolation a disposable projection.
 

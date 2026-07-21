@@ -620,6 +620,11 @@
   font-weight: 650;
 }
 
+.viewport-toolbar button:disabled {
+  color: #9aa9a2;
+  cursor: not-allowed;
+}
+
 .zoom-level {
   min-width: 42px;
   color: #526b66;

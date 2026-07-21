@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -18,9 +19,11 @@ import {
   type ViewportTransform,
 } from '../geometry/transforms'
 import { BoardSvg } from './BoardSvg'
+import type { VehicleProjection } from './BoardSvg'
 import { PlacementOverlay } from './PlacementOverlay'
 import type { GallerySelection } from '../gallery/catalogue'
 import { getRoadObjectAt } from '../domain/roads'
+import { getNextRoadStep } from '../domain/simulation'
 
 interface ViewportControllerProps {
   board: BoardModel
@@ -57,6 +60,19 @@ const DEFAULT_ZOOM = 1
 const MIN_ZOOM = 0.35
 const MAX_ZOOM = 3
 const WHEEL_ZOOM_SENSITIVITY = 0.001
+const VEHICLE_STEP_DURATION = 520
+
+interface VehicleSimulation {
+  vehicleId: string
+  coordinate: AxialCoordinate
+  heading: HexDirection
+  target: AxialCoordinate
+  direction: HexDirection
+  elapsed: number
+  lastTimestamp: number | null
+  frameId: number | null
+  stoppedAtDeadEnd: boolean
+}
 
 function distanceBetween(first: CartesianPoint, second: CartesianPoint): number {
   return Math.hypot(second.x - first.x, second.y - first.y)
@@ -104,6 +120,16 @@ export function ViewportController({
   const transformRef = useRef(transform)
   const initialTransformRef = useRef(initialTransform)
   const onTransformChangeRef = useRef(onTransformChange)
+  const vehicle = board.vehicles[0]
+  const simulationRef = useRef<VehicleSimulation | null>(null)
+  const boardSnapshotRef = useRef({
+    cells: board.cells,
+    objects: board.objects,
+    vehicleId: vehicle?.id ?? null,
+  })
+  const [vehicleProjection, setVehicleProjection] =
+    useState<VehicleProjection | null>(null)
+  const [simulationRunning, setSimulationRunning] = useState(false)
   const bounds = useMemo(
     () => getBoardBounds(board.configuration, board.configuration.cellSize, 1),
     [board.configuration],
@@ -124,6 +150,132 @@ export function ViewportController({
     initialTransformRef.current = initialTransform
     onTransformChangeRef.current = onTransformChange
   }, [initialTransform, onTransformChange])
+
+  useEffect(() => {
+    const snapshot = boardSnapshotRef.current
+    if (
+      snapshot.cells !== board.cells ||
+      snapshot.objects !== board.objects ||
+      snapshot.vehicleId !== (vehicle?.id ?? null)
+    ) {
+      const simulation = simulationRef.current
+      if (simulation?.frameId !== null && simulation?.frameId !== undefined) {
+        cancelAnimationFrame(simulation.frameId)
+      }
+      simulationRef.current = null
+      setVehicleProjection(null)
+      setSimulationRunning(false)
+    }
+    boardSnapshotRef.current = {
+      cells: board.cells,
+      objects: board.objects,
+      vehicleId: vehicle?.id ?? null,
+    }
+  }, [board.cells, board.objects, vehicle?.id])
+
+  useEffect(() => () => {
+    const simulation = simulationRef.current
+    if (simulation?.frameId !== null && simulation?.frameId !== undefined) {
+      cancelAnimationFrame(simulation.frameId)
+    }
+  }, [])
+
+  function runSimulation(simulation: VehicleSimulation) {
+    simulation.lastTimestamp = null
+    const animate = (timestamp: number) => {
+      if (simulationRef.current !== simulation) return
+      if (simulation.lastTimestamp !== null) {
+        simulation.elapsed += timestamp - simulation.lastTimestamp
+      }
+      simulation.lastTimestamp = timestamp
+
+      while (simulation.elapsed >= VEHICLE_STEP_DURATION) {
+        simulation.elapsed -= VEHICLE_STEP_DURATION
+        simulation.coordinate = simulation.target
+        simulation.heading = simulation.direction
+        const nextStep = getNextRoadStep(
+          board,
+          simulation.coordinate,
+          simulation.heading,
+        )
+        if (!nextStep) {
+          simulation.target = simulation.coordinate
+          simulation.stoppedAtDeadEnd = true
+          simulation.frameId = null
+          setVehicleProjection({
+            vehicleId: simulation.vehicleId,
+            from: simulation.coordinate,
+            to: simulation.coordinate,
+            direction: simulation.heading,
+            progress: 0,
+          })
+          setSimulationRunning(false)
+          return
+        }
+        simulation.target = nextStep.coordinate
+        simulation.direction = nextStep.direction
+      }
+
+      setVehicleProjection({
+        vehicleId: simulation.vehicleId,
+        from: simulation.coordinate,
+        to: simulation.target,
+        direction: simulation.direction,
+        progress: simulation.elapsed / VEHICLE_STEP_DURATION,
+      })
+      simulation.frameId = requestAnimationFrame(animate)
+    }
+    simulation.frameId = requestAnimationFrame(animate)
+  }
+
+  function handleSimulationToggle() {
+    const currentSimulation = simulationRef.current
+    if (simulationRunning && currentSimulation) {
+      if (currentSimulation.frameId !== null) {
+        cancelAnimationFrame(currentSimulation.frameId)
+        currentSimulation.frameId = null
+      }
+      currentSimulation.lastTimestamp = null
+      setSimulationRunning(false)
+      return
+    }
+
+    if (currentSimulation) {
+      if (currentSimulation.stoppedAtDeadEnd) return
+      setSimulationRunning(true)
+      runSimulation(currentSimulation)
+      return
+    }
+
+    if (!vehicle) return
+    const firstStep = getNextRoadStep(board, vehicle.coordinate, vehicle.heading)
+    if (!firstStep) {
+      setTerrainFeedback('This car has no safe connected road to follow.')
+      return
+    }
+
+    const simulation: VehicleSimulation = {
+      vehicleId: vehicle.id,
+      coordinate: vehicle.coordinate,
+      heading: vehicle.heading,
+      target: firstStep.coordinate,
+      direction: firstStep.direction,
+      elapsed: 0,
+      lastTimestamp: null,
+      frameId: null,
+      stoppedAtDeadEnd: false,
+    }
+    simulationRef.current = simulation
+    setVehicleProjection({
+      vehicleId: vehicle.id,
+      from: vehicle.coordinate,
+      to: firstStep.coordinate,
+      direction: firstStep.direction,
+      progress: 0,
+    })
+    setSimulationRunning(true)
+    runSimulation(simulation)
+  }
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current
@@ -423,7 +575,18 @@ export function ViewportController({
             error ?? `Car placed at ${coordinate.q}, ${coordinate.r}.`,
           )
         } else {
-          error = onRemoveAt(coordinate)
+          const projectedCell = vehicleProjection
+            ? vehicleProjection.progress < 0.5
+              ? vehicleProjection.from
+              : vehicleProjection.to
+            : null
+          const isProjectedVehicleCell =
+            vehicle &&
+            projectedCell?.q === coordinate.q &&
+            projectedCell.r === coordinate.r
+          error = onRemoveAt(
+            isProjectedVehicleCell ? vehicle.coordinate : coordinate,
+          )
           setTerrainFeedback(
             error ?? `Item removed from ${coordinate.q}, ${coordinate.r}.`,
           )
@@ -533,6 +696,16 @@ export function ViewportController({
       <div className="viewport-toolbar" role="group" aria-label="Viewport controls">
         <button
           type="button"
+          aria-pressed={simulationRunning}
+          aria-label={simulationRunning ? 'Pause car' : 'Run car'}
+          title={simulationRunning ? 'Pause car' : 'Run car'}
+          disabled={!vehicle}
+          onClick={handleSimulationToggle}
+        >
+          {simulationRunning ? 'Pause' : 'Run'}
+        </button>
+        <button
+          type="button"
           aria-label="Zoom out"
           title="Zoom out"
           onClick={() => handleZoomButton(1 / 1.2)}
@@ -573,7 +746,12 @@ export function ViewportController({
         </output>
       )}
       <div className="board-stage" style={stageStyle}>
-        <BoardSvg board={board} bounds={bounds} gridVisible={gridVisible} />
+        <BoardSvg
+          board={board}
+          bounds={bounds}
+          gridVisible={gridVisible}
+          vehicleProjection={vehicleProjection}
+        />
         <PlacementOverlay
           board={board}
           bounds={bounds}
