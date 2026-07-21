@@ -8,8 +8,10 @@ import {
 } from 'react'
 import type { AxialCoordinate, BoardModel, HexDirection, ObjectType, Terrain } from '../domain/types'
 import { getBoardBounds } from '../geometry/board-layout'
+import { getBoardCoordinates } from '../geometry/board-layout'
 import type { CartesianPoint } from '../geometry/coordinates'
 import { hitTestBoard } from '../geometry/board-layout'
+import { getNeighborCoordinate } from '../geometry/hex'
 import {
   centerBoardInViewport,
   clampViewportTransform,
@@ -116,6 +118,10 @@ export function ViewportController({
     () => initialTransform ?? { panX: 0, panY: 0, zoom: DEFAULT_ZOOM },
   )
   const [hoverCoordinate, setHoverCoordinate] = useState<AxialCoordinate | null>(null)
+    const [keyboardCoordinate, setKeyboardCoordinate] = useState(() => {
+      const coordinates = getBoardCoordinates(board.configuration)
+      return coordinates[Math.floor(coordinates.length / 2)]
+    })
   const [terrainFeedback, setTerrainFeedback] = useState('')
   const transformRef = useRef(transform)
   const initialTransformRef = useRef(initialTransform)
@@ -539,58 +545,8 @@ export function ViewportController({
         board.configuration,
       )
       if (coordinate) {
-        let error: string | null
-        if (selection.kind === 'road-edit') {
-          const road = getRoadObjectAt(board, coordinate)
-          onSelectRoad(road?.id ?? null)
-          setTerrainFeedback(
-            road
-              ? `Selected road at ${coordinate.q}, ${coordinate.r}.`
-              : 'No road in this cell. Select a placed road to edit its sides.',
-          )
-        } else if (selection.kind === 'terrain') {
-          const terrain: Terrain =
-            selection.terrain === 'bridge'
-            ? {
-                type: 'bridge',
-                ports: [bridgeEntry, bridgeExit],
-                transitions: [
-                  { entry: bridgeEntry, exit: bridgeExit },
-                  { entry: bridgeExit, exit: bridgeEntry },
-                ],
-              }
-              : { type: selection.terrain }
-          error = onTerrainChange(coordinate, terrain)
-          setTerrainFeedback(
-            error ?? `${selection.terrain[0].toUpperCase()}${selection.terrain.slice(1)} applied to cell ${coordinate.q}, ${coordinate.r}.`,
-          )
-        } else if (selection.kind === 'object') {
-          error = onPlaceObject(selection.objectType, coordinate)
-          setTerrainFeedback(
-            error ?? `${selection.objectType.replaceAll('-', ' ')} placed at ${coordinate.q}, ${coordinate.r}.`,
-          )
-        } else if (selection.kind === 'vehicle') {
-          error = onPlaceVehicle(coordinate)
-          setTerrainFeedback(
-            error ?? `Car placed at ${coordinate.q}, ${coordinate.r}.`,
-          )
-        } else {
-          const projectedCell = vehicleProjection
-            ? vehicleProjection.progress < 0.5
-              ? vehicleProjection.from
-              : vehicleProjection.to
-            : null
-          const isProjectedVehicleCell =
-            vehicle &&
-            projectedCell?.q === coordinate.q &&
-            projectedCell.r === coordinate.r
-          error = onRemoveAt(
-            isProjectedVehicleCell ? vehicle.coordinate : coordinate,
-          )
-          setTerrainFeedback(
-            error ?? `Item removed from ${coordinate.q}, ${coordinate.r}.`,
-          )
-        }
+        setKeyboardCoordinate(coordinate)
+        activateCoordinate(coordinate)
       }
     }
 
@@ -609,6 +565,67 @@ export function ViewportController({
     } else {
       gestureRef.current = null
     }
+  }
+
+  function activateCoordinate(coordinate: AxialCoordinate) {
+    let error: string | null
+    if (selection.kind === 'none') return
+    if (selection.kind === 'road-edit') {
+      const road = getRoadObjectAt(board, coordinate)
+      onSelectRoad(road?.id ?? null)
+      setTerrainFeedback(
+        road
+          ? `Selected road at ${coordinate.q}, ${coordinate.r}.`
+          : 'No road in this cell. Select a placed road to edit its sides.',
+      )
+      return
+    }
+
+    if (selection.kind === 'terrain') {
+      const terrain: Terrain = selection.terrain === 'bridge'
+        ? {
+            type: 'bridge',
+            ports: [bridgeEntry, bridgeExit],
+            transitions: [
+              { entry: bridgeEntry, exit: bridgeExit },
+              { entry: bridgeExit, exit: bridgeEntry },
+            ],
+          }
+        : { type: selection.terrain }
+      error = onTerrainChange(coordinate, terrain)
+      setTerrainFeedback(
+        error ?? `${selection.terrain[0].toUpperCase()}${selection.terrain.slice(1)} applied to cell ${coordinate.q}, ${coordinate.r}.`,
+      )
+      return
+    }
+
+    if (selection.kind === 'object') {
+      error = onPlaceObject(selection.objectType, coordinate)
+      setTerrainFeedback(
+        error ?? `${selection.objectType.replaceAll('-', ' ')} placed at ${coordinate.q}, ${coordinate.r}.`,
+      )
+      return
+    }
+
+    if (selection.kind === 'vehicle') {
+      error = onPlaceVehicle(coordinate)
+      setTerrainFeedback(error ?? `Car placed at ${coordinate.q}, ${coordinate.r}.`)
+      return
+    }
+
+    const projectedCell = vehicleProjection
+      ? vehicleProjection.progress < 0.5
+        ? vehicleProjection.from
+        : vehicleProjection.to
+      : null
+    const isProjectedVehicleCell =
+      vehicle &&
+      projectedCell?.q === coordinate.q &&
+      projectedCell.r === coordinate.r
+    error = onRemoveAt(isProjectedVehicleCell ? vehicle.coordinate : coordinate)
+    setTerrainFeedback(
+      error ?? `Item removed from ${coordinate.q}, ${coordinate.r}.`,
+    )
   }
 
   function applyZoomAt(point: CartesianPoint, zoom: number) {
@@ -637,6 +654,23 @@ export function ViewportController({
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget) return
     const current = transformRef.current
+    const boardCoordinates = getBoardCoordinates(board.configuration)
+    const focusedCoordinate = keyboardCoordinate &&
+      board.cells[`${keyboardCoordinate.q},${keyboardCoordinate.r}`]
+      ? keyboardCoordinate
+      : boardCoordinates[Math.floor(boardCoordinates.length / 2)]
+    if (event.shiftKey && event.key.startsWith('Arrow')) {
+      event.preventDefault()
+      const pan = {
+        ArrowLeft: { panX: current.panX + 40 },
+        ArrowRight: { panX: current.panX - 40 },
+        ArrowUp: { panY: current.panY + 40 },
+        ArrowDown: { panY: current.panY - 40 },
+      }[event.key]
+      if (pan) setConstrainedTransform({ ...current, ...pan })
+      return
+    }
+
     switch (event.key) {
       case '+':
       case '=':
@@ -652,20 +686,41 @@ export function ViewportController({
         handleCenterBoard()
         break
       case 'ArrowLeft':
-        event.preventDefault()
-        setConstrainedTransform({ ...current, panX: current.panX + 40 })
-        break
       case 'ArrowRight':
-        event.preventDefault()
-        setConstrainedTransform({ ...current, panX: current.panX - 40 })
-        break
       case 'ArrowUp':
-        event.preventDefault()
-        setConstrainedTransform({ ...current, panY: current.panY + 40 })
-        break
       case 'ArrowDown':
+      case 'q':
+      case 'Q':
+      case 'e':
+      case 'E':
         event.preventDefault()
-        setConstrainedTransform({ ...current, panY: current.panY - 40 })
+        if (!focusedCoordinate) return
+        {
+          const direction = {
+            ArrowRight: 'east',
+            ArrowUp: 'northWest',
+            ArrowLeft: 'west',
+            ArrowDown: 'southEast',
+            q: 'northEast',
+            Q: 'northEast',
+            e: 'southWest',
+            E: 'southWest',
+          }[event.key] as HexDirection
+          const next = getNeighborCoordinate(focusedCoordinate, direction)
+          if (board.cells[`${next.q},${next.r}`]) {
+            setKeyboardCoordinate(next)
+            setHoverCoordinate(next)
+          }
+        }
+        break
+      case 'Enter':
+      case ' ':
+        event.preventDefault()
+        if (focusedCoordinate) {
+          setKeyboardCoordinate(focusedCoordinate)
+          setHoverCoordinate(focusedCoordinate)
+          activateCoordinate(focusedCoordinate)
+        }
         break
     }
   }
@@ -682,6 +737,7 @@ export function ViewportController({
       className="board-surface"
       role="region"
       aria-label="Board viewport"
+      aria-describedby="board-keyboard-help"
       tabIndex={0}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -693,6 +749,9 @@ export function ViewportController({
       }}
       onKeyDown={handleKeyDown}
     >
+            <span id="board-keyboard-help" className="visually-hidden">
+              Use arrow keys and Q or E to select neighboring cells. Press Enter or Space to apply the selected tool. Hold Shift with an arrow key to pan.
+            </span>
       <div className="viewport-toolbar" role="group" aria-label="Viewport controls">
         <button
           type="button"

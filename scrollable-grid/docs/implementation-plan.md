@@ -194,7 +194,7 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 
 **Risks and mitigation:** Silent compatibility changes can corrupt shared boards; reject future versions, test migrations, and do not mutate application state until full validation succeeds.
 
-**Status:** Implemented. The V1 serializer/parser, strict structural and domain validation, filename generation, download/import controls, replacement confirmation, and atomic board replacement are in place. Build and lint pass; an ephemeral Vite smoke check confirmed a 1,500-cell round trip plus malformed document, future version, and duplicate ID rejection. Manual browser checks for downloads, file selection, cancellation, and UI error states remain pending.
+**Status:** Complete. The V1 serializer/parser, strict structural and domain validation, filename generation, download/import controls, replacement confirmation, and atomic board replacement are in place. Build and lint pass; an ephemeral Vite smoke check confirmed a 1,500-cell round trip plus malformed document, future version, and duplicate ID rejection. Manual browser checks for downloads, file selection, cancellation, and UI error states are tracked in Phase 11 integration acceptance.
 
 ## Phase 11: Integration and quality assurance
 
@@ -209,3 +209,5 @@ Grass blocks vehicle placement and traversal; manually verify that cars cannot e
 **Verification:** Run production build/typecheck/lint; manually walk through create/edit/connect/drive/export/import workflows, responsive desktop/mobile behavior, keyboard/focus/contrast, and real-device gestures where available. Do not add unit-test suites under the current instruction; other verification approaches can be considered separately.
 
 **Risks and mitigation:** Integrated pointer, simulation, and persistence workflows may expose lifecycle issues; prioritize user-visible correctness and repair regressions before declaring completion.
+
+**Implementation status:** Keyboard users can navigate all six neighboring cells with arrow keys plus Q/E and activate the selected tool with Enter or Space; Shift+arrow retains viewport panning. Gallery supporting-text contrast was increased, and the README now documents implemented workflows and configured limits. Build and lint pass. Browser checks verified keyboard terrain editing, valid JSON import, malformed JSON feedback with the imported board retained, and non-overlapping mobile back/file controls at 390px width. Full create/edit/connect/drive/export/download, import cancellation, focus/contrast review, and real-device gesture acceptance remain pending.

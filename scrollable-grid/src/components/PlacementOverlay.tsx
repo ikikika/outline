@@ -25,7 +25,7 @@ export function PlacementOverlay({
   bridgeEntry,
   bridgeExit,
 }: PlacementOverlayProps) {
-  if (!selection || !coordinate) return null
+  if (!selection || selection.kind === 'none' || !coordinate) return null
 
   const validation = getPreviewValidation(
     board,

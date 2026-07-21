@@ -77,7 +77,7 @@ export function ObjectGallery({
         <span className="gallery-current">
           {GALLERY_ITEMS.find((item) =>
             selectionsMatch(item.selection, selection),
-          )?.name ?? 'Choose item'}
+          )?.name ?? 'No tool selected'}
         </span>
       </div>
       <div className="gallery-groups">
@@ -95,7 +95,13 @@ export function ObjectGallery({
                     key={item.id}
                     item={item}
                     selected={selectionsMatch(item.selection, selection)}
-                    onSelect={() => onSelectionChange(item.selection)}
+                    onSelect={() =>
+                      onSelectionChange(
+                        selectionsMatch(item.selection, selection)
+                          ? { kind: 'none' }
+                          : item.selection,
+                      )
+                    }
                   />
                 )
               })}

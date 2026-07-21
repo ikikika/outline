@@ -212,7 +212,7 @@
 
 .gallery-current {
   overflow: hidden;
-  color: #72847e;
+  color: #566a64;
   font-size: 10px;
   font-weight: 500;
   text-overflow: ellipsis;
@@ -235,7 +235,7 @@
 
 .gallery-group h3 {
   margin: 0 3px 5px;
-  color: #788984;
+  color: #586a64;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0;
@@ -740,6 +740,18 @@
 
 .board-page-back:hover {
   background: #edf4ef;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .full-board-page > .persistence-controls {

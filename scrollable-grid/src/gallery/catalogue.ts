@@ -20,6 +20,7 @@ import removeArt from '../assets/objects/remove.svg'
 import type { ObjectType, TerrainType } from '../domain/types'
 
 export type GallerySelection =
+  | { kind: 'none' }
   | { kind: 'terrain'; terrain: TerrainType }
   | { kind: 'object'; objectType: ObjectType }
   | { kind: 'vehicle' }
