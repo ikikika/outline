@@ -2,7 +2,6 @@ import { useEffect, useReducer, useState, type FormEvent } from 'react'
 import './App.css'
 import {
   BOARD_LIMITS,
-  createDefaultRectangularBoard,
   createBoard,
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
@@ -17,6 +16,8 @@ import { ObjectGallery } from './components/ObjectGallery'
 import { getRoadConnectionIssues } from './domain/roads'
 import { isRoadType } from './domain/placement'
 import { PersistenceControls } from './components/PersistenceControls'
+import defaultBoardDocument from './assets/default-board.json?raw'
+import { parseBoardDocument } from './persistence/schema'
 
 interface BoardFormValues {
   shape: BoardShape
@@ -38,7 +39,7 @@ function App() {
   const [board, dispatch] = useReducer(
     boardReducer,
     undefined,
-    createDefaultRectangularBoard,
+    () => parseBoardDocument(defaultBoardDocument),
   )
   const [form, setForm] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState('')
