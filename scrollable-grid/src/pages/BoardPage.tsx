@@ -8,6 +8,8 @@ import { PersistenceControls } from '../components/PersistenceControls'
 interface BoardPageProps {
   board: BoardModel
   onImportBoard: (board: BoardModel) => void
+  onResetBoard: () => void
+  onClearBoard: () => void
   viewportTransform: ViewportTransform | null
   onViewportTransformChange: (transform: ViewportTransform) => void
   gridVisible: boolean
@@ -32,6 +34,8 @@ interface BoardPageProps {
 export function BoardPage({
   board,
   onImportBoard,
+  onResetBoard,
+  onClearBoard,
   viewportTransform,
   onViewportTransformChange,
   gridVisible,
@@ -87,7 +91,12 @@ export function BoardPage({
       >
         Back to setup
       </button>
-      <PersistenceControls board={board} onImport={onImportBoard} />
+      <PersistenceControls
+        board={board}
+        onImport={onImportBoard}
+        onReset={onResetBoard}
+        onClear={onClearBoard}
+      />
     </main>
   )
 }

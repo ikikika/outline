@@ -3,6 +3,7 @@ import './App.css'
 import {
   BOARD_LIMITS,
   createBoard,
+  createDefaultRectangularBoard,
 } from './domain/board'
 import { boardReducer } from './domain/boardReducer'
 import type { AxialCoordinate, BoardConfig, BoardShape, HexDirection, ObjectType, RoadObject, Terrain } from './domain/types'
@@ -216,11 +217,21 @@ function App() {
     })
   }
 
+  function handleResetBoard() {
+    handleImportBoard(parseBoardDocument(defaultBoardDocument))
+  }
+
+  function handleClearBoard() {
+    handleImportBoard(createDefaultRectangularBoard())
+  }
+
   if (currentPage === 'board') {
     return (
       <BoardPage
         board={board}
         onImportBoard={handleImportBoard}
+        onResetBoard={handleResetBoard}
+        onClearBoard={handleClearBoard}
         viewportTransform={viewportTransform}
         onViewportTransformChange={setViewportTransform}
         gridVisible={gridVisible}
@@ -355,7 +366,12 @@ function App() {
             >
               Open board page
             </button>
-            <PersistenceControls board={board} onImport={handleImportBoard} />
+            <PersistenceControls
+              board={board}
+              onImport={handleImportBoard}
+              onReset={handleResetBoard}
+              onClear={handleClearBoard}
+            />
             <span className="status-label">
               <span className="status-dot" aria-hidden="true" />
               Initialized
