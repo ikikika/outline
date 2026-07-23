@@ -1,121 +1,78 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { Canvas } from '@react-three/fiber'
+import type { Vector3 } from 'three'
+import { ImportantArea, Room } from './room/RoomScene'
+import { CameraRig } from './room/CameraRig'
+import { CAMERA_SETTINGS, SCENE_MIN_WIDTH_PX } from './room/config'
+import { getInitialCameraReadout } from './room/camera'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [floorPoint, setFloorPoint] = useState<Vector3 | null>(null)
+  const [cameraReadout, setCameraReadout] = useState(getInitialCameraReadout)
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+    <main className="room-page">
+      <section className="room-section" aria-label="Isometric room scene">
+        <div className="room-viewport">
+          <div className="room-scene-container" style={{ minWidth: SCENE_MIN_WIDTH_PX }}>
+            <Canvas
+              className="room-canvas"
+              orthographic
+              shadows="percentage"
+              dpr={[1, 1.5]}
+              camera={{
+                position: CAMERA_SETTINGS.position,
+                up: CAMERA_SETTINGS.up,
+                near: CAMERA_SETTINGS.near,
+                far: CAMERA_SETTINGS.far,
+              }}
+              gl={{ antialias: true, alpha: false }}
+              onPointerMissed={() => setFloorPoint(null)}
+            >
+              <color attach="background" args={['#dfe1df']} />
+              <CameraRig onCameraChange={setCameraReadout} />
+              <ambientLight intensity={1.15} />
+              <directionalLight
+                castShadow
+                position={[-6, -8, 18]}
+                intensity={2.2}
+                shadow-mapSize-width={2048}
+                shadow-mapSize-height={2048}
+                shadow-camera-left={-25}
+                shadow-camera-right={25}
+                shadow-camera-top={25}
+                shadow-camera-bottom={-25}
+                shadow-bias={-0.0002}
+              />
+              <Room onFloorPoint={setFloorPoint} floorPoint={floorPoint} />
+              <ImportantArea />
+            </Canvas>
+          </div>
+          <div className="camera-readout" aria-label="Live camera values">
+            <p className="camera-readout-title">CAMERA / LIVE</p>
+            <div className="camera-readout-row">
+              <span>ROTATION</span>
+              <output>
+                X {cameraReadout.rotation[0].toFixed(1)}° / Y {cameraReadout.rotation[1].toFixed(1)}° / Z{' '}
+                {cameraReadout.rotation[2].toFixed(1)}°
+              </output>
+            </div>
+            <div className="camera-readout-row">
+              <span>ZOOM</span>
+              <output>{cameraReadout.zoom.toFixed(2)}×</output>
+            </div>
+            <div className="camera-readout-row">
+              <span>PAN TARGET</span>
+              <output>
+                X {cameraReadout.pan[0].toFixed(2)} / Y {cameraReadout.pan[1].toFixed(2)} / Z{' '}
+                {cameraReadout.pan[2].toFixed(2)}
+              </output>
+            </div>
+          </div>
         </div>
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
