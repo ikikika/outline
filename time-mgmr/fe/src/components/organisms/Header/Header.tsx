@@ -40,7 +40,7 @@ export const Header: React.FC = () => {
               {isMobile ? <Menu size={20} strokeWidth={2} /> : <PanelLeft size={20} strokeWidth={2} />}
             </button>
           ) : null}
-          <Link to={user ? ROUTES.TODAY : ROUTES.HOME} className={styles.logo}>
+          <Link to={user ? ROUTES.TIMETABLE : ROUTES.HOME} className={styles.logo}>
             {APP_NAME}
           </Link>
         </div>

@@ -1,4 +1,3 @@
-import { API_BASE_URL } from '@/core/constants/app';
 import {
 	getAccessToken,
 	notifySessionExpired,
@@ -17,11 +16,11 @@ export class HttpClientError extends Error {
 	statusText: string;
 	url: string;
 
-	constructor(response: Response) {
-		super(response.statusText || 'HTTP request failed');
+	constructor(response: Response, message?: string) {
+		super(message || response.statusText || 'HTTP request failed');
 		this.name = 'HttpClientError';
 		this.status = response.status;
-		this.statusText = response.statusText;
+		this.statusText = message || response.statusText;
 		this.url = response.url;
 	}
 }
@@ -55,7 +54,21 @@ function buildRequestInit(
 
 async function ensureOk(response: Response): Promise<Response> {
 	if (!response.ok) {
-		throw new HttpClientError(response);
+		let message: string | undefined;
+		try {
+			const data: unknown = await response.clone().json();
+			if (
+				data &&
+				typeof data === 'object' &&
+				'error' in data &&
+				typeof (data as { error: unknown }).error === 'string'
+			) {
+				message = (data as { error: string }).error;
+			}
+		} catch {
+			// Keep default statusText when body is not JSON
+		}
+		throw new HttpClientError(response, message);
 	}
 	return response;
 }
@@ -133,6 +146,24 @@ export async function postJson<T>(
 	);
 }
 
+export async function patchJson<T>(
+	url: string,
+	body?: unknown,
+	options: IHttpRequestOptions = {}
+): Promise<T> {
+	return requestJson<T>(
+		url,
+		{
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: body === undefined ? undefined : JSON.stringify(body),
+		},
+		options
+	);
+}
+
 export async function post(
 	url: string,
 	body?: unknown,
@@ -176,4 +207,35 @@ export async function postJsonAuth<T>(
 	return postJson<T>(url, body, { ...options, auth: true });
 }
 
-export const HTTP_BASE_URL = API_BASE_URL;
+export async function patchJsonAuth<T>(
+	url: string,
+	body?: unknown,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<T> {
+	return patchJson<T>(url, body, { ...options, auth: true });
+}
+
+export async function deleteJsonAuth(
+	url: string,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<void> {
+	await request(url, { method: 'DELETE' }, { ...options, auth: true });
+}
+
+export async function deleteJsonAuthWithBody<T>(
+	url: string,
+	body?: unknown,
+	options: Omit<IHttpRequestOptions, 'auth'> = {}
+): Promise<T> {
+	return requestJson<T>(
+		url,
+		{
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: body === undefined ? undefined : JSON.stringify(body),
+		},
+		{ ...options, auth: true }
+	);
+}

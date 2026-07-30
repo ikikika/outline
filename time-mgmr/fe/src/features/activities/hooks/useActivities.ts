@@ -1,69 +1,277 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthContext } from '@/app/providers/auth/useAuthContext';
+import { getBrowserTimeZone } from '@/core/utils/timeZone/timeZone';
 import {
   ACTIVITY_QUERY_KEYS,
-  TEMPLATE_QUERY_KEYS,
+  SCHEDULE_BLOCK_QUERY_KEYS,
   TIME_ENTRY_QUERY_KEYS,
 } from '../constants';
 import {
-  createTaskApi,
-  fetchTasksByDate,
-  fetchTasksByDateRange,
-  isActivitiesApiEnabled,
+  fetchActivityById,
+  fetchTaskById,
+  patchTaskApi,
+  requireApiBaseUrl,
+  updateTaskApi,
+  deleteTaskApi,
+  type ITaskPatch,
 } from '../api/activitiesApi';
-import { activityRepository, taskRepository } from '../repository/activityRepository';
+import {
+  deleteScheduleBlockApi,
+  createScheduleBlockApi,
+  fetchScheduleBlocks,
+  fetchTimetableBlocksByDate,
+  fetchTimetableBlocksByDateRange,
+  fetchTimetableBlocksByTaskId,
+  patchScheduleBlockApi,
+  updateScheduleBlockApi,
+  type ITimetableBlockPatch,
+} from '../api/scheduleBlocksApi';
 import { timeEntryRepository } from '../repository/timeEntryRepository';
-import { hydrateFromPublicJson, persistTasksJsonSnapshot } from '../repository/jsonBackup';
-import type { ActivityStatus, IActivityInput, TaskStatus } from '../types';
-import { addDays, createId } from '../utils/dateUtils';
+import type {
+  ActivityStatus,
+  IActivityInput,
+  ITimetableBlock,
+  TaskStatus,
+} from '../types';
+import { addDays, todayKey } from '../utils/dateUtils';
 
-async function loadTasksByDate(date: string) {
-  if (isActivitiesApiEnabled()) {
-    return fetchTasksByDate(date);
+import { breakIdsFollowingFocuses } from '../utils/scheduleBlockCascade/scheduleBlockCascade';
+import {
+  adhocBlockIdsToDelete,
+  type AdhocDeleteMode,
+} from '../utils/adhocDelete/adhocDelete';
+import {
+  isWorkPeriodScheduleBlock,
+  pickActualWindowForBlock,
+  supersededPlannedBlockIds,
+} from '../utils/workPeriodBlocks/workPeriodBlocks';
+
+export {
+  blockHasActualWindow,
+  closedWorkSessions,
+  isWorkPeriodScheduleBlock,
+  pickActualWindowForBlock,
+  visibleTimetableBlocks,
+  workSessionBounds,
+} from '../utils/workPeriodBlocks/workPeriodBlocks';
+
+/** Remove work-period clones and clear legacy consolidated actuals for a task. */
+async function clearDoneWorkPeriodBlocks(taskId: string): Promise<void> {
+  const blocks = await fetchScheduleBlocks({ taskId });
+  const workPeriodIds: string[] = [];
+  const legacyActualIds: string[] = [];
+  for (const block of blocks) {
+    if (isWorkPeriodScheduleBlock(block)) {
+      workPeriodIds.push(block.id);
+    } else if (block.actualStart || block.actualEnd) {
+      legacyActualIds.push(block.id);
+    }
   }
-  await hydrateFromPublicJson();
-  return taskRepository.listByDate(date);
+  await Promise.all(workPeriodIds.map((id) => deleteScheduleBlockApi(id)));
+  await Promise.all(
+    legacyActualIds.map((id) =>
+      patchScheduleBlockApi(id, {
+        actualStart: null,
+        actualEnd: null,
+      })
+    )
+  );
 }
 
-async function loadTasksByRange(from: string, to: string) {
-  if (isActivitiesApiEnabled()) {
-    return fetchTasksByDateRange(from, to);
-  }
-  await hydrateFromPublicJson();
-  return taskRepository.listByDateRange(from, to);
+/**
+ * After work-period clones exist, delete original planned focus blocks and any
+ * pomodoro rests that followed them so unused breaks do not linger.
+ */
+async function deleteSupersededPlannedBlocks(taskId: string): Promise<void> {
+  const blocks = await fetchScheduleBlocks({ taskId });
+  const supersededIds = supersededPlannedBlockIds(blocks);
+  if (supersededIds.length === 0) return;
+
+  const supersededIdSet = new Set(supersededIds);
+  const supersededFocuses = blocks.filter((block) =>
+    supersededIdSet.has(block.id)
+  );
+  // Breaks use a separate (or missing) taskId — fetch the window covering these focuses.
+  const nearbyBlocks = await fetchScheduleBlocksNearFocuses(supersededFocuses);
+  const followingBreakIds = breakIdsFollowingFocuses(
+    supersededFocuses,
+    nearbyBlocks
+  );
+  const ids = [...new Set([...supersededIds, ...followingBreakIds])];
+  await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
 }
 
-async function invalidateActivityQueries(
+/** Delete every focus block for a task plus pomodoro rests that follow them. */
+async function deleteFocusBlocksAndFollowingBreaks(
+  taskId: string
+): Promise<void> {
+  const taskBlocks = await fetchScheduleBlocks({ taskId });
+  const nearbyBlocks = await fetchScheduleBlocksNearFocuses(taskBlocks);
+  const followingBreakIds = breakIdsFollowingFocuses(taskBlocks, nearbyBlocks);
+  const ids = [
+    ...new Set([
+      ...taskBlocks.map((block) => block.id),
+      ...followingBreakIds,
+    ]),
+  ];
+  await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
+}
+
+/**
+ * Load schedule blocks in the UTC window that covers the given focuses so we can
+ * find adjacent pomodoro rests (API requires date, from+to, or taskId).
+ */
+async function fetchScheduleBlocksNearFocuses(
+  focuses: Array<{ plannedStart: string; plannedEnd: string }>
+): Promise<Awaited<ReturnType<typeof fetchScheduleBlocks>>> {
+  if (focuses.length === 0) return [];
+
+  let from = focuses[0]!.plannedStart;
+  let latestEnd = focuses[0]!.plannedEnd;
+  for (const block of focuses) {
+    if (block.plannedStart < from) from = block.plannedStart;
+    if (block.plannedEnd > latestEnd) latestEnd = block.plannedEnd;
+  }
+  // Range filter is exclusive on `to`; rests start at focus plannedEnd.
+  const endMs = Date.parse(latestEnd);
+  const to = Number.isFinite(endMs)
+    ? new Date(endMs + 1).toISOString()
+    : latestEnd;
+  if (Date.parse(to) <= Date.parse(from)) return [];
+
+  return fetchScheduleBlocks({ from, to });
+}
+
+function findBlockInCache(
   queryClient: ReturnType<typeof useQueryClient>,
-  date?: string
-) {
-  await queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all });
-  await queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.all });
-  if (date) {
-    await queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.byDate(date) });
+  id: string
+): ITimetableBlock | undefined {
+  const queries = queryClient.getQueriesData<ITimetableBlock[]>({
+    queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all,
+  });
+  for (const [, blocks] of queries) {
+    if (!Array.isArray(blocks)) continue;
+    const found = blocks.find((block) => block.id === id);
+    if (found) return found;
   }
-  if (!isActivitiesApiEnabled()) {
-    await persistTasksJsonSnapshot();
-  }
+  return undefined;
 }
 
-export function useActivitiesByDate(date: string) {
+export function useResolvedTimeZone(): string {
+  const { user } = useAuthContext();
+  return user?.timeZone ?? getBrowserTimeZone();
+}
+
+async function invalidateScheduleBlocks(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  await queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all });
+}
+
+/** Schedule blocks + activity/task catalog (status or metadata changed). */
+async function invalidateTaskRelated(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all }),
+  ]);
+}
+
+/** Timer / manual log / delete paths that touch entries, tasks, and blocks. */
+async function invalidateTimeTracking(
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: SCHEDULE_BLOCK_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: ACTIVITY_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.all }),
+    queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.running }),
+  ]);
+}
+
+export function useTimetableBlocksByDate(
+  date: string,
+  options?: { enabled?: boolean }
+) {
+  const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: ACTIVITY_QUERY_KEYS.byDate(date),
-    queryFn: () => loadTasksByDate(date),
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byDate(date), timeZone],
+    queryFn: () => {
+      requireApiBaseUrl();
+      return fetchTimetableBlocksByDate(date, timeZone);
+    },
+    enabled: options?.enabled ?? true,
   });
 }
 
-export function useActivitiesByRange(from: string, to: string) {
+export function useTimetableBlocksByRange(
+  from: string,
+  to: string,
+  options?: { enabled?: boolean }
+) {
+  const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: ACTIVITY_QUERY_KEYS.byRange(from, to),
-    queryFn: () => loadTasksByRange(from, to),
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byRange(from, to), timeZone],
+    queryFn: () => {
+      requireApiBaseUrl();
+      return fetchTimetableBlocksByDateRange(from, to, timeZone);
+    },
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useActivityById(activityId: string | null) {
+  return useQuery({
+    queryKey: ['activity-catalog', 'id', activityId ?? ''],
+    queryFn: () => fetchActivityById(activityId!),
+    enabled: Boolean(activityId),
+  });
+}
+
+export function useTimetableBlocksForCatalog(enabled = true) {
+  const timeZone = useResolvedTimeZone();
+  const from = addDays(todayKey(), -1);
+  const to = addDays(todayKey(), 7);
+  return useQuery({
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byRange(from, to), timeZone, 'catalog'],
+    queryFn: () => fetchTimetableBlocksByDateRange(from, to, timeZone),
+    enabled,
+  });
+}
+
+export function useTaskById(taskId: string | null) {
+  return useQuery({
+    queryKey: ACTIVITY_QUERY_KEYS.one(taskId ?? ''),
+    queryFn: () => fetchTaskById(taskId!),
+    enabled: Boolean(taskId),
+  });
+}
+
+export function useTimetableBlocksByTask(taskId: string | null) {
+  const timeZone = useResolvedTimeZone();
+  return useQuery({
+    queryKey: [...SCHEDULE_BLOCK_QUERY_KEYS.byTask(taskId ?? ''), timeZone],
+    queryFn: () =>
+      fetchTimetableBlocksByTaskId(taskId!, timeZone, todayKey()),
+    enabled: Boolean(taskId),
   });
 }
 
 export function useTimeEntriesByRange(from: string, to: string) {
+  const timeZone = useResolvedTimeZone();
   return useQuery({
-    queryKey: TIME_ENTRY_QUERY_KEYS.byRange(from, to),
-    queryFn: () => timeEntryRepository.listByDateRange(from, to),
+    queryKey: [...TIME_ENTRY_QUERY_KEYS.byRange(from, to), timeZone],
+    queryFn: () => timeEntryRepository.listByDateRange(from, to, timeZone),
+  });
+}
+
+export function useTimeEntriesByTask(taskId: string | null) {
+  return useQuery({
+    queryKey: TIME_ENTRY_QUERY_KEYS.byTask(taskId ?? ''),
+    queryFn: () =>
+      taskId ? timeEntryRepository.listByTask(taskId) : Promise.resolve([]),
+    enabled: Boolean(taskId),
   });
 }
 
@@ -74,73 +282,350 @@ export function useRunningTimer() {
       const running = await timeEntryRepository.listRunning();
       return running[0] ?? null;
     },
-    refetchInterval: 1000,
+    refetchOnWindowFocus: true,
   });
 }
 
 export function useActivityMutations(date: string) {
   const queryClient = useQueryClient();
+  const timeZone = useResolvedTimeZone();
 
-  const create = useMutation({
-    mutationFn: async (input: IActivityInput) => {
-      if (isActivitiesApiEnabled()) {
-        return createTaskApi({
-          activityId: input.activityId ?? `ad-hoc-${createId()}`,
-          title: input.title,
-          date: input.date,
-          plannedStart: input.plannedStart,
-          plannedEnd: input.plannedEnd,
-          categoryId: input.categoryId,
-          notes: input.notes,
-          status: input.status,
-        });
-      }
-      return activityRepository.create(input);
+  const updateBlock = useMutation({
+    mutationFn: async ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: ITimetableBlockPatch;
+    }) => {
+      const existing = findBlockInCache(queryClient, id);
+      return updateScheduleBlockApi(
+        id,
+        patch,
+        timeZone,
+        existing
+          ? {
+              date: existing.date,
+              plannedStart: existing.plannedStart,
+              plannedEnd: existing.plannedEnd,
+            }
+          : { date, plannedStart: '09:00', plannedEnd: '10:00' }
+      );
     },
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateScheduleBlocks(queryClient);
     },
   });
 
-  const update = useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<IActivityInput> }) =>
-      activityRepository.update(id, patch),
+  const updateTask = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: ITaskPatch }) => {
+      return updateTaskApi(id, patch);
+    },
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateTaskRelated(queryClient);
+    },
+  });
+
+  /** Edit timetable form: task metadata (if linked) + block schedule times. */
+  const update = useMutation({
+    mutationFn: async ({
+      blockId,
+      taskId,
+      patch,
+    }: {
+      blockId: string;
+      taskId?: string;
+      patch: Partial<IActivityInput> & { estimatedMinutes?: number };
+    }) => {
+      if (taskId) {
+        const taskPatch: ITaskPatch = {};
+        if (patch.title !== undefined) taskPatch.title = patch.title;
+        if (patch.categoryId !== undefined) taskPatch.categoryId = patch.categoryId;
+        if (patch.notes !== undefined) taskPatch.notes = patch.notes;
+        if (patch.status !== undefined) taskPatch.status = patch.status;
+        if (patch.estimatedMinutes !== undefined) {
+          taskPatch.timeEstimationSeconds = Math.max(60, patch.estimatedMinutes * 60);
+        }
+        if (Object.keys(taskPatch).length > 0) {
+          await updateTaskApi(taskId, taskPatch);
+        }
+      }
+
+      const blockPatch: ITimetableBlockPatch = {};
+      if (patch.date !== undefined) blockPatch.date = patch.date;
+      if (patch.plannedStart !== undefined) blockPatch.plannedStart = patch.plannedStart;
+      if (patch.plannedEnd !== undefined) blockPatch.plannedEnd = patch.plannedEnd;
+
+      if (Object.keys(blockPatch).length === 0) {
+        return findBlockInCache(queryClient, blockId);
+      }
+
+      const existing = findBlockInCache(queryClient, blockId);
+      return updateScheduleBlockApi(
+        blockId,
+        blockPatch,
+        timeZone,
+        existing
+          ? {
+              date: existing.date,
+              plannedStart: existing.plannedStart,
+              plannedEnd: existing.plannedEnd,
+            }
+          : { date, plannedStart: '09:00', plannedEnd: '10:00' }
+      );
+    },
+    onSuccess: async () => {
+      await invalidateTaskRelated(queryClient);
     },
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      await timeEntryRepository.removeByTask(id);
-      await activityRepository.remove(id);
+    mutationFn: async ({
+      blockId,
+      taskId,
+    }: {
+      blockId: string;
+      taskId?: string;
+    }) => {
+      if (taskId) {
+        await timeEntryRepository.removeByTask(taskId);
+        await deleteTaskApi(taskId);
+      } else {
+        await deleteScheduleBlockApi(blockId);
+      }
     },
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateTimeTracking(queryClient);
+    },
+  });
+
+  /**
+   * Adhoc (possibly repeating): delete this occurrence, or this and all later
+   * occurrences. Removes the catalog task when no schedule blocks remain.
+   */
+  const deleteAdhoc = useMutation({
+    mutationFn: async ({
+      block,
+      mode,
+    }: {
+      block: ITimetableBlock;
+      mode: AdhocDeleteMode;
+    }) => {
+      if (block.id.startsWith('unscheduled:')) {
+        throw new Error('Cannot delete an unscheduled stand-in block');
+      }
+
+      if (!block.taskId) {
+        await deleteScheduleBlockApi(block.id);
+        return;
+      }
+
+      const taskBlocks = await fetchScheduleBlocks({ taskId: block.taskId });
+      const ids = adhocBlockIdsToDelete(taskBlocks, block.id, mode);
+      await Promise.all(ids.map((id) => deleteScheduleBlockApi(id)));
+
+      const remaining = taskBlocks.filter((item) => !ids.includes(item.id));
+      if (remaining.length === 0) {
+        await timeEntryRepository.removeByTask(block.taskId);
+        await deleteTaskApi(block.taskId);
+      }
+    },
+    onSuccess: async () => {
+      await invalidateTimeTracking(queryClient);
     },
   });
 
   const setStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: ActivityStatus | TaskStatus }) =>
-      activityRepository.update(id, { status }),
+    mutationFn: async ({
+      taskId,
+      status,
+    }: {
+      taskId: string;
+      status: ActivityStatus | TaskStatus;
+    }) => {
+      if (status === 'in_progress') {
+        await clearDoneWorkPeriodBlocks(taskId);
+      }
+      return patchTaskApi(taskId, { status });
+    },
     onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, date);
+      await invalidateTaskRelated(queryClient);
     },
   });
 
-  return { create, update, remove, setStatus };
+  /**
+   * Focus/adhoc: remove all schedule blocks and mark the task skipped.
+   * Break: delete the break schedule block (and linked break task when present).
+   */
+  const skip = useMutation({
+    mutationFn: async (block: ITimetableBlock) => {
+      const isBreak =
+        block.blockType === 'short_break' ||
+        block.blockType === 'long_break' ||
+        block.categoryId === 'break';
+
+      if (isBreak) {
+        if (block.taskId) {
+          // Cascades time entries + schedule blocks for this break task.
+          await deleteTaskApi(block.taskId);
+        } else if (!block.id.startsWith('unscheduled:')) {
+          await deleteScheduleBlockApi(block.id);
+        }
+        return;
+      }
+
+      if (!block.taskId) {
+        throw new Error('Cannot skip a focus block without a task');
+      }
+
+      await deleteFocusBlocksAndFollowingBreaks(block.taskId);
+      await patchTaskApi(block.taskId, { status: 'skipped' });
+    },
+    onSuccess: async () => {
+      await invalidateTaskRelated(queryClient);
+    },
+  });
+
+  /**
+   * Finish one focus block/session: create a work-period clone for that window
+   * and remove only this planned block. Sibling plans stay; task stays in progress.
+   */
+  const completeBlock = useMutation({
+    mutationFn: async ({
+      blockId,
+      taskId,
+      sessions,
+    }: {
+      blockId: string;
+      taskId: string;
+      sessions?: Array<{ startAt: string; endAt: string }>;
+    }) => {
+      if (blockId.startsWith('unscheduled:')) {
+        throw new Error('Cannot finish a session on an unscheduled task');
+      }
+
+      const blocks = await fetchScheduleBlocks({ taskId });
+      const block = blocks.find((item) => item.id === blockId);
+      if (!block) {
+        throw new Error('Schedule block not found');
+      }
+      if (block.blockType !== 'focus') {
+        throw new Error('Only focus blocks can be finished as a session');
+      }
+      if (isWorkPeriodScheduleBlock(block) || (block.actualStart && block.actualEnd)) {
+        throw new Error('This session is already finished');
+      }
+
+      const claimedSessions = new Set(
+        blocks
+          .filter(isWorkPeriodScheduleBlock)
+          .map((item) => `${item.plannedStart}|${item.plannedEnd}`)
+      );
+      const availableSessions = (sessions ?? []).filter(
+        (session) => !claimedSessions.has(`${session.startAt}|${session.endAt}`)
+      );
+      const window = pickActualWindowForBlock(block, availableSessions);
+      const created = await createScheduleBlockApi({
+        taskId,
+        blockType: 'focus',
+        plannedStart: window.startAt,
+        plannedEnd: window.endAt,
+      });
+      await patchScheduleBlockApi(created.id, {
+        actualStart: created.plannedStart,
+        actualEnd: created.plannedEnd,
+      });
+      await deleteScheduleBlockApi(blockId);
+
+      const task = await fetchTaskById(taskId);
+      if (
+        task &&
+        task.status !== 'in_progress' &&
+        task.status !== 'done' &&
+        task.status !== 'skipped'
+      ) {
+        await patchTaskApi(taskId, { status: 'in_progress' });
+      }
+    },
+    onSuccess: async () => {
+      await invalidateTaskRelated(queryClient);
+    },
+  });
+
+  /**
+   * Finish the whole catalog task.
+   * With sessions: replace plans with work-period clones (existing behavior).
+   * Without sessions: keep any session work-periods already created, drop remaining plans.
+   */
+  const complete = useMutation({
+    mutationFn: async ({
+      taskId,
+      sessions,
+    }: {
+      taskId: string;
+      /** Closed work sessions (UTC ISO); each becomes its own timetable block. */
+      sessions?: Array<{ startAt: string; endAt: string }>;
+    }) => {
+      const workSessions = sessions ?? [];
+      if (workSessions.length > 0) {
+        await clearDoneWorkPeriodBlocks(taskId);
+        for (const session of workSessions) {
+          const created = await createScheduleBlockApi({
+            taskId,
+            blockType: 'focus',
+            plannedStart: session.startAt,
+            plannedEnd: session.endAt,
+          });
+          await patchScheduleBlockApi(created.id, {
+            actualStart: created.plannedStart,
+            actualEnd: created.plannedEnd,
+          });
+        }
+        await deleteSupersededPlannedBlocks(taskId);
+      } else {
+        const blocks = await fetchScheduleBlocks({ taskId });
+        if (blocks.some(isWorkPeriodScheduleBlock)) {
+          await deleteSupersededPlannedBlocks(taskId);
+        }
+      }
+      return patchTaskApi(taskId, { status: 'done' });
+    },
+    onSuccess: async () => {
+      await invalidateTaskRelated(queryClient);
+    },
+  });
+
+  return {
+    update,
+    updateBlock,
+    updateTask,
+    remove,
+    deleteAdhoc,
+    setStatus,
+    skip,
+    completeBlock,
+    complete,
+  };
 }
 
-export function useTimeEntryMutations(date: string) {
+export function useTimeEntryMutations(_date: string) {
   const queryClient = useQueryClient();
 
   const refresh = async () => {
-    await invalidateActivityQueries(queryClient, date);
-    await queryClient.invalidateQueries({ queryKey: TIME_ENTRY_QUERY_KEYS.running });
+    await invalidateTimeTracking(queryClient);
   };
 
   const startTimer = useMutation({
-    mutationFn: (taskId: string) => timeEntryRepository.startTimer(taskId),
+    mutationFn: async (taskId: string) => {
+      const task = await fetchTaskById(taskId);
+      const entry = await timeEntryRepository.startTimer(taskId);
+      const patch: ITaskPatch = { status: 'in_progress' };
+      if (task?.status === 'unplanned' || task?.startedFromUnplanned) {
+        patch.startedFromUnplanned = true;
+      }
+      await patchTaskApi(taskId, patch);
+      return entry;
+    },
     onSuccess: refresh,
   });
 
@@ -164,119 +649,4 @@ export function useTimeEntryMutations(date: string) {
   });
 
   return { startTimer, stopTimer, pauseTimer, addManual };
-}
-
-export function useTemplates() {
-  return useQuery({
-    queryKey: TEMPLATE_QUERY_KEYS.all,
-    queryFn: () => activityRepository.listTemplates(),
-  });
-}
-
-export function useTemplateMutations() {
-  const queryClient = useQueryClient();
-
-  const save = useMutation({
-    mutationFn: activityRepository.saveTemplate,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: TEMPLATE_QUERY_KEYS.all });
-      await persistTasksJsonSnapshot();
-    },
-  });
-
-  const remove = useMutation({
-    mutationFn: (id: string) => activityRepository.removeTemplate(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: TEMPLATE_QUERY_KEYS.all });
-      await persistTasksJsonSnapshot();
-    },
-  });
-
-  return { save, remove };
-}
-
-export function useCopyYesterdayPlan(targetDate: string) {
-  const queryClient = useQueryClient();
-  const sourceDate = addDays(targetDate, -1);
-
-  return useMutation({
-    mutationFn: async () => {
-      const source = await activityRepository.listByDate(sourceDate);
-      if (source.length === 0) {
-        throw new Error('No activities found for yesterday.');
-      }
-      return activityRepository.createMany(
-        source.map((a) => ({
-          title: a.title,
-          date: targetDate,
-          plannedStart: a.plannedStart,
-          plannedEnd: a.plannedEnd,
-          categoryId: a.categoryId,
-          notes: a.notes,
-          status: 'planned',
-          activityId: a.activityId,
-        }))
-      );
-    },
-    onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, targetDate);
-    },
-  });
-}
-
-export function useApplyTemplate(targetDate: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (templateId: string) => {
-      const templates = await activityRepository.listTemplates();
-      const template = templates.find((t) => t.id === templateId);
-      if (!template) throw new Error('Template not found.');
-      return activityRepository.createMany(
-        template.items.map((item) => ({
-          title: item.title,
-          date: targetDate,
-          plannedStart: item.plannedStart,
-          plannedEnd: item.plannedEnd,
-          categoryId: item.categoryId,
-          notes: item.notes,
-          status: 'planned' as const,
-          activityId: item.activityId ?? `ad-hoc-${createId()}`,
-        }))
-      );
-    },
-    onSuccess: async () => {
-      await invalidateActivityQueries(queryClient, targetDate);
-    },
-  });
-}
-
-export function useSaveDayAsTemplate(date: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (name: string) => {
-      const tasks = await activityRepository.listByDate(date);
-      if (tasks.length === 0) {
-        throw new Error('Add activities before saving a template.');
-      }
-      const weekday = new Date(`${date}T12:00:00`).getDay();
-      return activityRepository.saveTemplate({
-        name,
-        weekday,
-        items: tasks.map((a) => ({
-          activityId: a.activityId,
-          title: a.title,
-          plannedStart: a.plannedStart,
-          plannedEnd: a.plannedEnd,
-          categoryId: a.categoryId,
-          notes: a.notes,
-        })),
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: TEMPLATE_QUERY_KEYS.all });
-      await persistTasksJsonSnapshot();
-    },
-  });
 }

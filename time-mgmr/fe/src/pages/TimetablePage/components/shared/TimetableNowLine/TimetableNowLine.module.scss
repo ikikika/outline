@@ -1,0 +1,30 @@
+.nowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #dc2626;
+  z-index: 4;
+  pointer-events: none;
+  transform: translateY(-1px);
+}
+
+.nowDot {
+  position: absolute;
+  top: 50%;
+  border-radius: 50%;
+  background: #dc2626;
+  transform: translateY(-50%);
+}
+
+.density_day .nowDot {
+  left: -5px;
+  width: 10px;
+  height: 10px;
+}
+
+.density_week .nowDot {
+  left: -4px;
+  width: 8px;
+  height: 8px;
+}

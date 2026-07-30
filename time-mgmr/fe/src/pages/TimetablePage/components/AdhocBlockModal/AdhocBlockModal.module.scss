@@ -1,0 +1,123 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.modal {
+  width: min(100%, 30rem);
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.description {
+  margin: 0.4rem 0 1rem;
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.85rem;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field:first-child,
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.field label,
+.weekdaysLabel {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.checkLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-text, #111827) !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary, #2563eb);
+}
+
+.weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.weekdayBtn {
+  min-width: 2.5rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.weekdayBtnActive {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: var(--color-primary, #2563eb);
+}
+
+.error {
+  color: var(--color-danger, #dc2626);
+  font-size: 0.75rem;
+}
+
+.submitError {
+  margin: 0.75rem 0 0;
+  color: var(--color-danger, #dc2626);
+  font-size: 0.8rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 30rem) {
+  .fields {
+    grid-template-columns: 1fr;
+  }
+
+  .field:first-child,
+  .fullWidth {
+    grid-column: auto;
+  }
+}

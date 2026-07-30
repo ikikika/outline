@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { Header } from '@/components/organisms/Header/Header';
 import { ProtectedLayout } from '@/components/organisms/ProtectedLayout/ProtectedLayout';
 import type { IUser } from '@/core/types/common';
 
@@ -64,18 +63,10 @@ function renderLayout() {
   });
 
   return render(
-    <MemoryRouter initialEntries={['/today']}>
+    <MemoryRouter initialEntries={['/timetable']}>
       <Routes>
         <Route element={<ProtectedLayout />}>
-          <Route
-            path="/today"
-            element={
-              <>
-                <Header />
-                <div>Today content</div>
-              </>
-            }
-          />
+          <Route path="/timetable" element={<div>Timetable content</div>} />
         </Route>
       </Routes>
     </MemoryRouter>

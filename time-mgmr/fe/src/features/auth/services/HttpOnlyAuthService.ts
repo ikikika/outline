@@ -1,7 +1,10 @@
 /**
- * HttpOnly Auth Service
- * Tokens live in HttpOnly Secure SameSite=None cookies set by the API.
- * JavaScript never reads token values.
+ * Cookie-first auth with in-memory Bearer fallback.
+ *
+ * HttpOnly cookies are set by the API for browsers that allow cross-site cookies.
+ * iOS Safari / Home Screen PWAs often block those third-party cookies when the SPA
+ * and API are on different hosts — so login/refresh also return tokens in JSON and
+ * we keep them in memory for Authorization: Bearer.
  */
 
 import type { IAuthCredentials, IAuthResponse, IAuthService } from '../types';
@@ -11,7 +14,13 @@ import {
 	logoutRequest,
 	mapAuthError,
 } from '../api/authApi';
-import { clearSession, refreshSession } from '../session/authSession';
+import {
+	clearSession,
+	getAccessToken,
+	getRefreshToken,
+	refreshSession,
+	setTokens,
+} from '../session/authSession';
 
 const credentials = { includeCredentials: true as const };
 
@@ -19,6 +28,9 @@ export class HttpOnlyAuthService implements IAuthService {
 	async login(credentialsInput: IAuthCredentials): Promise<IAuthResponse> {
 		try {
 			const data = await loginRequest(credentialsInput, credentials);
+			if (data.token) {
+				setTokens(data.token, data.refreshToken);
+			}
 			return {
 				user: data.user,
 				token: data.token ?? '',
@@ -31,7 +43,10 @@ export class HttpOnlyAuthService implements IAuthService {
 
 	async logout(): Promise<void> {
 		try {
-			await logoutRequest(credentials);
+			await logoutRequest({
+				...credentials,
+				refreshToken: getRefreshToken(),
+			});
 		} catch (error) {
 			throw mapAuthError(error);
 		} finally {
@@ -71,6 +86,6 @@ export class HttpOnlyAuthService implements IAuthService {
 	}
 
 	getAccessToken(): string | null {
-		return null;
+		return getAccessToken();
 	}
 }

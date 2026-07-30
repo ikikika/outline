@@ -11,6 +11,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useAuth } from '@/features/auth';
 import { useThemeContext } from '@/app/providers/theme';
 import type { IUser } from '@/core/types/common';
+import { getBrowserTimeZone } from '@/core/utils/timeZone/timeZone';
 import { AuthContext } from './useAuthContext';
 
 const AUTH_DISABLED = import.meta.env.VITE_DISABLE_AUTH === 'true';
@@ -22,6 +23,7 @@ const GUEST_USER: IUser = {
   email: 'guest@local.dev',
   role: 'user',
   themePreference: 'system',
+  timeZone: getBrowserTimeZone(),
   createdAt: new Date('2026-01-01T00:00:00Z'),
   updatedAt: new Date(),
 };
@@ -29,7 +31,8 @@ const GUEST_USER: IUser = {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { user, isLoading, error, loadCurrentUser, login, logout } = useAuth();
+  const { user, isLoading, error, loadCurrentUser, login, logout, setUser } =
+    useAuth();
   const { setTheme } = useThemeContext();
 
   useEffect(() => {
@@ -51,8 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       error: AUTH_DISABLED ? null : error,
       login,
       logout: AUTH_DISABLED ? async () => undefined : logout,
+      refreshUser: AUTH_DISABLED ? async () => undefined : loadCurrentUser,
+      setUser: AUTH_DISABLED ? () => undefined : setUser,
     }),
-    [user, isLoading, error, login, logout]
+    [user, isLoading, error, login, logout, loadCurrentUser, setUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

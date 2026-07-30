@@ -3,6 +3,10 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+  /* Absolute tooltips still contribute to scroll width while hidden */
+  overflow-x: clip;
 }
 
 .header {
@@ -50,6 +54,48 @@
   margin-bottom: 0.25rem;
 }
 
+.metricLabel {
+  position: relative;
+  width: fit-content;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.metricLabel:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+  border-radius: 0.15rem;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: calc(100% + 0.5rem);
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 2rem));
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.4rem;
+  background: #111827;
+  color: #f9fafb;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 18%);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  /* Hidden tooltips must not expand the page scroll width */
+  display: none;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.metricLabel:hover .tooltip,
+.metricLabel:focus-visible .tooltip {
+  display: block;
+}
+
 .summaryValue {
   font-size: 1.15rem;
   font-weight: 700;
@@ -67,9 +113,16 @@
   font-weight: 600;
 }
 
+.sectionHint {
+  margin: -0.35rem 0 0;
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.85rem;
+}
+
 .mixList,
 .overrunList,
-.dayList {
+.dayList,
+.breakdownList {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -80,19 +133,47 @@
 
 .mixItem,
 .overrunItem,
-.dayItem {
+.dayItem,
+.breakdownItem {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 0.5rem;
+}
+
+.bar_over {
+  background: #dc2626;
+}
+
+.bar_under {
+  background: #2563eb;
+}
+
+.bar_on_target {
+  background: #059669;
+}
+
+.bar_untracked {
+  background: #94a3b8;
 }
 
 .mixRow {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
+  min-width: 0;
   font-size: 0.9rem;
+
+  > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  > :last-child {
+    flex-shrink: 0;
+  }
 }
 
 .barTrack {

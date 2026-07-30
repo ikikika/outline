@@ -1,10 +1,16 @@
 /**
  * Domain types:
  * - Activity = catalog item (activities.json)
- * - Task = scheduled timetable block derived from an activity
+ * - Task = unscheduled work item (may be placed via ScheduleBlock)
+ * - ScheduleBlock = timed timetable placement
  */
 
-export type TaskStatus = 'planned' | 'in_progress' | 'done' | 'skipped';
+export type TaskStatus =
+  | 'unplanned'
+  | 'planned'
+  | 'in_progress'
+  | 'done'
+  | 'skipped';
 
 /** @deprecated Use TaskStatus */
 export type ActivityStatus = TaskStatus;
@@ -15,6 +21,8 @@ export type ActivityCategoryId =
   | 'admin'
   | 'personal'
   | 'break';
+
+export type ScheduleBlockType = 'focus' | 'short_break' | 'long_break';
 
 export interface IActivityCategory {
   id: ActivityCategoryId;
@@ -28,60 +36,60 @@ export interface IActivity {
   title: string;
   categoryId: ActivityCategoryId;
   notes: string;
+  /** Catalog priority — lower values appear first. */
+  sortOrder?: number;
   /** Optional color override for timetable blocks. */
   color?: string;
-  /** Used when splitting into a task without an explicit schedule slot. */
-  defaultDurationMinutes: number;
-  /** Optional preferred start HH:mm for auto-split. */
-  preferredStart?: string;
-  /**
-   * Optional explicit splits into timed tasks.
-   * When present, these become tasks instead of preferredStart + duration.
-   */
-  schedule?: IActivityScheduleSlot[];
+  /** ISO timestamp when archived; null/undefined when active. */
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface IActivityScheduleSlot {
-  date: string; // YYYY-MM-DD or relative "today" | "tomorrow" | "yesterday"
-  plannedStart: string; // HH:mm
-  plannedEnd: string; // HH:mm
-  notes?: string;
-  status?: TaskStatus;
-}
-
-/** Scheduled task — rendered on the timetable. */
-export interface ITask {
+/** API / catalog task — unscheduled domain record (no timetable times). */
+export interface IApiTask {
   id: string;
   activityId: string;
-  /** Source lecture/content id when imported from a catalog. */
-  contentItemId?: string;
   title: string;
+  timeEstimationSeconds?: number;
+  categoryId: ActivityCategoryId;
+  notes: string;
+  status: TaskStatus;
+  sortOrder?: number;
+  /** When true, omit from report metrics while still blocking the timetable. */
+  excludeFromReports?: boolean;
+  /** True when work began while the task was still unplanned (reactive work). */
+  startedFromUnplanned?: boolean;
+}
+
+/**
+ * Timetable view model: schedule-block identity + task/break display metadata.
+ * `id` is always the schedule-block id; `taskId` is the linked task when present.
+ */
+export interface ITimetableBlock {
+  id: string;
+  taskId?: string;
+  blockType: ScheduleBlockType;
   date: string; // YYYY-MM-DD
   plannedStart: string; // HH:mm
   plannedEnd: string; // HH:mm
+  actualDate?: string; // YYYY-MM-DD
+  actualStart?: string; // HH:mm
+  actualEnd?: string; // HH:mm
+  activityId: string;
+  title: string;
+  timeEstimationSeconds?: number;
   categoryId: ActivityCategoryId;
   notes: string;
-  /** Optional color override for timetable blocks. */
   color?: string;
   status: TaskStatus;
+  sortOrder?: number;
+  excludeFromReports?: boolean;
+  startedFromUnplanned?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ITaskInput {
-  activityId: string;
-  title: string;
-  date: string;
-  plannedStart: string;
-  plannedEnd: string;
-  categoryId: ActivityCategoryId;
-  notes?: string;
-  status?: TaskStatus;
-}
-
-/** @deprecated Use ITaskInput — kept for form compatibility during transition */
 export interface IActivityInput {
   title: string;
   date: string;
@@ -110,20 +118,4 @@ export interface IManualTimeEntryInput {
   taskId: string;
   durationMinutes: number;
   startAt?: string;
-}
-
-export interface IActivityTemplate {
-  id: string;
-  name: string;
-  weekday: number | null;
-  items: Array<{
-    activityId?: string;
-    title: string;
-    plannedStart: string;
-    plannedEnd: string;
-    categoryId: ActivityCategoryId;
-    notes: string;
-  }>;
-  createdAt: string;
-  updatedAt: string;
 }

@@ -4,11 +4,13 @@ import type { IUser } from '@/core/types/common';
 import {
 	getJson,
 	HttpClientError,
+	patchJson,
 	post,
 	postJson,
 	type IHttpRequestOptions,
 } from '@/services/httpClient';
 import type { IAuthCredentials, IAuthResponse } from '../types';
+import { getBrowserTimeZone } from '@/core/utils/timeZone/timeZone';
 
 const AUTH_BASE_URL = `${API_BASE_URL}/auth`;
 
@@ -46,6 +48,15 @@ export function normalizeUser(raw: unknown): IUser | null {
 		role: (user.role as IUser['role']) ?? 'user',
 		avatar: typeof user.avatar === 'string' ? user.avatar : undefined,
 		themePreference: user.themePreference as IUser['themePreference'],
+		timeZone: typeof user.timeZone === 'string' ? user.timeZone : undefined,
+		timetableVisibleStart:
+			typeof user.timetableVisibleStart === 'string'
+				? user.timetableVisibleStart
+				: undefined,
+		timetableVisibleEnd:
+			typeof user.timetableVisibleEnd === 'string'
+				? user.timetableVisibleEnd
+				: undefined,
 		createdAt: new Date(String(user.createdAt ?? Date.now())),
 		updatedAt: new Date(String(user.updatedAt ?? Date.now())),
 	};
@@ -96,5 +107,61 @@ export async function getCurrentUserRequest(
 			return null;
 		}
 		throw error;
+	}
+}
+
+export async function updateCurrentUserRequest(
+	patch: {
+		timeZone?: string;
+		themePreference?: IUser['themePreference'];
+		timetableVisibleStart?: string;
+		timetableVisibleEnd?: string;
+	},
+	options: IAuthApiRequestOptions = {}
+): Promise<IUser> {
+	const raw = await patchJson<unknown>(`${AUTH_BASE_URL}/me`, patch, {
+		...options,
+		includeCredentials: options.includeCredentials ?? true,
+		auth: options.auth ?? true,
+	});
+	const user = normalizeUser(raw);
+	if (!user) {
+		throw new Error('Invalid profile update response');
+	}
+	return user;
+}
+
+export async function changePasswordRequest(
+	input: { currentPassword: string; newPassword: string },
+	options: IAuthApiRequestOptions = {}
+): Promise<void> {
+	try {
+		await postJson<{ ok: boolean }>(`${AUTH_BASE_URL}/change-password`, input, {
+			...options,
+			includeCredentials: options.includeCredentials ?? true,
+			auth: options.auth ?? true,
+		});
+	} catch (error) {
+		throw mapAuthError(error);
+	}
+}
+
+/** Persist browser IANA timezone when the profile has none yet. */
+export async function ensureProfileTimeZone(
+	user: IUser,
+	options: IAuthApiRequestOptions = {}
+): Promise<IUser> {
+	if (user.timeZone) {
+		return user;
+	}
+
+	try {
+		// Prefer credentials; avoid auth-retry/sessionExpired during login bootstrap.
+		return await updateCurrentUserRequest(
+			{ timeZone: getBrowserTimeZone() },
+			{ ...options, auth: true, includeCredentials: true }
+		);
+	} catch {
+		return { ...user, timeZone: getBrowserTimeZone() };
 	}
 }

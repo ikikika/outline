@@ -17,7 +17,7 @@ export const LoginPage: React.FC = () => {
   const location = useLocation();
 
   // Redirect already-authenticated users
-  const from = (location.state as { from?: Location })?.from?.pathname ?? ROUTES.TODAY;
+  const from = (location.state as { from?: Location })?.from?.pathname ?? ROUTES.TIMETABLE;
   if (user) {
     return <Navigate to={from} replace />;
   }

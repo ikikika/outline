@@ -1,0 +1,181 @@
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button, Input } from '@/components/ui';
+import {
+  ACTIVITY_CATEGORIES,
+  activityFormSchema,
+  plannedDurationMinutes,
+  type ActivityFormValues,
+  type ITimetableBlock,
+} from '@/features/activities';
+import styles from './ActivityForm.module.scss';
+
+function defaultEstimatedMinutes(initial?: ITimetableBlock | null): number {
+  if (initial?.timeEstimationSeconds != null && initial.timeEstimationSeconds > 0) {
+    return Math.max(1, Math.round(initial.timeEstimationSeconds / 60));
+  }
+  if (initial?.plannedStart && initial?.plannedEnd) {
+    const scheduled = plannedDurationMinutes(initial.plannedStart, initial.plannedEnd);
+    if (scheduled > 0) return scheduled;
+  }
+  return 25;
+}
+
+interface ActivityFormProps {
+  date: string;
+  initial?: ITimetableBlock | null;
+  /** When false, hide date/time fields (catalog task edit). Default true. */
+  includeScheduleFields?: boolean;
+  onSubmit: (values: ActivityFormValues) => Promise<void> | void;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+}
+
+export const ActivityForm: React.FC<ActivityFormProps> = ({
+  date,
+  initial,
+  includeScheduleFields = true,
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+}) => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ActivityFormValues>({
+    resolver: zodResolver(activityFormSchema),
+    defaultValues: {
+      title: initial?.title ?? '',
+      date: initial?.date ?? date,
+      plannedStart: initial?.plannedStart ?? '09:00',
+      plannedEnd: initial?.plannedEnd ?? '10:00',
+      categoryId: initial?.categoryId ?? 'work',
+      estimatedMinutes: defaultEstimatedMinutes(initial),
+      notes: initial?.notes ?? '',
+    },
+  });
+
+  return (
+    <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
+      <h2 className={styles.formTitle}>{initial ? 'Edit task' : 'New activity'}</h2>
+
+      <div className={styles.grid}>
+        <div className={`${styles.field} ${styles.full}`}>
+          <label className={styles.label} htmlFor="activity-title">
+            Title
+          </label>
+          <Input id="activity-title" placeholder="What will you do?" {...register('title')} />
+          {errors.title && <span className={styles.error}>{errors.title.message}</span>}
+        </div>
+
+        {includeScheduleFields ? (
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="activity-date">
+              Date
+            </label>
+            <Input id="activity-date" type="date" {...register('date')} />
+            {errors.date && <span className={styles.error}>{errors.date.message}</span>}
+          </div>
+        ) : (
+          <input type="hidden" {...register('date')} />
+        )}
+
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="activity-category">
+            Category
+          </label>
+          <select
+            id="activity-category"
+            className={styles.select}
+            {...register('categoryId')}
+          >
+            {ACTIVITY_CATEGORIES.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          {errors.categoryId && (
+            <span className={styles.error}>{errors.categoryId.message}</span>
+          )}
+        </div>
+
+        {includeScheduleFields ? (
+          <>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="activity-start">
+                Planned start
+              </label>
+              <Input id="activity-start" type="time" {...register('plannedStart')} />
+              {errors.plannedStart && (
+                <span className={styles.error}>{errors.plannedStart.message}</span>
+              )}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="activity-end">
+                Planned end
+              </label>
+              <Input id="activity-end" type="time" {...register('plannedEnd')} />
+              {errors.plannedEnd && (
+                <span className={styles.error}>{errors.plannedEnd.message}</span>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <input type="hidden" {...register('plannedStart')} />
+            <input type="hidden" {...register('plannedEnd')} />
+          </>
+        )}
+
+        {initial?.taskId ? (
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="activity-estimate">
+              Estimated minutes
+            </label>
+            <Input
+              id="activity-estimate"
+              type="number"
+              min={1}
+              step={1}
+              {...register('estimatedMinutes', { valueAsNumber: true })}
+            />
+            {errors.estimatedMinutes && (
+              <span className={styles.error}>{errors.estimatedMinutes.message}</span>
+            )}
+          </div>
+        ) : (
+          <input
+            type="hidden"
+            {...register('estimatedMinutes', { valueAsNumber: true })}
+          />
+        )}
+
+        <div className={`${styles.field} ${styles.full}`}>
+          <label className={styles.label} htmlFor="activity-notes">
+            Notes
+          </label>
+          <textarea
+            id="activity-notes"
+            className={styles.textarea}
+            placeholder="Optional context"
+            {...register('notes')}
+          />
+          {errors.notes && <span className={styles.error}>{errors.notes.message}</span>}
+        </div>
+      </div>
+
+      <div className={styles.actions}>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving…' : initial ? 'Save changes' : 'Add activity'}
+        </Button>
+      </div>
+    </form>
+  );
+};

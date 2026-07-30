@@ -23,7 +23,7 @@ const mockUser: IUser = {
 };
 
 const renderSidebar = ({
-  route = '/today',
+  route = '/timetable',
   user = mockUser,
   logout = vi.fn(),
 }: {
@@ -54,7 +54,7 @@ describe('Sidebar', () => {
     renderSidebar();
 
     expect(screen.getByText('Tempo')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /today/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /timetable/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /report/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /profile/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
@@ -73,12 +73,12 @@ describe('Sidebar', () => {
   });
 
   it('highlights the active nav item based on current route', () => {
-    renderSidebar({ route: '/today' });
+    renderSidebar({ route: '/timetable' });
 
-    const todayLink = screen.getByRole('link', { name: /today/i });
+    const timetableLink = screen.getByRole('link', { name: /timetable/i });
     const profileLink = screen.getByRole('link', { name: /profile/i });
 
-    expect(todayLink).toHaveClass('nav-item--active');
+    expect(timetableLink).toHaveClass('nav-item--active');
     expect(profileLink).not.toHaveClass('nav-item--active');
   });
 

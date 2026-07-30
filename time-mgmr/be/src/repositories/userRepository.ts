@@ -35,6 +35,9 @@ function toUser(record: IUserProfileRecord): IUser {
 		role: record.role,
 		avatar: record.avatar,
 		themePreference: record.themePreference,
+		timeZone: record.timeZone,
+		timetableVisibleStart: record.timetableVisibleStart,
+		timetableVisibleEnd: record.timetableVisibleEnd,
 		createdAt: record.createdAt,
 		updatedAt: record.updatedAt,
 	};
@@ -161,6 +164,72 @@ export async function createUser(input: {
 		new PutCommand({
 			TableName: getTableName(),
 			Item: credentials,
+		})
+	);
+
+	return toUser(profile);
+}
+
+export async function updateUserPassword(
+	userId: string,
+	passwordHash: string
+): Promise<void> {
+	const existing = await getUserCredentials(userId);
+	if (!existing) {
+		throw new Error('User credentials not found');
+	}
+
+	const now = new Date().toISOString();
+	const credentials: IUserCredentialsRecord = {
+		...existing,
+		passwordHash,
+		updatedAt: now,
+	};
+
+	const client = getDocumentClient();
+	await client.send(
+		new PutCommand({
+			TableName: getTableName(),
+			Item: credentials,
+		})
+	);
+}
+
+export async function updateUserProfile(
+	userId: string,
+	patch: {
+		timeZone?: string;
+		themePreference?: IUser['themePreference'];
+		timetableVisibleStart?: string;
+		timetableVisibleEnd?: string;
+	}
+): Promise<IUser> {
+	const existing = await getUserProfile(userId);
+	if (!existing) {
+		throw new Error('User not found');
+	}
+
+	const now = new Date().toISOString();
+	const profile: IUserProfileRecord = {
+		...existing,
+		...(patch.timeZone !== undefined ? { timeZone: patch.timeZone } : {}),
+		...(patch.themePreference !== undefined
+			? { themePreference: patch.themePreference }
+			: {}),
+		...(patch.timetableVisibleStart !== undefined
+			? { timetableVisibleStart: patch.timetableVisibleStart }
+			: {}),
+		...(patch.timetableVisibleEnd !== undefined
+			? { timetableVisibleEnd: patch.timetableVisibleEnd }
+			: {}),
+		updatedAt: now,
+	};
+
+	const client = getDocumentClient();
+	await client.send(
+		new PutCommand({
+			TableName: getTableName(),
+			Item: profile,
 		})
 	);
 

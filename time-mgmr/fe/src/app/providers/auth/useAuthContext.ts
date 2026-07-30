@@ -14,6 +14,8 @@ export interface IAuthContext {
   error: Error | null;
   login: (credentials: IAuthCredentials) => Promise<IUser>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  setUser: (user: IUser | null) => void;
 }
 
 export const AuthContext = createContext<IAuthContext | null>(null);

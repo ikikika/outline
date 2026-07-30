@@ -2,15 +2,14 @@ export type {
   ActivityStatus,
   TaskStatus,
   ActivityCategoryId,
+  ScheduleBlockType,
   IActivity,
   IActivityCategory,
-  IActivityScheduleSlot,
   IActivityInput,
-  ITask,
-  ITaskInput,
+  IApiTask,
+  ITimetableBlock,
   ITimeEntry,
   IManualTimeEntryInput,
-  IActivityTemplate,
   TimeEntrySource,
 } from './types';
 
@@ -18,44 +17,138 @@ export {
   ACTIVITY_CATEGORIES,
   CATEGORY_MAP,
   ACTIVITY_QUERY_KEYS,
+  SCHEDULE_BLOCK_QUERY_KEYS,
   TIME_ENTRY_QUERY_KEYS,
-  TEMPLATE_QUERY_KEYS,
   ON_TARGET_TOLERANCE,
+  ADHOC_BLOCKS_ACTIVITY_ID,
 } from './constants';
 
 export {
   activityFormSchema,
+  manualScheduleSchema,
+  adhocBlockSchema,
   manualTimeEntrySchema,
+  autoScheduleSchema,
+  createAutoScheduleSchema,
+  needsFirstDayStart,
+  activityCatalogImportSchema,
   type ActivityFormValues,
+  type ManualScheduleValues,
+  type AdhocBlockValues,
   type ManualTimeEntryFormValues,
+  type AutoScheduleFormValues,
+  type AutoScheduleSchemaContext,
+  type ActivityCatalogImportValues,
 } from './schemas';
 
 export {
   fetchActivities,
-  fetchTasksByDate,
-  fetchTasksByDateRange,
-  createTaskApi,
-  isActivitiesApiEnabled,
+  fetchActivityById,
+  fetchCatalogTasks,
+  fetchTasksByActivityId,
+  fetchTaskById,
+  createActivityApi,
+  createCatalogTaskApi,
+  importActivityCatalogApi,
+  deleteActivityApi,
+  deleteTaskApi,
+  archiveActivityApi,
+  restoreActivityApi,
+  updateTaskApi,
+  patchActivityApi,
+  patchTaskApi,
+  type ActivityListFilter,
+  type IActivityPatch,
+  type IActivityCreateInput,
+  type ICatalogTaskCreateInput,
+  type IActivityCatalogImportInput,
+  type IActivityCatalogImportResponse,
+  type ITaskPatch,
 } from './api/activitiesApi';
-export { activityRepository, taskRepository } from './repository/activityRepository';
-export { activityCatalogRepository } from './repository/activityCatalogRepository';
+
+export {
+  fetchScheduleBlocks,
+  createScheduleBlockApi,
+  patchScheduleBlockApi,
+  deleteScheduleBlockApi,
+  fetchTimetableBlocksByDate,
+  fetchTimetableBlocksByDateRange,
+  fetchTimetableBlocksByTaskId,
+  scheduleTaskApi,
+  updateScheduleBlockApi,
+  previewAutoScheduleApi,
+  confirmAutoScheduleApi,
+  type IManualScheduleInput,
+  type ITimetableBlockPatch,
+  type IAutoScheduleRequest,
+  type IAutoSchedulePreviewResponse,
+  type IAutoSchedulePreviewDay,
+  type IAutoScheduleConfirmResponse,
+} from './api/scheduleBlocksApi';
+
+export {
+  fetchTimeEntriesByTask,
+  fetchTimeEntryById,
+  fetchTimeEntriesByRange,
+  fetchRunningTimeEntries,
+  createTimeEntryApi,
+  patchTimeEntryApi,
+  deleteTimeEntryApi,
+  type ITimeEntryCreateBody,
+  type ITimeEntryPatchBody,
+} from './api/timeEntriesApi';
+
+export type { IApiScheduleBlock } from './api/mapApiScheduleBlock';
+export {
+  apiScheduleBlockToTimetableBlock,
+  timetableTimesToIso,
+  breakFallbackMeta,
+} from './api/mapApiScheduleBlock';
+
 export { timeEntryRepository } from './repository/timeEntryRepository';
 
 export {
-  useActivitiesByDate,
-  useActivitiesByRange,
+  useTimetableBlocksByDate,
+  useTimetableBlocksByRange,
+  useActivityById,
+  useTimetableBlocksForCatalog,
+  useResolvedTimeZone,
+  useTaskById,
+  useTimetableBlocksByTask,
   useTimeEntriesByRange,
+  useTimeEntriesByTask,
   useRunningTimer,
   useActivityMutations,
   useTimeEntryMutations,
-  useTemplates,
-  useTemplateMutations,
-  useCopyYesterdayPlan,
-  useApplyTemplate,
-  useSaveDayAsTemplate,
+  blockHasActualWindow,
+  closedWorkSessions,
+  pickActualWindowForBlock,
+  visibleTimetableBlocks,
+  workSessionBounds,
 } from './hooks/useActivities';
 
-export { useJsonBackup } from './hooks/useJsonBackup';
+export {
+  useActivityCatalog,
+  useCreateActivity,
+  useImportActivityCatalog,
+  useCreateCatalogTask,
+  useDeleteActivity,
+  useArchiveActivity,
+  useRestoreActivity,
+  useDeleteCatalogTask,
+  useScheduleCatalogTask,
+  usePreviewAutoSchedule,
+  useConfirmAutoSchedule,
+  useReorderActivities,
+  useReorderTasks,
+  type IActivityWithTasks,
+} from './hooks/useActivityCatalog';
+
+export { sortBySortOrder } from './utils/sortBySortOrder/sortBySortOrder';
+export {
+  canArchiveActivity,
+  isActivityArchived,
+} from './utils/canArchiveActivity/canArchiveActivity';
 
 export {
   formatDateKey,
@@ -72,24 +165,17 @@ export {
   plannedDurationMinutes,
   formatMinutes,
   formatSignedMinutes,
-  combineDateAndTime,
-  minutesBetween,
-  createId,
 } from './utils/dateUtils';
 
-export { splitActivitiesIntoTasks } from './utils/splitActivitiesIntoTasks';
+export {
+  adhocOccurrenceDates,
+  ADHOC_WEEKDAY_OPTIONS,
+  MAX_ADHOC_OCCURRENCES,
+  type WeekdayIndex,
+} from './utils/adhocOccurrenceDates/adhocOccurrenceDates';
 
 export {
-  ACTIVITIES_JSON_FILENAME,
-  TASKS_JSON_FILENAME,
-  buildDataSnapshot,
-  persistTasksJsonSnapshot,
-  saveTasksToJsonFile,
-  loadTasksFromJsonFile,
-  loadSampleDataFromPublic,
-  reloadSampleDataFromPublic,
-  hydrateFromPublicJson,
-  ensureTasksSeeded,
-  type ITasksJsonFile,
-  type IActivitiesJsonFile,
-} from './repository/jsonBackup';
+  isAdhocTimetableBlock,
+  adhocBlockIdsToDelete,
+  type AdhocDeleteMode,
+} from './utils/adhocDelete/adhocDelete';

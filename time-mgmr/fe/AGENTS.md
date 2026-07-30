@@ -25,7 +25,7 @@ Generate, review, and optimize React code for correctness, clarity, performance,
 - Keep barrel exports in index.ts files for public module surfaces.
 - Put each component in its own subfolder; co-locate the component, SCSS module, and tests (example: `DayTimetable/DayTimetable.tsx`, `DayTimetable.module.scss`, `DayTimetable.test.tsx`).
 - Put each util module in its own subfolder; co-locate the source and tests (example: `overlapLayout/overlapLayout.ts`, `overlapLayout.test.ts`).
-- For page-local UI and helpers, nest those folders under the page (example: `pages/TodayPage/components/…`, `pages/TodayPage/utils/…`); keep the page container files at the page root.
+- For page-local UI and helpers, nest those folders under the page (example: `pages/TimetablePage/components/…`, `pages/TimetablePage/utils/…`); keep the page container files at the page root.
 
 ## React Baseline Rules
 - Use functional components.

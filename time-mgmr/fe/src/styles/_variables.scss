@@ -32,25 +32,25 @@
   --shadow-card-elevated: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
   --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 
-  /* Landing page palette */
-  --landing-page-bg: #0f172a;
-  --landing-nav-bg: rgba(15, 23, 42, 0.85);
-  --landing-surface: #1e293b;
-  --landing-border: #334155;
-  --landing-divider: rgba(255, 255, 255, 0.06);
-  --landing-text: #f1f5f9;
-  --landing-text-strong: #f8fafc;
-  --landing-text-muted: #94a3b8;
-  --landing-text-soft: #cbd5e1;
-  --landing-text-dim: #475569;
-  --landing-badge-bg: rgba(59, 130, 246, 0.15);
-  --landing-badge-border: rgba(59, 130, 246, 0.35);
-  --landing-badge-text: #93c5fd;
-  --landing-highlight-purple: #c084fc;
-  --landing-highlight-green: #86efac;
-  --landing-feature-hover-border: #3b82f6;
-  --landing-shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
-  --landing-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  /* Landing page palette (owned by LandingPage.module.scss; kept for legacy refs) */
+  --landing-page-bg: #0c1216;
+  --landing-nav-bg: rgba(12, 18, 22, 0.88);
+  --landing-surface: #151d24;
+  --landing-border: rgba(232, 238, 242, 0.12);
+  --landing-divider: rgba(232, 238, 242, 0.1);
+  --landing-text: #e8eef2;
+  --landing-text-strong: #e8eef2;
+  --landing-text-muted: #8a9aa6;
+  --landing-text-soft: #b4c0c8;
+  --landing-text-dim: #6b7c88;
+  --landing-badge-bg: rgba(77, 182, 184, 0.12);
+  --landing-badge-border: rgba(77, 182, 184, 0.28);
+  --landing-badge-text: #4db6b8;
+  --landing-highlight-purple: #6b7f9c;
+  --landing-highlight-green: #4db6b8;
+  --landing-feature-hover-border: #4db6b8;
+  --landing-shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.45);
+  --landing-gradient: linear-gradient(180deg, #0c1216 0%, #151d24 100%);
 
   /* Backward-compatible aliases */
   --color-background: var(--color-bg);
@@ -91,25 +91,25 @@
   --shadow-card-elevated: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.35);
   --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.45);
 
-  /* Landing page palette (intentionally static visual identity) */
-  --landing-page-bg: #0f172a;
-  --landing-nav-bg: rgba(15, 23, 42, 0.85);
-  --landing-surface: #1e293b;
-  --landing-border: #334155;
-  --landing-divider: rgba(255, 255, 255, 0.06);
-  --landing-text: #f1f5f9;
-  --landing-text-strong: #f8fafc;
-  --landing-text-muted: #94a3b8;
-  --landing-text-soft: #cbd5e1;
-  --landing-text-dim: #475569;
-  --landing-badge-bg: rgba(59, 130, 246, 0.15);
-  --landing-badge-border: rgba(59, 130, 246, 0.35);
-  --landing-badge-text: #93c5fd;
-  --landing-highlight-purple: #c084fc;
-  --landing-highlight-green: #86efac;
-  --landing-feature-hover-border: #3b82f6;
-  --landing-shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
-  --landing-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  /* Landing page palette (static marketing identity) */
+  --landing-page-bg: #0c1216;
+  --landing-nav-bg: rgba(12, 18, 22, 0.88);
+  --landing-surface: #151d24;
+  --landing-border: rgba(232, 238, 242, 0.12);
+  --landing-divider: rgba(232, 238, 242, 0.1);
+  --landing-text: #e8eef2;
+  --landing-text-strong: #e8eef2;
+  --landing-text-muted: #8a9aa6;
+  --landing-text-soft: #b4c0c8;
+  --landing-text-dim: #6b7c88;
+  --landing-badge-bg: rgba(77, 182, 184, 0.12);
+  --landing-badge-border: rgba(77, 182, 184, 0.28);
+  --landing-badge-text: #4db6b8;
+  --landing-highlight-purple: #6b7f9c;
+  --landing-highlight-green: #4db6b8;
+  --landing-feature-hover-border: #4db6b8;
+  --landing-shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.45);
+  --landing-gradient: linear-gradient(180deg, #0c1216 0%, #151d24 100%);
 
   /* Backward-compatible aliases */
   --color-background: var(--color-bg);
@@ -150,25 +150,25 @@
   --shadow-card-elevated: 0 1px 3px 0 rgba(34, 5, 10, 0.4), 0 1px 2px -1px rgba(34, 5, 10, 0.4);
   --shadow-card-hover: 0 4px 6px -1px rgba(34, 5, 10, 0.5), 0 2px 4px -2px rgba(34, 5, 10, 0.5);
 
-  /* Landing page palette (intentionally static visual identity) */
-  --landing-page-bg: #0f172a;
-  --landing-nav-bg: rgba(15, 23, 42, 0.85);
-  --landing-surface: #1e293b;
-  --landing-border: #334155;
-  --landing-divider: rgba(255, 255, 255, 0.06);
-  --landing-text: #f1f5f9;
-  --landing-text-strong: #f8fafc;
-  --landing-text-muted: #94a3b8;
-  --landing-text-soft: #cbd5e1;
-  --landing-text-dim: #475569;
-  --landing-badge-bg: rgba(59, 130, 246, 0.15);
-  --landing-badge-border: rgba(59, 130, 246, 0.35);
-  --landing-badge-text: #93c5fd;
-  --landing-highlight-purple: #c084fc;
-  --landing-highlight-green: #86efac;
-  --landing-feature-hover-border: #3b82f6;
-  --landing-shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.5);
-  --landing-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  /* Landing page palette (static marketing identity) */
+  --landing-page-bg: #0c1216;
+  --landing-nav-bg: rgba(12, 18, 22, 0.88);
+  --landing-surface: #151d24;
+  --landing-border: rgba(232, 238, 242, 0.12);
+  --landing-divider: rgba(232, 238, 242, 0.1);
+  --landing-text: #e8eef2;
+  --landing-text-strong: #e8eef2;
+  --landing-text-muted: #8a9aa6;
+  --landing-text-soft: #b4c0c8;
+  --landing-text-dim: #6b7c88;
+  --landing-badge-bg: rgba(77, 182, 184, 0.12);
+  --landing-badge-border: rgba(77, 182, 184, 0.28);
+  --landing-badge-text: #4db6b8;
+  --landing-highlight-purple: #6b7f9c;
+  --landing-highlight-green: #4db6b8;
+  --landing-feature-hover-border: #4db6b8;
+  --landing-shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.45);
+  --landing-gradient: linear-gradient(180deg, #0c1216 0%, #151d24 100%);
 
   /* Backward-compatible aliases */
   --color-background: var(--color-bg);

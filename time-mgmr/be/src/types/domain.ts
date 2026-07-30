@@ -1,6 +1,11 @@
 /** Domain types aligned with the time-mgmr frontend (`fe/src/features/activities/types.ts`). */
 
-export type TaskStatus = 'planned' | 'in_progress' | 'done' | 'skipped';
+export type TaskStatus =
+	| 'unplanned'
+	| 'planned'
+	| 'in_progress'
+	| 'done'
+	| 'skipped';
 
 export type ActivityCategoryId =
 	| 'work'
@@ -14,9 +19,15 @@ export interface IActivity {
 	title: string;
 	categoryId: ActivityCategoryId;
 	notes: string;
+	/** Catalog priority — lower values appear first. */
+	sortOrder: number;
+	/** ISO timestamp when archived; null when active. */
+	archivedAt: string | null;
 	createdAt: string;
 	updatedAt: string;
 }
+
+export type ActivityListFilter = 'active' | 'archived' | 'all';
 
 /** Request body for POST /api/activities — matches fe/public/activities.json entries (without timestamps). */
 export interface IActivityCreateInput {
@@ -24,18 +35,31 @@ export interface IActivityCreateInput {
 	title: string;
 	categoryId: ActivityCategoryId;
 	notes: string;
+	sortOrder?: number;
+}
+
+/** Partial update for PATCH /api/activities/:id */
+export interface IActivityPatchInput {
+	title?: string;
+	categoryId?: ActivityCategoryId;
+	notes?: string;
+	sortOrder?: number;
 }
 
 export interface ITask {
 	id: string;
 	activityId: string;
 	title: string;
-	plannedStart: string;
-	plannedEnd: string;
 	timeEstimationSeconds?: number;
 	categoryId: ActivityCategoryId;
 	notes: string;
 	status: TaskStatus;
+	/** Priority within the parent activity — lower values appear first. */
+	sortOrder: number;
+	/** When true, omit from report metrics while still blocking the timetable. */
+	excludeFromReports?: boolean;
+	/** True when work began while the task was still unplanned (reactive work). */
+	startedFromUnplanned?: boolean;
 }
 
 /** Request body for POST /api/tasks — matches fe/public/tasks.json entries (+ categoryId, notes, status). */
@@ -43,13 +67,66 @@ export interface ITaskCreateInput {
 	id?: string;
 	activityId: string;
 	title: string;
-	plannedStart: string;
-	plannedEnd: string;
 	timeEstimationSeconds?: number;
 	categoryId?: ActivityCategoryId;
 	notes?: string;
 	status?: TaskStatus;
+	sortOrder?: number;
+	excludeFromReports?: boolean;
+	startedFromUnplanned?: boolean;
 }
+
+/** Partial update for PATCH /api/tasks/:id */
+export interface ITaskPatchInput {
+	activityId?: string;
+	title?: string;
+	timeEstimationSeconds?: number;
+	categoryId?: ActivityCategoryId;
+	notes?: string;
+	status?: TaskStatus;
+	sortOrder?: number;
+	excludeFromReports?: boolean;
+	startedFromUnplanned?: boolean;
+}
+
+export type ScheduleBlockType = 'focus' | 'short_break' | 'long_break';
+
+export interface IScheduleBlock {
+	id: string;
+	taskId?: string;
+	/** Owning activity when created by auto-schedule (especially rests). */
+	activityId?: string;
+	blockType: ScheduleBlockType;
+	plannedStart: string;
+	plannedEnd: string;
+	actualStart?: string;
+	actualEnd?: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface IScheduleBlockCreateInput {
+	id?: string;
+	taskId?: string;
+	activityId?: string;
+	blockType: ScheduleBlockType;
+	plannedStart: string;
+	plannedEnd: string;
+	actualStart?: string;
+	actualEnd?: string;
+}
+
+export interface IScheduleBlockPatchInput {
+	taskId?: string | null;
+	activityId?: string | null;
+	blockType?: ScheduleBlockType;
+	plannedStart?: string;
+	plannedEnd?: string;
+	actualStart?: string | null;
+	actualEnd?: string | null;
+}
+
+export type TimeEntrySource = 'timer' | 'manual';
 
 export interface ITimeEntry {
 	id: string;
@@ -57,12 +134,27 @@ export interface ITimeEntry {
 	startAt: string;
 	endAt: string | null;
 	durationMinutes: number | null;
-	source: 'timer' | 'manual';
+	source: TimeEntrySource;
 	createdAt: string;
 	updatedAt: string;
 }
 
-export type EntityType = 'activity' | 'task' | 'time_entry';
+/** Request body for POST /api/time-entries */
+export interface ITimeEntryCreateInput {
+	taskId: string;
+	source?: TimeEntrySource;
+	/** Optional ISO start; defaults to now for timer, or now - duration for manual. */
+	startAt?: string;
+	/** Required when source is manual. */
+	durationMinutes?: number;
+}
+
+/** Partial update for PATCH /api/time-entries/:id (typically stop a timer). */
+export interface ITimeEntryPatchInput {
+	endAt?: string;
+}
+
+export type EntityType = 'activity' | 'task' | 'schedule_block' | 'time_entry';
 
 export interface IDynamoItem {
 	pk: string;
@@ -82,18 +174,22 @@ export interface ITaskStorageFields {
 	id: string;
 	activityId: string;
 	title: string;
-	date: string;
-	plannedStart: string;
-	plannedEnd: string;
 	categoryId: ActivityCategoryId;
 	notes: string;
 	color?: string;
 	status: TaskStatus;
 	timeEstimationSeconds?: number;
+	sortOrder: number;
+	excludeFromReports?: boolean;
+	startedFromUnplanned?: boolean;
 }
 
 export interface ITaskRecord extends IDynamoItem, ITaskStorageFields {
 	entityType: 'task';
+}
+
+export interface IScheduleBlockRecord extends IDynamoItem, IScheduleBlock {
+	entityType: 'schedule_block';
 }
 
 export interface ITimeEntryRecord extends IDynamoItem, ITimeEntry {

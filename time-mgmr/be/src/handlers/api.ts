@@ -8,6 +8,10 @@ import { registerActivityRoutes } from '../routes/activities.js';
 import { registerAuthRoutes } from '../routes/auth.js';
 import { registerHealthRoutes } from '../routes/health.js';
 import { registerTaskRoutes } from '../routes/tasks.js';
+import { registerTimeEntryRoutes } from '../routes/timeEntries.js';
+import { registerScheduleBlockRoutes } from '../routes/scheduleBlocks.js';
+import { registerAutoScheduleRoutes } from '../routes/autoSchedule.js';
+import { registerPushRoutes } from '../routes/push.js';
 
 const app = new Hono();
 
@@ -37,9 +41,19 @@ api.use('/activities', authMiddleware);
 api.use('/activities/*', authMiddleware);
 api.use('/tasks', authMiddleware);
 api.use('/tasks/*', authMiddleware);
+api.use('/schedule-blocks', authMiddleware);
+api.use('/schedule-blocks/*', authMiddleware);
+api.use('/time-entries', authMiddleware);
+api.use('/time-entries/*', authMiddleware);
+api.use('/push', authMiddleware);
+api.use('/push/*', authMiddleware);
 
 registerActivityRoutes(api);
 registerTaskRoutes(api);
+registerScheduleBlockRoutes(api);
+registerAutoScheduleRoutes(api);
+registerTimeEntryRoutes(api);
+registerPushRoutes(api);
 
 api.notFound((c) => c.json({ error: 'Not found' }, 404));
 

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpOnlyAuthService } from '@/features/auth/services/HttpOnlyAuthService';
 import type { IUser } from '@/core/types/common';
 import {
+	getAccessToken,
 	resetAuthSessionForTests,
 	useCookieAuthMode,
 } from '@/features/auth/session/authSession';
@@ -25,7 +26,11 @@ vi.mock('@/features/auth/api/authApi', async (importOriginal) => {
 });
 
 vi.mock('@/features/auth/api/authRefreshApi', () => ({
-	refreshTokenRequest: vi.fn().mockResolvedValue({ ok: true }),
+	refreshTokenRequest: vi.fn().mockResolvedValue({
+		ok: true,
+		token: 'access-2',
+		refreshToken: 'refresh-2',
+	}),
 }));
 
 const user: IUser = {
@@ -46,8 +51,12 @@ describe('HttpOnlyAuthService', () => {
 		vi.clearAllMocks();
 	});
 
-	it('login uses credentials and does not require tokens in the response', async () => {
-		mockApi.loginRequest.mockResolvedValue({ user });
+	it('login stores Bearer tokens from the response for cross-origin fallback', async () => {
+		mockApi.loginRequest.mockResolvedValue({
+			user,
+			token: 'access-1',
+			refreshToken: 'refresh-1',
+		});
 
 		const service = new HttpOnlyAuthService();
 		const result = await service.login({
@@ -60,7 +69,8 @@ describe('HttpOnlyAuthService', () => {
 			{ email: 'jane@example.com', password: 'safe-password' },
 			{ includeCredentials: true }
 		);
-		expect(service.getAccessToken()).toBeNull();
+		expect(service.getAccessToken()).toBe('access-1');
+		expect(getAccessToken()).toBe('access-1');
 	});
 
 	it('logout sends credentials and clears session leftovers', async () => {
@@ -69,7 +79,10 @@ describe('HttpOnlyAuthService', () => {
 		const service = new HttpOnlyAuthService();
 		await service.logout();
 
-		expect(mockApi.logoutRequest).toHaveBeenCalledWith({ includeCredentials: true });
+		expect(mockApi.logoutRequest).toHaveBeenCalledWith({
+			includeCredentials: true,
+			refreshToken: null,
+		});
 	});
 
 	it('getCurrentUser uses credentialed authenticated requests', async () => {
@@ -85,9 +98,10 @@ describe('HttpOnlyAuthService', () => {
 		});
 	});
 
-	it('refreshToken returns cookie sentinel via cookie refresh path', async () => {
+	it('refreshToken stores rotated access token when returned', async () => {
 		const service = new HttpOnlyAuthService();
 		const token = await service.refreshToken();
-		expect(token).toBe('cookie');
+		expect(token).toBe('access-2');
+		expect(service.getAccessToken()).toBe('access-2');
 	});
 });

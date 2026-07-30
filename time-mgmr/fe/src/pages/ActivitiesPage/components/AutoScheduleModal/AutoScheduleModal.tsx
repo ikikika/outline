@@ -1,0 +1,549 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button, Input } from '@/components/ui';
+import { ModalShell } from '@/components/molecules/ModalShell/ModalShell';
+import { utcToZonedParts } from '@/core/utils/timeZone/timeZone';
+import {
+  createAutoScheduleSchema,
+  formatMinutes,
+  minutesToTime,
+  needsFirstDayStart,
+  timeToMinutes,
+  type AutoScheduleFormValues,
+  type IActivityWithTasks,
+  type IAutoSchedulePreviewResponse,
+  type IAutoScheduleRequest,
+} from '@/features/activities';
+import { useResolvedTimeZone } from '@/features/activities/hooks/useActivities';
+import styles from './AutoScheduleModal.module.scss';
+
+type ModalStep = 'configure' | 'preview';
+
+interface AutoScheduleModalProps {
+  activity: IActivityWithTasks;
+  defaultDate: string;
+  busy?: boolean;
+  error?: string | null;
+  preview: IAutoSchedulePreviewResponse | null;
+  onCancel: () => void;
+  onPreview: (request: IAutoScheduleRequest) => Promise<void>;
+  onConfirm: (request: IAutoScheduleRequest & { previewToken: string }) => Promise<void>;
+  onBack: () => void;
+}
+
+function defaultSelectedTaskIds(tasks: IActivityWithTasks['tasks']): string[] {
+  const unplanned = tasks.filter((task) => task.status === 'unplanned');
+  return (unplanned.length > 0 ? unplanned : tasks).map((task) => task.id);
+}
+
+function blockLabel(
+  blockType: IAutoSchedulePreviewResponse['days'][number]['blocks'][number]['blockType']
+): string {
+  if (blockType === 'focus') return 'Focus';
+  if (blockType === 'long_break') return 'Long break';
+  return 'Short break';
+}
+
+function currentLocalParts(timeZone: string): { date: string; time: string } {
+  return utcToZonedParts(new Date().toISOString(), timeZone);
+}
+
+/** Default first-day start: ~10 minutes from now (clamped to same calendar day). */
+function defaultFirstDayStart(nowTime: string, offsetMinutes = 10): string {
+  return minutesToTime(timeToMinutes(nowTime) + offsetMinutes);
+}
+
+export function AutoScheduleModal({
+  activity,
+  defaultDate,
+  busy = false,
+  error = null,
+  preview,
+  onCancel,
+  onPreview,
+  onConfirm,
+  onBack,
+}: AutoScheduleModalProps) {
+  const timeZone = useResolvedTimeZone();
+  const step: ModalStep = preview ? 'preview' : 'configure';
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>(() =>
+    defaultSelectedTaskIds(activity.tasks)
+  );
+  const [clock, setClock] = useState(() => currentLocalParts(timeZone));
+  const clockRef = useRef(clock);
+  clockRef.current = clock;
+
+  useEffect(() => {
+    setClock(currentLocalParts(timeZone));
+    const intervalId = window.setInterval(() => {
+      setClock(currentLocalParts(timeZone));
+    }, 30_000);
+    return () => window.clearInterval(intervalId);
+  }, [timeZone]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    getValues,
+    setValue,
+    watch,
+  } = useForm<AutoScheduleFormValues>({
+    resolver: async (values, context, options) => {
+      const dynamicSchema = createAutoScheduleSchema({
+        today: clockRef.current.date,
+        nowTime: clockRef.current.time,
+      });
+      return zodResolver(dynamicSchema)(values, context, options);
+    },
+    defaultValues: {
+      taskIds: defaultSelectedTaskIds(activity.tasks),
+      earliestDate: defaultDate,
+      deadline: '',
+      workStart: '09:00',
+      workEnd: '17:00',
+      firstDayStart: '',
+      sessionMinutes: 25,
+      shortBreakMinutes: 5,
+      longBreakMinutes: 15,
+      estimateBuffer: 1.5,
+      allowSplitAcrossDays: false,
+      skipWeekends: false,
+    },
+  });
+
+  const earliestDate = watch('earliestDate');
+  const workStart = watch('workStart');
+  const showFirstDayStart = needsFirstDayStart(earliestDate, workStart, {
+    today: clock.date,
+    nowTime: clock.time,
+  });
+
+  useEffect(() => {
+    if (!showFirstDayStart) {
+      setValue('firstDayStart', '');
+      return;
+    }
+    const current = getValues('firstDayStart');
+    if (!current) {
+      setValue('firstDayStart', defaultFirstDayStart(clock.time));
+    }
+  }, [showFirstDayStart, clock.time, getValues, setValue]);
+
+  const taskTitleById = useMemo(
+    () => new Map(activity.tasks.map((task) => [task.id, task.title])),
+    [activity.tasks]
+  );
+
+  const previewFocusSummary = useMemo(() => {
+    if (!preview) return null;
+    const focusBlocks = preview.days.flatMap((day) =>
+      day.blocks.filter((block) => block.blockType === 'focus')
+    );
+    const scheduledSeconds = focusBlocks.reduce((sum, block) => {
+      const startMs = Date.parse(block.plannedStart);
+      const endMs = Date.parse(block.plannedEnd);
+      if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
+        return sum;
+      }
+      return sum + (endMs - startMs) / 1000;
+    }, 0);
+    const estimateSeconds = selectedTaskIds.reduce((sum, taskId) => {
+      const task = activity.tasks.find((item) => item.id === taskId);
+      return sum + Math.max(0, task?.timeEstimationSeconds ?? 0);
+    }, 0);
+    const buffer = getValues('estimateBuffer');
+    return {
+      scheduledMinutes: Math.round(scheduledSeconds / 60),
+      estimateMinutes: Math.round(estimateSeconds / 60),
+      buffer: Number.isFinite(buffer) ? buffer : 1.5,
+    };
+  }, [preview, selectedTaskIds, activity.tasks, getValues]);
+
+  const buildRequest = (values: AutoScheduleFormValues): IAutoScheduleRequest => ({
+    activityId: activity.id,
+    taskIds: selectedTaskIds,
+    earliestDate: values.earliestDate,
+    ...(values.deadline ? { deadline: values.deadline } : {}),
+    workStart: values.workStart,
+    workEnd: values.workEnd,
+    ...(values.firstDayStart ? { firstDayStart: values.firstDayStart } : {}),
+    sessionMinutes: values.sessionMinutes,
+    shortBreakMinutes: values.shortBreakMinutes,
+    longBreakMinutes: values.longBreakMinutes,
+    estimateBuffer: values.estimateBuffer,
+    allowSplitAcrossDays: values.allowSplitAcrossDays,
+    skipWeekends: values.skipWeekends,
+  });
+
+  const allTaskIds = useMemo(
+    () => activity.tasks.map((task) => task.id),
+    [activity.tasks]
+  );
+  const allTasksSelected =
+    allTaskIds.length > 0 && selectedTaskIds.length === allTaskIds.length;
+  const lastClickedTaskIndexRef = useRef<number | null>(null);
+
+  const handleTaskToggle = (
+    taskId: string,
+    index: number,
+    shiftKey: boolean,
+    nextChecked: boolean
+  ) => {
+    if (shiftKey && lastClickedTaskIndexRef.current != null) {
+      const from = Math.min(lastClickedTaskIndexRef.current, index);
+      const to = Math.max(lastClickedTaskIndexRef.current, index);
+      const rangeIds = new Set(allTaskIds.slice(from, to + 1));
+      setSelectedTaskIds((current) => {
+        const selected = new Set(current);
+        for (const id of rangeIds) {
+          if (nextChecked) selected.add(id);
+          else selected.delete(id);
+        }
+        return allTaskIds.filter((id) => selected.has(id));
+      });
+    } else {
+      setSelectedTaskIds((current) =>
+        nextChecked
+          ? current.includes(taskId)
+            ? current
+            : [...current, taskId]
+          : current.filter((id) => id !== taskId)
+      );
+    }
+
+    lastClickedTaskIndexRef.current = index;
+  };
+
+  const toggleAllTasks = () => {
+    setSelectedTaskIds(allTasksSelected ? [] : allTaskIds);
+    lastClickedTaskIndexRef.current = null;
+  };
+
+  const handlePreviewSubmit = handleSubmit(async (values) => {
+    if (selectedTaskIds.length === 0) return;
+    await onPreview(buildRequest({ ...values, taskIds: selectedTaskIds }));
+  });
+
+  const handleConfirm = async () => {
+    if (!preview) return;
+    const values = getValues();
+    await onConfirm({
+      ...buildRequest({ ...values, taskIds: selectedTaskIds }),
+      previewToken: preview.previewToken,
+    });
+  };
+
+  return (
+    <ModalShell
+      onDismiss={onCancel}
+      dismissDisabled={busy}
+      backdropClassName={styles.backdrop}
+      panelClassName={styles.modal}
+      labelledBy="auto-schedule-title"
+    >
+        <h2 id="auto-schedule-title" className={styles.title}>
+          Auto-schedule {activity.title}
+        </h2>
+        <p className={styles.description}>
+          {step === 'configure'
+            ? 'Select tasks and work constraints, then preview the Pomodoro plan.'
+            : 'Review the proposed timetable before confirming.'}
+        </p>
+
+        {step === 'configure' ? (
+          <form onSubmit={handlePreviewSubmit} noValidate>
+            <fieldset className={styles.taskFieldset} disabled={busy}>
+              <div className={styles.taskFieldsetHeader}>
+                <legend className={styles.legend}>Tasks</legend>
+                {activity.tasks.length > 0 ? (
+                  <button
+                    type="button"
+                    className={styles.taskSelectAll}
+                    onClick={toggleAllTasks}
+                  >
+                    {allTasksSelected ? 'Uncheck all' : 'Check all'}
+                  </button>
+                ) : null}
+              </div>
+              {activity.tasks.length === 0 ? (
+                <p className={styles.emptyTasks}>No tasks to schedule.</p>
+              ) : (
+                <ul className={styles.taskList}>
+                  {activity.tasks.map((task, index) => {
+                    const checked = selectedTaskIds.includes(task.id);
+                    const estimateLabel = task.timeEstimationSeconds
+                      ? formatMinutes(Math.round(task.timeEstimationSeconds / 60))
+                      : 'No estimate';
+                    return (
+                      <li key={task.id}>
+                        <label className={styles.taskOption}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(event) => {
+                              handleTaskToggle(
+                                task.id,
+                                index,
+                                event.nativeEvent instanceof MouseEvent
+                                  ? event.nativeEvent.shiftKey
+                                  : false,
+                                event.target.checked
+                              );
+                            }}
+                          />
+                          <span className={styles.taskOptionTitle}>{task.title}</span>
+                          <span className={styles.taskOptionMeta}>{task.status}</span>
+                          <span className={styles.taskOptionMeta}>{estimateLabel}</span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {selectedTaskIds.length === 0 ? (
+                <p className={styles.error} role="alert">
+                  Select at least one task.
+                </p>
+              ) : null}
+            </fieldset>
+
+            <div className={styles.fields}>
+              <div className={styles.field}>
+                <label htmlFor="auto-earliest-date">Earliest date</label>
+                <Input
+                  id="auto-earliest-date"
+                  type="date"
+                  {...register('earliestDate')}
+                />
+                {errors.earliestDate ? (
+                  <span className={styles.error}>{errors.earliestDate.message}</span>
+                ) : null}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="auto-deadline">Deadline (optional)</label>
+                <Input id="auto-deadline" type="date" {...register('deadline')} />
+                {errors.deadline ? (
+                  <span className={styles.error}>{errors.deadline.message}</span>
+                ) : null}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="auto-work-start">Work start</label>
+                <Input
+                  id="auto-work-start"
+                  type="time"
+                  {...register('workStart')}
+                />
+                {errors.workStart ? (
+                  <span className={styles.error}>{errors.workStart.message}</span>
+                ) : null}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="auto-work-end">Work end</label>
+                <Input id="auto-work-end" type="time" {...register('workEnd')} />
+                {errors.workEnd ? (
+                  <span className={styles.error}>{errors.workEnd.message}</span>
+                ) : null}
+              </div>
+              {showFirstDayStart ? (
+                <div className={styles.field}>
+                  <label htmlFor="auto-first-day-start">Start time today</label>
+                  <Input
+                    id="auto-first-day-start"
+                    type="time"
+                    {...register('firstDayStart')}
+                  />
+                  {errors.firstDayStart ? (
+                    <span className={styles.error}>
+                      {errors.firstDayStart.message}
+                    </span>
+                  ) : (
+                    <span className={styles.hint}>
+                      Work start is already past; later days still use work start.
+                    </span>
+                  )}
+                </div>
+              ) : null}
+              <div className={styles.field}>
+                <label htmlFor="auto-session">Session (min)</label>
+                <Input
+                  id="auto-session"
+                  type="number"
+                  min={5}
+                  max={120}
+                  {...register('sessionMinutes', { valueAsNumber: true })}
+                />
+                {errors.sessionMinutes ? (
+                  <span className={styles.error}>
+                    {errors.sessionMinutes.message}
+                  </span>
+                ) : null}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="auto-short-break">Short break (min)</label>
+                <Input
+                  id="auto-short-break"
+                  type="number"
+                  min={1}
+                  max={60}
+                  {...register('shortBreakMinutes', { valueAsNumber: true })}
+                />
+                {errors.shortBreakMinutes ? (
+                  <span className={styles.error}>
+                    {errors.shortBreakMinutes.message}
+                  </span>
+                ) : null}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="auto-long-break">Long break (min)</label>
+                <Input
+                  id="auto-long-break"
+                  type="number"
+                  min={1}
+                  max={60}
+                  {...register('longBreakMinutes', { valueAsNumber: true })}
+                />
+                {errors.longBreakMinutes ? (
+                  <span className={styles.error}>
+                    {errors.longBreakMinutes.message}
+                  </span>
+                ) : null}
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="auto-estimate-buffer">Estimate buffer</label>
+                <Input
+                  id="auto-estimate-buffer"
+                  type="number"
+                  min={1}
+                  max={5}
+                  step={0.1}
+                  {...register('estimateBuffer', { valueAsNumber: true })}
+                />
+                {errors.estimateBuffer ? (
+                  <span className={styles.error}>
+                    {errors.estimateBuffer.message}
+                  </span>
+                ) : (
+                  <span className={styles.hint}>
+                    Multiplier on each task&apos;s time estimate (e.g. 1.5 =
+                    50% extra).
+                  </span>
+                )}
+              </div>
+              <div className={`${styles.field} ${styles.checkboxField}`}>
+                <label className={styles.checkboxLabel}>
+                  <input type="checkbox" {...register('allowSplitAcrossDays')} />
+                  Allow tasks to span multiple days
+                </label>
+              </div>
+              <div className={`${styles.field} ${styles.checkboxField}`}>
+                <label className={styles.checkboxLabel}>
+                  <input type="checkbox" {...register('skipWeekends')} />
+                  Don&apos;t schedule on weekends
+                </label>
+              </div>
+            </div>
+
+            {error ? (
+              <p className={styles.submitError} role="alert">
+                {error}
+              </p>
+            ) : null}
+
+            <div className={styles.actions}>
+              <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={busy || activity.tasks.length === 0 || selectedTaskIds.length === 0}
+              >
+                {busy ? 'Generating…' : 'Preview schedule'}
+              </Button>
+            </div>
+          </form>
+        ) : preview ? (
+          <>
+            {previewFocusSummary ? (
+              <p className={styles.notice}>
+                Scheduled focus {formatMinutes(previewFocusSummary.scheduledMinutes)}{' '}
+                (estimates {formatMinutes(previewFocusSummary.estimateMinutes)} ×{' '}
+                {previewFocusSummary.buffer}).
+              </p>
+            ) : null}
+
+            {preview.replacedBlockIds.length > 0 ? (
+              <p className={styles.notice}>
+                Replaces {preview.replacedBlockIds.length} existing future block
+                {preview.replacedBlockIds.length === 1 ? '' : 's'} for selected tasks.
+              </p>
+            ) : null}
+
+            {preview.warnings.length > 0 ? (
+              <ul className={styles.warnings} role="alert">
+                {preview.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            ) : null}
+
+            <div className={styles.previewDays}>
+              {preview.days.map((day) => (
+                <section key={day.date} className={styles.previewDay}>
+                  <h3 className={styles.previewDayTitle}>{day.date}</h3>
+                  <ul className={styles.previewBlocks}>
+                    {day.blocks.map((block) => {
+                      const start = utcToZonedParts(block.plannedStart, timeZone);
+                      const end = utcToZonedParts(block.plannedEnd, timeZone);
+                      const title =
+                        block.taskId && taskTitleById.get(block.taskId)
+                          ? taskTitleById.get(block.taskId)
+                          : blockLabel(block.blockType);
+                      return (
+                        <li key={block.id} className={styles.previewBlock}>
+                          <span className={styles.previewBlockLabel}>{title}</span>
+                          <span className={styles.previewBlockMeta}>
+                            {blockLabel(block.blockType)} · {start.time}–{end.time}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+
+            {error ? (
+              <p className={styles.submitError} role="alert">
+                {error}
+              </p>
+            ) : null}
+
+            <div className={styles.actions}>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => {
+                  onBack();
+                }}
+              >
+                Back
+              </Button>
+              <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={busy || !preview.canConfirm}
+                onClick={() => void handleConfirm()}
+              >
+                {busy ? 'Confirming…' : 'Confirm schedule'}
+              </Button>
+            </div>
+          </>
+        ) : null}
+    </ModalShell>
+  );
+}

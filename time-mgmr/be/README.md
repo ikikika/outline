@@ -173,12 +173,91 @@ npm run remove
 
 ## Secrets (production)
 
-JWT secrets are defined in `sst.config.ts` as SST secrets:
+Secrets are defined in `sst.config.ts` as SST secrets. Config placeholders are **not** for production (and VAPID placeholders are not valid push keys).
 
-- `JwtAccessSecret`
-- `JwtRefreshSecret`
+| Secret | Purpose |
+|--------|---------|
+| `JwtAccessSecret` | Sign short-lived access JWTs |
+| `JwtRefreshSecret` | Sign refresh JWTs |
+| `VapidPublicKey` | Web Push public key (sent to browsers) |
+| `VapidPrivateKey` | Web Push private key (server only — never commit) |
 
-For production, set strong values via the SST secret workflow instead of relying on the dev defaults in config.
+Set values per stage with `npx sst secret set <Name> '<value>'` (see below for VAPID).
+
+---
+
+## Push notifications (VAPID)
+
+Web Push uses **VAPID** keys so browsers/push services can verify that *this* API is allowed to send notifications to a user’s subscription.
+
+- Generate keys yourself (`web-push`); they are not issued by Google/Apple.
+- Store them only as **SST secrets** — never commit real keys to git (`sst.config.ts` has placeholders only).
+- The frontend enables notifications under **Profile → Notifications** and calls the `/api/push/*` routes.
+
+### 1. Generate a key pair
+
+From `be/`:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+You get a **Public Key** and a **Private Key**. Keep the private key secret.
+
+### 2. Store them as SST secrets
+
+For your current stage (default personal stage when using `sst dev`):
+
+```bash
+npx sst secret set VapidPublicKey '<public-key>'
+npx sst secret set VapidPrivateKey '<private-key>'
+```
+
+For production:
+
+```bash
+npx sst secret set VapidPublicKey '<public-key>' --stage production
+npx sst secret set VapidPrivateKey '<private-key>' --stage production
+```
+
+### 3. Redeploy / restart
+
+Secrets are available to the Lambda after deploy (or after restarting `sst dev`):
+
+```bash
+npm run deploy
+# or production:
+npm run deploy:prod
+```
+
+### 4. Verify
+
+While logged in against the API:
+
+```bash
+curl -sS -b cookies.txt '{API_URL}/api/push/vapid-public-key'
+```
+
+Expect JSON like `{ "publicKey": "B...." }` (long URL-safe base64). If you still see a placeholder or a 500 about invalid VAPID config, the secrets are not set for that stage.
+
+Then in the app (HTTPS, or localhost on Android Chrome): **Profile → Notifications → Enable → Send test notification**. On iPhone, install via Safari **Add to Home Screen** first, then open from the icon.
+
+### Notes
+
+- Rotating VAPID keys invalidates existing browser subscriptions; users must enable notifications again.
+- Use a different key pair per environment if you want isolation (dev vs production).
+- Push endpoints: `GET /api/push/vapid-public-key`, `POST|DELETE /api/push/subscriptions`, `POST /api/push/test` (all auth-required).
+
+### First-task reminder (cron)
+
+A `CronV2` job (`FirstFocusReminder`) runs every **1 minute** and sends a push when a subscribed user’s **first focus block of their local calendar day** starts in **5 minutes**.
+
+- Uses the user’s profile `timeZone` (falls back to `UTC`).
+- First focus = earliest `blockType: focus` block with a `taskId` that day.
+- Dedupes with a DynamoDB `REMINDER_SENT#first_focus#{localDate}#{blockId}` marker (TTL).
+- Notification body: `{task title} starts in 5 minutes` → opens `/timetable`.
+
+Requires valid VAPID secrets and at least one push subscription for the user. Rescheduling to a different first block can notify again (dedupe is per block id).
 
 ---
 
@@ -194,18 +273,19 @@ npm run seed:user -- you@example.com yourpassword "Your Name"
 
 Password must be at least 8 characters.
 
-### 2. Load activities and scheduled tasks
+### 2. Load activities, tasks, and schedule blocks
 
 ```bash
-npm run seed:data -- you@example.com 2026-07-21
+npm run seed:data -- you@example.com
 ```
 
 This script:
 
-1. Upserts activities from `../fe/public/activities.json`
-2. Upserts tasks from `../fe/public/tasks.json` (ISO `plannedStart` / `plannedEnd`, `timeEstimationSeconds`)
+1. Upserts activities from `../scripts/activities.json`
+2. Upserts catalog task metadata from `../scripts/tasks.json`
+3. Upserts the file's explicit `scheduleBlocks`, including multiple focus blocks per task and taskless Pomodoro breaks
 
-Optional second argument is a fallback calendar date (`YYYY-MM-DD`, default `2026-07-21`) used when a task has no embedded date in `plannedStart`.
+Legacy timed-task JSON remains supported as an import format. Task records written to DynamoDB do not contain `date`, `plannedStart`, `plannedEnd`, or scheduling GSI fields.
 
 ---
 
@@ -223,14 +303,13 @@ The frontend appends `/api` automatically in `API_BASE_URL`.
 
 ## Authentication
 
-The API uses **HttpOnly cookies** for browser sessions (cross-origin SPA → API Gateway):
+The API uses **HttpOnly cookies** plus **Bearer tokens in JSON** for browser sessions (cross-origin SPA → API Gateway):
 
 - `access_token` — JWT, 15 minutes, `HttpOnly; Secure; SameSite=None; Path=/`
 - `refresh_token` — JWT, 7 days, same attributes
+- Login / refresh JSON also returns `token` and `refreshToken` so the SPA can send `Authorization: Bearer …` when Safari/iOS blocks third-party cookies (common for Home Screen PWAs on a different API host)
 
-The browser stores cookies on the **API host** and sends them automatically when the client uses `credentials: 'include'`. Tokens are **not** returned in JSON login/refresh bodies.
-
-`Authorization: Bearer <access_token>` remains supported as a fallback for non-browser tooling.
+The browser stores cookies on the **API host** when allowed and sends them with `credentials: 'include'`. The frontend also keeps tokens in memory for Bearer fallback (not localStorage).
 
 CORS must allow credentials (`credentials: true` / `allowCredentials: true`) with an explicit origin allowlist (never `*`).
 
@@ -240,12 +319,15 @@ CORS must allow credentials (`credentials: true` / `allowCredentials: true`) wit
 | `POST /api/auth/login`, `POST /api/auth/refresh` | No (sets/rotates cookies) |
 | `POST /api/auth/logout` | Cookie or Bearer (clears cookies) |
 | `GET /api/auth/me` | Cookie or Bearer |
-| All `/api/activities/*` and `/api/tasks/*` | Cookie or Bearer |
+| `PATCH /api/auth/me` | Cookie or Bearer |
+| `POST /api/auth/change-password` | Cookie or Bearer |
+| All `/api/activities/*`, `/api/tasks/*`, `/api/schedule-blocks/*`, and `/api/time-entries/*` | Cookie or Bearer |
 
 **Security notes**
 
 - `SameSite=None` does not block CSRF by itself; mitigation is the CORS allowlist + JSON `Content-Type` (preflight) for mutating calls.
-- XSS cannot read HttpOnly cookies; do not put tokens in localStorage or JSON responses for the SPA.
+- XSS cannot read HttpOnly cookies. Tokens returned in JSON are kept in memory only (not localStorage) for cross-origin Bearer fallback.
+- Prefer hosting the SPA and API on the same site long-term so cookies alone are enough.
 - Cookies are tied to the API host; changing the API Gateway URL clears sessions.
 
 ---
@@ -298,7 +380,7 @@ Verifies DynamoDB connectivity (scan limit 1).
 }
 ```
 
-**Response `200`** — sets `access_token` and `refresh_token` cookies
+**Response `200`** — sets `access_token` and `refresh_token` cookies; also returns tokens for Bearer fallback
 
 ```json
 {
@@ -311,7 +393,9 @@ Verifies DynamoDB connectivity (scan limit 1).
     "themePreference": "system",
     "createdAt": "2026-07-20T12:00:00.000Z",
     "updatedAt": "2026-07-20T12:00:00.000Z"
-  }
+  },
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
 }
 ```
 
@@ -324,6 +408,31 @@ Verifies DynamoDB connectivity (scan limit 1).
 Sends cookies automatically (browser) or `Authorization: Bearer <access_token>`.
 
 **Response `200`** — `IUser` object (same shape as `user` in login response)
+
+---
+
+#### `POST /api/auth/change-password`
+
+Requires an authenticated session (cookie or Bearer).
+
+**Request body**
+
+```json
+{
+  "currentPassword": "yourpassword",
+  "newPassword": "yournewpassword"
+}
+```
+
+**Response `200`**
+
+```json
+{
+  "ok": true
+}
+```
+
+**Errors:** `400` / `401` with `{ "error": "message" }` (e.g. incorrect current password, new password too short)
 
 ---
 
@@ -341,7 +450,9 @@ Rotates both cookies and returns:
 
 ```json
 {
-  "ok": true
+  "ok": true,
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
 }
 ```
 
@@ -372,11 +483,14 @@ List all activities for the authenticated user.
     "title": "GitHub Copilot for Agentic Coding...",
     "categoryId": "admin",
     "notes": "Inbox zero, pick top 3 for the day",
+    "sortOrder": 0,
     "createdAt": "2026-07-18T20:00:00.000Z",
     "updatedAt": "2026-07-18T20:00:00.000Z"
   }
 ]
 ```
+
+Activities are ordered by `sortOrder` ascending (lower = higher priority).
 
 ---
 
@@ -398,12 +512,14 @@ Create or upsert an activity.
   "id": "github-copilot",
   "title": "GitHub Copilot for Agentic Coding. Use GitHub Copilot AI to generate code, build apps, + more. (GitHub Copilot 2026)",
   "categoryId": "admin",
-  "notes": "Inbox zero, pick top 3 for the day"
+  "notes": "Inbox zero, pick top 3 for the day",
+  "sortOrder": 0
 }
 ```
 
 Required fields: `title`, `categoryId`, `notes`.  
 Optional: `id` — generated by the server when omitted.  
+Optional: `sortOrder` — defaults to the next available index.  
 `categoryId` must be one of: `work`, `deep_work`, `admin`, `personal`, `break`.  
 Do not send `createdAt` or `updatedAt`; the server sets them.
 
@@ -413,17 +529,109 @@ Do not send `createdAt` or `updatedAt`; the server sets them.
 
 ---
 
-### Tasks (timetable)
+#### `POST /api/activities/import`
 
-Tasks match the shape in `fe/public/tasks.json`.  
-`plannedStart` and `plannedEnd` are ISO datetimes (e.g. `2026-07-22T10:44:00.000Z`).  
-`status` values: `planned` | `in_progress` | `done` | `skipped`
+Import one activity and its nested catalog tasks from a JSON body. Catalog only — does not create schedule blocks.
 
-#### `GET /api/tasks?date=YYYY-MM-DD`
+**Request body**
 
-Tasks for a single day (timetable day view).
+```json
+{
+  "activity": {
+    "title": "GitHub Copilot for Agentic Coding",
+    "categoryId": "admin",
+    "notes": "Inbox zero, pick top 3 for the day",
+    "id": "github-copilot",
+    "sortOrder": 0
+  },
+  "tasks": [
+    {
+      "title": "GitHub Copilot CLI",
+      "timeEstimationSeconds": 917,
+      "sortOrder": 0,
+      "status": "unplanned",
+      "notes": "",
+      "id": "56468647"
+    },
+    {
+      "title": "Hooks with GitHub Copilot",
+      "timeEstimationSeconds": 1006,
+      "sortOrder": 1,
+      "status": "unplanned"
+    }
+  ]
+}
+```
 
-**Example:** `GET /api/tasks?date=2026-07-22`
+**`activity`**
+- Required: `title`, `categoryId`
+- Optional: `notes` (defaults to `""`), `id`, `sortOrder`
+
+**`tasks`**
+- Required array (may be empty). Each task requires `title`.
+- Optional per task: `id`, `timeEstimationSeconds`, `categoryId` (defaults to parent activity), `notes`, `status` (defaults to `unplanned`), `sortOrder` (defaults to array index when omitted), `excludeFromReports`, `startedFromUnplanned`.
+- `activityId` is assigned by the server from the imported activity.
+- Do not send `scheduleBlocks`, or task scheduling fields (`plannedStart` / `plannedEnd` / `date`).
+- Do not send `createdAt` / `updatedAt`.
+
+Optional `id`s upsert (idempotent re-import), same as `POST /api/activities` and `POST /api/tasks`.
+
+**Response `201`**
+
+```json
+{
+  "activity": { "id": "github-copilot", "title": "...", "categoryId": "admin", "notes": "...", "sortOrder": 0, "createdAt": "...", "updatedAt": "..." },
+  "tasks": [
+    { "id": "56468647", "activityId": "github-copilot", "title": "...", "timeEstimationSeconds": 917, "categoryId": "admin", "notes": "", "status": "unplanned", "sortOrder": 0 }
+  ]
+}
+```
+
+**Error `400`** — `{ "error": "..." }` when validation fails
+
+---
+
+#### `PATCH /api/activities/:id`
+
+Partial update (reorder / edit).
+
+**Request body** (at least one field)
+
+```json
+{
+  "sortOrder": 2,
+  "title": "Updated title"
+}
+```
+
+Allowed fields: `title`, `categoryId`, `notes`, `sortOrder`.
+
+**Response `200`** — updated activity  
+**Response `404`** — `{ "error": "Activity not found" }`
+
+---
+
+#### `DELETE /api/activities/:id`
+
+Deletes the activity, all of its tasks, and their schedule blocks, time entries, and following Pomodoro rests.
+
+**Response `204`** — deleted  
+**Response `404`** — `{ "error": "Activity not found" }`
+
+---
+
+### Tasks (catalog)
+
+Tasks are untimed catalog entities. Scheduling fields belong to ScheduleBlocks.
+`status` values: `unplanned` | `planned` | `in_progress` | `done` | `skipped`  
+`sortOrder` is catalog priority within an activity.
+
+Optional flags:
+
+| Field | Meaning |
+|-------|---------|
+| `excludeFromReports` | When `true`, timetable blocks for this task are omitted from report metrics (used for adhoc blockers). |
+| `startedFromUnplanned` | When `true`, work began while the task was still `unplanned` (reactive work). The SPA sets this when starting a timer on an unplanned task. |
 
 **Response `200`**
 
@@ -433,27 +641,30 @@ Tasks for a single day (timetable day view).
     "id": "49739779",
     "activityId": "the-complete-agentic-ai-engineering-course",
     "title": "Day 1 - Build Your First Autonomous AI Agent with n8n (No-Code Demo)",
-    "plannedStart": "2026-07-22T10:44:00.000Z",
-    "plannedEnd": "2026-07-22T11:05:45.000Z",
     "timeEstimationSeconds": 870,
     "categoryId": "admin",
     "notes": "",
-    "status": "planned"
+    "status": "planned",
+    "sortOrder": 0,
+    "excludeFromReports": true,
+    "startedFromUnplanned": true
   }
 ]
 ```
 
+`excludeFromReports` and `startedFromUnplanned` are omitted from the JSON when false/unset.
+
+#### `GET /api/tasks?activityId=...`
+
+Tasks for one activity, ordered by `sortOrder` (catalog).
+
 ---
 
-#### `GET /api/tasks?from=YYYY-MM-DD&to=YYYY-MM-DD`
+#### `GET /api/tasks`
 
-Tasks for a date range (timetable week view).
+All tasks for the user, ordered by `(activityId, sortOrder)` (catalog).
 
-**Example:** `GET /api/tasks?from=2026-07-21&to=2026-07-27`
-
-**Response `200`** — same task array shape as above
-
-**Error `400`** if neither `date` nor both `from` and `to` are provided.
+Legacy task `date` and `from`/`to` scheduling queries return `410`; use `/api/schedule-blocks`.
 
 ---
 
@@ -466,7 +677,7 @@ Tasks for a date range (timetable week view).
 
 #### `POST /api/tasks`
 
-Create a scheduled task. `categoryId` inherits from the parent activity when omitted.
+Create an unscheduled catalog task. `categoryId` inherits from the parent activity when omitted and status defaults to `unplanned`.
 
 **Request body**
 
@@ -475,20 +686,97 @@ Create a scheduled task. `categoryId` inherits from the parent activity when omi
   "id": "49739779",
   "activityId": "the-complete-agentic-ai-engineering-course",
   "title": "Day 1 - Build Your First Autonomous AI Agent with n8n (No-Code Demo)",
-  "plannedStart": "2026-07-22T10:44:00.000Z",
-  "plannedEnd": "2026-07-22T11:05:45.000Z",
   "timeEstimationSeconds": 870,
   "categoryId": "admin",
   "notes": "",
-  "status": "planned"
+  "status": "unplanned",
+  "sortOrder": 0,
+  "excludeFromReports": false,
+  "startedFromUnplanned": false
 }
 ```
 
-Required fields: `activityId`, `title`, `plannedStart`, `plannedEnd`.  
+Required fields: `activityId`, `title`.
 Optional: `id` — generated by the server when omitted.  
+Optional: `sortOrder` — defaults to the next index under that activity.  
+Optional: `excludeFromReports`, `startedFromUnplanned` (booleans).  
+`date`, `plannedStart`, and `plannedEnd` are rejected; create a ScheduleBlock instead.
 Do not send `createdAt` or `updatedAt`; the server sets them internally.
 
 **Response `201`** — created task (includes server-generated `id` when omitted)
+
+---
+
+#### `PATCH /api/tasks/:id`
+
+Partial update (reorder / reparent / edit).
+
+**Request body** (at least one field)
+
+```json
+{
+  "sortOrder": 1,
+  "activityId": "github-copilot",
+  "startedFromUnplanned": true
+}
+```
+
+Allowed fields: `activityId`, `title`, `timeEstimationSeconds`, `categoryId`, `notes`, `status`, `sortOrder`, `excludeFromReports`, `startedFromUnplanned`.
+When reparenting without an explicit `sortOrder`, the task is appended at the end of the new activity.
+
+**Response `200`** — updated task  
+**Response `404`** — `{ "error": "Task not found" }` or `{ "error": "Activity not found" }` when reparenting to a missing activity
+
+---
+
+#### `DELETE /api/tasks/:id`
+
+Deletes the task, its schedule blocks, time entries, and Pomodoro rests that immediately follow those focus blocks (same adjacency rule as activity delete).
+
+**Response `204`** — deleted  
+**Response `404`** — `{ "error": "Task not found" }`
+
+---
+
+### ScheduleBlocks (timetable)
+
+ScheduleBlocks are the only calendar entities:
+
+```json
+{
+  "id": "block-1",
+  "taskId": "49739779",
+  "blockType": "focus",
+  "plannedStart": "2026-07-22T10:44:00.000Z",
+  "plannedEnd": "2026-07-22T11:05:45.000Z",
+  "createdAt": "2026-07-21T12:00:00.000Z",
+  "updatedAt": "2026-07-21T12:00:00.000Z"
+}
+```
+
+`blockType` is `focus`, `short_break`, or `long_break`. `taskId` is optional (Pomodoro rests are often taskless).
+
+**List query (required):** provide exactly one of:
+
+| Query | Behavior |
+|-------|----------|
+| `date=YYYY-MM-DD` | Blocks by UTC calendar start date |
+| `from=<ISO>&to=<ISO>` | Blocks whose `plannedStart` is in `[from, to)` |
+| `taskId=...` | All blocks for that task |
+
+Omitting these returns `400` with  
+`Provide query parameter "date", both "from" and "to", or "taskId"`.
+
+- `GET /api/schedule-blocks/:id` returns one block.
+- `POST /api/schedule-blocks` creates a block.
+- `PATCH /api/schedule-blocks/:id` updates its task, type, or times. Send `"taskId": null` to detach it.
+- `DELETE /api/schedule-blocks/:id` deletes that block only (does not cascade following rests).
+
+Creating a focus block linked to an unplanned task marks that task planned. Deleting or detaching the last block linked to a task marks the task unplanned. A supplied `taskId` must identify an existing task.
+
+**Cascade on task/activity delete:** deleting a task (or activity) removes its schedule blocks **and** Pomodoro rests that start exactly when those focus blocks end (`break.plannedStart` matches `focus.plannedEnd`). The SPA uses the same adjacency rule when completing/skipping focus work so unused breaks do not linger after planned focuses are removed.
+
+ScheduleBlocks use `pk=USER#{userId}`, `sk=SCHEDULE_BLOCK#{id}`, and `Gsi1` keys `USER#{userId}#DATE#{UTC date}` / `{plannedStart}#{id}`. Task lookup queries the user's `SCHEDULE_BLOCK#` partition-key prefix and filters by `taskId`.
 
 ---
 
@@ -508,12 +796,13 @@ curl -c cookies.txt -s -X POST "{API_URL}/api/auth/login" \
 # List activities (sends cookies)
 curl -b cookies.txt "{API_URL}/api/activities"
 
-# Tasks for a day
-curl -b cookies.txt "{API_URL}/api/tasks?date=2026-07-22"
-
-# Tasks for a week
+# Schedule blocks for a day
 curl -b cookies.txt \
-  "{API_URL}/api/tasks?from=2026-07-21&to=2026-07-27"
+  "{API_URL}/api/schedule-blocks?date=2026-07-22"
+
+# Schedule blocks in an instant range
+curl -b cookies.txt \
+  "{API_URL}/api/schedule-blocks?from=2026-07-21T00%3A00%3A00.000Z&to=2026-07-28T00%3A00%3A00.000Z"
 
 # Refresh session (rotates cookies)
 curl -c cookies.txt -b cookies.txt -s -X POST "{API_URL}/api/auth/refresh" \

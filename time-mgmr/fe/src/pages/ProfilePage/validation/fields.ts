@@ -4,13 +4,9 @@ export const PROFILE_FORM_FIELDS = {
     email: 'email',
     phone: 'phone',
   },
-  work: {
-    company: 'company',
-    linkedinLink: 'linkedinLink',
-    githubLink: 'githubLink',
-  },
-  interests: {
-    list: 'interests',
-    value: 'value',
+  password: {
+    currentPassword: 'currentPassword',
+    newPassword: 'newPassword',
+    confirmPassword: 'confirmPassword',
   },
 } as const;

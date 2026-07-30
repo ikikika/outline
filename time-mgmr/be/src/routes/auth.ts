@@ -9,10 +9,12 @@ import {
 import { verifyAccessToken } from '../lib/jwt.js';
 import {
 	AuthError,
+	changePassword,
 	getCurrentUser,
 	login,
 	logout,
 	refreshSession,
+	updateCurrentUser,
 } from '../services/authService.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -31,7 +33,14 @@ export function registerAuthRoutes(app: Hono): void {
 				refreshToken: response.refreshToken,
 			});
 
-			return c.json({ user: response.user });
+			// Also return tokens in JSON so SPAs on a different origin (e.g. iOS
+			// Safari / Home Screen PWAs) can use Authorization Bearer when
+			// third-party cookies are blocked.
+			return c.json({
+				user: response.user,
+				token: response.token,
+				refreshToken: response.refreshToken,
+			});
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, error.status as 400 | 401);
@@ -47,6 +56,60 @@ export function registerAuthRoutes(app: Hono): void {
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, 401);
+			}
+			throw error;
+		}
+	});
+
+	app.patch('/auth/me', authMiddleware, async (c) => {
+		try {
+			const body = await c.req.json<{
+				timeZone?: string;
+				themePreference?: string;
+				timetableVisibleStart?: string;
+				timetableVisibleEnd?: string;
+			}>();
+			const user = await updateCurrentUser(c.get('userId'), {
+				...(typeof body.timeZone === 'string' ? { timeZone: body.timeZone } : {}),
+				...(typeof body.themePreference === 'string'
+					? {
+							themePreference: body.themePreference as
+								| 'light'
+								| 'dark'
+								| 'velvet'
+								| 'system',
+						}
+					: {}),
+				...(typeof body.timetableVisibleStart === 'string'
+					? { timetableVisibleStart: body.timetableVisibleStart }
+					: {}),
+				...(typeof body.timetableVisibleEnd === 'string'
+					? { timetableVisibleEnd: body.timetableVisibleEnd }
+					: {}),
+			});
+			return c.json(user);
+		} catch (error) {
+			if (error instanceof AuthError) {
+				return c.json({ error: error.message }, error.status as 400 | 401);
+			}
+			throw error;
+		}
+	});
+
+	app.post('/auth/change-password', authMiddleware, async (c) => {
+		try {
+			const body = await c.req.json<{
+				currentPassword?: string;
+				newPassword?: string;
+			}>();
+			await changePassword(c.get('userId'), {
+				currentPassword: typeof body.currentPassword === 'string' ? body.currentPassword : '',
+				newPassword: typeof body.newPassword === 'string' ? body.newPassword : '',
+			});
+			return c.json({ ok: true });
+		} catch (error) {
+			if (error instanceof AuthError) {
+				return c.json({ error: error.message }, error.status as 400 | 401);
 			}
 			throw error;
 		}
@@ -74,7 +137,11 @@ export function registerAuthRoutes(app: Hono): void {
 				refreshToken: response.refreshToken,
 			});
 
-			return c.json({ ok: true });
+			return c.json({
+				ok: true,
+				token: response.token,
+				refreshToken: response.refreshToken,
+			});
 		} catch (error) {
 			if (error instanceof AuthError) {
 				return c.json({ error: error.message }, error.status as 400 | 401);

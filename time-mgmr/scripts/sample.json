@@ -1,3211 +1,791 @@
 {
 	"results": [
 		{
-			"_class": "lecture",
-			"id": 11482928,
-			"title": "Mapping Existing Knowledge",
-			"created": "2018-08-22T02:51:55Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933026,
-				"asset_type": "Video",
-				"title": "158 - Mapping Existing Knowledge.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "158-Mapping-Existing-Knowledge.mov",
-				"time_estimation": 457
-			},
-			"sort_order": 163,
-			"object_index": 180,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 19125114,
-			"title": "Quick Note to Prevent an Error",
-			"created": "2020-04-16T23:26:15Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 23734426,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 37
-			},
-			"sort_order": 162,
-			"object_index": 181,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482930,
-			"title": "Adding Configuration Files",
-			"created": "2018-08-22T02:51:59Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933028,
-				"asset_type": "Video",
-				"title": "159 - Adding Configuration Files.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "159-Adding-Configuration-Files.mov",
-				"time_estimation": 411
-			},
-			"sort_order": 161,
-			"object_index": 182,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482932,
-			"title": "Object Types and API Versions",
-			"created": "2018-08-22T02:52:03Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933022,
-				"asset_type": "Video",
-				"title": "160 - Object Types and API Versions.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "160-Object-Types-and-API-Versions.mov",
-				"time_estimation": 415
-			},
-			"sort_order": 160,
-			"object_index": 183,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482934,
-			"title": "Running Containers in Pods",
-			"created": "2018-08-22T02:52:06Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933030,
-				"asset_type": "Video",
-				"title": "161 - Running Containers in Pods.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "161-Running-Containers-in-Pods.mov",
-				"time_estimation": 558
-			},
-			"sort_order": 159,
-			"object_index": 184,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "quiz",
-			"id": 5161070,
-			"title": "Gotcha Around Images Used in Pods",
-			"type": "simple-quiz",
-			"is_published": true,
-			"sort_order": 158,
-			"object_index": 10
-		},
-		{
-			"_class": "lecture",
-			"id": 11482938,
-			"title": "Service Config Files in Depth",
-			"created": "2018-08-22T02:52:10Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933016,
-				"asset_type": "Video",
-				"title": "162 - Service Config Files in Depth.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "162-Service-Config-Files-in-Depth.mov",
-				"time_estimation": 817
-			},
-			"sort_order": 157,
-			"object_index": 185,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "quiz",
-			"id": 5157916,
-			"title": "Why Use Pod Labels?",
-			"type": "simple-quiz",
-			"is_published": true,
-			"sort_order": 156,
-			"object_index": 11
-		},
-		{
-			"_class": "lecture",
-			"id": 41990270,
-			"title": "Connecting to Running Containers",
-			"created": "2024-01-25T20:51:41Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 54209418,
-				"asset_type": "Video",
-				"title": "163-connecting-to-running-containers.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "163-connecting-to-running-containers.mp4",
-				"time_estimation": 624
-			},
-			"sort_order": 155,
-			"object_index": 186,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 54291164,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "195-connecting-to-running.zip",
-					"filename": "195-connecting-to-running.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11482942,
-			"title": "The Entire Deployment Flow",
-			"created": "2018-08-22T02:52:19Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933014,
-				"asset_type": "Video",
-				"title": "164 - The Entire Deployment Flow.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "164-The-Entire-Deployment-Flow.mov",
-				"time_estimation": 782
-			},
-			"sort_order": 154,
-			"object_index": 187,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482946,
-			"title": "Imperative vs Declarative Deployments",
-			"created": "2018-08-22T02:52:26Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933024,
-				"asset_type": "Video",
-				"title": "165 - Imperative vs Declarative Deployments.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "165-Imperative-vs-Declarative-Deployments.mov",
-				"time_estimation": 816
-			},
-			"sort_order": 153,
-			"object_index": 188,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "quiz",
-			"id": 5161792,
-			"title": "Kubernetes Config Files",
-			"type": "simple-quiz",
-			"is_published": true,
-			"sort_order": 152,
-			"object_index": 12
-		},
-		{
 			"_class": "chapter",
-			"id": 2709010,
-			"sort_order": 151,
-			"title": "Maintaining Sets of Containers with Deployments",
-			"is_published": true,
-			"object_index": 13
-		},
-		{
-			"_class": "lecture",
-			"id": 11482954,
-			"title": "Updating Existing Objects",
-			"created": "2018-08-22T02:54:24Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932982,
-				"asset_type": "Video",
-				"title": "166 - Updating Existing Objects.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "166-Updating-Existing-Objects.mov",
-				"time_estimation": 370
-			},
-			"sort_order": 150,
-			"object_index": 189,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482956,
-			"title": "Declarative Updates in Action",
-			"created": "2018-08-22T02:54:28Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932994,
-				"asset_type": "Video",
-				"title": "167 - Declarative Updates in Action.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "167-Declarative-Updates-in-Action.mov",
-				"time_estimation": 424
-			},
-			"sort_order": 149,
-			"object_index": 190,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482958,
-			"title": "Limitations in Config Updates",
-			"created": "2018-08-22T02:54:32Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932980,
-				"asset_type": "Video",
-				"title": "168 - Limitations in Config Updates.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "168-Limitations-in-Config-Updates.mov",
-				"time_estimation": 175
-			},
-			"sort_order": 148,
-			"object_index": 191,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482960,
-			"title": "Running Containers with Deployments",
-			"created": "2018-08-22T02:54:36Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932986,
-				"asset_type": "Video",
-				"title": "169 - Running Containers with Deployments.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "169-Running-Containers-with-Deployments.mov",
-				"time_estimation": 363
-			},
-			"sort_order": 147,
-			"object_index": 192,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 19125388,
-			"title": "Quick Note to Prevent an Error",
-			"created": "2020-04-16T23:49:10Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 23734296,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 9
-			},
-			"sort_order": 146,
-			"object_index": 193,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482964,
-			"title": "Deployment Configuration Files",
-			"created": "2018-08-22T02:54:50Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932990,
-				"asset_type": "Video",
-				"title": "170 - Deployment Configuration Files.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "170-Deployment-Configuration-Files.mov",
-				"time_estimation": 198
-			},
-			"sort_order": 145,
-			"object_index": 194,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482966,
-			"title": "Walking Through the Deployment Config",
-			"created": "2018-08-22T02:54:55Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933002,
-				"asset_type": "Video",
-				"title": "171 - Walking Through the Deployment Config.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "171-Walking-Through-the-Deployment-Config.mov",
-				"time_estimation": 263
-			},
-			"sort_order": 144,
-			"object_index": 195,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11482968,
-			"title": "Applying a Deployment",
-			"created": "2018-08-22T02:54:58Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933006,
-				"asset_type": "Video",
-				"title": "172 - Applying a Deployment.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "172-Applying-a-Deployment.mov",
-				"time_estimation": 382
-			},
-			"sort_order": 143,
-			"object_index": 196,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 28664123,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "205-adding-deployment.zip",
-					"filename": "205-adding-deployment.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11482970,
-			"title": "Why Use Services?",
-			"created": "2018-08-22T02:55:02Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932996,
-				"asset_type": "Video",
-				"title": "173 - Why Use Services?.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "173-Why-Use-Services.mov",
-				"time_estimation": 319
-			},
-			"sort_order": 142,
-			"object_index": 197,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "quiz",
-			"id": 5161156,
-			"title": "Important Notes on Services",
-			"type": "simple-quiz",
-			"is_published": true,
-			"sort_order": 141,
-			"object_index": 13
-		},
-		{
-			"_class": "lecture",
-			"id": 11482974,
-			"title": "Scaling and Changing Deployments",
-			"created": "2018-08-22T02:55:06Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13933000,
-				"asset_type": "Video",
-				"title": "174 - Scaling and Changing Deployments.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "174-Scaling-and-Changing-Deployments.mov",
-				"time_estimation": 391
-			},
-			"sort_order": 140,
-			"object_index": 198,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 28664125,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "207-scaling-and-changing.zip",
-					"filename": "207-scaling-and-changing.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11482978,
-			"title": "Updating Deployment Images",
-			"created": "2018-08-22T02:55:10Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932992,
-				"asset_type": "Video",
-				"title": "175 - Updating Deployment Images.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "175-Updating-Deployment-Images.mov",
-				"time_estimation": 237
-			},
-			"sort_order": 139,
-			"object_index": 199,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 28664129,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "208-updating-deployment.zip",
-					"filename": "208-updating-deployment.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11482980,
-			"title": "Rebuilding the Client Image",
-			"created": "2018-08-22T02:55:14Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932998,
-				"asset_type": "Video",
-				"title": "176 - Rebuilding the Client Image.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "176-Rebuilding-the-Client-Image.mov",
-				"time_estimation": 179
-			},
-			"sort_order": 138,
-			"object_index": 200,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 47062176,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "209-rebuilding-client.zip",
-					"filename": "209-rebuilding-client.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 47062182,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "209-client-directory.zip",
-					"filename": "209-client-directory.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11482982,
-			"title": "Triggering Deployment Updates",
-			"created": "2018-08-22T02:55:26Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932984,
-				"asset_type": "Video",
-				"title": "177 - [Link GH issue 33664] Triggering Deployment Updates.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "177-Link-GH-issue-33664-Triggering-Deployment-Updates.mov",
-				"time_estimation": 744
-			},
-			"sort_order": 137,
-			"object_index": 201,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 28664147,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "210-triggering-deployment.zip",
-					"filename": "210-triggering-deployment.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 45347396,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "210-client-directory.zip",
-					"filename": "210-client-directory.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11482984,
-			"title": "Imperatively Updating a Deployment's Image",
-			"created": "2018-08-22T02:55:32Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13932988,
-				"asset_type": "Video",
-				"title": "178 - Imperatively Updating a Deployment's Image.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "178-Imperatively-Updating-a-Deployments-Image.mov",
-				"time_estimation": 444
-			},
-			"sort_order": 136,
-			"object_index": 202,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 28664153,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "211-imperatively-updating.zip",
-					"filename": "211-imperatively-updating.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 47062184,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "211-client-directory.zip",
-					"filename": "211-client-directory.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 22875417,
-			"title": "Reminder for Docker Desktop's Kubernetes Users",
-			"created": "2020-10-20T23:12:39Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 28664195,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 12
-			},
-			"sort_order": 135,
-			"object_index": 203,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11500786,
-			"title": "Multiple Docker Installations",
-			"created": "2018-08-23T14:37:38Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944070,
-				"asset_type": "Video",
-				"title": "179 - Multiple Docker Installations.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "179-Multiple-Docker-Installations.mov",
-				"time_estimation": 337
-			},
-			"sort_order": 134,
-			"object_index": 204,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11500788,
-			"title": "Reconfiguring Docker CLI",
-			"created": "2018-08-23T14:37:42Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944068,
-				"asset_type": "Video",
-				"title": "180 - Reconfiguring Docker CLI.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "180-Reconfiguring-Docker-CLI.mov",
-				"time_estimation": 357
-			},
-			"sort_order": 133,
-			"object_index": 205,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11500790,
-			"title": "Why Mess with Docker in the Node?",
-			"created": "2018-08-23T14:37:47Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944072,
-				"asset_type": "Video",
-				"title": "181 - Why Mess with Docker in the Node?.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "181-Why-Mess-with-Docker-in-the-Node.mov",
-				"time_estimation": 305
-			},
-			"sort_order": 132,
-			"object_index": 206,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "chapter",
-			"id": 2712702,
-			"sort_order": 131,
-			"title": "A Multi-Container App with Kubernetes",
-			"is_published": true,
-			"object_index": 14
-		},
-		{
-			"_class": "lecture",
-			"id": 11500808,
-			"title": "The Path to Production",
-			"created": "2018-08-23T14:38:47Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944078,
-				"asset_type": "Video",
-				"title": "182 - [PUT ZIP AFTER ME] The Path to Production.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "182-PUT-ZIP-AFTER-ME-The-Path-to-Production.mov",
-				"time_estimation": 312
-			},
-			"sort_order": 130,
-			"object_index": 207,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11500810,
-			"title": "Checkpoint Files",
-			"created": "2018-08-23T14:38:51Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 57650049,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 42
-			},
-			"sort_order": 129,
-			"object_index": 208,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 65225879,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "208-checkpoint.zip",
-					"filename": "208-checkpoint.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11500814,
-			"title": "A Quick Checkpoint",
-			"created": "2018-08-23T14:38:54Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944080,
-				"asset_type": "Video",
-				"title": "183 - A Quick Checkpoint.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "183-A-Quick-Checkpoint.mov",
-				"time_estimation": 275
-			},
-			"sort_order": 128,
-			"object_index": 209,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11500816,
-			"title": "Recreating the Deployment",
-			"created": "2018-08-23T14:38:57Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944082,
-				"asset_type": "Video",
-				"title": "184 - Recreating the Deployment.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "184-Recreating-the-Deployment.mov",
-				"time_estimation": 329
-			},
-			"sort_order": 127,
-			"object_index": 210,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11500820,
-			"title": "NodePort vs ClusterIP Services",
-			"created": "2018-08-23T14:39:04Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944074,
-				"asset_type": "Video",
-				"title": "185 - NodePort vs ClusterIP Services.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "185-NodePort-vs-ClusterIP-Services.mov",
-				"time_estimation": 221
-			},
-			"sort_order": 126,
-			"object_index": 211,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11500824,
-			"title": "The ClusterIP Config",
-			"created": "2018-08-23T14:39:07Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944076,
-				"asset_type": "Video",
-				"title": "186 - The ClusterIP Config.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "186-The-ClusterIP-Config.mov",
-				"time_estimation": 232
-			},
-			"sort_order": 125,
-			"object_index": 212,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 48959284,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "210-clusterip.zip",
-					"filename": "210-clusterip.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11500828,
-			"title": "Applying Multiple Files with Kubectl",
-			"created": "2018-08-23T14:39:14Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13944084,
-				"asset_type": "Video",
-				"title": "187 - Applying Multiple Files with Kubectl.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "187-Applying-Multiple-Files-with-Kubectl.mov",
-				"time_estimation": 258
-			},
-			"sort_order": 124,
-			"object_index": 213,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11514726,
-			"title": "Express API Deployment Config",
-			"created": "2018-08-24T15:21:44Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967476,
-				"asset_type": "Video",
-				"title": "188 - Express API Deployment Config.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "188-Express-API-Deployment-Config.mov",
-				"time_estimation": 362
-			},
-			"sort_order": 123,
-			"object_index": 214,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11514728,
-			"title": "Cluster IP for the Express API",
-			"created": "2018-08-24T15:21:48Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967486,
-				"asset_type": "Video",
-				"title": "189 - Cluster IP for the Express API.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "189-Cluster-IP-for-the-Express-API.mov",
-				"time_estimation": 188
-			},
-			"sort_order": 122,
-			"object_index": 215,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11514730,
-			"title": "Combining Config Into Single Files",
-			"created": "2018-08-24T15:22:05Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967470,
-				"asset_type": "Video",
-				"title": "190 - Combining Config Into Single Files.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "190-Combining-Config-Into-Single-Files.mov",
-				"time_estimation": 359
-			},
-			"sort_order": 121,
-			"object_index": 216,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11514734,
-			"title": "The Worker Deployment",
-			"created": "2018-08-24T15:22:10Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967484,
-				"asset_type": "Video",
-				"title": "191 - The Worker Deployment.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "191-The-Worker-Deployment.mov",
-				"time_estimation": 276
-			},
-			"sort_order": 120,
-			"object_index": 217,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11514736,
-			"title": "Reapplying a Batch of Config Files",
-			"created": "2018-08-24T15:22:15Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967478,
-				"asset_type": "Video",
-				"title": "192 - Reapplying a Batch of Config Files.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "192-Reapplying-a-Batch-of-Config-Files.mov",
-				"time_estimation": 291
-			},
-			"sort_order": 119,
-			"object_index": 218,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 64921397,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "218-reapplying.zip",
-					"filename": "218-reapplying.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11514740,
-			"title": "Creating and Applying Redis Config",
-			"created": "2018-08-24T15:22:20Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967474,
-				"asset_type": "Video",
-				"title": "193 - Creating and Applying Redis Config.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "193-Creating-and-Applying-Redis-Config.mov",
-				"time_estimation": 446
-			},
-			"sort_order": 118,
-			"object_index": 219,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 64921403,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "219-creating.zip",
-					"filename": "219-creating.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 19399692,
-			"title": "Important Note about Expected Postgres Error",
-			"created": "2020-04-28T02:47:21Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 36715864,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 59
-			},
-			"sort_order": 117,
-			"object_index": 220,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11514744,
-			"title": "Last Set of Boring Config!",
-			"created": "2018-08-24T15:22:24Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967482,
-				"asset_type": "Video",
-				"title": "194 - Last Set of Boring Config!.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "194-Last-Set-of-Boring-Config.mov",
-				"time_estimation": 374
-			},
-			"sort_order": 116,
-			"object_index": 221,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 64921407,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "221-last-set.zip",
-					"filename": "221-last-set.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11514746,
-			"title": "The Need for Volumes with Databases",
-			"created": "2018-08-24T15:22:30Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967480,
-				"asset_type": "Video",
-				"title": "195 - The Need for Volumes with Databases.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "195-The-Need-for-Volumes-with-Databases.mov",
-				"time_estimation": 438
-			},
-			"sort_order": 115,
-			"object_index": 222,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11514748,
-			"title": "Kubernetes Volumes",
-			"created": "2018-08-24T15:22:34Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13967472,
-				"asset_type": "Video",
-				"title": "196 - Kubernetes Volumes.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "196-Kubernetes-Volumes.mov",
-				"time_estimation": 317
-			},
-			"sort_order": 114,
-			"object_index": 223,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582308,
-			"title": "Volumes vs Persistent Volumes",
-			"created": "2018-08-29T20:17:37Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971812,
-				"asset_type": "Video",
-				"title": "197 - Volumes vs Persistent Volumes.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "197-Volumes-vs-Persistent-Volumes.mov",
-				"time_estimation": 179
-			},
-			"sort_order": 113,
-			"object_index": 224,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582334,
-			"title": "Persistent Volumes vs Persistent Volume Claims",
-			"created": "2018-08-29T20:19:21Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971810,
-				"asset_type": "Video",
-				"title": "198 - Persistent Volumes vs Persistent Volume Claims.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "198-Persistent-Volumes-vs-Persistent-Volume-Claims.mov",
-				"time_estimation": 561
-			},
-			"sort_order": 112,
-			"object_index": 225,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582310,
-			"title": "Claim Config Files",
-			"created": "2018-08-29T20:17:42Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971808,
-				"asset_type": "Video",
-				"title": "199 - Claim Config Files.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "199-Claim-Config-Files.mov",
-				"time_estimation": 176
-			},
-			"sort_order": 111,
-			"object_index": 226,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582312,
-			"title": "Persistent Volume Access Modes",
-			"created": "2018-08-29T20:17:47Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971818,
-				"asset_type": "Video",
-				"title": "200 - Persistent Volume Access Modes.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "200-Persistent-Volume-Access-Modes.mov",
-				"time_estimation": 211
-			},
-			"sort_order": 110,
-			"object_index": 227,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582314,
-			"title": "Where Does Kubernetes Allocate Persistent Volumes?",
-			"created": "2018-08-29T20:17:56Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971822,
-				"asset_type": "Video",
-				"title": "201 - Where Does Kubernetes Allocate Persistent Volumes?.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "201-Where-Does-Kubernetes-Allocate-Persistent-Volumes.mov",
-				"time_estimation": 462
-			},
-			"sort_order": 109,
-			"object_index": 228,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 52982499,
-			"title": "Designating a PVC in a Pod Template",
-			"created": "2025-10-14T20:41:49Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 68792351,
-				"asset_type": "Video",
-				"title": "202-Designating-a-PVC-in-Pod-Template.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "202-Designating-a-PVC-in-Pod-Template.mp4",
-				"time_estimation": 369
-			},
-			"sort_order": 108,
-			"object_index": 229,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582320,
-			"title": "Applying a PVC",
-			"created": "2018-08-29T20:18:05Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971830,
-				"asset_type": "Video",
-				"title": "203 - Applying a PVC.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "203-Applying-a-PVC.mov",
-				"time_estimation": 142
-			},
-			"sort_order": 106,
-			"object_index": 230,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811163,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "230-applying.zip",
-					"filename": "230-applying.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11582322,
-			"title": "Defining Environment Variables",
-			"created": "2018-08-29T20:18:11Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971826,
-				"asset_type": "Video",
-				"title": "204 - Defining Environment Variables.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "204-Defining-Environment-Variables.mov",
-				"time_estimation": 248
-			},
-			"sort_order": 105,
-			"object_index": 231,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582324,
-			"title": "Adding Environment Variables to Config",
-			"created": "2018-08-29T20:18:16Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971816,
-				"asset_type": "Video",
-				"title": "205 - Adding Environment Variables to Config.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "205-Adding-Environment-Variables-to-Config.mov",
-				"time_estimation": 344
-			},
-			"sort_order": 104,
-			"object_index": 232,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582326,
-			"title": "Creating an Encoded Secret",
-			"created": "2018-08-29T20:18:20Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971828,
-				"asset_type": "Video",
-				"title": "206 - Creating an Encoded Secret.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "206-Creating-an-Encoded-Secret.mov",
-				"time_estimation": 565
-			},
-			"sort_order": 103,
-			"object_index": 233,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 18122883,
-			"title": "Postgres Environment Variable Fix",
-			"created": "2020-02-20T03:42:06Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 28470659,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 14
-			},
-			"sort_order": 102,
-			"object_index": 234,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582328,
-			"title": "Passing Secrets as Environment Variables",
-			"created": "2018-08-29T20:18:26Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971820,
-				"asset_type": "Video",
-				"title": "207 - Passing Secrets as Environment Variables.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "207-Passing-Secrets-as-Environment-Variables.mov",
-				"time_estimation": 353
-			},
-			"sort_order": 101,
-			"object_index": 235,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582330,
-			"title": "Environment Variables as Strings",
-			"created": "2018-08-29T20:18:33Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971824,
-				"asset_type": "Video",
-				"title": "208 - Environment Variables as Strings.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "208-Environment-Variables-as-Strings.mov",
-				"time_estimation": 137
-			},
-			"sort_order": 100,
-			"object_index": 236,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811165,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "236-environment.zip",
-					"filename": "236-environment.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "chapter",
-			"id": 2730282,
-			"sort_order": 99,
-			"title": "Handling Traffic with Ingress Controllers",
-			"is_published": true,
-			"object_index": 15
-		},
-		{
-			"_class": "lecture",
-			"id": 11582340,
-			"title": "Load Balancer Services",
-			"created": "2018-08-29T20:20:59Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971832,
-				"asset_type": "Video",
-				"title": "209 - Load Balancer Services.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "209-Load-Balancer-Services.mov",
-				"time_estimation": 254
-			},
-			"sort_order": 98,
-			"object_index": 237,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582342,
-			"title": "A Quick Note on Ingresses",
-			"created": "2018-08-29T20:21:03Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971836,
-				"asset_type": "Video",
-				"title": "210 - A Quick Note on Ingresses.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "210-A-Quick-Note-on-Ingresses.mov",
-				"time_estimation": 212
-			},
-			"sort_order": 97,
-			"object_index": 238,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582344,
-			"title": "One Other Quick Note!",
-			"created": "2018-08-29T20:21:07Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 13971834,
-				"asset_type": "Video",
-				"title": "211 - One Other Quick Note.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "211-One-Other-Quick-Note.mov",
-				"time_estimation": 97
-			},
-			"sort_order": 96,
-			"object_index": 239,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582346,
-			"title": "Behind the Scenes of Ingress",
-			"created": "2018-08-29T20:21:12Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088048,
-				"asset_type": "Video",
-				"title": "212 - Behind the Scenes of Ingress.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "212-Behind-the-Scenes-of-Ingress.mov",
-				"time_estimation": 317
-			},
-			"sort_order": 95,
-			"object_index": 240,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11582348,
-			"title": "More Behind the Scenes of Ingress",
-			"created": "2018-08-29T20:21:17Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088058,
-				"asset_type": "Video",
-				"title": "213 - More Behind the Scenes of Ingress.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "213-More-Behind-the-Scenes-of-Ingress.mov",
-				"time_estimation": 397
-			},
-			"sort_order": 94,
-			"object_index": 241,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11639804,
-			"title": "Optional Reading on Ingress Nginx",
-			"created": "2018-09-03T15:02:33Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14110052,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 9
-			},
-			"sort_order": 93,
-			"object_index": 242,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 21475302,
-			"title": "Docker Driver  and Ingress - IMPORTANT",
-			"created": "2020-08-04T22:56:08Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 39644520,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 37
-			},
-			"sort_order": 92,
-			"object_index": 243,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 42750686,
-			"title": "Setting Up Ingress Locally with Docker Desktop",
-			"created": "2024-03-11T22:37:53Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 55236062,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 17
-			},
-			"sort_order": 91,
-			"object_index": 244,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 42750318,
-			"title": "Setting  Up Ingress Locally with Minikube",
-			"created": "2024-03-11T22:08:52Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 55235432,
-				"asset_type": "Video",
-				"title": "214-setting-up-ingress-locally.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "214-setting-up-ingress-locally.mp4",
-				"time_estimation": 126
-			},
-			"sort_order": 90,
-			"object_index": 245,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 14520632,
-			"title": "Ingress API Update + \"this.state.seenIndexes.map...\" + 404 errors",
-			"created": "2019-04-25T21:52:51Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 52561914,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 52
-			},
-			"sort_order": 88,
-			"object_index": 246,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 52561940,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "ingress-service.yaml.zip",
-					"filename": "ingress-service.yaml.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 11582352,
-			"title": "Creating the Ingress Configuration",
-			"created": "2018-08-29T20:21:24Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088050,
-				"asset_type": "Video",
-				"title": "215 - Creating the Ingress Config.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "215-Creating-the-Ingress-Config.mov",
-				"time_estimation": 420
-			},
-			"sort_order": 87,
-			"object_index": 247,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 41990902,
-			"title": "Testing Ingress Locally",
-			"created": "2024-01-25T22:00:30Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 54210982,
-				"asset_type": "Video",
-				"title": "216-testing-ingress.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "216-testing-ingress.mp4",
-				"time_estimation": 170
-			},
-			"sort_order": 86,
-			"object_index": 248,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811171,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "248-testing.zip",
-					"filename": "248-testing.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "chapter",
-			"id": 2740122,
-			"sort_order": 83,
-			"title": "Kubernetes Production Deployment",
-			"is_published": true,
-			"object_index": 16
-		},
-		{
-			"_class": "lecture",
-			"id": 11628194,
-			"title": "The Deployment Process",
-			"created": "2018-09-02T14:11:55Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088126,
-				"asset_type": "Video",
-				"title": "217 - The Deployment Process.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "217-The-Deployment-Process.mov",
-				"time_estimation": 349
-			},
-			"sort_order": 82,
-			"object_index": 249,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628196,
-			"title": "Google Cloud vs AWS for Kubernetes",
-			"created": "2018-09-02T14:12:05Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088078,
-				"asset_type": "Video",
-				"title": "218 - Google Cloud vs AWS for Kubernetes.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "218-Google-Cloud-vs-AWS-for-Kubernetes.mov",
-				"time_estimation": 293
-			},
-			"sort_order": 81,
-			"object_index": 250,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628200,
-			"title": "Creating a Git Repo",
-			"created": "2018-09-02T14:12:07Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088088,
-				"asset_type": "Video",
-				"title": "219 - Creating a Git Repo.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "219-Creating-a-Git-Repo.mov",
-				"time_estimation": 239
-			},
-			"sort_order": 80,
-			"object_index": 251,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628202,
-			"title": "Linking the Github Repo to Travis",
-			"created": "2018-09-02T14:12:12Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088104,
-				"asset_type": "Video",
-				"title": "220 - Linking the Github Repo to Travis.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "220-Linking-the-Github-Repo-to-Travis.mov",
-				"time_estimation": 95
-			},
-			"sort_order": 79,
-			"object_index": 252,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 12084242,
-			"title": "Free Google Cloud Trial and Credits",
-			"created": "2018-10-09T16:44:39Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 62995483,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 17
-			},
-			"sort_order": 78,
-			"object_index": 253,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628204,
-			"title": "Creating a Google Cloud Project",
-			"created": "2018-09-02T14:12:17Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088134,
-				"asset_type": "Video",
-				"title": "221 - Creating a Google Cloud Project.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "221-Creating-a-Google-Cloud-Project.mov",
-				"time_estimation": 119
-			},
-			"sort_order": 77,
-			"object_index": 254,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628206,
-			"title": "Linking a Billing Account",
-			"created": "2018-09-02T14:12:21Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088132,
-				"asset_type": "Video",
-				"title": "222 - Linking a Billing Account.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "222-Linking-a-Billing-Account.mov",
-				"time_estimation": 131
-			},
-			"sort_order": 76,
-			"object_index": 255,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 52432781,
-			"title": "GKE Creation Steps Using Autopilot",
-			"created": "2025-09-11T00:40:19Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 68074323,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 84
-			},
-			"sort_order": 74,
-			"object_index": 256,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628314,
-			"title": "Kubernetes Dashboard on Google Cloud",
-			"created": "2018-09-02T14:18:17Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088130,
-				"asset_type": "Video",
-				"title": "225 - Kubernetes Dashboard on Google Cloud.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "225-Kubernetes-Dashboard-on-Google-Cloud.mov",
-				"time_estimation": 273
-			},
-			"sort_order": 70,
-			"object_index": 257,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628214,
-			"title": "Travis Deployment Overview",
-			"created": "2018-09-02T14:12:38Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088118,
-				"asset_type": "Video",
-				"title": "226 - Travis Deployment Overview.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "226-Travis-Deployment-Overview.mov",
-				"time_estimation": 304
-			},
-			"sort_order": 69,
-			"object_index": 258,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 50723123,
-			"title": "Installing the Google Cloud SDK",
-			"created": "2025-06-06T18:35:39Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 65738167,
-				"asset_type": "Video",
-				"title": "227-installing-google-cloud-sdk.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "227-installing-google-cloud-sdk.mp4",
-				"time_estimation": 344
-			},
-			"sort_order": 68,
-			"object_index": 259,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 25408376,
-			"title": "Updated Service Account steps for new GCP UI",
-			"created": "2021-03-12T01:35:52Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 32066112,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 49
-			},
-			"sort_order": 66,
-			"object_index": 260,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628218,
-			"title": "Generating a Service Account",
-			"created": "2018-09-02T14:12:50Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088116,
-				"asset_type": "Video",
-				"title": "228 - Generating a Service Account.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "228-Generating-a-Service-Account.mov",
-				"time_estimation": 329
-			},
-			"sort_order": 65,
-			"object_index": 261,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 18296716,
-			"title": "Ruby Version Fix",
-			"created": "2020-03-05T00:43:32Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 44319296,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 17
-			},
-			"sort_order": 64,
-			"object_index": 262,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628220,
-			"title": "Running Travis CLI in a Container",
-			"created": "2018-09-02T14:12:55Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088112,
-				"asset_type": "Video",
-				"title": "229 - Running Travis CLI in a Container.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "229-Running-Travis-CLI-in-a-Container.mov",
-				"time_estimation": 557
-			},
-			"sort_order": 63,
-			"object_index": 263,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 17886124,
-			"title": "Travis Login Issues, \"iv undefined\" or \"repository not known\"",
-			"created": "2020-01-31T23:33:00Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 30536758,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 54
-			},
-			"sort_order": 62,
-			"object_index": 264,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628228,
-			"title": "Encrypting a Service Account File",
-			"created": "2018-09-02T14:13:02Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088074,
-				"asset_type": "Video",
-				"title": "230 - Encrypting a Service Account File.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "230-Encrypting-a-Service-Account-File.mov",
-				"time_estimation": 474
-			},
-			"sort_order": 61,
-			"object_index": 265,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 52448957,
-			"title": "More Google Cloud CLI Config",
-			"created": "2025-09-11T22:46:00Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 68074155,
-				"asset_type": "Video",
-				"title": "231-More-Google-Cloud-CLI-Config.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "231-More-Google-Cloud-CLI-Config.mp4",
-				"time_estimation": 279
-			},
-			"sort_order": 60,
-			"object_index": 266,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 50725299,
-			"title": "Running Tests with Travis",
-			"created": "2025-06-06T22:30:10Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 65741395,
-				"asset_type": "Video",
-				"title": "232-running-tests-travis.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "232-running-tests-travis.mp4",
-				"time_estimation": 378
-			},
-			"sort_order": 58,
-			"object_index": 267,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628234,
-			"title": "Custom Deployment Providers",
-			"created": "2018-09-02T14:13:16Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088106,
-				"asset_type": "Video",
-				"title": "233 - Custom Deployment Providers.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "233-Custom-Deployment-Providers.mov",
-				"time_estimation": 229
-			},
-			"sort_order": 56,
-			"object_index": 268,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628252,
-			"title": "Unique Deployment Images",
-			"created": "2018-09-02T14:14:27Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088086,
-				"asset_type": "Video",
-				"title": "182 - Unique Deployment Images.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "182-Unique-Deployment-Images.mov",
-				"time_estimation": 513
-			},
-			"sort_order": 55,
-			"object_index": 269,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628236,
-			"title": "Unique Tags for Built Images",
-			"created": "2018-09-02T14:13:20Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088128,
-				"asset_type": "Video",
-				"title": "234 - Unique Tags for Built Images.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "234-Unique-Tags-for-Built-Images.mov",
-				"time_estimation": 467
-			},
-			"sort_order": 54,
-			"object_index": 270,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628262,
-			"title": "Updating the Deployment Script",
-			"created": "2018-09-02T14:15:38Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088108,
-				"asset_type": "Video",
-				"title": "235 - Updating the Deployment Script.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "235-Updating-the-Deployment-Script.mov",
-				"time_estimation": 470
-			},
-			"sort_order": 53,
-			"object_index": 271,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811175,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "273-updating-gh.zip",
-					"filename": "273-updating-gh.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 68811183,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "273-updating-travis.zip",
-					"filename": "273-updating-travis.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 52449043,
-			"title": "Configuring the GCloud CLI on Cloud Console",
-			"created": "2025-09-11T22:56:23Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 68074153,
-				"asset_type": "Video",
-				"title": "236- Configuring-the-GCloud-CLI-on-Cloud-Console.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "236-Configuring-the-GCloud-CLI-on-Cloud-Console.mp4",
-				"time_estimation": 334
-			},
-			"sort_order": 51,
-			"object_index": 272,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11628268,
-			"title": "Creating a Secret on Google Cloud",
-			"created": "2018-09-02T14:15:54Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088082,
-				"asset_type": "Video",
-				"title": "237 - Creating a Secret on Google Cloud.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "237-Creating-a-Secret-on-Google-Cloud.mov",
-				"time_estimation": 144
-			},
-			"sort_order": 50,
-			"object_index": 273,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 40954462,
-			"title": "Helm Setup",
-			"created": "2023-11-21T20:06:29Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 52864722,
-				"asset_type": "Video",
-				"title": "238-helm-setup.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "238-helm-setup.mp4",
-				"time_estimation": 374
-			},
-			"sort_order": 49,
-			"object_index": 274,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 52861818,
-					"is_external": true,
-					"time_estimation": 0,
-					"title": "Install Commands",
-					"filename": "Install-Commands",
-					"status": 1,
-					"asset_type": "ExternalLink"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 40955164,
-			"title": "Important - Updated Ingress Installation with Helm",
-			"created": "2023-11-21T21:22:47Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 52882518,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 16
-			},
-			"sort_order": 48,
-			"object_index": 275,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 52863766,
-					"is_external": true,
-					"time_estimation": 0,
-					"title": "Ingress Nginx w/ Helm Docs",
-					"filename": "Ingress-Nginx-w-Helm-Docs",
-					"status": 1,
-					"asset_type": "ExternalLink"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 40956610,
-			"title": "Ingress-Nginx with Helm",
-			"created": "2023-11-22T00:11:17Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 52865986,
-				"asset_type": "Video",
-				"title": "241-ingress-nginx-with-helm.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "241-ingress-nginx-with-helm.mp4",
-				"time_estimation": 116
-			},
+			"id": 13359427,
 			"sort_order": 47,
-			"object_index": 276,
-			"supplementary_assets": []
+			"title": "Introduction",
+			"is_published": true,
+			"object_index": 1
 		},
 		{
 			"_class": "lecture",
-			"id": 40954804,
-			"title": "The Result of Ingress-Nginx",
-			"created": "2023-11-21T20:30:31Z",
+			"id": 56519473,
+			"title": "Introduction & Resources",
+			"created": "2026-06-07T14:54:39Z",
 			"is_published": true,
-			"is_free": false,
+			"is_free": true,
 			"asset": {
 				"_class": "asset",
-				"id": 52863994,
+				"id": 73917527,
 				"asset_type": "Video",
-				"title": "242-result-of-ingress.mp4",
+				"title": "1-sdd-course-introduction.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "242-result-of-ingress.mp4",
-				"time_estimation": 227
+				"filename": "1-sdd-course-introduction.mp4",
+				"time_estimation": 182
 			},
 			"sort_order": 46,
-			"object_index": 277,
-			"supplementary_assets": []
+			"object_index": 1,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 73917591,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "spec-driven-development.zip",
+					"title": "spec-driven-development.zip",
+					"status": 1,
+					"time_estimation": 0
+				},
+				{
+					"_class": "asset",
+					"id": 73956355,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "design.md",
+					"title": "design.md",
+					"status": 1,
+					"time_estimation": 0
+				},
+				{
+					"_class": "asset",
+					"id": 73956363,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "requirements.md",
+					"title": "requirements.md",
+					"status": 1,
+					"time_estimation": 0
+				},
+				{
+					"_class": "asset",
+					"id": 73956369,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "tasks.md",
+					"title": "tasks.md",
+					"status": 1,
+					"time_estimation": 0
+				}
+			]
 		},
 		{
 			"_class": "lecture",
-			"id": 11628286,
-			"title": "Finally - Deployment!",
-			"created": "2018-09-02T14:16:20Z",
+			"id": 56519477,
+			"title": "Different ways to create software",
+			"created": "2026-06-07T14:55:17Z",
 			"is_published": true,
-			"is_free": false,
+			"is_free": true,
 			"asset": {
 				"_class": "asset",
-				"id": 14088100,
+				"id": 73698805,
 				"asset_type": "Video",
-				"title": "243 - Finally - Deployment!.mov",
+				"title": "1-sdd-ways-to-create-software.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "243-Finally-Deployment.mov",
-				"time_estimation": 210
+				"filename": "1-sdd-ways-to-create-software.mp4",
+				"time_estimation": 298
 			},
 			"sort_order": 45,
-			"object_index": 278,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811189,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "280-finally-gh.zip",
-					"filename": "280-finally-gh.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 68811195,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "280-finally-travis.zip",
-					"filename": "280-finally-travis.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
+			"object_index": 2,
+			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 11628290,
-			"title": "Did I Really Type That?",
-			"created": "2018-09-02T14:16:25Z",
+			"id": 56520383,
+			"title": "Vibe-coding vs Spec-driven development",
+			"created": "2026-06-07T16:21:13Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088114,
+				"id": 73713167,
 				"asset_type": "Video",
-				"title": "244 - Did I Really Type That?.mov",
+				"title": "1-sdd-vibe-coding-vs-sdd.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "244-Did-I-Really-Type-That.mov",
-				"time_estimation": 45
+				"filename": "1-sdd-vibe-coding-vs-sdd.mp4",
+				"time_estimation": 121
 			},
 			"sort_order": 44,
-			"object_index": 279,
+			"object_index": 3,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 11628292,
-			"title": "Verifying Deployment",
-			"created": "2018-09-02T14:16:30Z",
+			"id": 56532265,
+			"title": "What if we need to make a change?",
+			"created": "2026-06-08T13:33:29Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088110,
+				"id": 73714641,
 				"asset_type": "Video",
-				"title": "245 - Verifying Deployment.mov",
+				"title": "3-sdd-what-to-do-when-changes-happen.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "245-Verifying-Deployment.mov",
-				"time_estimation": 320
+				"filename": "3-sdd-what-to-do-when-changes-happen.mp4",
+				"time_estimation": 144
 			},
 			"sort_order": 43,
-			"object_index": 280,
+			"object_index": 4,
 			"supplementary_assets": []
 		},
 		{
-			"_class": "lecture",
-			"id": 11628294,
-			"title": "A Workflow for Changing in Prod",
-			"created": "2018-09-02T14:16:35Z",
+			"id": 41271,
+			"title": "Practice an Interview Question on Spec‑Driven Development",
 			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088102,
-				"asset_type": "Video",
-				"title": "246 - A Workflow for Changing in Prod.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "246-A-Workflow-for-Changing-in-Prod.mov",
-				"time_estimation": 269
-			},
+			"course_id": 7193647,
 			"sort_order": 42,
-			"object_index": 281,
-			"supplementary_assets": []
+			"object_index": 1,
+			"_class": "role-play"
 		},
 		{
-			"_class": "lecture",
-			"id": 11628296,
-			"title": "Merging a PR for Deployment",
-			"created": "2018-09-02T14:16:39Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088120,
-				"asset_type": "Video",
-				"title": "247 - Merging a PR for Deployment.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "247-Merging-a-PR-for-Deployment.mov",
-				"time_estimation": 61
-			},
+			"_class": "chapter",
+			"id": 13362361,
 			"sort_order": 41,
-			"object_index": 282,
-			"supplementary_assets": []
+			"title": "REST, GraphQL, and API Contracts",
+			"is_published": true,
+			"object_index": 2
 		},
 		{
 			"_class": "lecture",
-			"id": 11628302,
-			"title": "That's It!  What's Next?",
-			"created": "2018-09-02T14:16:45Z",
+			"id": 56533481,
+			"title": "You can spec any type of application",
+			"created": "2026-06-08T14:48:42Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088098,
+				"id": 73759969,
 				"asset_type": "Video",
-				"title": "248 - Thats It!  What's Next?.mov",
+				"title": "4-sdd-you-can-spec-any-software-v2.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "248-Thats-It-Whats-Next.mov",
-				"time_estimation": 97
+				"filename": "4-sdd-you-can-spec-any-software-v2.mp4",
+				"time_estimation": 270
 			},
 			"sort_order": 40,
-			"object_index": 283,
+			"object_index": 5,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 25408280,
-			"title": "Completed Code For Google Cloud Deployment",
-			"created": "2021-03-12T01:20:05Z",
+			"id": 56537601,
+			"title": "Introduction to REST API",
+			"created": "2026-06-08T20:25:23Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 32159744,
-				"asset_type": "Article",
-				"title": "",
+				"id": 73738247,
+				"asset_type": "Video",
+				"title": "5-sdd-rest-api-v2.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "",
-				"time_estimation": 3
+				"filename": "5-sdd-rest-api-v2.mp4",
+				"time_estimation": 337
 			},
 			"sort_order": 39,
-			"object_index": 284,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811199,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "286-completed-gh.zip",
-					"filename": "286-completed-gh.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 68811201,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "286-completed-travis.zip",
-					"filename": "286-completed-travis.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "chapter",
-			"id": 2740140,
-			"sort_order": 33,
-			"title": "HTTPS Setup with Kubernetes",
-			"is_published": true,
-			"object_index": 17
+			"object_index": 6,
+			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 11628340,
-			"title": "HTTPS Setup Overview",
-			"created": "2018-09-02T14:22:26Z",
+			"id": 56551393,
+			"title": "Introduction to GraphQL",
+			"created": "2026-06-09T18:02:59Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088158,
+				"id": 73742023,
 				"asset_type": "Video",
-				"title": "249 - HTTPS Setup Overview.mov",
+				"title": "6-sdd-graphql.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "249-HTTPS-Setup-Overview.mov",
-				"time_estimation": 335
+				"filename": "6-sdd-graphql.mp4",
+				"time_estimation": 204
+			},
+			"sort_order": 38,
+			"object_index": 7,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 56551405,
+			"title": "Introduction to API Contract",
+			"created": "2026-06-09T18:03:42Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73760145,
+				"asset_type": "Video",
+				"title": "6-sdd-api-contract-v2.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "6-sdd-api-contract-v2.mp4",
+				"time_estimation": 254
+			},
+			"sort_order": 37,
+			"object_index": 8,
+			"supplementary_assets": []
+		},
+		{
+			"id": 41309,
+			"title": "Practice an Interview Question on Spec‑Driven Development",
+			"is_published": true,
+			"course_id": 7193647,
+			"sort_order": 36,
+			"object_index": 2,
+			"_class": "role-play"
+		},
+		{
+			"_class": "chapter",
+			"id": 13370133,
+			"sort_order": 35,
+			"title": "Tools for Spec-Driven Development",
+			"is_published": true,
+			"object_index": 3
+		},
+		{
+			"_class": "lecture",
+			"id": 56567387,
+			"title": "Kiro",
+			"created": "2026-06-10T17:32:37Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73783437,
+				"asset_type": "Video",
+				"title": "8-sdd-tools-for-sdd-kiro.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "8-sdd-tools-for-sdd-kiro.mp4",
+				"time_estimation": 187
+			},
+			"sort_order": 34,
+			"object_index": 9,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 56582477,
+			"title": "GitHub Spec Kit",
+			"created": "2026-06-11T16:57:01Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73783441,
+				"asset_type": "Video",
+				"title": "8-sdd-tools-for-sdd-spec-kit.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "8-sdd-tools-for-sdd-spec-kit.mp4",
+				"time_estimation": 169
+			},
+			"sort_order": 33,
+			"object_index": 10,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 56582479,
+			"title": "BMAD",
+			"created": "2026-06-11T16:57:07Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73783461,
+				"asset_type": "Video",
+				"title": "8-sdd-tools-for-sdd-bmad.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "8-sdd-tools-for-sdd-bmad.mp4",
+				"time_estimation": 126
 			},
 			"sort_order": 32,
-			"object_index": 285,
+			"object_index": 11,
 			"supplementary_assets": []
 		},
 		{
-			"_class": "lecture",
-			"id": 11628344,
-			"title": "Domain Purchase",
-			"created": "2018-09-02T14:22:28Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088148,
-				"asset_type": "Video",
-				"title": "250 - Domain Purchase.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "250-Domain-Purchase.mov",
-				"time_estimation": 137
-			},
+			"_class": "chapter",
+			"id": 13373871,
 			"sort_order": 31,
-			"object_index": 286,
-			"supplementary_assets": []
+			"title": "Spec-driven development in practice",
+			"is_published": true,
+			"object_index": 4
 		},
 		{
 			"_class": "lecture",
-			"id": 11628346,
-			"title": "Domain Name Setup",
-			"created": "2018-09-02T14:22:31Z",
+			"id": 56582493,
+			"title": "Introduction",
+			"created": "2026-06-11T16:59:06Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088150,
+				"id": 73900287,
 				"asset_type": "Video",
-				"title": "251 - Domain Name Setup.mov",
+				"title": "0-sdd-in-practice-introduction.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "251-Domain-Name-Setup.mov",
-				"time_estimation": 210
+				"filename": "0-sdd-in-practice-introduction.mp4",
+				"time_estimation": 98
 			},
 			"sort_order": 30,
-			"object_index": 287,
+			"object_index": 12,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 25482916,
-			"title": "Required Updates for Cert Manager Install",
-			"created": "2021-03-15T21:37:41Z",
+			"id": 56582495,
+			"title": "Creating OpenAPI Document using AI",
+			"created": "2026-06-11T16:59:17Z",
 			"is_published": true,
-			"is_free": false,
+			"is_free": true,
 			"asset": {
 				"_class": "asset",
-				"id": 40989550,
-				"asset_type": "Article",
-				"title": "",
+				"id": 73783473,
+				"asset_type": "Video",
+				"title": "1-sdd-in-practice.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "",
-				"time_estimation": 25
+				"filename": "1-sdd-in-practice.mp4",
+				"time_estimation": 339
 			},
 			"sort_order": 29,
-			"object_index": 288,
-			"supplementary_assets": []
+			"object_index": 13,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 73803113,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "Prompt-to-generate-OpenAPI-Document.pdf",
+					"title": "Prompt to generate OpenAPI Document.pdf",
+					"status": 1,
+					"time_estimation": 0
+				}
+			]
 		},
 		{
 			"_class": "lecture",
-			"id": 11628348,
-			"title": "Cert Manager Install",
-			"created": "2018-09-02T14:22:34Z",
+			"id": 56593535,
+			"title": "Linting an OpenAPI document using Spectral",
+			"created": "2026-06-12T13:44:22Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088166,
+				"id": 73799411,
 				"asset_type": "Video",
-				"title": "252 - Cert Manager Install.mov",
+				"title": "2-sdd-in-practice-spectral.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "252-Cert-Manager-Install.mov",
-				"time_estimation": 117
+				"filename": "2-sdd-in-practice-spectral.mp4",
+				"time_estimation": 309
 			},
 			"sort_order": 28,
-			"object_index": 289,
+			"object_index": 14,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 11628352,
-			"title": "How to Wire Up Cert Manager",
-			"created": "2018-09-02T14:22:39Z",
+			"id": 56593547,
+			"title": "Resolving Spectral Warnings",
+			"created": "2026-06-12T13:45:41Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088164,
+				"id": 73800377,
 				"asset_type": "Video",
-				"title": "253 - How to Wire Up Cert Manager.mov",
+				"title": "3-sdd-in-practice-spectral-resolve-warnings.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "253-How-to-Wire-Up-Cert-Manager.mov",
-				"time_estimation": 358
+				"filename": "3-sdd-in-practice-spectral-resolve-warnings.mp4",
+				"time_estimation": 218
 			},
 			"sort_order": 27,
-			"object_index": 290,
+			"object_index": 15,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 25482794,
-			"title": "Required Update for Issuer",
-			"created": "2021-03-15T21:27:32Z",
+			"id": 56595957,
+			"title": "Mock your API and test it before writing any code",
+			"created": "2026-06-12T18:01:28Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 32860306,
-				"asset_type": "Article",
-				"title": "",
+				"id": 73802713,
+				"asset_type": "Video",
+				"title": "4-sdd-in-practice-spectral-prism.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "",
-				"time_estimation": 13
+				"filename": "4-sdd-in-practice-spectral-prism.mp4",
+				"time_estimation": 431
 			},
 			"sort_order": 26,
-			"object_index": 291,
-			"supplementary_assets": []
+			"object_index": 16,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 73803087,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "curl-request-to-create-user.txt",
+					"title": "curl-request-to-create-user.txt",
+					"status": 1,
+					"time_estimation": 0
+				}
+			]
 		},
 		{
 			"_class": "lecture",
-			"id": 11628354,
-			"title": "Issuer Config File",
-			"created": "2018-09-02T14:22:42Z",
+			"id": 56597953,
+			"title": "Creating a Requirements document",
+			"created": "2026-06-12T21:48:01Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088156,
+				"id": 73805287,
 				"asset_type": "Video",
-				"title": "254 - Issuer Config File.mov",
+				"title": "4-sdd-in-practice-requirements-document.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "254-Issuer-Config-File.mov",
-				"time_estimation": 307
+				"filename": "4-sdd-in-practice-requirements-document.mp4",
+				"time_estimation": 493
 			},
 			"sort_order": 25,
-			"object_index": 292,
+			"object_index": 17,
 			"supplementary_assets": [
 				{
 					"_class": "asset",
-					"id": 68811207,
+					"id": 74159189,
+					"asset_type": "File",
 					"is_external": false,
-					"time_estimation": 0,
-					"title": "294-issuer-gh.zip",
-					"filename": "294-issuer-gh.zip",
+					"filename": "prompt-to-create-requirements-document.txt",
+					"title": "prompt-to-create-requirements-document.txt",
 					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 68811209,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "294-issuer-travis.zip",
-					"filename": "294-issuer-travis.zip",
-					"status": 1,
-					"asset_type": "File"
+					"time_estimation": 0
 				}
 			]
 		},
 		{
 			"_class": "lecture",
-			"id": 25482936,
-			"title": "Required Update for the Certificate",
-			"created": "2021-03-15T21:41:03Z",
+			"id": 56605659,
+			"title": "Creating a Technical Design document",
+			"created": "2026-06-13T16:04:35Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 32565938,
-				"asset_type": "Article",
-				"title": "",
+				"id": 73816021,
+				"asset_type": "Video",
+				"title": "6-sdd-in-practice-generating-design-document.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "",
-				"time_estimation": 17
+				"filename": "6-sdd-in-practice-generating-design-document.mp4",
+				"time_estimation": 399
 			},
 			"sort_order": 24,
-			"object_index": 293,
-			"supplementary_assets": []
+			"object_index": 18,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 74159185,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "prompt-to-create-design-document.txt",
+					"title": "prompt-to-create-design-document.txt",
+					"status": 1,
+					"time_estimation": 0
+				}
+			]
 		},
 		{
 			"_class": "lecture",
-			"id": 11628356,
-			"title": "Certificate Config File",
-			"created": "2018-09-02T14:22:47Z",
+			"id": 56606669,
+			"title": "Technical Design document overview",
+			"created": "2026-06-13T18:14:20Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088146,
+				"id": 73817873,
 				"asset_type": "Video",
-				"title": "255 - Certificate Config File.mov",
+				"title": "7-sdd-in-practice-review-design-document.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "255-Certificate-Config-File.mov",
-				"time_estimation": 318
+				"filename": "7-sdd-in-practice-review-design-document.mp4",
+				"time_estimation": 187
 			},
 			"sort_order": 23,
-			"object_index": 294,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811211,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "296-certificate-gh.zip",
-					"filename": "296-certificate-gh.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 68811215,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "296-certificate-travis.zip",
-					"filename": "296-certificate-travis.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
+			"object_index": 19,
+			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 11628360,
-			"title": "Deploying Changes",
-			"created": "2018-09-02T14:22:49Z",
+			"id": 56619181,
+			"title": "Creating a list of Tasks",
+			"created": "2026-06-14T20:33:00Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088154,
+				"id": 73836587,
 				"asset_type": "Video",
-				"title": "256 - Deploying Changes.mov",
+				"title": "8-sdd-in-practice-creating-task-list.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "256-Deploying-Changes.mov",
-				"time_estimation": 195
+				"filename": "8-sdd-in-practice-creating-task-list.mp4",
+				"time_estimation": 374
 			},
 			"sort_order": 22,
-			"object_index": 295,
-			"supplementary_assets": []
+			"object_index": 20,
+			"supplementary_assets": [
+				{
+					"_class": "asset",
+					"id": 74159207,
+					"asset_type": "File",
+					"is_external": false,
+					"filename": "prompt-to-create-task-list-document.txt",
+					"title": "prompt-to-create-task-list-document.txt",
+					"status": 1,
+					"time_estimation": 0
+				}
+			]
 		},
 		{
 			"_class": "lecture",
-			"id": 25483088,
-			"title": "No Resources Found?",
-			"created": "2021-03-15T21:52:09Z",
+			"id": 56631125,
+			"title": "Executing the task list",
+			"created": "2026-06-15T15:56:44Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 32159258,
-				"asset_type": "Article",
-				"title": "",
+				"id": 73853949,
+				"asset_type": "Video",
+				"title": "9-sdd-executing-the-list-of-tasks.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "",
-				"time_estimation": 12
+				"filename": "9-sdd-executing-the-list-of-tasks.mp4",
+				"time_estimation": 296
 			},
 			"sort_order": 21,
-			"object_index": 296,
+			"object_index": 21,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 11628362,
-			"title": "Verifying the Certificate",
-			"created": "2018-09-02T14:22:53Z",
+			"id": 56633969,
+			"title": "Reviewing and Deploying the created application to AWS",
+			"created": "2026-06-15T19:43:06Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14088160,
+				"id": 73858297,
 				"asset_type": "Video",
-				"title": "257 - Verifying the Certificate.mov",
+				"title": "10-sdd-review-and-deploy.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "257-Verifying-the-Certificate.mov",
-				"time_estimation": 234
+				"filename": "10-sdd-review-and-deploy.mp4",
+				"time_estimation": 206
 			},
 			"sort_order": 20,
-			"object_index": 297,
+			"object_index": 22,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "lecture",
-			"id": 25483166,
-			"title": "Required Update for the HTTPS Ingress",
-			"created": "2021-03-15T21:58:35Z",
+			"id": 56635643,
+			"title": "Trying if the deployed application works",
+			"created": "2026-06-15T23:29:43Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 32159316,
-				"asset_type": "Article",
-				"title": "",
+				"id": 73860711,
+				"asset_type": "Video",
+				"title": "11-sdd-trying-if-application-works.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "",
-				"time_estimation": 4
+				"filename": "11-sdd-trying-if-application-works.mp4",
+				"time_estimation": 353
 			},
 			"sort_order": 19,
-			"object_index": 298,
+			"object_index": 23,
 			"supplementary_assets": []
 		},
 		{
-			"_class": "lecture",
-			"id": 11628364,
-			"title": "Ingress Config for HTTPS",
-			"created": "2018-09-02T14:22:59Z",
+			"id": 41419,
+			"title": "Practice an Interview Question on Spec‑Driven Development",
 			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088152,
-				"asset_type": "Video",
-				"title": "258 - Ingress Config for HTTPS.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "258-Ingress-Config-for-HTTPS.mov",
-				"time_estimation": 409
-			},
+			"course_id": 7193647,
 			"sort_order": 18,
-			"object_index": 299,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811219,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "301-ingress-gh.zip",
-					"filename": "301-ingress-gh.zip",
-					"status": 1,
-					"asset_type": "File"
-				},
-				{
-					"_class": "asset",
-					"id": 68811221,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "301-ingress-travis.zip",
-					"filename": "301-ingress-travis.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
+			"object_index": 3,
+			"_class": "role-play"
 		},
 		{
-			"_class": "lecture",
-			"id": 11628366,
-			"title": "It Worked!",
-			"created": "2018-09-02T14:23:03Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 14088162,
-				"asset_type": "Video",
-				"title": "259 - It Worked!.mov",
-				"status": 1,
-				"is_external": false,
-				"filename": "259-It-Worked.mov",
-				"time_estimation": 171
-			},
+			"_class": "chapter",
+			"id": 13389215,
 			"sort_order": 17,
-			"object_index": 300,
-			"supplementary_assets": []
+			"title": "Specification as a Source of Truth in Testing",
+			"is_published": true,
+			"object_index": 5
 		},
 		{
 			"_class": "lecture",
-			"id": 11684242,
-			"title": "Google Cloud Cleanup",
-			"created": "2018-09-06T15:50:43Z",
+			"id": 56645463,
+			"title": "OpenAPI Document Is the Source of Truth for Testing",
+			"created": "2026-06-16T13:15:08Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 14167200,
-				"asset_type": "Article",
-				"title": "",
+				"id": 73876931,
+				"asset_type": "Video",
+				"title": "1-sdd-testing-openapi-as-source-of-truth.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "",
-				"time_estimation": 20
+				"filename": "1-sdd-testing-openapi-as-source-of-truth.mp4",
+				"time_estimation": 180
 			},
 			"sort_order": 16,
-			"object_index": 301,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 11684298,
-			"title": "Local Environment Cleanup",
-			"created": "2018-09-06T15:55:01Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 35329684,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 38
-			},
-			"sort_order": 15,
-			"object_index": 302,
+			"object_index": 24,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "chapter",
-			"id": 3585736,
-			"sort_order": 14,
-			"title": "Local Development with Skaffold",
+			"id": 13393147,
+			"sort_order": 15,
+			"title": "OpenAPI and Microserices",
 			"is_published": true,
-			"object_index": 18
+			"object_index": 6
 		},
 		{
 			"_class": "lecture",
-			"id": 15271340,
-			"title": "Awkward Local Development",
-			"created": "2019-06-27T19:18:36Z",
+			"id": 56661631,
+			"title": "How OpenAPI Helps Microservices Talk Correctly",
+			"created": "2026-06-17T13:41:26Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 18723198,
+				"id": 73897031,
 				"asset_type": "Video",
-				"title": "260 - Awkward Local Development.mp4",
+				"title": "1-sdd-how-teams-use-openapi-for-microservices.mp4",
 				"status": 1,
 				"is_external": false,
-				"filename": "260-Awkward-Local-Development.mp4",
-				"time_estimation": 234
+				"filename": "1-sdd-how-teams-use-openapi-for-microservices.mp4",
+				"time_estimation": 187
+			},
+			"sort_order": 14,
+			"object_index": 25,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 56662189,
+			"title": "Diagram: Microservices and Contracts",
+			"created": "2026-06-17T14:12:57Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73899431,
+				"asset_type": "Video",
+				"title": "2-sdd-how-teams-use-openapi-for-microservices-diagram.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "2-sdd-how-teams-use-openapi-for-microservices-diagram.mp4",
+				"time_estimation": 94
 			},
 			"sort_order": 13,
-			"object_index": 303,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 15271344,
-			"title": "Installing Skaffold",
-			"created": "2019-06-27T19:18:46Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 18723190,
-				"asset_type": "Video",
-				"title": "261 - Installing Skaffold.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "261-Installing-Skaffold.mp4",
-				"time_estimation": 119
-			},
-			"sort_order": 12,
-			"object_index": 304,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 15271346,
-			"title": "The Skaffold Config File",
-			"created": "2019-06-27T19:18:54Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 18723192,
-				"asset_type": "Video",
-				"title": "262 - The Skaffold Config File.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "262-The-Skaffold-Config-File.mp4",
-				"time_estimation": 403
-			},
-			"sort_order": 11,
-			"object_index": 305,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 45818207,
-			"title": "Skaffold Sync Update and Example Source Code",
-			"created": "2024-09-13T22:06:59Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 59226763,
-				"asset_type": "Article",
-				"title": "",
-				"status": 1,
-				"is_external": false,
-				"filename": "",
-				"time_estimation": 114
-			},
-			"sort_order": 10,
-			"object_index": 306,
-			"supplementary_assets": [
-				{
-					"_class": "asset",
-					"id": 68811225,
-					"is_external": false,
-					"time_estimation": 0,
-					"title": "308-complex-skaffold.zip",
-					"filename": "308-complex-skaffold.zip",
-					"status": 1,
-					"asset_type": "File"
-				}
-			]
-		},
-		{
-			"_class": "lecture",
-			"id": 15271348,
-			"title": "Live Sync Changes",
-			"created": "2019-06-27T19:19:00Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 18723194,
-				"asset_type": "Video",
-				"title": "263 - Live Sync Changes.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "263-Live-Sync-Changes.mp4",
-				"time_estimation": 302
-			},
-			"sort_order": 9,
-			"object_index": 307,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 15271350,
-			"title": "Automatic Shutdown",
-			"created": "2019-06-27T19:19:06Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 18723196,
-				"asset_type": "Video",
-				"title": "264 - Automatic Shutdown.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "264-Automatic-Shutdown.mp4",
-				"time_estimation": 306
-			},
-			"sort_order": 8,
-			"object_index": 308,
-			"supplementary_assets": []
-		},
-		{
-			"_class": "lecture",
-			"id": 15271356,
-			"title": "Testing Live Sync with the API Server",
-			"created": "2019-06-27T19:19:14Z",
-			"is_published": true,
-			"is_free": false,
-			"asset": {
-				"_class": "asset",
-				"id": 18723188,
-				"asset_type": "Video",
-				"title": "265 - Testing Live Sync with the API Server.mp4",
-				"status": 1,
-				"is_external": false,
-				"filename": "265-Testing-Live-Sync-with-the-API-Server.mp4",
-				"time_estimation": 329
-			},
-			"sort_order": 7,
-			"object_index": 309,
+			"object_index": 26,
 			"supplementary_assets": []
 		},
 		{
 			"_class": "chapter",
-			"id": 3927498,
-			"sort_order": 1,
-			"title": "Extras",
+			"id": 13390253,
+			"sort_order": 3,
+			"title": "Conclusion",
 			"is_published": true,
-			"object_index": 19
+			"object_index": 7
 		},
 		{
 			"_class": "lecture",
-			"id": 16727404,
-			"title": "Bonus!",
-			"created": "2019-10-28T22:44:13Z",
+			"id": 56649753,
+			"title": "What you learned so far",
+			"created": "2026-06-16T18:57:57Z",
 			"is_published": true,
 			"is_free": false,
 			"asset": {
 				"_class": "asset",
-				"id": 71080867,
+				"id": 73878521,
+				"asset_type": "Video",
+				"title": "sdd-conclusion.mp4",
+				"status": 1,
+				"is_external": false,
+				"filename": "sdd-conclusion.mp4",
+				"time_estimation": 113
+			},
+			"sort_order": 2,
+			"object_index": 27,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 56677869,
+			"title": "Let's connect!",
+			"created": "2026-06-18T15:45:03Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73917885,
 				"asset_type": "Article",
 				"title": "",
 				"status": 1,
 				"is_external": false,
 				"filename": "",
-				"time_estimation": 33
+				"time_estimation": 10
+			},
+			"sort_order": 1,
+			"object_index": 28,
+			"supplementary_assets": []
+		},
+		{
+			"_class": "lecture",
+			"id": 56666365,
+			"title": "Bonus",
+			"created": "2026-06-17T21:35:55Z",
+			"is_published": true,
+			"is_free": false,
+			"asset": {
+				"_class": "asset",
+				"id": 73917675,
+				"asset_type": "Article",
+				"title": "",
+				"status": 1,
+				"is_external": false,
+				"filename": "",
+				"time_estimation": 175
 			},
 			"sort_order": 0,
-			"object_index": 310,
+			"object_index": 29,
 			"supplementary_assets": []
 		}
 	]

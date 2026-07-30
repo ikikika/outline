@@ -1,190 +1,172 @@
-# React Starter
+# Tempo (frontend)
 
-Enterprise-oriented React + TypeScript starter with:
+React + TypeScript SPA for the Tempo time-management app: plan work on a timetable, track timers, and review how planned time compared to reality.
 
-- Feature-based architecture
-- Atomic Design component organization
-- Auth strategy abstraction
-- Theme provider with tokenized styling
-- Shared HTTP client layer
+**Stack:** React 19 · TypeScript · Vite · React Query · React Router · SCSS modules · Tailwind / shadcn
 
-## Start Here
+## Start here
 
 - Setup, structure, and conventions: [ARCHITECTURE.md](ARCHITECTURE.md)
-- Agent workflow instructions: [copilot-instructions.md](.github\copilot-instructions.md)
+- Backend API and deploy: [../be/README.md](../be/README.md)
 
 ## Scripts
 
-- `npm run dev` start development server
-- `npm run build` build production assets
-- `npm run lint` run lint checks
-- `npm run preview` preview production build
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start Vite development server |
+| `npm run build` | Type-check and build production assets |
+| `npm run lint` | Run ESLint |
+| `npm run preview` | Preview the production build |
+| `npm test` / `npx vitest run` | Unit tests |
 
-## Module Federation (Webpack)
+## Environment
 
-This starter now supports Webpack Module Federation while keeping the existing Vite workflow.
-
-### Install dependencies
-
-```bash
-npm install
-```
-
-### Federation scripts
-
-- `npm run dev:mf` run Webpack dev server using env vars (`MF_MODE`, `PORT`, etc.)
-- `npm run build:mf` production build using env vars
-
-Pass mode with `--env mode=...`:
-
-```bash
-npm run dev:mf -- --env mode=standalone
-npm run dev:mf -- --env mode=host
-npm run dev:mf -- --env mode=remote
-npm run build:mf -- --env mode=standalone
-npm run build:mf -- --env mode=host
-npm run build:mf -- --env mode=remote
-```
-
-### Runtime configuration
-
-The Webpack federation config is in `config-webpack/webpack.common.cjs` and supports these env values:
-
-- `MF_MODE`: `standalone`, `host`, or `remote`
-- `MF_NAME`: federation container name (default: `react_starter`)
-- `PORT`: dev server port
-- `MF_REMOTES`: comma-separated remote mappings for host mode
-- `MF_EXPOSES`: comma-separated expose mappings for remote mode
-
-Mapping format for `MF_REMOTES` and `MF_EXPOSES` is:
-
-```text
-key=value,key2=value2
-```
-
-By default, these values are loaded from `.env`.
-
-### `.env` configuration for MF
-
-Set MF values in `.env`:
+Create `.env` (or `.env.local`) with the API Gateway **root** URL (no `/api` suffix):
 
 ```env
-MF_MODE=host
-MF_NAME=react_starter
-PORT=3000
-MF_REMOTES=profile=profile@http://localhost:3001/remoteEntry.js
-MF_EXPOSES=./App=./src/app/App
+VITE_API_URL=https://your-api-id.execute-api.region.amazonaws.com
 ```
 
-Resolution priority is:
+The app builds `API_BASE_URL` as `{VITE_API_URL}/api`.
 
-1. CLI `--env` values
-2. Process env values (`$env:...`)
-3. `.env` values
-4. Hardcoded fallback in Webpack config
+## App surfaces
 
-This means you can run host/remote with one command using `.env` defaults and override when needed.
+| Route / area | What it does |
+|--------------|--------------|
+| **Timetable** | Day/week grid of schedule blocks; drag/resize; timers; Pomodoro break prompts |
+| **Activities** | Catalog of activities and tasks; auto-schedule; adhoc tab |
+| **Report** | Day/week metrics: estimates vs logged time, schedule fit, unplanned work |
+| **Profile** | Theme, timetable hours, notifications (PWA push) |
 
-### config-webpack folder status (microfrontend-ready)
+### Timetable
 
-The `config-webpack` folder is now aligned with this repo's active Module Federation implementation.
+- View day or week; zoom; show all hours vs profile visible range.
+- **Add adhoc** — one-off or **repeating** blockers under the `adhoc-blocks` activity (`excludeFromReports: true`).
+  - Repeating: start date, end date, days of the week (max 90 occurrences).
+  - Creates one catalog task and one focus block per occurrence.
+- **Start rest** — creates a 5-minute short break and starts its timer (disabled while another timer runs).
+- Task detail modal: start/stop, finish session/task, skip, edit.
+- **Adhoc delete menu** (adhoc only): **This block only** or **This and future blocks** for that task.
 
-- `config-webpack/webpack.common.cjs` contains the shared Module Federation config
-- `config-webpack/webpack.dev.cjs` uses development mode
-- `config-webpack/webpack.prod.cjs` uses production mode
+### Activities
 
-Use these scripts if your team prefers the `config-webpack` convention:
+- Active / archived / adhoc lists; priority reorder.
+- Open unplanned tasks without a schedule block (synthetic `unscheduled:…` detail).
+- Starting a timer on an **unplanned** task sets `startedFromUnplanned` so reports can attribute reactive work.
+- Completing a task with closed sessions creates **work-period** focus blocks (planned window = actual session) and removes leftover planned focuses plus following Pomodoro rests.
 
-- `npm run dev:mf`
-- `npm run build:mf`
+### Reports
 
-Pass mode at runtime (same as main MF scripts):
+Built from timetable blocks + time entries (adhoc blockers excluded).
 
-```bash
-npm run dev:mf -- --env mode=host
-npm run dev:mf -- --env mode=remote
-npm run build:mf -- --env mode=host
-npm run build:mf -- --env mode=remote
+| Insight | Meaning |
+|---------|---------|
+| Planned / actual / variance / accuracy | Task **estimate** (`timeEstimationSeconds`) vs logged time |
+| Completion / coverage | Done vs planned; how many blocks have logged time |
+| Category mix | Planned vs actual share by category |
+| Over / under / on target / untracked | Estimate calibration (±10% = on target) |
+| **Schedule fit** | Share of logged work that fell inside the planned timetable window (not meaningful for work-period clones) |
+| **Unplanned** | Share of actual time from tasks with `startedFromUnplanned` |
+| Schedule drift / unplanned work lists | Worst off-slot planned blocks; reactive tasks with logged time |
+
+## Domain model (frontend)
+
+- **Activity** — catalog group (course, project, …).
+- **Task** — catalog work item (`unplanned` → `planned` → `in_progress` → `done` / `skipped`).
+- **Schedule block** — timed timetable placement (`focus` / `short_break` / `long_break`).
+- **Time entry** — timer or manual log against a `taskId`.
+
+Special activity ids: `adhoc-blocks` (report-excluded blockers), `pomodoro-breaks` (rests).
+
+## Project layout
+
+```
+src/
+├── app/           # Providers, router
+├── components/    # Shared UI
+├── core/          # Constants, time zone helpers
+├── features/      # Domain: activities, auth, reports, notifications
+├── pages/         # TimetablePage, ActivitiesPage, ReportPage, …
+└── services/      # HTTP client
 ```
 
-All mode values resolve from `.env` unless overridden by process env or `--env`.
+Feature modules expose public APIs via `index.ts`. Prefer `@/` imports.
 
-### Use as standalone project
+## Install as a PWA (phone)
 
-Run it as a normal app through Webpack (no remotes required):
+Tempo can be installed as a Progressive Web App. Use a **production HTTPS** URL (or a trusted tunnel). Localhost works for Android Chrome testing; iOS needs a real HTTPS origin for a useful install.
 
-```bash
-npm run dev:mf -- --env mode=standalone
-```
+After install, enable push under **Profile → Notifications**. On iPhone, you must open the app from the Home Screen icon before enabling notifications.
 
-### Use as a remote microfrontend
+### iOS (iPhone / iPad)
 
-By default, remote mode exposes `./App` from `./src/app/App` and emits `remoteEntry.js`.
+1. Open the site in **Safari** (not Chrome or other browsers).
+2. Tap **Share** (square with an arrow).
+3. Tap **Add to Home Screen**.
+4. Confirm the name (**Tempo**) and tap **Add**.
+5. Launch Tempo from the new Home Screen icon (standalone, no Safari chrome).
 
-```bash
-npm run dev:mf -- --env mode=remote
-```
+Notes:
 
-Using generic script with config-file mode values:
+- Push notifications require **iOS 16.4+** and only work when the app was added to the Home Screen and opened from that icon.
+- If **Add to Home Screen** is missing, scroll the Share sheet or check Safari settings.
 
-```bash
-npm run dev:mf -- --env mode=remote
-```
+### Android
 
-Remote entry URL example:
+1. Open the site in **Chrome**.
+2. Use one of:
+   - Chrome’s **Install app** / **Add to Home screen** banner or menu item, or
+   - Chrome menu (⋮) → **Install app** / **Add to Home screen**.
+3. Confirm, then open Tempo from the Home Screen / app drawer icon.
 
-```text
-http://localhost:3001/remoteEntry.js
-```
+Notes:
 
-Custom remote name and extra exposed modules:
+- Chrome may show an install prompt automatically when the PWA criteria are met (HTTPS, manifest, service worker).
+- You can also use **Profile → Notifications** from a Chrome tab on Android; installing still gives the best app-like experience.
 
-```bash
-MF_NAME=profile MF_MODE=remote MF_EXPOSES=./App=./src/app/App,./routes=./src/app/routes/index.ts npm run dev:mf
-```
+## Module Federation (optional)
 
-Note for Windows PowerShell:
+Webpack Module Federation remains available alongside Vite:
 
-```powershell
-$env:MF_NAME='profile'; $env:MF_MODE='remote'; $env:MF_EXPOSES='./App=./src/app/App,./routes=./src/app/routes/index.ts'; npm run dev:mf
-```
+- `npm run dev:mf` / `npm run build:mf`
+- Modes: `standalone`, `host`, `remote` via `--env mode=…` or `.env` (`MF_MODE`, `MF_NAME`, `PORT`, `MF_REMOTES`, `MF_EXPOSES`)
 
-### Use as a host microfrontend shell
-
-Provide remotes using `MF_REMOTES`:
-
-```bash
-MF_MODE=host MF_REMOTES=profile=profile@http://localhost:3001/remoteEntry.js npm run dev:mf
-```
-
-Using generic script with config-file mode values:
-
-```bash
-npm run dev:mf -- --env mode=host
-```
-
-PowerShell equivalent:
-
-```powershell
-$env:MF_MODE='host'; $env:MF_REMOTES='profile=profile@http://localhost:3001/remoteEntry.js'; npm run dev:mf
-```
-
-Then import remote modules in host code, for example:
-
-```ts
-const RemoteApp = React.lazy(() => import('profile/App'))
-```
-
-### Notes
-
-- `src/main.tsx` uses async bootstrap (`import('./bootstrap')`) to support Module Federation shared module initialization.
-- Existing Vite scripts (`npm run dev`, `npm run build`) are unchanged.
-- Webpack HTML template is `index.webpack.html`.
+See `config-webpack/` for shared Webpack config. Day-to-day development uses Vite (`npm run dev`).
 
 ## Stack
 
-- React
-- TypeScript
-- Vite
-- SCSS modules
+- React 19, TypeScript, Vite
+- TanStack Query, React Hook Form + Zod
+- SCSS modules, Tailwind 4, shadcn/ui
+- Vitest + Testing Library
 
+## Future ideas
+
+Ideas that extend the existing plan → track → replan → learn loop. Prefer these over unrelated product directions (teams/sharing, generic AI chat coach) until that loop is tighter. Differentiator today: **schedule fit** and **unplanned work**.
+
+### Highest leverage
+
+1. **Real daily dashboard** — Replace the `/dashboard` redirect with a “today” briefing: next focus, open unplanned, today’s fit/unplanned share, one CTA to start or replan.
+2. **Replanning when you’re behind** — If a session runs long or you skip blocks, propose shifting the rest of the day (slip remaining auto-scheduled focus + rests).
+3. **Estimate coaching** — Surface chronic over/under patterns from existing calibration metrics; suggest buffer or session-length tweaks per activity/task.
+4. **Interruptions as a first-class flow** — One-tap “log interruption” → unplanned work with clear report attribution (builds on `startedFromUnplanned`).
+5. **Self-serve onboarding** — Signup + guided first week using existing activity/course import packs instead of seed-only users.
+
+### Product depth
+
+6. **Calendar sync** — ICS or Google/Outlook in/out so blockers and real life stay aligned with adhoc blocks.
+7. **Longer-range reports** — Month/quarter trends, consistency streaks, category mix over time (reports are currently day/week and client-only).
+8. **Richer rest policy** — User-configurable Pomodoro lengths, long-break rules, and lunch as a first-class constraint outside auto-schedule defaults.
+9. **Recurring tasks / templates** — Beyond repeating adhoc blockers: weekly review templates, standing deep-work slots tied to activities.
+10. **Smarter notifications** — Beyond first-focus reminders: break-end, “session overrun,” “you have unplanned backlog,” quiet hours.
+
+### Polish that compounds
+
+11. **Mobile / PWA UX** — Faster timer controls and today’s agenda as the primary phone surface.
+12. **Manual time entry UX** — Quick backfill for work done off-timer without fighting the timetable.
+13. **Server-side reports** — Persist/export metrics so history doesn’t depend on client recomputation.
+14. **Goals / capacity** — Weekly hour budgets per category (“10h deep work”) with live burn-down against the timetable.
+
+### Suggested next pair
+
+**Daily dashboard + replanning** — uses data already collected and closes the gap when the day doesn’t go as planned.

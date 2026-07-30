@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VALIDATION_RULES } from '@/core/constants/app';
 
 const phonePattern = /^[+\d\s().-]{7,20}$/;
 
@@ -13,20 +14,26 @@ export const basicInfoSchema = z.object({
     .regex(phonePattern, 'Enter a valid phone number.'),
 });
 
-export const workInfoSchema = z.object({
-  company: z.string().trim().min(2, 'Company must be at least 2 characters.').max(100, 'Company is too long.'),
-  linkedinLink: z.string().trim().url('Enter a valid LinkedIn URL.'),
-  githubLink: z.string().trim().url('Enter a valid GitHub URL.'),
-});
-
-export const interestItemSchema = z.object({
-  value: z.string().trim().min(1, 'Interest cannot be empty.').max(50, 'Interest is too long.'),
-});
-
-export const interestsSchema = z.object({
-  interests: z.array(interestItemSchema).min(1, 'Add at least one interest.'),
-});
-
 export type BasicInfoFormValues = z.infer<typeof basicInfoSchema>;
-export type WorkInfoFormValues = z.infer<typeof workInfoSchema>;
-export type InterestsFormValues = z.infer<typeof interestsSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required.'),
+    newPassword: z
+      .string()
+      .min(
+        VALIDATION_RULES.PASSWORD_MIN_LENGTH,
+        `Password must be at least ${VALIDATION_RULES.PASSWORD_MIN_LENGTH} characters.`
+      ),
+    confirmPassword: z.string().min(1, 'Confirm your new password.'),
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    message: 'Passwords do not match.',
+    path: ['confirmPassword'],
+  })
+  .refine((values) => values.currentPassword !== values.newPassword, {
+    message: 'New password must be different from current password.',
+    path: ['newPassword'],
+  });
+
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
