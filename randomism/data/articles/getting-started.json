@@ -1,0 +1,80 @@
+{
+  "published": true,
+  "publishDate": "2026-08-01",
+  "title": "Getting Started with Content Blocks",
+  "description": "How every Randomism block type composes an article body, including Markdown prose.",
+  "ogImage": "/images/getting-started.svg",
+  "blocks": [
+    {
+      "componentType": "Heading",
+      "level": 1,
+      "content": "Getting Started with Content Blocks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Each block declares a `componentType` and a content payload. The registry maps that type to a single React renderer.\n\nProse fields accept **Markdown** — for example a [link](https://example.com) and `inline code`."
+    },
+    {
+      "componentType": "Image",
+      "content": {
+        "src": "/images/getting-started.svg",
+        "alt": "Diagram-like illustration of stacked content blocks"
+      }
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Code samples"
+    },
+    {
+      "componentType": "CodeBlock",
+      "language": "ts",
+      "code": "const greeting = \"hello\";\nconsole.log(greeting);"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Collapsible sections"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Why **JSON** blocks?",
+          "body": "Content stays in versioned files under `data/articles/`. Edit JSON, rebuild, and the page updates — no CMS required.",
+          "defaultOpen": true
+        },
+        {
+          "title": "Markdown in titles and bodies",
+          "body": "Accordion titles and bodies support full CommonMark. Prefer Heading blocks for the primary outline."
+        }
+      ]
+    },
+    {
+      "componentType": "Blockquote",
+      "text": "Prefer a *small* set of blocks over a page builder.",
+      "cite": "Randomism constitution"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Add a file under `data/articles/`",
+        "Set **published** to true with a `publishDate`",
+        "Rebuild — the home list updates automatically"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Callout variants are `info`, `tip`, and `warning`. Body text supports **Markdown**."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "After a divider, continue with more Heading, Paragraph, or Image blocks as needed."
+    }
+  ]
+}

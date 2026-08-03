@@ -1,0 +1,180 @@
+{
+  "published": true,
+  "publishDate": "2026-08-03",
+  "title": "SOLID Principles",
+  "description": "Each SOLID principle explained, with expandable React examples — ready for other frameworks later.",
+  "blocks": [
+    {
+      "componentType": "Heading",
+      "level": 1,
+      "content": "SOLID Principles"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "SOLID is five design guidelines that keep code easier to change and test. Each principle below has a short description, then a **React example** dropdown with a violation and a compliant rewrite. More framework examples can be added the same way."
+    },
+    {
+      "componentType": "List",
+      "ordered": true,
+      "items": [
+        "**S** — Single Responsibility",
+        "**O** — Open/Closed",
+        "**L** — Liskov Substitution",
+        "**I** — Interface Segregation",
+        "**D** — Dependency Inversion"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Treat these as heuristics, not rigid UML rules. Prefer small units, composition, and injected dependencies — whatever the framework."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "S — Single Responsibility"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "A module should have one reason to change. Avoid units that fetch, transform, and present everything at once — split data access, formatting, and UI."
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "React example",
+          "body": "### ❌ Violation\n\nOne component loads users, formats dates, and owns the full UI:\n\n```tsx\n// VIOLATION: UserDashboard has three reasons to change —\n// data fetching, date formatting, and list rendering.\nfunction UserDashboard() {\n  const [users, setUsers] = useState<User[]>([]);\n\n  // ❌ Responsibility 1: fetching / data access\n  useEffect(() => {\n    fetch(\"/api/users\")\n      .then((r) => r.json())\n      .then(setUsers);\n  }, []);\n\n  return (\n    <ul>\n      {users.map((u) => (\n        <li key={u.id}>\n          {/* ❌ Responsibility 2: date formatting mixed into JSX */}\n          {/* ❌ Responsibility 3: also owns the list UI */}\n          {u.name} — joined {new Date(u.joinedAt).toLocaleDateString()}\n        </li>\n      ))}\n    </ul>\n  );\n}\n```\n\n### ✅ Compliant\n\nSplit data access, formatting, and presentation:\n\n```tsx\n// ✅ Compliant: only loads users — one reason to change (API / data).\nfunction useUsers() {\n  const [users, setUsers] = useState<User[]>([]);\n  useEffect(() => {\n    fetch(\"/api/users\")\n      .then((r) => r.json())\n      .then(setUsers);\n  }, []);\n  return users;\n}\n\n// ✅ Compliant: only formats dates — change locale/format here alone.\nfunction formatJoined(iso: string) {\n  return new Date(iso).toLocaleDateString();\n}\n\n// ✅ Compliant: only renders the list — UI changes stay here.\nfunction UserList({ users }: { users: User[] }) {\n  return (\n    <ul>\n      {users.map((u) => (\n        <li key={u.id}>\n          {u.name} — joined {formatJoined(u.joinedAt)}\n        </li>\n      ))}\n    </ul>\n  );\n}\n\n// ✅ Compliant: composes the pieces; no fetch/format/render of its own.\nfunction UserDashboard() {\n  const users = useUsers();\n  return <UserList users={users} />;\n}\n```"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "O — Open/Closed"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Open for extension, closed for modification. Prefer composition or registration over growing `if`/`switch` trees inside a shared unit whenever a new variant appears."
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "React example",
+          "body": "### ❌ Violation\n\nAdding a new notification type means editing the shared renderer:\n\n```tsx\nfunction Notification({ type, message }: { type: string; message: string }) {\n  // VIOLATION: closed for extension — every new type forces edits here.\n  // ❌ Adding \"info\" means opening this function and inserting another branch.\n  if (type === \"success\") return <div className=\"ok\">{message}</div>;\n  if (type === \"error\") return <div className=\"err\">{message}</div>;\n  if (type === \"warning\") return <div className=\"warn\">{message}</div>;\n  // ❌ Fallback also lives in the same closed switch-like chain.\n  return <div>{message}</div>;\n}\n```\n\n### ✅ Compliant\n\nMap types to renderers; new variants register without rewriting the host:\n\n```tsx\n// ✅ Compliant: each notice carries its own render behavior (extension point).\ntype Notice = { id: string; message: string; render: () => React.ReactNode };\n\n// ✅ Compliant: variants live in a map — add entries without rewriting the list.\nconst noticeRenderers = {\n  success: (message: string) => <div className=\"ok\">{message}</div>,\n  error: (message: string) => <div className=\"err\">{message}</div>,\n  warning: (message: string) => <div className=\"warn\">{message}</div>,\n} as const;\n\n// ✅ Compliant: closed for modification — never branches on type.\nfunction NotificationList({ notices }: { notices: Notice[] }) {\n  return (\n    <>\n      {notices.map((n) => (\n        <Fragment key={n.id}>{n.render()}</Fragment>\n      ))}\n    </>\n  );\n}\n\n// ✅ Compliant: extend by adding data, not by editing NotificationList.\nconst billingNotice: Notice = {\n  id: \"billing\",\n  message: \"Invoice ready\",\n  render: () => noticeRenderers.success(\"Invoice ready\"),\n};\n```"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "L — Liskov Substitution"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Subtypes must honor the contract callers expect. Avoid specialized replacements that reject valid inputs, change required props, or throw where the base type would succeed — compose instead of pretending to substitute."
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "React example",
+          "body": "### ❌ Violation\n\n`IconButton` pretends to be a `Button` but rejects children and breaks layout consumers:\n\n```tsx\ntype ButtonProps = {\n  children: React.ReactNode; // callers may pass label text\n  onClick: () => void;\n  disabled?: boolean;\n};\n\nfunction Button({ children, onClick, disabled }: ButtonProps) {\n  return (\n    <button type=\"button\" onClick={onClick} disabled={disabled}>\n      {children}\n    </button>\n  );\n}\n\n// VIOLATION: IconButton is not substitutable for Button.\nfunction IconButton({ onClick }: { onClick: () => void }) {\n  // ❌ Drops `children` and `disabled` — breaks ButtonProps contract.\n  return (\n    <button type=\"button\" onClick={onClick} aria-label=\"icon\">\n      ★\n    </button>\n  );\n}\n\n// Expects any Action to accept ButtonProps (including children).\nfunction Toolbar({ Action }: { Action: React.ComponentType<ButtonProps> }) {\n  return <Action onClick={() => {}}>Save</Action>;\n}\n\n// ❌ Forced cast hides the LSP break; \"Save\" children are ignored / invalid.\n<Toolbar Action={IconButton as React.ComponentType<ButtonProps>} />\n```\n\n### ✅ Compliant\n\nCompose instead of violating the shared contract:\n\n```tsx\n// ✅ Compliant: IconButton does not pretend to be Button — it uses Button.\nfunction IconButton({ onClick, disabled, label }: {\n  onClick: () => void;\n  disabled?: boolean;\n  label: string;\n}) {\n  // ✅ Honors Button's contract: always passes valid children + optional disabled.\n  return (\n    <Button onClick={onClick} disabled={disabled}>\n      <span aria-hidden>★</span>\n      <span className=\"sr-only\">{label}</span>\n    </Button>\n  );\n}\n\n// ✅ Compliant: Toolbar accepts rendered nodes, not a fake Button subtype.\nfunction Toolbar({ action }: { action: React.ReactNode }) {\n  return <div className=\"toolbar\">{action}</div>;\n}\n\n// ✅ Compliant: compose the concrete component — no unsafe cast needed.\n<Toolbar action={<IconButton label=\"Favorite\" onClick={() => {}} />} />\n```"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "I — Interface Segregation"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Clients should not depend on details they do not use. Prefer narrow interfaces over one mega-surface that forces every consumer to supply unused fields."
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "React example",
+          "body": "### ❌ Violation\n\nEvery consumer must satisfy a fat props object:\n\n```tsx\n// VIOLATION: one fat interface forces every caller to know every field.\ntype MegaCardProps = {\n  title: string;\n  body: string;\n  author: string;       // ❌ unused by CommentPreview\n  avatarUrl: string;    // ❌ unused by CommentPreview\n  onLike: () => void;   // ❌ unused by CommentPreview\n  onShare: () => void;  // ❌ unused by CommentPreview\n  onEdit: () => void;   // ❌ unused by CommentPreview\n  analyticsId: string;  // ❌ unused by CommentPreview\n};\n\nfunction CommentPreview(props: MegaCardProps) {\n  // ❌ Depends on MegaCardProps but only reads title + body.\n  return (\n    <article>\n      <h3>{props.title}</h3>\n      <p>{props.body}</p>\n    </article>\n  );\n}\n```\n\n### ✅ Compliant\n\nSplit interfaces so each component asks only for what it needs:\n\n```tsx\n// ✅ Compliant: narrow interfaces — clients depend only on what they use.\ntype ContentProps = { title: string; body: string };\ntype AuthorProps = { author: string; avatarUrl: string };\ntype ActionsProps = {\n  onLike: () => void;\n  onShare: () => void;\n  onEdit: () => void;\n};\n\n// ✅ Compliant: CommentPreview only requires ContentProps.\nfunction CommentPreview({ title, body }: ContentProps) {\n  return (\n    <article>\n      <h3>{title}</h3>\n      <p>{body}</p>\n    </article>\n  );\n}\n\n// ✅ Compliant: author UI has its own small contract.\nfunction AuthorBadge({ author, avatarUrl }: AuthorProps) {\n  return (\n    <div>\n      <img src={avatarUrl} alt=\"\" />\n      <span>{author}</span>\n    </div>\n  );\n}\n\n// ✅ Compliant: actions UI is segregated from content/author props.\nfunction CardActions({ onLike, onShare, onEdit }: ActionsProps) {\n  return (\n    <>\n      <button type=\"button\" onClick={onLike}>Like</button>\n      <button type=\"button\" onClick={onShare}>Share</button>\n      <button type=\"button\" onClick={onEdit}>Edit</button>\n    </>\n  );\n}\n```"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "D — Dependency Inversion"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Depend on abstractions, not concrete modules hard-wired inside the caller. Inject collaborators so the unit stays testable and swappable."
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "React example",
+          "body": "### ❌ Violation\n\nThe component imports and calls a concrete client directly:\n\n```tsx\n// ❌ VIOLATION: UI depends on a concrete Stripe module (hard-wired).\nimport { stripeClient } from \"@/lib/stripeClient\";\n\nfunction CheckoutButton({ cartId }: { cartId: string }) {\n  return (\n    <button\n      type=\"button\"\n      // ❌ Cannot swap Stripe for a fake/other provider without editing this file.\n      onClick={() => stripeClient.createSession(cartId)}\n    >\n      Pay now\n    </button>\n  );\n}\n```\n\n### ✅ Compliant\n\nInject the dependency so UI stays testable and swappable:\n\n```tsx\n// ✅ Compliant: depend on an abstraction, not stripeClient itself.\ntype CheckoutApi = {\n  createSession: (cartId: string) => Promise<void>;\n};\n\nfunction CheckoutButton({\n  cartId,\n  checkout, // ✅ injected collaborator\n}: {\n  cartId: string;\n  checkout: CheckoutApi;\n}) {\n  return (\n    <button\n      type=\"button\"\n      // ✅ Calls the abstraction — works with Stripe, a mock, or anything else.\n      onClick={() => void checkout.createSession(cartId)}\n    >\n      Pay now\n    </button>\n  );\n}\n\n// ✅ Compliant: production wires the concrete Stripe client at the edge.\n<CheckoutButton cartId=\"c_1\" checkout={stripeClient} />\n\n// ✅ Compliant: tests inject a fake — no Stripe import required in the UI.\n<CheckoutButton\n  cartId=\"c_1\"\n  checkout={{ createSession: async () => {} }}\n/>\n```"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "Tips for applying SOLID"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "SOLID is a lens, not a checklist to force on every file. Use it when change hurts — and stop when the design is clear enough to ship."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "**Start from pain, not purity.** Refactor when a module is hard to test, risky to change, or keeps growing `if`/`switch` branches. Skip ceremony for one-off scripts and tiny views."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Name the reason to change** — if you can list two unrelated reasons, split (S).",
+        "**Prefer composition over inheritance** — extend by plugging pieces in, not by subclassing for every variant (O + L).",
+        "**Keep props/interfaces small** — if a caller stubs fields it never uses, segregate (I).",
+        "**Inject at the edges** — wire concrete APIs, storage, and clocks in composition roots; keep UI/domain on abstractions (D).",
+        "**One principle at a time** — fix the worst smell first; chasing all five in one PR usually over-abstracts."
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "warning",
+      "body": "**Watch for over-engineering.** Tiny functions, deep prop-drilling of unused abstractions, and “interfaces for everything” can cost more than they save. Prefer the smallest split that removes a real pain."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "**A practical review prompt:** *What would I have to edit to add the next feature?* If the answer is “one closed switch,” “a fat props bag,” or “every test that imports Stripe,” apply the matching principle."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "When code feels hard to test or extend, walk the checklist: one job, extend by composition, honor contracts, slim interfaces, inject dependencies — then ship."
+    }
+  ]
+}
