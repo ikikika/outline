@@ -4,6 +4,9 @@
   "title": "Welcome to Randomism",
   "description": "An introduction to the Randomism JSON-driven blog.",
   "ogImage": "/images/welcome.svg",
+  "tags": [
+    "randomism"
+  ],
   "blocks": [
     {
       "componentType": "Heading",

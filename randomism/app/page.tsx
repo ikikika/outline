@@ -1,19 +1,52 @@
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import type { Metadata } from "next";
 import { ArticleList } from "@/components/ArticleList";
+import { TagFilter } from "@/components/TagFilter";
 import { listPublishedArticles } from "@/lib/articles/list";
-import { defaultDescription } from "@/lib/site";
+import {
+  listPublishedTags,
+  parseMatchMode,
+  parseTagSelection,
+} from "@/lib/articles/tags";
 
-export default function HomePage() {
-  const articles = listPublishedArticles();
+type HomePageProps = {
+  searchParams: Promise<{
+    tag?: string | string[];
+    match?: string | string[];
+  }>;
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    alternates: {
+      canonical: "/",
+    },
+  };
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const selection = parseTagSelection(params.tag);
+  const match = parseMatchMode(params.match);
+  const publishedTags = new Set(listPublishedTags());
+  const publishedSelected = selection.filter((id) => publishedTags.has(id));
+  const filterActive = selection.length > 0;
+  const articles = listPublishedArticles(
+    filterActive ? { tags: selection, match } : {},
+  );
+  const emptyMessage = filterActive
+    ? "No matching articles."
+    : "No published articles yet.";
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", sm: "2rem" } }}>
-        Articles
-      </Typography>
-      <Typography color="text.secondary">{defaultDescription}</Typography>
-      <ArticleList articles={articles} />
+      <TagFilter selectedTags={publishedSelected} match={match} />
+      <ArticleList
+        articles={articles}
+        emptyMessage={emptyMessage}
+        selectedTags={publishedSelected}
+        match={match}
+      />
     </Stack>
   );
 }

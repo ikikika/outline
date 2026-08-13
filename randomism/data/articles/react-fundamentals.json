@@ -1,0 +1,1449 @@
+{
+  "published": true,
+  "publishDate": "2026-08-04",
+  "title": "Must-Know React Topics (Priority-Based Guide)",
+  "description": "Priority-based React guide covering JSX, props, components, state, hooks, events, forms, data fetching, error handling, performance, routing, testing, accessibility, and React 19 patterns.",
+  "tags": [
+    "react"
+  ],
+  "blocks": [
+    {
+      "componentType": "Paragraph",
+      "content": "A priority-based guide to the React concepts that matter most day to day — from JSX, props, and components through hooks, events, forms, data fetching, error handling, performance, routing, testing, and modern React 19 patterns."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "Sections are ordered by priority: **core foundations** first, then state and hooks, then events/forms/data, then errors/debugging, performance, routing, testing, and accessibility."
+    },
+    {
+      "componentType": "TableOfContents",
+      "items": [
+        {
+          "label": "1. Core Foundations (Highest Priority)",
+          "href": "1-core-foundations-highest-priority"
+        },
+        {
+          "label": "2. State & Rendering Behavior",
+          "href": "2-state-rendering-behavior"
+        },
+        {
+          "label": "3. Hooks & Lifecycle (With Explanation)",
+          "href": "3-hooks-lifecycle-with-explanation"
+        },
+        {
+          "label": "4. Event Handling",
+          "href": "4-event-handling"
+        },
+        {
+          "label": "5. Forms",
+          "href": "5-forms"
+        },
+        {
+          "label": "6. Data Fetching",
+          "href": "6-data-fetching"
+        },
+        {
+          "label": "7. Error Handling",
+          "href": "7-error-handling"
+        },
+        {
+          "label": "8. Debugging",
+          "href": "8-debugging"
+        },
+        {
+          "label": "9. Performance Optimization",
+          "href": "9-performance-optimization"
+        },
+        {
+          "label": "10. Routing",
+          "href": "10-routing"
+        },
+        {
+          "label": "11. Testing",
+          "href": "11-testing"
+        },
+        {
+          "label": "12. Accessibility",
+          "href": "12-accessibility"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🟢 1. Core Foundations (Highest Priority)",
+      "id": "1-core-foundations-highest-priority"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ JSX Basics"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "Expressions vs Statements"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "✅ Expressions allowed:"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "<div>{isActive ? \"Active\" : \"Inactive\"}</div>",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "❌ Statements NOT allowed directly (`if`, `for`)",
+        "❌ You CANNOT put statements directly inside JSX:"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// ❌ INVALID\n<div>\n  {if (isLoggedIn) {\n    return <Dashboard />\n  }}\n</div>",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "Conditional Rendering"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// ternary operator\n{isLoggedIn ? <Dashboard /> : <Login />}\n\n // logical AND short-circuit evaluation\n{items.length > 0 && <List />}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "Lists & Keys"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "items.map(item => <Item key={item.id} />)",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Why keys matter**"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Identify elements across renders so React can match the right item",
+        "Preserve component state (inputs, focus) when the list updates",
+        "Avoid incorrect remounts — which also avoids unnecessary work"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**When index-as-key is risky**"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Breaks identity when items are reordered, inserted, or filtered",
+        "Can cause incorrect DOM reuse and lost input state",
+        "Fine for **static** lists that never reorder or change membership"
+      ]
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "more info about jsx",
+          "body": "#### 🧠 Big idea\n\n> **JSX is NOT HTML — it compiles to JavaScript that creates React elements** (today via `react/jsx-runtime`; historically via `React.createElement`)\n\nWhen you write JSX, it gets **compiled (transpiled)** into plain JavaScript.\n\n#### 🔧 1. Simple example\n\n##### Your JSX:\n\n```jsx\nconst element = <h1>Hello</h1>;\n```\n\n##### What it becomes:\n\n```js\nconst element = React.createElement(\"h1\", null, \"Hello\");\n```\n\n#### ⚙️ 2. What `React.createElement` does\n\n```js\nReact.createElement(type, props, ...children)\n```\n\n##### Breakdown:\n\n```js\nReact.createElement(\n  \"h1\",            // type (HTML tag or component)\n  null,            // props\n  \"Hello\"          // children\n);\n```\n\n👉 It returns a **React element (a plain JS object)**:\n\n```js\n{\n  type: \"h1\",\n  props: {\n    children: \"Hello\"\n  }\n}\n```\n\n#### 🧱 3. More complex example\n\n##### JSX:\n\n```jsx\n<div className=\"container\">\n  <h1>Hello</h1>\n  <p>Welcome</p>\n</div>\n```\n\n##### Compiled:\n\n```js\nReact.createElement(\n  \"div\",\n  { className: \"container\" },\n  React.createElement(\"h1\", null, \"Hello\"),\n  React.createElement(\"p\", null, \"Welcome\")\n);\n```\n\n👉 Notice:\n\n* Nested JSX → nested `createElement` calls\n* Everything becomes **function calls + objects**\n\n#### 🧩 4. Component example\n\n##### JSX:\n\n```jsx\n<MyComponent name=\"John Smith\" />\n```\n\n##### Compiled:\n\n```js\nReact.createElement(MyComponent, { name: \"John Smith\" });\n```\n\n👉 Difference:\n\n* `\"div\"` → HTML element\n* `MyComponent` → React component (function)\n\n#### ✨ 5. With expressions\n\n##### JSX:\n\n```jsx\nconst name = \"John Smith\";\nconst el = <h1>Hello {name}</h1>;\n```\n\n##### Compiled:\n\n```js\nconst el = React.createElement(\n  \"h1\",\n  null,\n  \"Hello \",\n  name\n);\n```\n\n👉 `{}` just lets you inject JavaScript into JSX\n\n#### 💭 6. Why JSX exists\n\nWithout JSX:\n\n```js\nReact.createElement(\n  \"div\",\n  null,\n  React.createElement(\"h1\", null, \"Hello\")\n);\n```\n\nWith JSX:\n\n```jsx\n<div>\n  <h1>Hello</h1>\n</div>\n```\n\n👉 Much cleaner and easier to read\n\n#### 🚀 7. Modern React (default today)\n\nSince React 17 (and **required** in React 19), JSX compiles with the automatic runtime:\n\n```js\nimport { jsx as _jsx } from \"react/jsx-runtime\";\n\n_jsx(\"h1\", { children: \"Hello\" });\n```\n\n👉 You usually **do not** import React just for JSX.\n\n👉 `React.createElement` still exists and is useful for mental models / older code, but new apps should think in terms of `jsx-runtime`.\n\n#### 🧠 Key mental model\n\nWhen React runs your app:\n\n1. JSX → compiled to JS\n2. JS calls → `createElement`\n3. Creates → React elements (objects)\n4. React uses them → to update the DOM\n\n#### ⚠️ Common misconceptions\n\n##### ❌ JSX is HTML\n\n👉 It looks like HTML but is actually JavaScript\n\n##### ❌ Browser understands JSX\n\n👉 Nope — it must be compiled by:\n\n* Babel\n* TypeScript\n\n##### ❌ React uses DOM directly\n\n👉 It uses:\n\n* React elements → Virtual DOM → Real DOM\n\n#### 🪞 Simple analogy\n\n👉 Think of JSX as:\n\n> A **template language** that compiles into **JavaScript function calls**\n\n#### 🎯 One-line takeaway\n\n> JSX is a nicer way to describe React elements — the compiler turns it into `jsx`/`createElement` calls that build the objects React uses to render your UI.\n\n#### 💡 Why this matters\n\nUnderstanding this helps you:\n\n* debug weird JSX issues\n* understand rendering deeply\n* write better components"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Props"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Props are the inputs to a component. Treat them as **read-only** — a child must not mutate props; ask the parent to update via a callback."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "function Greeting({ name, onSayHi }) {\n  return (\n    <button onClick={onSayHi}>\n      Hello, {name}\n    </button>\n  );\n}\n\n// Parent owns the data; child receives props and events up\n<Greeting name={user.name} onSayHi={() => console.log(\"hi\")} />",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Immutable from the child's perspective** — never `props.foo = …`",
+        "**`children`** is just a prop for nested content (composition)",
+        "**Props down, events up** — data flows down; callbacks report changes up",
+        "Default values: use JS defaults (`function Button({ size = \"md\" })`) rather than legacy `defaultProps` on function components"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "In React 19, **`ref` is a regular prop** on function components — you usually do not need `forwardRef` anymore."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Functional Components"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Pure functions → predictable output",
+        "No side effects in render"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Regular function**"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "function App() {\n  return <h1>Hello</h1>;\n}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Arrow function**"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const App = () => {\n  return <h1>Hello</h1>;\n};",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "✅ Both work the same way in React."
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "🧠 Why do we still use regular function?",
+          "body": "Mostly for:\n\n* Clarity (easier to teach fundamentals)\n* Simplicity for beginners\n* Explicit function behavior\n\nMost teams today actually prefer arrow functions:\n\n```jsx\nconst App = () => <h1>Hello</h1>;\n```\n\n#### Benefits of arrow functions:\n\n* Shorter syntax\n* No `this` binding issues (important historically)\n* Consistent with modern JS style"
+        },
+        {
+          "title": "⚠️ Differences (small but important)",
+          "body": "#### 1. `this` behavior\n\nArrow functions:\n\n```js\nconst fn = () => {\n  console.log(this); // lexical (inherited)\n};\n```\n\nNormal functions:\n\n```js\nfunction fn() {\n  console.log(this); // dynamic\n}\n```\n\n👉 In React functional components:\n\n* this doesn’t matter much (you don’t use `this`)\n\n#### 2. Hoisting\n\n##### Function declaration (hoisted):\n\n```js\nApp(); // ✅ works when u call the function before it's declared\n\nfunction App() {}\n```\n\n##### Arrow function (not hoisted):\n\n```js\nApp(); // ❌ error\n\nconst App = () => {};\n```\n\n👉 Usually NOT a problem in React apps."
+        },
+        {
+          "title": "🚫 When arrow functions can cause issues",
+          "body": "Not in component definition — but inside JSX:\n\n```jsx\n<button onClick={() => doSomething()} />\n```\n\n👉 This creates a **new function every render**\n\n⚠️ That only matters when the handler is passed to a **memoized child** (`React.memo`) or used as a hook dependency. For a plain `<button>`, inline handlers are fine.\n\n✅ Prefer a named handler when you need a stable reference:\n\n```jsx\nconst handleClick = () => {\n  doSomething();\n};\n\n<button onClick={handleClick} />\n// notice you are not calling the function, just passing the reference\n```\n\nSee also `useCallback` later — use it when reference stability actually buys you something, not by default."
+        },
+        {
+          "title": "🧠 Best practice",
+          "body": "👉 Pick ONE style and stay consistent\n\nTypical team rules:\n\n* Use arrow functions for components ✅\n* Avoid mixing styles randomly ❌\n\n##### 💡 Simple answer\n\n> You can (and usually should) use arrow functions — regular functions are just shown for clarity, not because arrow functions are bad.\n\n##### ✅ One-line takeaway\n\n> Arrow functions are fully valid for React components and are commonly preferred today — inline handlers in JSX are fine unless you need a stable reference for memoization."
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Composition"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "<Card>\n  <Button />\n</Card>",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "🧠 What is Composition in React?",
+          "body": "👉 **Composition = building complex UIs by combining smaller components**\n\nThink of it like LEGO:\n\n* Small pieces → combine → bigger structure\n\n#### 📘 Simple definition\n\n> Composition is when you **reuse components by nesting them and passing content into them**\n\n#### 🔧 1. Basic example (the core idea)\n\n```tsx\nfunction Layout({ children }) {\n  return (\n    <div>\n      <header>Header</header>\n      <main>{children}</main>\n    </div>\n  );\n}\n```\n\nUsage:\n\n```tsx\n<Layout>\n  <h1>Hello</h1>\n  <p>Welcome</p>\n</Layout>\n```\n\n🔍 What’s happening:\n\n* `Layout` doesn’t know what’s inside\n* It just **composes** whatever you pass\n\n👉 That `{children}` is the key to composition\n\n#### 🧩 2. Why composition is powerful\n\nWhen a piece is reused or has its own responsibility, extract it:\n\n```tsx\nfunction Header() {\n  return <header>Header</header>;\n}\n\nfunction Page() {\n  return (\n    <div>\n      <Header />\n      <Content />\n    </div>\n  );\n}\n```\n\n👉 A small one-off page that inlines its markup is **not** automatically bad — extract when reuse or clarity improves, not for its own sake.\n\n#### 🧠 3. Types of Composition (important)\n\n##### 📦 A. Children composition (most common)\n\n```tsx\n<Card>\n  <h2>Title</h2>\n  <p>Description</p>\n</Card>\n```\n\n```tsx\nfunction Card({ children }) {\n  return <div className=\"card\">{children}</div>;\n}\n```\n\n##### 🎛️ B. Props-based composition\n\n```tsx\nfunction Button({ icon, label }) {\n  return (\n    <button>\n      {icon} {label}\n    </button>\n  );\n}\n```\n\nUsage:\n\n```tsx\n<Button icon={<Icon />} label=\"Click me\" />\n```\n\n##### 🔌 C. Component injection\n\n```tsx\nfunction Layout({ HeaderComponent }) {\n  return (\n    <div>\n      <HeaderComponent />\n      <main>Content</main>\n    </div>\n  );\n}\n```\n\n#### 🔥 4. Advanced composition pattern (VERY important)\n\n##### 🧱 Compound components\n\nUsed in real-world UI libraries:\n\n```tsx\n<Card>\n  <Card.Header>Title</Card.Header>\n  <Card.Body>Content</Card.Body>\n</Card>\n```\n\nImplementation:\n\n```tsx\nfunction Card({ children }) {\n  return <div>{children}</div>;\n}\n\nCard.Header = function ({ children }) {\n  return <div className=\"header\">{children}</div>;\n};\n\nCard.Body = function ({ children }) {\n  return <div className=\"body\">{children}</div>;\n};\n```\n\n👉 This makes your API:\n\n* clean\n* flexible\n* scalable\n\n#### 🚫 Composition vs inheritance (important concept)\n\nReact encourages:\n\n👉 ✨ Composition  \n👉 ❌ Inheritance\n\n##### ❌ Avoid:\n\n```tsx\nclass AdminPage extends Page {}\n```\n\n##### 👍 Prefer:\n\n```tsx\n<Layout>\n  <AdminPanel />\n</Layout>\n```\n\n#### 🧠 5. Real-world example (this is how you actually use it)\n\n```tsx\n<DashboardLayout>\n  <Sidebar />\n  <MainContent>\n    <Header />\n    <Stats />\n    <Table />\n  </MainContent>\n</DashboardLayout>\n```\n\n👉 Each piece:\n\n* is independent\n* reusable\n* testable\n\n#### ⚠️ Common mistakes\n\n##### ❌ Overcomplicating composition\n\nToo many nested components → hard to read\n\n##### ❌ Passing too many props\n\n→ becomes hard to maintain\n\n##### ❌ Not abstracting reusable parts\n\n→ duplicate code everywhere\n\n#### ⭐ Best practice\n\n👉 Good composition =\n\n* small components\n* clear responsibilities\n* flexible structure\n\n#### 💡 Simple mental model\n\n> **Composition = “put components inside components” to build UI**\n\n#### 🎯 One-line takeaway\n\n> **Composition is how React builds big UIs from small reusable pieces using props and children.**"
+        },
+        {
+          "title": "🧠 Higher-Order Components (HOCs) — quick look",
+          "body": "👉 A **Higher-Order Component** is a function that takes a component and returns a new component with extra behavior.\n\n```tsx\nfunction withLogger(WrappedComponent) {\n  return function LoggedComponent(props) {\n    console.log(\"rendering\", WrappedComponent.name);\n    return <WrappedComponent {...props} />;\n  };\n}\n\nconst ProfileWithLogger = withLogger(Profile);\n```\n\n🔍 Pattern you’ll see: `withAuth(Component)`, `connect(...)(Component)`, `withRouter(Component)`.\n\n#### When it mattered\n\nHOCs were the main way to **reuse logic** before Hooks (auth wrappers, data injection, logging).\n\n#### Prefer today\n\nFor new code, prefer:\n\n* **Custom hooks** for shared logic\n* **Composition** (`children` / wrappers) for shared UI structure\n\n```tsx\n// ❌ older style\nconst Dashboard = withAuth(DashboardView);\n\n// ✅ modern style\nfunction Dashboard() {\n  const user = useAuth();\n  if (!user) return <Login />;\n  return <DashboardView />;\n}\n```\n\n#### 🎯 One-line takeaway\n\n> Recognize HOCs in older codebases — for new work, reach for custom hooks and composition instead."
+        }
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "Best Practices"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Split components when reuse or clarity improves",
+        "Avoid duplication",
+        "Colocate state close to where it is used",
+        "Reach for Context when many distant consumers need the same rarely changing value — not as a default global store"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🟢 2. State & Rendering Behavior",
+      "id": "2-state-rendering-behavior"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ State Management"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "`useState` / `useReducer` — local UI state",
+        "Context — share **rarely changing** values deep in the tree (theme, locale, auth user) without prop drilling",
+        "Client stores (Zustand, Jotai, Redux Toolkit) — cross-cutting client state with frequent updates",
+        "Server/async state (TanStack Query, SWR) — caching, revalidation, and request status for remote data"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "warning",
+      "body": "Context is not a general-purpose replacement for Redux/Zustand. Frequent updates through Context re-render all consumers — prefer a dedicated store or query library for high-churn data."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Updating State Safely"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Three day-to-day rules that prevent subtle bugs:"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "Updater form (avoid stale closures)"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// ❌ May use a stale count if multiple updates queue\nsetCount(count + 1);\n\n// ✅ Always based on the previous state\nsetCount((prev) => prev + 1);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "Automatic batching"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "React 18+ batches state updates in event handlers, timeouts, and promises — one re-render for multiple `setState` calls in the same turn."
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "Stale values in async code"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "useEffect(() => {\n  let cancelled = false;\n  loadUser(id).then((user) => {\n    if (!cancelled) setUser(user);\n  });\n  return () => {\n    cancelled = true;\n  };\n}, [id]);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "If a value can be computed from existing props/state during render, **do not** put it in state or sync it with an effect."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Derived State (You Might Not Need an Effect)"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// ❌ Syncing state from props/state in an effect\nconst [fullName, setFullName] = useState(\"\");\nuseEffect(() => {\n  setFullName(first + \" \" + last);\n}, [first, last]);\n\n// ✅ Derive during render\nconst fullName = first + \" \" + last;",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Filter/sort/map lists during render (or with `useMemo` only if expensive)",
+        "Toggle UI from existing booleans — no mirror state",
+        "Use an effect only to synchronize with an **external** system (DOM APIs, network, third-party widgets)"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ React Rendering Behavior"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Triggers:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "State change ✅",
+        "Props change ✅",
+        "Parent re-render ✅"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Virtual DOM"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "React does **not** update the browser DOM on every tiny change. It keeps a lightweight tree of **React elements** (plain objects), compares the new tree to the previous one (**reconciliation**), and then applies only the needed DOM updates."
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "That’s why **immutable state**, **keys on lists**, and avoiding unnecessary re-renders matter — they shape how cheap (or expensive) that diff is."
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "More about the Virtual DOM",
+          "body": "#### 🧠 Big idea\n\n> The Virtual DOM is React’s in-memory representation of the UI — a tree of elements that React diffs before touching the real DOM.\n\nJSX → `createElement` / `jsx` → **React elements (objects)** → reconcile → **real DOM updates**\n\n#### 🔧 What “Virtual DOM” actually means\n\nIt is **not** a secret browser feature. It is:\n\n* a tree of plain JS objects (`type`, `props`, `children`)\n* produced every time a component renders\n* compared to the previous tree so React can decide what changed\n\n```js\n// Conceptual shape of a React element\n{\n  type: \"div\",\n  props: {\n    className: \"card\",\n    children: \"Hello\"\n  }\n}\n```\n\n#### 🔄 The render → commit loop (mental model)\n\n1. Something triggers a render (state, props, or parent)\n2. React calls your components and builds a **new** element tree\n3. React **diffs** new tree vs previous tree (reconciliation)\n4. React **commits** the minimal set of DOM mutations\n\n👉 Render work is calculating “what the UI should look like.”  \n👉 Commit work is applying that to the browser.\n\n#### 🔑 Why keys matter here\n\nWhen React reconciles lists, it matches children by **key** (and position as a fallback).\n\n* Stable unique keys → React reuses the right DOM nodes\n* Index keys (or missing keys) when order changes → wrong reuse, weird bugs, lost input state\n\n#### ⚡ What this means for performance\n\nVirtual DOM does **not** mean “updates are free.”\n\n* Re-rendering still runs your component functions\n* Diffing still costs CPU\n* Extra work compounds in large trees\n\nThat’s why tools like `React.memo`, `useMemo`, and `useCallback` exist — to skip work when props/values haven’t meaningfully changed. Use them when profiling shows a need (React Compiler can also memoize automatically where enabled).\n\n#### 🪞 Simple analogy\n\n> Real DOM = the stage. Virtual DOM = the script. React rewrites the script, compares editions, then only moves the props that actually changed.\n\n#### 🎯 One-line takeaway\n\n> You don’t need the Fiber algorithm — you need the model: render produces an element tree, React diffs it, then updates the DOM. Keys, immutable updates, and re-render control all exist to make that process correct and cheap."
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🟡 3. Hooks & Lifecycle (With Explanation)",
+      "id": "3-hooks-lifecycle-with-explanation"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ What Are Hooks?"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "**Hooks are functions that let you \"hook into\" React features (state, lifecycle, context, etc.) inside functional components.**"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "✅ Why Hooks?"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Replace class components",
+        "Reuse logic cleanly",
+        "Separate concerns (logic vs UI)",
+        "Improve readability & testability"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Hook Rules (IMPORTANT)"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "✅ Only call hooks at top level",
+        "✅ Only call inside React functions/components",
+        "❌ Don't call inside loops/conditions"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Effects (start with useEffect)"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "useEffect"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Synchronize with **external systems** (network, subscriptions, timers, non-React widgets). Prefer thinking “sync,” not class lifecycle methods."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "useEffect(() => {\n  const subscription = connect(roomId);\n\n  return () => {\n    subscription.disconnect();\n  };\n}, [roomId]);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Class component equivalents (for reading older code)",
+          "body": "Hooks replaced the need for class lifecycle methods in new code, but you may still see these in legacy class components:\n\n* `componentDidMount`\n* `componentDidUpdate`\n* `componentWillUnmount`\n\nRough mapping (not 1:1):\n\n* mount-only work → `useEffect(..., [])` (and remember **Strict Mode** remounts in development)\n* update when deps change → `useEffect(..., [deps])`\n* cleanup → the function you `return` from the effect\n\nPrefer the effect mental model (“synchronize with an external system”) over forcing class lifecycle names onto hooks."
+        },
+        {
+          "title": "When do we cleanup",
+          "body": "#### 🧠 Core idea\n\n> **You use cleanup in `useEffect` when you need to “undo” something your effect created**\n\n#### ✅ 1. What is cleanup?\n\n```jsx\nuseEffect(() => {\n  // setup\n  return () => {\n    // cleanup\n  };\n}, []);\n```\n\n👉 The function you `return` is the **cleanup function**\n\n#### 🔄 2. When does cleanup run?\n\n###### ✅ It runs in TWO cases:\n\n##### ✅ A. When component unmounts\n\n```text\nComponent removed → cleanup runs\n```\n\n##### ✅ B. BEFORE the effect runs again\n\n```text\nDependency changes → cleanup runs → effect runs again\n```\n\n#### 📊 Timeline (important)\n\n```text\nMount:\n  → effect runs\n\nUpdate (dependency changes):\n  → cleanup runs (old effect)\n  → effect runs again (new effect)\n\nUnmount:\n  → cleanup runs\n```\n\n#### ✅ 3. When SHOULD you use cleanup?\n\n##### ✅ 1. Subscriptions (very important)\n\n```jsx\nuseEffect(() => {\n  const socket = connectWebSocket();\n\n  return () => {\n    socket.disconnect(); // cleanup\n  };\n}, []);\n```\n\n##### ✅ 2. Timers (setInterval / setTimeout)\n\n```jsx\nuseEffect(() => {\n  const id = setInterval(() => {\n    console.log(\"running\");\n  }, 1000);\n\n  return () => {\n    clearInterval(id);\n  };\n}, []);\n```\n\n##### ✅ 3. Event listeners\n\n```jsx\nuseEffect(() => {\n  function handleResize() {\n    console.log(window.innerWidth);\n  }\n\n  window.addEventListener(\"resize\", handleResize);\n\n  return () => {\n    window.removeEventListener(\"resize\", handleResize);\n  };\n}, []);\n```\n\n##### ✅ 4. Cancel API requests (important in real apps)\n\n```jsx\nuseEffect(() => {\n  const controller = new AbortController();\n\n  fetch(\"/api/data\", { signal: controller.signal });\n\n  return () => {\n    controller.abort();\n  };\n}, []);\n```\n\n#### ❌ 4. When you DON’T need cleanup\n\n##### ❌ Pure calculations\n\n```jsx\nuseEffect(() => {\n  console.log(\"just logging\");\n});\n```\n\n👉 Nothing to clean up\n\n##### ❌ Simple data fetching (sometimes)\n\nIf you don’t care about canceling:\n\n```jsx\nuseEffect(() => {\n  fetchData();\n}, []);\n```\n\n👉 No cleanup needed (but aborting is better in real apps)\n\n#### ⚠️ 5. Why cleanup is important\n\nWithout cleanup:\n\n###### ❌ Memory leaks\n\n* intervals keep running\n* subscriptions stay active\n\n###### ❌ Duplicate effects\n\nExample:\n\n```jsx\nuseEffect(() => {\n  setInterval(() => {\n    console.log(\"tick\");\n  }, 1000);\n}, [count]); // ❌ no cleanup\n```\n\n👉 Every update adds another interval 😱\n\n✅ Fix:\n\n```jsx\nuseEffect(() => {\n  const id = setInterval(() => {\n    console.log(\"tick\");\n  }, 1000);\n\n  return () => clearInterval(id);\n}, [count]);\n```\n\n#### 🧠 6. Simple rule (remember this)\n\n> If your effect **creates something persistent**, you must clean it up\n\n#### 🔥 7. Mental model\n\nThink of `useEffect` as:\n\n```text\nSetup something\n→ React may replace it later\n→ You must clean up the old version\n```\n\n#### ✅ 8. Quick checklist\n\nUse cleanup when you:\n\n* ✅ start a timer\n* ✅ subscribe to something\n* ✅ add event listeners\n* ✅ open connections (WebSocket)\n* ✅ start async operations you may cancel\n\n#### ✅ One-line takeaway\n\n> Cleanup in `useEffect` runs before re-running the effect and on unmount, and you should use it whenever your effect creates something that needs to be stopped, removed, or cleaned up."
+        }
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "**Strict Mode (development):** React intentionally mounts → unmounts → remounts to surface missing cleanups. Seeing effects run twice in dev is expected — fix cleanup, don’t disable Strict Mode to hide the signal."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Hook Categories (With Explanation + Examples)"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 State Hooks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Manage component data that affects UI"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useState"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Simple state"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const [count, setCount] = useState(0);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useReducer"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Complex state logic (multiple actions)"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const [state, dispatch] = useReducer(reducer, initialState);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "📌 Use when:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Many state transitions",
+        "Logic is complex"
+      ]
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Detailed explanation",
+          "body": "#### 🧠 Full Picture First\n\n```tsx\nconst [state, dispatch] = useReducer(reducer, initialState);\n```\n\n👉 There are 4 key parts you must understand:\n\n* **state**\n* **dispatch**\n* **reducer**\n* **action**\n\n#### ✅ 1. State\n\n###### 📌 Definition:\n\n> The current data of your component\n\n###### Example:\n\n```tsx\nconst [state, dispatch] = useReducer(reducer, {\n  count: 0\n});\n```\n\n👉 `state`:\n\n```ts\n{ count: 0 }\n```\n\n#### ✅ 2. Action\n\n###### 📌 Definition:\n\n> An object that describes **what happened**\n\n###### Example:\n\n```tsx\ndispatch({ type: \"increment\" });\n```\n\n👉 This is an **action**:\n\n```ts\n{ type: \"increment\" }\n```\n\n###### ✅ Real-world action:\n\n```ts\n{ type: \"LOGIN_ERROR\", payload: \"Invalid password\" }\n```\n\n👉 Common structure:\n\n```ts\n{\n  type: \"ACTION_NAME\",\n  payload: data (optional)\n}\n```\n\n#### ✅ 3. Dispatch\n\n###### 📌 Definition:\n\n> A function used to **send an action to the reducer**\n\n###### Example:\n\n```tsx\ndispatch({ type: \"increment\" });\n```\n\n👉 You are saying:\n\n> “Something happened — update the state accordingly”\n\n#### ✅ 4. Reducer\n\n###### 📌 Definition:\n\n> A function that takes **current state + action** and returns **new state**\n\n###### Structure:\n\n```tsx\nfunction reducer(state, action) {\n  switch (action.type) {\n    case \"increment\":\n      return { count: state.count + 1 };\n\n    default:\n      return state;\n  }\n}\n```\n\n👉 Important:\n\n* must be **pure**\n* must NOT mutate state\n* always return new state\n\n#### 🔁 How everything works together\n\n```\nUser action (click)\n        ↓\ndispatch(action)\n        ↓\nreducer(state, action)\n        ↓\nnew state returned\n        ↓\nReact re-renders UI\n```\n\n#### 🧩 Full example (with all definitions)\n\n```tsx\nfunction reducer(state, action) {\n  switch (action.type) {\n    case \"increment\":\n      return { count: state.count + 1 };\n\n    case \"decrement\":\n      return { count: state.count - 1 };\n\n    default:\n      return state;\n  }\n}\n\nfunction Counter() {\n  const [state, dispatch] = useReducer(reducer, { count: 0 });\n\n  return (\n    <div>\n      <h1>{state.count}</h1>\n      <button onClick={() => dispatch({ type: \"increment\" })}>\n        +\n      </button>\n    </div>\n  );\n}\n```\n\n#### 🧠 Think of it like a system\n\n| Concept  | Meaning           |\n| -------- | ----------------- |\n| State    | current data      |\n| Action   | what happened     |\n| Dispatch | sends action      |\n| Reducer  | decides new state |\n\n#### 🔥 Real-world analogy\n\nThink of it like **restaurant ordering system**:\n\n| Concept  | Analogy                         |\n| -------- | ------------------------------- |\n| State    | current order                   |\n| Action   | \"add burger\", \"remove fries\"    |\n| Dispatch | waiter taking your order        |\n| Reducer  | kitchen preparing updated order |\n\n#### ✅ Extra important related terms\n\n##### ✅ 5. Initial State\n\n###### 📌 Definition:\n\n> The starting value of your state\n\n```tsx\nuseReducer(reducer, { count: 0 });\n```\n\n##### ✅ 6. Pure Function (important for reducer)\n\n###### 📌 Definition:\n\n> A function that:\n\n* does NOT mutate data\n* returns same output for same input\n\n❌ BAD:\n\n```tsx\nstate.count++; // mutation\nreturn state;\n```\n\n✅ GOOD:\n\n```tsx\nreturn { ...state, count: state.count + 1 };\n```\n\n##### ✅ 7. Payload\n\n###### 📌 Definition:\n\n> Additional data sent with an action\n\n```tsx\ndispatch({ type: \"SET_NAME\", payload: \"John Smith\" });\n```\n\nUsed inside reducer:\n\n```tsx\ncase \"SET_NAME\":\n  return { ...state, name: action.payload };\n```\n\n##### ✅ 8. Action Type\n\n###### 📌 Definition:\n\n> A string or constant that identifies the action\n\n```ts\ntype Action =\n  | { type: \"ADD_TODO\" }\n  | { type: \"REMOVE_TODO\" };\n```\n\n👉 Best practice:\n\n* use clear, consistent naming\n\n#### 🧠 Quick summary diagram\n\n```\nstate = current data\n\ndispatch(action)\n        ↓\nreducer(state, action)\n        ↓\nnew state\n        ↓\nUI updates\n```\n\n#### ✅ One-line takeaway\n\n> `useReducer` works by dispatching actions that describe what happened, and a reducer function uses those actions to compute and return the new state.\n\n👉 `useReducer` helps you:\n\n* centralize logic\n* make state predictable\n* scale complex UI without chaos"
+        },
+        {
+          "title": "More detailed example",
+          "body": "#### 🧠 Scenario: Login Form (multiple states + actions)\n\nInstead of juggling multiple `useState`:\n\n```tsx\nconst [email, setEmail] = useState(\"\");\nconst [password, setPassword] = useState(\"\");\nconst [loading, setLoading] = useState(false);\nconst [error, setError] = useState(null);\n```\n\n👉 This gets messy fast.\n\n#### ✅ useReducer version (clean + scalable)\n\n##### Step 1: Define reducer\n\n```tsx\ntype State = {\n  email: string;\n  password: string;\n  loading: boolean;\n  error: string | null;\n};\n\ntype Action =\n  | { type: \"SET_EMAIL\"; payload: string }\n  | { type: \"SET_PASSWORD\"; payload: string }\n  | { type: \"LOGIN_START\" }\n  | { type: \"LOGIN_SUCCESS\" }\n  | { type: \"LOGIN_ERROR\"; payload: string };\n\nfunction reducer(state: State, action: Action): State {\n  switch (action.type) {\n    case \"SET_EMAIL\":\n      return { ...state, email: action.payload };\n\n    case \"SET_PASSWORD\":\n      return { ...state, password: action.payload };\n\n    case \"LOGIN_START\":\n      return { ...state, loading: true, error: null };\n\n    case \"LOGIN_SUCCESS\":\n      return { ...state, loading: false };\n\n    case \"LOGIN_ERROR\":\n      return { ...state, loading: false, error: action.payload };\n\n    default:\n      return state;\n  }\n}\n```\n\n##### Step 2: Use it in component\n\n```tsx\nfunction LoginForm() {\n  const [state, dispatch] = useReducer(reducer, {\n    email: \"\",\n    password: \"\",\n    loading: false,\n    error: null,\n  });\n\n  const handleSubmit = async () => {\n    dispatch({ type: \"LOGIN_START\" });\n\n    try {\n      await fakeLogin(state.email, state.password);\n      dispatch({ type: \"LOGIN_SUCCESS\" });\n    } catch (err: any) {\n      dispatch({ type: \"LOGIN_ERROR\", payload: err.message });\n    }\n  };\n\n  return (\n    <div>\n      <input\n        value={state.email}\n        onChange={(e) =>\n          dispatch({ type: \"SET_EMAIL\", payload: e.target.value })\n        }\n      />\n\n      <input\n        value={state.password}\n        onChange={(e) =>\n          dispatch({ type: \"SET_PASSWORD\", payload: e.target.value })\n        }\n      />\n\n      <button onClick={handleSubmit} disabled={state.loading}>\n        {state.loading ? \"Logging in...\" : \"Login\"}\n      </button>\n\n      {state.error && <p>{state.error}</p>}\n    </div>\n  );\n}\n```\n\n#### 🧠 Why this is better\n\n###### ✅ 1. Centralized logic\n\n* All state updates live in one place (the reducer)\n\n###### ✅ 2. Predictable state changes\n\nYou can clearly see:\n\n```\nLOGIN_START → loading true\nLOGIN_SUCCESS → loading false\nLOGIN_ERROR → error set\n```\n\n###### ✅ 3. Scales better\n\nIf more fields/features are added:\n\n* just add new actions\n* no need to add tons of `useState`\n\n#### 🔥 Another example: Todo App (classic but useful)\n\n##### ✅ Reducer\n\n```tsx\nfunction reducer(state, action) {\n  switch (action.type) {\n    case \"ADD_TODO\":\n      return [...state, { id: Date.now(), text: action.payload }];\n\n    case \"REMOVE_TODO\":\n      return state.filter(todo => todo.id !== action.payload);\n\n    default:\n      return state;\n  }\n}\n```\n\n##### ✅ Component\n\n```tsx\nfunction TodoApp() {\n  const [todos, dispatch] = useReducer(reducer, []);\n  const [input, setInput] = useState(\"\");\n\n  return (\n    <>\n      <input value={input} onChange={(e) => setInput(e.target.value)} />\n\n      <button onClick={() => {\n        dispatch({ type: \"ADD_TODO\", payload: input });\n        setInput(\"\");\n      }}>\n        Add\n      </button>\n\n      {todos.map(todo => (\n        <div key={todo.id}>\n          {todo.text}\n          <button onClick={() =>\n            dispatch({ type: \"REMOVE_TODO\", payload: todo.id })\n          }>\n            Delete\n          </button>\n        </div>\n      ))}\n    </>\n  );\n}\n```\n\n#### 🧠 Key takeaway from examples\n\n👉 `useReducer` shines when:\n\n* multiple related fields\n* multiple actions\n* state changes follow clear rules\n\n#### 🔥 Real-world pattern (VERY useful)\n\nYou’ll often see:\n\n```tsx\ndispatch({ type: \"ACTION_NAME\", payload: data });\n```\n\n👉 Similar to Redux — but local to your component\n\n#### ⚠️ When NOT to use useReducer\n\nAvoid it for simple state:\n\n```tsx\nconst [count, setCount] = useState(0); // ✅ better\n```\n\n#### ✅ Mental model\n\n> Instead of saying “set state directly”  \n> You say “what happened” → reducer decides update\n\n#### ✅ One-line takeaway\n\n> `useReducer` is ideal for managing complex, related state by centralizing update logic into actions and a reducer function, making your components more predictable and scalable."
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 Context Hooks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Share data globally without prop drilling"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useContext"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Set up the context"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// src/context/useReactContext.tsx\nimport { createContext, useContext } from \"react\";\n\nimport { AppContextValueType } from \"./AppContext\";\n\nexport const AppContext = createContext<AppContextValueType | null>(null);\n\nexport const useAppContext = (): AppContextValueType => {\n  const context = useContext(AppContext);\n  if (!context) {\n    throw new Error('useAppContext must be used within a AppContextProvider');\n  }\n  return context;\n};",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Set up the context provider"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// src/context/AppContext.tsx\nimport { Dispatch, ReactNode, SetStateAction, useMemo, useState } from 'react';\n\nimport { AppContext } from './useReactContext';\n\nexport interface AppContextValueType {\n  isGameActive: boolean;\n  setIsGameActive: Dispatch<SetStateAction<boolean>>;\n}\n\nexport const AppContextProvider = ({ children }: AppContextProviderType) => {\n  const [isGameActive, setIsGameActive] = useState<boolean>(false);\n\n  const AppContextValue: AppContextValueType = useMemo(\n    () => ({\n      isGameActive,\n      setIsGameActive,\n    }),\n    [isGameActive]\n  );\n\n  return <AppContext.Provider value={AppContextValue}>{children}</AppContext.Provider>;\n};\n\ninterface AppContextProviderType {\n  children: ReactNode;\n}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Add to context wrapper"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// src/context/ContextWrapper.tsx\nimport { ReactNode } from 'react';\n\nimport { AppContextProvider } from './AppContext';\n\nconst ContextWrapper = ({ children }: { children: ReactNode }) => (\n  <AppContextProvider>\n    {children}\n  </AppContextProvider>\n);\n\nexport default ContextWrapper;",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Wrap context wrapper around App"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "// src/main.tsx\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <ContextWrapper>\n      <App />\n    </ContextWrapper>\n  </StrictMode>,\n)",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Set context value in a component"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "export default function DashboardPage() {\n  const { setIsGameActive } = useAppContext();\n  useEffect(() => {\n    setIsGameActive(false);\n  }, [\n    setIsGameActive,\n  ]);\n  ...\n}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Consume context value in a component"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "export default function LandingPage() {\n  const { isGameActive } = useAppContext();\n\n  return isGameActive ? <Game /> : <Dashboard />;\n}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "📌 Use when:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Passing data through many components"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 Ref Hooks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Store values that don't trigger re-render"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useRef"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "📌 Use cases:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Access DOM",
+        "Store mutable values that don't trigger re-renders"
+      ]
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Examples",
+          "body": "#### ✅ 1. Basic syntax (TypeScript)\n\n```tsx\nconst ref = useRef<Type>(initialValue);\n```\n\n👉 The key is typing the ref properly.\n\n#### 🧩 2. Accessing DOM elements (most common)\n\n##### ✅ Example: Input focus\n\n```tsx\nimport { useRef } from \"react\";\n\nexport default function InputFocus() {\n  const inputRef = useRef<HTMLInputElement>(null);\n\n  const focusInput = () => {\n    inputRef.current?.focus();\n  };\n\n  return (\n    <div>\n      <input ref={inputRef} />\n      <button onClick={focusInput}>Focus</button>\n    </div>\n  );\n}\n```\n\n###### ✅ Key points:\n\n* `HTMLInputElement` = correct DOM type\n* `?.` (optional chaining) because it may be `null`\n\n#### 🧠 Common DOM types\n\n| Element    | Type                |\n| ---------- | ------------------- |\n| `<input>`  | `HTMLInputElement`  |\n| `<div>`    | `HTMLDivElement`    |\n| `<button>` | `HTMLButtonElement` |\n| `<form>`   | `HTMLFormElement`   |\n\n#### ✅ 3. Scrolling example (DOM usage)\n\n```tsx\nconst divRef = useRef<HTMLDivElement>(null);\n\nconst scrollToDiv = () => {\n  divRef.current?.scrollIntoView({ behavior: \"smooth\" });\n};\n\nreturn (\n  <>\n    <button onClick={scrollToDiv}>Scroll</button>\n    <div ref={divRef}>Target</div>\n  </>\n);\n```\n\n#### 🔄 4. Store mutable values (NO re-render)\n\n👉 This is where `useRef` is underrated\n\n##### ✅ Example: Previous value\n\n```tsx\nimport { useRef, useEffect } from \"react\";\n\nfunction Example({ count }: { count: number }) {\n  const prevCount = useRef<number | null>(null);\n\n  useEffect(() => {\n    prevCount.current = count;\n  }, [count]);\n\n  return (\n    <div>\n      <p>Current: {count}</p>\n      <p>Previous: {prevCount.current}</p>\n    </div>\n  );\n}\n```\n\n✅ Why useRef?\n\n* updating `prevCount.current` does **NOT re-render**\n\n#### ⏱️ 5. Timer example (very common)\n\n```tsx\nimport { useRef, useEffect } from \"react\";\n\nexport default function Timer() {\n  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);\n\n  useEffect(() => {\n    intervalRef.current = setInterval(() => {\n      console.log(\"tick\");\n    }, 1000);\n\n    return () => {\n      if (intervalRef.current) {\n        clearInterval(intervalRef.current);\n      }\n    };\n  }, []);\n\n  return <div>Running...</div>;\n}\n```\n\n✅ Why useRef here?\n\n* Store interval ID without re-render\n\n#### 🎯 6. Avoid re-creating values\n\n```tsx\nconst idRef = useRef<number>(0);\n\nconst handleClick = () => {\n  idRef.current += 1;\n  console.log(idRef.current);\n};\n```\n\n👉 This persists across renders without triggering UI updates\n\n#### ⚡ 7. Imperative actions (advanced usage)\n\n##### Example: Trigger child methods (React 19 — `ref` as a prop)\n\n```tsx\ntype InputHandle = {\n  focus: () => void;\n};\n\nfunction CustomInput({ ref }: { ref?: React.Ref<InputHandle> }) {\n  const inputRef = useRef<HTMLInputElement>(null);\n\n  useImperativeHandle(ref, () => ({\n    focus: () => inputRef.current?.focus(),\n  }));\n\n  return <input ref={inputRef} />;\n}\n```\n\n```tsx\nconst parentRef = useRef<InputHandle>(null);\n\n<button onClick={() => parentRef.current?.focus()}>Focus</button>\n<CustomInput ref={parentRef} />\n```\n\n✅ Used in design systems and reusable components. In older React, wrap with `forwardRef` instead of a `ref` prop."
+        },
+        {
+          "title": "Common mistakes",
+          "body": "#### ⚠️ 8. Common mistakes\n\n##### ❌ Forgetting null type\n\n```tsx\nuseRef<HTMLInputElement>(); // ❌ wrong\n```\n\n✅ Correct:\n\n```tsx\nuseRef<HTMLInputElement>(null);\n```\n\n##### ❌ Expecting re-render\n\n```tsx\nref.current = 10;\n```\n\n👉 UI will NOT update\n\n##### ❌ Using useRef instead of state\n\n* if UI depends on it → use `useState`"
+        },
+        {
+          "title": "useRef vs useState",
+          "body": "#### 🧠 9. useRef vs useState\n\n| useRef                 | useState           |\n| ---------------------- | ------------------ |\n| No re-render           | Triggers re-render |\n| Mutable                | Immutable updates  |\n| Stores values silently | Updates UI         |\n\n#### ✅ When to use useRef\n\nUse it when:\n\n* ✅ accessing DOM\n* ✅ storing timers / IDs\n* ✅ storing previous values\n* ✅ avoiding unnecessary re-renders\n\n#### 💡 Simple mental model\n\n> `useRef` = a **persistent box** that React does NOT watch\n\n#### ✅ One-line takeaway\n\n> In TypeScript, `useRef` is used with proper typing (e.g. `HTMLInputElement`, `number`, etc.) to safely access DOM elements or store mutable values without triggering re-renders."
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useImperativeHandle"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 Customize the instance value exposed to a parent via `ref` (advanced). Prefer normal props/callbacks when possible."
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "React 19: pass `ref` as a normal prop. `forwardRef` is mainly for older libraries/codebases."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "import { useRef, useImperativeHandle } from \"react\";\n\ntype InputHandle = { focus: () => void };\n\nfunction CustomInput({ ref }: { ref?: React.Ref<InputHandle> }) {\n  const inputRef = useRef<HTMLInputElement>(null);\n\n  useImperativeHandle(ref, () => ({\n    focus: () => inputRef.current?.focus(),\n  }));\n\n  return <input ref={inputRef} />;\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 Effect Hooks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Synchronize UI with external systems"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useEffect"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Standard async effects"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useLayoutEffect"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Runs before screen paint, **before the user sees anything**",
+        "Used for measurements"
+      ]
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "More examples",
+          "body": "#### 🎯 Key difference\n\n| Hook              | When it runs |\n| ----------------- | ------------ |\n| `useEffect`       | after paint  |\n| `useLayoutEffect` | before paint |\n\n#### 🧠 3. Why this matters\n\nBecause you can:\n\n* ✅ **read layout (size, position)**\n* ✅ **modify DOM before user sees it**\n* ✅ prevent visual flicker\n\n#### ✅ 4. Your example (explained)\n\n```jsx\nuseLayoutEffect(() => {\n  console.log(ref.current.offsetHeight);\n}, []);\n```\n\n👉 Why use layout effect?\n\n* DOM is already updated ✅\n* but not painted yet ✅\n\n→ You get **accurate measurements**\n\n#### ✅ 5. Real-world examples\n\n##### ✅ A. Measuring DOM size (most common)\n\n```tsx\nimport { useRef, useLayoutEffect, useState } from \"react\";\n\nfunction Example() {\n  const ref = useRef<HTMLDivElement>(null);\n  const [height, setHeight] = useState(0);\n\n  useLayoutEffect(() => {\n    if (ref.current) {\n      setHeight(ref.current.offsetHeight);\n    }\n  }, []);\n\n  return (\n    <>\n      <div ref={ref}>Content</div>\n      <p>Height: {height}</p>\n    </>\n  );\n}\n```\n\n👉 Why not `useEffect`?\n\n* User may briefly see incorrect height (flicker)\n\n##### ✅ B. Prevent layout jump (very important)\n\n```tsx\nuseLayoutEffect(() => {\n  if (ref.current) {\n    ref.current.style.transform = \"translateX(100px)\";\n  }\n}, []);\n```\n\n👉 Runs before paint:\n\n* user never sees initial position (no flicker)\n\n##### ✅ C. Synchronizing scroll position\n\n```tsx\nuseLayoutEffect(() => {\n  window.scrollTo(0, 0);\n}, []);\n```\n\n👉 Ensures:\n\n* page starts at correct scroll BEFORE paint\n\n##### ✅ D. Tooltip positioning (real-world pattern)\n\n```tsx\nuseLayoutEffect(() => {\n  const rect = targetRef.current?.getBoundingClientRect();\n\n  if (rect) {\n    tooltipRef.current!.style.top = `${rect.bottom}px`;\n  }\n}, []);\n```\n\n👉 Needed because:\n\n* positioning depends on layout\n* must happen before render\n\n#### ⚠️ 6. When NOT to use `useLayoutEffect`\n\n##### ❌ Data fetching\n\n```tsx\nuseLayoutEffect(() => {\n  fetchData(); // ❌ BAD\n}, []);\n```\n\n👉 Blocks painting → slower UI\n\n##### ❌ Logging / analytics\n\n```tsx\nuseLayoutEffect(() => {\n  console.log(\"mounted\"); // ❌ unnecessary\n}, []);\n```\n\n##### ❌ Non-visual side effects\n\n→ use `useEffect` instead\n\n#### ⚠️ 7. Performance warning (important)\n\n> ❗ `useLayoutEffect` BLOCKS the browser from painting\n\n👉 If you overuse it:\n\n* UI becomes slower\n* worse performance\n\n#### ✅ Rule of thumb\n\n👉 Use `useEffect` by default  \n👉 Use `useLayoutEffect` only when:\n\n* you need layout info\n* you must update DOM before paint\n* avoiding flicker matters\n\n#### 🧠 8. Mental model\n\n```\nNeed to measure or fix layout BEFORE user sees it?\n→ useLayoutEffect\n\nEverything else?\n→ useEffect\n```\n\n#### 📊 9. Timeline diagram\n\n```\nRender\n  ↓\nDOM updated\n  ↓\nuseLayoutEffect runs ✅\n  ↓\nBrowser paints (user sees UI)\n  ↓\nuseEffect runs ✅\n```\n\n#### ✅ 10. Simple example comparison\n\n##### With useEffect (may flicker)\n\n```tsx\nuseEffect(() => {\n  setHeight(ref.current.offsetHeight);\n}, []);\n```\n\n##### With useLayoutEffect (no flicker)\n\n```tsx\nuseLayoutEffect(() => {\n  setHeight(ref.current.offsetHeight);\n}, []);\n```\n\n#### ✅ One-line takeaway\n\n> `useLayoutEffect` runs before the browser paints, making it ideal for measuring or updating layout without causing visual flicker—but it should be used sparingly because it blocks rendering.\n\n#### 🔥 For your level (important)\n\nAs someone building:\n\n* large apps\n* possibly microfrontends\n\n👉 You’ll use `useLayoutEffect` mainly for:\n\n* UI libraries\n* positioning logic\n* advanced interactions\n\nNot everyday coding."
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useInsertionEffect"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Inject styles before DOM updates"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 Performance Hooks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Prevent unnecessary re-renders"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useMemo"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Cache computed values"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const total = useMemo(() => compute(items), [items]);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Examples",
+          "body": "> **Measure first.** Most components do not need `useMemo`. Prefer it for expensive pure calculations or stable object/array identities passed to memoized children — not for `count + 1`.\n\n#### 🔥 1. Expensive computation\n\n##### ❌ Inefficient (recomputes every render)\n\n```tsx\nfunction App({ items }) {\n  const total = items.reduce((sum, item) => sum + item.price, 0);\n\n  return <div>Total: {total}</div>;\n}\n```\n\n👉 Problem:\n\n* Every re-render → recalculates total\n* Even if `items` didn’t change\n\n##### ✅ Efficient (useMemo)\n\n```tsx\nfunction App({ items }) {\n  const total = useMemo(() => {\n    return items.reduce((sum, item) => sum + item.price, 0);\n  }, [items]);\n\n  return <div>Total: {total}</div>;\n}\n```\n\n👉 Only recalculates when `items` changes ✅\n\n#### 🔥 2. Prevent child re-renders (VERY important)\n\n##### ❌ Inefficient\n\n```tsx\nfunction Parent({ count }) {\n  const data = { count };\n\n  return <Child data={data} />;\n}\n```\n\n👉 Problem:\n\n* `{ count }` = new object every render\n* `Child` always re-renders ❌\n\n##### ✅ Efficient\n\n```tsx\nfunction Parent({ count }) {\n  const data = useMemo(() => ({ count }), [count]);\n\n  return <Child data={data} />;\n}\n```\n\n👉 Stable reference → prevents unnecessary re-render ✅\n\n#### 🔥 3. Filtering large lists\n\n##### ❌ Inefficient\n\n```tsx\nfunction UserList({ users, search }) {\n  const filtered = users.filter(user =>\n    user.name.includes(search)\n  );\n\n  return filtered.map(user => <div>{user.name}</div>);\n}\n```\n\n👉 Problem:\n\n* Filtering runs every render ❌\n\n##### ✅ Efficient\n\n```tsx\nfunction UserList({ users, search }) {\n  const filtered = useMemo(() => {\n    return users.filter(user =>\n      user.name.includes(search)\n    );\n  }, [users, search]);\n\n  return filtered.map(user => <div>{user.name}</div>);\n}\n```\n\n👉 Only recalculates when `users` or `search` changes ✅\n\n#### 🔥 4. Sorting (very expensive in big datasets)\n\n##### ❌ Inefficient\n\n```tsx\nconst sorted = items.sort((a, b) => a.price - b.price);\n```\n\n👉 Problem:\n\n* Runs every render\n* Mutates original array ❌\n\n##### ✅ Efficient\n\n```tsx\nconst sorted = useMemo(() => {\n  return [...items].sort((a, b) => a.price - b.price);\n}, [items]);\n```\n\n👉\n\n* No mutation ✅\n* Cached computation ✅\n\n#### 🔥 5. Dependency stability (useEffect bug fix)\n\n##### ❌ Inefficient (causes infinite or repeated effects)\n\n```tsx\nconst options = { page: 1 };\n\nuseEffect(() => {\n  fetchData(options);\n}, [options]);\n```\n\n👉 Problem:\n\n* `options` is new every render ❌\n* useEffect runs every time ❌\n\n##### ✅ Efficient\n\n```tsx\nconst options = useMemo(() => ({ page: 1 }), []);\n\nuseEffect(() => {\n  fetchData(options);\n}, [options]);\n```\n\n👉 Stable dependency → effect runs once ✅\n\n#### 🔥 6. Styling objects (common hidden issue)\n\n##### ❌ Inefficient\n\n```tsx\n<MyComponent style={{ color: isActive ? \"blue\" : \"gray\" }} />\n```\n\n👉 Problem:\n\n* new object every render → child re-renders ❌\n\n##### ✅ Efficient\n\n```tsx\nconst style = useMemo(() => ({\n  color: isActive ? \"blue\" : \"gray\"\n}), [isActive]);\n\n<MyComponent style={style} />\n```\n\n👉 Stable object → better performance ✅\n\n#### 🔥 7. Derived values\n\n##### ❌ Inefficient\n\n```tsx\nconst completedCount = todos.filter(t => t.done).length;\n```\n\n👉 Problem:\n\n* recalculated every render ❌\n\n##### ✅ Efficient\n\n```tsx\nconst completedCount = useMemo(() => {\n  return todos.filter(t => t.done).length;\n}, [todos]);\n```\n\n👉 Only recalculates when todos change ✅\n\n#### 🔥 8. Large table / dashboard (real scenario)\n\n##### ❌ Inefficient\n\n```tsx\nconst processedData = processHugeDataset(data);\n```\n\n👉 Problem:\n\n* heavy computation runs on every render\n* freezes UI ❌\n\n##### ✅ Efficient\n\n```tsx\nconst processedData = useMemo(() => {\n  return processHugeDataset(data);\n}, [data]);\n```\n\n👉 Runs only when needed ✅\n\n#### 🧠 Key pattern you should recognize\n\n👉 Inefficient code usually looks like:\n\n```\ncreating new objects / arrays / computations inside render\n```\n\n👉 Efficient code:\n\n```\nwrap expensive or unstable values with useMemo\n```\n\n#### ⚠️ Important: don’t overuse useMemo\n\n##### ❌ Bad usage\n\n```tsx\nconst value = useMemo(() => count + 1, [count]);\n```\n\n👉 useless — too cheap to matter\n\n#### ✅ When it actually matters\n\nUse `useMemo` when:\n\n* ✅ expensive computation\n* ✅ large lists\n* ✅ object/array passed to children\n* ✅ dependency for useEffect\n\n#### 💡 Super simple rule\n\n> If it’s expensive or causes re-renders → consider `useMemo`  \n> If it’s cheap → don’t use it\n\n#### ✅ One-line takeaway\n\n> The inefficient way recreates values on every render, while `useMemo` avoids unnecessary recomputation and stabilizes references for better performance."
+        }
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useCallback"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Cache function references",
+        "Closely related to useMemo, but specifically for functions."
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const fn = useCallback(() => {\n  // logic\n}, [deps]);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "📌 Important for:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Passing props to optimized children"
+      ]
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Detailed example",
+          "body": "#### 🧠 Quick reminder\n\n> `useCallback` = **memoize (cache) a function reference**\n\n```tsx\nconst fn = useCallback(() => {\n  // logic\n}, [deps]);\n```\n\n#### 🔥 1. Prevent unnecessary child re-renders (MOST IMPORTANT)\n\n##### ❌ Inefficient\n\n```tsx\nfunction Parent() {\n  const handleClick = () => {\n    console.log(\"clicked\");\n  };\n\n  return <Child onClick={handleClick} />;\n}\n```\n\n👉 Problem:\n\n* `handleClick` is recreated every render\n* `Child` re-renders even if nothing changed ❌\n\n##### ✅ Efficient\n\n```tsx\nfunction Parent() {\n  const handleClick = useCallback(() => {\n    console.log(\"clicked\");\n  }, []);\n\n  return <Child onClick={handleClick} />;\n}\n```\n\n👉 Stable function → child doesn’t re-render unnecessarily ✅\n\n#### 🔥 2. Using with `React.memo`\n\n##### ❌ Inefficient\n\n```tsx\nconst Child = React.memo(({ onClick }) => {\n  console.log(\"Child re-rendered\");\n  return <button onClick={onClick}>Click</button>;\n});\n\nfunction Parent() {\n  const handleClick = () => console.log(\"click\");\n\n  return <Child onClick={handleClick} />;\n}\n```\n\n👉 Problem:\n\n* new function → props changed → `React.memo` useless ❌\n\n##### ✅ Efficient\n\n```tsx\nfunction Parent() {\n  const handleClick = useCallback(() => {\n    console.log(\"click\");\n  }, []);\n\n  return <Child onClick={handleClick} />;\n}\n```\n\n👉 `React.memo` works properly ✅\n\n#### 🔥 3. Passing callbacks in lists\n\n##### ❌ Inefficient\n\n```tsx\nitems.map(item => (\n  <Item\n    key={item.id}\n    onSelect={() => handleSelect(item.id)}\n  />\n))\n```\n\n👉 Problem:\n\n* new function created for EVERY item, every render ❌\n\n##### ✅ Efficient\n\n```tsx\nconst handleSelect = useCallback((id) => {\n  console.log(id);\n}, []);\n\nitems.map(item => (\n  <Item\n    key={item.id}\n    onSelect={handleSelect}\n  />\n))\n```\n\n👉 Inside child:\n\n```tsx\nfunction Item({ onSelect, id }) {\n  return <button onClick={() => onSelect(id)}>Select</button>;\n}\n```\n\n✅ Now function is stable\n\n#### 🔥 4. Dependency stability in hooks\n\n##### ❌ Inefficient\n\n```tsx\nconst fetchData = () => {\n  console.log(\"fetching...\");\n};\n\nuseEffect(() => {\n  fetchData();\n}, [fetchData]); // ❌ runs every render\n```\n\n👉 Problem:\n\n* `fetchData` changes every render\n* effect keeps running ❌\n\n##### ✅ Efficient\n\n```tsx\nconst fetchData = useCallback(() => {\n  console.log(\"fetching...\");\n}, []);\n\nuseEffect(() => {\n  fetchData();\n}, [fetchData]);\n```\n\n👉 Now effect runs only once ✅\n\n#### 🔥 5. Inline handlers on plain elements\n\n```tsx\n<button onClick={() => setCount((prev) => prev + 1)}>\n  Increment\n</button>\n```\n\n👉 Fine for a normal button. Reach for `useCallback` when the function is passed to a **memoized child** or listed in a hook dependency array — not for every click handler.\n\n#### 🔥 6. Expensive child components\n\n##### ❌ Inefficient\n\n```tsx\n<HeavyComponent onAction={() => doSomething()} />\n```\n\n👉 `HeavyComponent` re-renders unnecessarily ❌\n\n##### ✅ Efficient\n\n```tsx\nconst onAction = useCallback(() => {\n  doSomething();\n}, []);\n\n<HeavyComponent onAction={onAction} />\n```\n\n👉 Prevents unnecessary work ✅\n\n#### 🧠 Key concept: reference equality\n\nReact compares:\n\n```tsx\noldFn === newFn\n```\n\n###### Without useCallback:\n\n```tsx\n() => {} !== () => {}\n```\n\n###### With useCallback:\n\n```tsx\nsameFn === sameFn\n```\n\n✅ This is why it helps performance\n\n#### ⚠️ When NOT to use useCallback\n\n##### ❌ Simple cases\n\n```tsx\n<button onClick={() => console.log(\"hi\")} />\n```\n\n👉 Fine — no need for useCallback\n\n##### ❌ Overusing it\n\n```tsx\nconst fn = useCallback(() => count + 1, [count]); // unnecessary\n```\n\n👉 Adds complexity with little benefit\n\n#### 🔄 useCallback vs useMemo\n\n| Hook          | What it returns |\n| ------------- | --------------- |\n| `useMemo`     | value           |\n| `useCallback` | function        |\n\nEquivalent:\n\n```tsx\nuseCallback(fn, deps)\n```\n\n≈\n\n```tsx\nuseMemo(() => fn, deps)\n```\n\n#### 🧠 Mental model\n\n> `useCallback` = “keep this function reference stable”\n\n#### ✅ When it REALLY matters\n\nUse it when:\n\n* ✅ passing functions to child components\n* ✅ using `React.memo`\n* ✅ function is a dependency of `useEffect`\n* ✅ avoiding re-renders in large lists\n\n#### ❗ Most important real-world rule\n\n👉 `useCallback` is about **preventing unnecessary re-renders**, NOT just optimizing performance blindly\n\n#### ✅ One-line takeaway\n\n> `useCallback` keeps function references stable across renders, which is crucial when passing callbacks to optimized components or hooks that depend on them."
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 Transition Hooks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Improve UI responsiveness"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useTransition"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Mark updates as non-urgent",
+        "one of the **most important modern React hooks** for handling **UI performance and responsiveness**, especially in larger apps"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const [isPending, startTransition] = useTransition();",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Real, practical examples",
+          "body": "#### 🧠 Quick recap\n\n```tsx\nconst [isPending, startTransition] = useTransition();\n```\n\n👉 What it does:\n\n* Marks updates as **non-urgent**\n* Keeps UI responsive while heavy work runs\n\n#### 🔥 1. Heavy list filtering (most common use case)\n\n##### ❌ Without `useTransition` (UI freezes)\n\n```tsx\nfunction App({ largeList }) {\n  const [input, setInput] = useState(\"\");\n  const [filtered, setFiltered] = useState(largeList);\n\n  const handleChange = (e) => {\n    const value = e.target.value;\n    setInput(value);\n\n    // ❌ expensive filtering blocks typing\n    const result = largeList.filter(item =>\n      item.includes(value)\n    );\n    setFiltered(result);\n  };\n\n  return (\n    <>\n      <input value={input} onChange={handleChange} />\n      {filtered.map(item => <div key={item}>{item}</div>)}\n    </>\n  );\n}\n```\n\n👉 Problem:\n\n* Typing becomes laggy\n* UI freezes on every keystroke\n\n##### ✅ With `useTransition` (smooth typing)\n\n```tsx\nfunction App({ largeList }) {\n  const [input, setInput] = useState(\"\");\n  const [filtered, setFiltered] = useState(largeList);\n\n  const [isPending, startTransition] = useTransition();\n\n  const handleChange = (e) => {\n    const value = e.target.value;\n    setInput(value); // urgent ✅\n\n    startTransition(() => {\n      const result = largeList.filter(item =>\n        item.includes(value)\n      );\n      setFiltered(result); // non-urgent ✅\n    });\n  };\n\n  return (\n    <>\n      <input value={input} onChange={handleChange} />\n      {isPending && <p>Updating...</p>}\n      {filtered.map(item => <div key={item}>{item}</div>)}\n    </>\n  );\n}\n```\n\n👉 Result:\n\n* Typing stays instant ✅\n* List updates in background ✅\n\n#### 🔥 2. Search UI (real-world pattern)\n\n##### ✅ Example: search suggestions\n\n```tsx\nfunction Search({ data }) {\n  const [query, setQuery] = useState(\"\");\n  const [results, setResults] = useState([]);\n\n  const [isPending, startTransition] = useTransition();\n\n  const handleSearch = (e) => {\n    const value = e.target.value;\n\n    setQuery(value); // immediate UI update\n\n    startTransition(() => {\n      const filtered = data.filter(item =>\n        item.toLowerCase().includes(value.toLowerCase())\n      );\n      setResults(filtered);\n    });\n  };\n\n  return (\n    <>\n      <input value={query} onChange={handleSearch} />\n      {isPending && <span>Searching...</span>}\n\n      {results.map(item => (\n        <div key={item}>{item}</div>\n      ))}\n    </>\n  );\n}\n```\n\n#### 🔥 3. Switching tabs (UI responsiveness)\n\n##### ❌ Without transition (laggy UI)\n\n```tsx\nconst handleTabChange = (tab) => {\n  setActiveTab(tab);\n  loadHeavyData(tab); // blocks UI ❌\n};\n```\n\n##### ✅ With `useTransition`\n\n```tsx\nconst [isPending, startTransition] = useTransition();\n\nconst handleTabChange = (tab) => {\n  setActiveTab(tab); // immediate\n\n  startTransition(() => {\n    loadHeavyData(tab); // non-urgent\n  });\n};\n```\n\n👉 Result:\n\n* Tab switches instantly ✅\n* content loads in background ✅\n\n#### 🔥 4. Navigation / page transitions\n\n```tsx\nconst [isPending, startTransition] = useTransition();\n\nconst handleNavigate = () => {\n  startTransition(() => {\n    setPage(\"dashboard\");\n  });\n};\n\nreturn (\n  <>\n    <button onClick={handleNavigate}>Go</button>\n    {isPending && <p>Loading page...</p>}\n  </>\n);\n```\n\n👉 Useful for:\n\n* large pages\n* expensive components\n\n#### 🔥 5. Updating charts / dashboards\n\n##### ❌ Without transition\n\n```tsx\nsetChartData(processLargeDataset(data)); // blocks UI\n```\n\n##### ✅ With transition\n\n```tsx\nstartTransition(() => {\n  setChartData(processLargeDataset(data));\n});\n```\n\n👉 UI stays responsive while recalculating\n\n#### 🔥 6. Form with expensive validation\n\n```tsx\nconst handleChange = (e) => {\n  const value = e.target.value;\n\n  setInput(value);\n\n  startTransition(() => {\n    const errors = validateComplexForm(value);\n    setErrors(errors);\n  });\n};\n```\n\n👉 Fast typing ✅  \n👉 validation runs in background ✅\n\n#### 🧠 Key concept: urgent vs non-urgent updates\n\n| Type         | Example                             |\n| ------------ | ----------------------------------- |\n| ✅ Urgent     | input typing, button clicks         |\n| ✅ Non-urgent | filtering, search, heavy UI updates |\n\n👉 `useTransition` lets you say:\n\n> “This update can wait”\n\n#### ⚠️ When NOT to use it\n\n##### ❌ Simple updates\n\n```tsx\nsetCount(count + 1);\n```\n\n👉 No need — too fast\n\n##### ❌ Critical UI updates\n\n* form input value\n* user interactions\n\n👉 must stay instant\n\n#### 🧠 Mental model\n\n```\nUser interaction → urgent\nHeavy UI work → transition\n```\n\n#### 🔄 useTransition vs useDeferredValue\n\n| Hook               | Purpose                             |\n| ------------------ | ----------------------------------- |\n| `useTransition`    | control when updates are non-urgent |\n| `useDeferredValue` | delay a value                       |\n\n#### ✅ One-line takeaway\n\n> `useTransition` lets you mark non-critical updates as low priority so React keeps your UI responsive while heavy work runs in the background.\n\n👉 `useTransition` is especially useful for:\n\n* search\n* filtering\n* large tables\n* charts"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "useDeferredValue"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Delay non-critical updates"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "const deferred = useDeferredValue(value);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Example",
+          "body": "#### 🧠 Quick recap\n\n```tsx\nconst deferredValue = useDeferredValue(value);\n```\n\n> It returns a **“delayed version” of a value**, allowing React to **lag behind on expensive updates**\n\n#### 🎯 Key idea\n\n* `value` = updates immediately ✅\n* `deferredValue` = updates later (low priority)\n\n👉 Great for:\n\n* search\n* filtering\n* large lists\n* expensive UI\n\n#### 🔥 1. Search input (MOST COMMON)\n\n##### ❌ Without `useDeferredValue`\n\n```tsx\nfunction App({ list }) {\n  const [query, setQuery] = useState(\"\");\n\n  const filtered = list.filter(item =>\n    item.includes(query)\n  );\n\n  return (\n    <>\n      <input value={query} onChange={e => setQuery(e.target.value)} />\n      {filtered.map(item => <div key={item}>{item}</div>)}\n    </>\n  );\n}\n```\n\n👉 Problem:\n\n* filtering runs on every keystroke\n* typing becomes laggy\n\n##### ✅ With `useDeferredValue`\n\n```tsx\nfunction App({ list }) {\n  const [query, setQuery] = useState(\"\");\n  const deferredQuery = useDeferredValue(query);\n\n  const filtered = useMemo(() => {\n    return list.filter(item =>\n      item.includes(deferredQuery)\n    );\n  }, [list, deferredQuery]);\n\n  return (\n    <>\n      <input value={query} onChange={e => setQuery(e.target.value)} />\n      {filtered.map(item => <div key={item}>{item}</div>)}\n    </>\n  );\n}\n```\n\n✅ Result:\n\n* typing is fast (uses `query`)\n* filtering is slower (uses `deferredQuery`)\n\n#### 🔥 2. Large list rendering\n\n##### ✅ Example\n\n```tsx\nfunction List({ items }) {\n  const deferredItems = useDeferredValue(items);\n\n  return (\n    <>\n      {deferredItems.map(item => (\n        <div key={item.id}>{item.name}</div>\n      ))}\n    </>\n  );\n}\n```\n\n👉 If `items` updates frequently:\n\n* UI doesn’t freeze\n* rendering happens in background\n\n#### 🔥 3. Expensive computation\n\n```tsx\nfunction Dashboard({ data }) {\n  const deferredData = useDeferredValue(data);\n\n  const processed = useMemo(() => {\n    return processLargeDataset(deferredData);\n  }, [deferredData]);\n\n  return <Chart data={processed} />;\n}\n```\n\n✅ Keeps UI responsive when data updates rapidly\n\n#### 🔥 4. Form input with heavy validation\n\n```tsx\nfunction Form() {\n  const [value, setValue] = useState(\"\");\n\n  const deferredValue = useDeferredValue(value);\n\n  const errors = useMemo(() => {\n    return validateHeavy(deferredValue);\n  }, [deferredValue]);\n\n  return (\n    <>\n      <input value={value} onChange={e => setValue(e.target.value)} />\n      <p>{errors}</p>\n    </>\n  );\n}\n```\n\n👉 User types smoothly  \n👉 validation is delayed\n\n#### 🔥 5. Typing + live preview\n\n```tsx\nfunction Editor() {\n  const [text, setText] = useState(\"\");\n  const deferredText = useDeferredValue(text);\n\n  return (\n    <>\n      <textarea onChange={e => setText(e.target.value)} />\n      <Preview content={deferredText} />\n    </>\n  );\n}\n```\n\n👉 Use case:\n\n* markdown editor\n* code preview\n* live formatting\n\n#### 🔥 6. Combined with loading indicator\n\n```tsx\nconst deferredQuery = useDeferredValue(query);\nconst isStale = query !== deferredQuery;\n\nreturn (\n  <>\n    <input value={query} onChange={handleChange} />\n    {isStale && <p>Updating...</p>}\n  </>\n);\n```\n\n👉 Lets you show:\n\n* “UI is catching up”\n\n#### 🧠 Important difference from `useTransition`\n\n| Hook               | You control           |\n| ------------------ | --------------------- |\n| `useTransition`    | when to defer updates |\n| `useDeferredValue` | which value to defer  |\n\n#### 🔄 Mental model\n\n```\nImmediate value (fast UI)\n        ↓\nDeferred value (slow heavy work)\n```\n\n#### ⚠️ When NOT to use it\n\n##### ❌ Simple UI\n\n```tsx\nconst deferred = useDeferredValue(count);\n```\n\n👉 pointless\n\n##### ❌ Critical logic\n\n* authentication\n* form submission\n\n👉 must not be delayed\n\n#### ✅ When to use `useDeferredValue`\n\n* ✅ searching\n* ✅ filtering\n* ✅ large datasets\n* ✅ live previews\n* ✅ dashboards\n\n#### 🔥 Simple rule\n\n> If a value drives expensive UI → defer it\n\n#### ✅ One-line takeaway\n\n> `useDeferredValue` lets you delay updates to expensive UI by using a lagging version of a value, keeping the interface responsive during rapid changes.\n\n👉 `useDeferredValue` is perfect for:\n\n* large tables\n* search bars\n* analytics UIs"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 Other Hooks (Advanced)"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 Some are library-oriented; several are everyday React 19 APIs."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**useDebugValue** → DevTools labels for custom hooks",
+        "**useId** → Stable unique IDs (accessibility + SSR hydration)",
+        "**useSyncExternalStore** → Subscribe to external stores correctly",
+        "**use** → Read a Promise or Context; unwraps promises with Suspense",
+        "**useActionState** → Track pending state + result for Actions",
+        "**useOptimistic** → Show optimistic UI while an async update finishes",
+        "**useFormStatus** → Pending/disabled state inside a form Action subtree"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 5,
+      "content": "React 19: Actions & optimistic UI (sketch)"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "import { useActionState, useOptimistic } from \"react\";\n\nasync function saveName(prevState, formData) {\n  const name = formData.get(\"name\");\n  await updateName(name);\n  return { ok: true };\n}\n\nfunction NameForm() {\n  const [state, action, pending] = useActionState(saveName, { ok: false });\n  return (\n    <form action={action}>\n      <input name=\"name\" disabled={pending} />\n      <button disabled={pending}>{pending ? \"Saving…\" : \"Save\"}</button>\n      {state.ok && <p>Saved</p>}\n    </form>\n  );\n}",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "**Server Components vs Client Components:** Frameworks like Next.js can render components on the server by default (no hooks, can `await` data). Add `\"use client\"` when you need state, effects, or browser APIs. Keep the boundary intentional — fetch on the server when you can."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 4,
+      "content": "🔹 Custom Hooks"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "👉 **Purpose:** Reuse logic across components"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "function useFetch(url) {\n  const [data, setData] = useState(null);\n  const [error, setError] = useState(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    const controller = new AbortController();\n    setLoading(true);\n    setError(null);\n\n    fetch(url, { signal: controller.signal })\n      .then((res) => {\n        if (!res.ok) throw new Error(res.statusText);\n        return res.json();\n      })\n      .then(setData)\n      .catch((err) => {\n        if (err.name !== \"AbortError\") setError(err);\n      })\n      .finally(() => setLoading(false));\n\n    return () => controller.abort();\n  }, [url]);\n\n  return { data, error, loading };\n}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "warning",
+      "body": "A hand-rolled `useFetch` is fine for learning. In production apps prefer **TanStack Query**, **SWR**, or your framework’s data APIs for caching, deduping, and retries."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "✅ Hook Mental Model (VERY IMPORTANT)"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "UI = function(state)",
+        "Hooks = tools to manage that state & side effects"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🟡 4. Event Handling",
+      "id": "4-event-handling"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "<button onClick={handleClick}>Click</button>",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Synthetic Events",
+          "body": "#### 🧠 What are Synthetic Events?\n\n> **Synthetic Events are React’s wrapper around native browser events**\n\nReact creates its own event system to:\n\n* ✅ normalize behavior across browsers\n* ✅ improve performance\n* ✅ provide a consistent API\n\n#### ✅ Simple definition\n\n> A **SyntheticEvent** is a cross-browser wrapper around a native DOM event that React uses to handle events consistently.\n\n#### 🔄 Native vs Synthetic Events\n\n##### ✅ Native DOM event\n\n```js\nbutton.addEventListener(\"click\", function (event) {\n  console.log(event);\n});\n```\n\n##### ✅ React Synthetic Event\n\n```jsx\n<button onClick={(e) => console.log(e)}>\n  Click\n</button>\n```\n\n👉 Here `e` is NOT the raw browser event  \n👉 It is a **React SyntheticEvent**\n\n#### 🎯 Why React uses Synthetic Events\n\n##### ✅ 1. Cross-browser compatibility\n\nDifferent browsers behave differently:\n\n```js\nevent.target vs event.srcElement\n```\n\n👉 React normalizes this so you get:\n\n```js\nevent.target // always works\n```\n\n##### ✅ 2. Consistent API\n\nNo matter the browser:\n\n* `event.target`\n* `event.preventDefault()`\n* `event.stopPropagation()`\n\n👉 Always behave the same ✅\n\n##### ✅ 3. Performance (event delegation)\n\nReact attaches events at the **root level** instead of each element.\n\n👉 Instead of:\n\n```\n1000 buttons → 1000 listeners ❌\n```\n\n👉 React does:\n\n```\n1 listener at root ✅\n```\n\n#### 🧩 Example: Click event\n\n```tsx\nfunction App() {\n  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {\n    console.log(e.type);        // \"click\"\n    console.log(e.target);      // button element\n    console.log(e.nativeEvent); // raw browser event\n  };\n\n  return <button onClick={handleClick}>Click</button>;\n}\n```\n\n#### ✅ Accessing native event\n\n```tsx\ne.nativeEvent\n```\n\n👉 Gives you the original browser event if needed\n\n#### 🔥 Common event types\n\n###### ✅ Mouse events\n\n```tsx\nonClick\nonMouseEnter\nonMouseLeave\n```\n\n###### ✅ Keyboard events\n\n```tsx\nonKeyDown\nonKeyUp\n```\n\n###### ✅ Form events\n\n```tsx\nonChange\nonSubmit\nonInput\n```\n\n#### ⚠️ Important behavior (very important)\n\n##### 🧠 Event pooling (OLD behavior)\n\nIn older React versions:\n\n```tsx\nconsole.log(e.target); // ❌ might break later\n```\n\n👉 Event was reused (pooled)\n\n##### ✅ Modern React (17+)\n\n👉 **Pooling is removed**\n\nSo this works:\n\n```tsx\nsetTimeout(() => {\n  console.log(e.target); // ✅ safe\n}, 1000);\n```\n\n#### ✅ Example: Form submit\n\n```tsx\nfunction Form() {\n  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {\n    e.preventDefault(); // stop page refresh\n    console.log(\"Submitted\");\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <button type=\"submit\">Submit</button>\n    </form>\n  );\n}\n```\n\n#### ✅ Example: Stop propagation\n\n```tsx\nfunction App() {\n  return (\n    <div onClick={() => console.log(\"Parent\")}>\n      <button\n        onClick={(e) => {\n          e.stopPropagation();\n          console.log(\"Button\");\n        }}\n      >\n        Click\n      </button>\n    </div>\n  );\n}\n```\n\n👉 Output:\n\n```\nButton\n```\n\n👉 Without stopPropagation:\n\n```\nButton\nParent\n```\n\n#### 🧠 SyntheticEvent API (important methods)\n\n```tsx\ne.preventDefault()\ne.stopPropagation()\ne.target\ne.currentTarget\ne.nativeEvent\n```\n\n#### 🔄 e.target vs e.currentTarget\n\n##### ✅ Example\n\n```tsx\n<div onClick={(e) => console.log(e.currentTarget)}>\n  <button>Click</button>\n</div>\n```\n\n| Property        | Meaning                |\n| --------------- | ---------------------- |\n| `target`        | actual clicked element |\n| `currentTarget` | element with handler   |\n\n#### 🔥 TypeScript typing (VERY useful)\n\n##### ✅ Click event\n\n```tsx\nconst handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {}\n```\n\n##### ✅ Input change\n\n```tsx\nconst handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {\n  console.log(e.target.value);\n};\n```\n\n##### ✅ Form submit\n\n```tsx\nconst handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {}\n```\n\n#### ⚠️ Common mistakes\n\n##### ❌ Treating it as native event\n\n```tsx\nconsole.log(e.path); // ❌ not standard\n```\n\n##### ❌ Forgetting preventDefault\n\n```tsx\n<form onSubmit={handleSubmit}>\n```\n\n👉 page reloads ❌\n\n##### ❌ Using wrong event type (TS)\n\n```tsx\n(e: any) // ❌ avoid\n```\n\n#### 🧠 Mental model\n\n> SyntheticEvent = **React-controlled event system**\n\n#### ✅ When you care about Synthetic Events\n\nIn real apps:\n\n* handling forms\n* handling clicks\n* preventing propagation\n* typing events properly (TypeScript)\n\n#### ✅ One-line takeaway\n\n> Synthetic Events are React’s cross-browser wrapper around native events, providing a consistent API and better performance through event delegation.\n\n#### 🔥 For YOUR level\n\nAs you move into:\n\n* large apps\n* microfrontends\n\n👉 understanding Synthetic Events helps with:\n\n* debugging event propagation\n* performance optimization\n* writing clean TypeScript event handlers"
+        },
+        {
+          "title": "Event Bubbling",
+          "body": "#### 🧠 What is Event Bubbling?\n\n> **Event bubbling is a mechanism where an event starts at the target element and “bubbles up” through its parent elements.**\n\n#### 🎯 Simple explanation\n\nWhen you click something:\n\n```\nChild → Parent → Parent → ... → Document\n```\n\n👉 The event travels **up the DOM tree**\n\n#### ✅ Example (Plain HTML/JS)\n\n```js\ndocument.getElementById(\"parent\").addEventListener(\"click\", () => {\n  console.log(\"Parent clicked\");\n});\n\ndocument.getElementById(\"child\").addEventListener(\"click\", () => {\n  console.log(\"Child clicked\");\n});\n```\n\n##### ✅ What happens when you click the button?\n\nOutput:\n\n```\nChild clicked\nParent clicked\n```\n\n👉 Event fires on:\n\n1. child ✅\n2. then bubbles to parent ✅\n\n#### ✅ Same in React\n\n```tsx\nfunction App() {\n  return (\n    <div onClick={() => console.log(\"Parent\")}>\n      <button onClick={() => console.log(\"Child\")}>\n        Click\n      </button>\n    </div>\n  );\n}\n```\n\n###### ✅ Output\n\n```\nChild\nParent\n```\n\n👉 React uses the same bubbling behavior ✅\n\n#### 🧠 Why does this happen?\n\nBecause of how the **DOM event flow works**\n\n#### 🔄 Event Flow (3 phases)\n\n```\n1. Capturing phase ↓\n2. Target phase 🎯\n3. Bubbling phase ↑\n```\n\n###### ✅ Example flow\n\nClick button:\n\n```\ndocument ↓\nhtml ↓\nbody ↓\ndiv ↓\nbutton 🎯 (target)\ndiv ↑\nbody ↑\nhtml ↑\ndocument ↑\n```\n\n👉 Bubbling = the **upward phase**\n\n#### 🛑 How to stop event bubbling\n\n##### ✅ Using `stopPropagation()`\n\n```tsx\n<button\n  onClick={(e) => {\n    e.stopPropagation();\n    console.log(\"Child only\");\n  }}\n>\n  Click\n</button>\n```\n\n###### ✅ Output\n\n```\nChild only\n```\n\n👉 Parent will NOT receive the event\n\n#### ✅ Real-world example\n\n```tsx\nfunction Card() {\n  return (\n    <div onClick={() => console.log(\"Card clicked\")}>\n      <button\n        onClick={(e) => {\n          e.stopPropagation();\n          console.log(\"Button clicked\");\n        }}\n      >\n        Delete\n      </button>\n    </div>\n  );\n}\n```\n\n###### ✅ Behavior\n\n👉 Click button:\n\n```\nButton clicked ✅\nCard clicked ❌ (blocked)\n```\n\n👉 Click card:\n\n```\nCard clicked ✅\n```\n\n#### 🧠 When bubbling is useful\n\n##### ✅ 1. Event delegation (important)\n\nInstead of attaching many listeners:\n\n```tsx\n<ul onClick={handleClick}>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>\n```\n\n👉 Parent handles all clicks ✅\n\n##### ✅ 2. Simplifying logic\n\n* handle events at higher level\n* reduce code duplication\n\n#### ⚠️ When bubbling causes bugs\n\n##### ❌ Unwanted parent handler runs\n\nExample:\n\n* clicking delete button also triggers card click\n* modal closes unexpectedly\n\n👉 Fix:\n\n```tsx\ne.stopPropagation();\n```\n\n#### 🔥 e.target vs e.currentTarget (important)\n\n```tsx\n<div onClick={(e) => console.log(\"current:\", e.currentTarget)}>\n  <button>Click</button>\n</div>\n```\n\n| Property        | Meaning                |\n| --------------- | ---------------------- |\n| `target`        | actual element clicked |\n| `currentTarget` | element with handler   |\n\n#### 🧠 Mental model\n\n> Event Bubbling = **event travels UP the DOM after being triggered**\n\n#### ✅ One-line takeaway\n\n> Event bubbling is when an event triggered on a child element propagates upward through its parent elements unless explicitly stopped.\n\n#### 🔥 Understanding bubbling helps you:\n\n* ✅ debug event bugs\n* ✅ build clean component structures\n* ✅ use event delegation effectively"
+        }
+      ]
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Passing params:"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "onClick={() => handleClick(id)}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🟡 5. Forms",
+      "id": "5-forms"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "<input value={value} onChange={e => setValue(e.target.value)} />",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "Controlled vs Uncontrolled Components (in React)",
+          "body": "#### 🧠 Controlled vs Uncontrolled Components (in React)\n\n> These describe **how form data is managed**\n\n#### ✅ 1. Controlled Components\n\n###### 📌 Definition\n\n> A controlled component is a form element whose value is **controlled by React state**\n\n##### ✅ Example (Controlled input)\n\n```tsx\nfunction Form() {\n  const [value, setValue] = useState(\"\");\n\n  return (\n    <input\n      value={value}\n      onChange={(e) => setValue(e.target.value)}\n    />\n  );\n}\n```\n\n#### ✅ How it works\n\n```\nInput → onChange → React state → re-render → UI updates\n```\n\n👉 React is the **single source of truth**\n\n##### ✅ Key characteristics\n\n* ✅ Value stored in React state\n* ✅ Updates through `onChange`\n* ✅ Always in sync with UI\n* ✅ Fully controlled by React\n\n#### ✅ Use cases\n\n* form validation\n* dynamic UI updates\n* conditional rendering\n* multi-step forms\n\n#### ❗ Example: validation\n\n```tsx\nfunction Form() {\n  const [email, setEmail] = useState(\"\");\n\n  return (\n    <>\n      <input\n        value={email}\n        onChange={(e) => setEmail(e.target.value)}\n      />\n      {!email.includes(\"@\") && <p>Invalid email</p>}\n    </>\n  );\n}\n```\n\n👉 React controls everything ✅\n\n#### ❌ Downsides\n\n* more code\n* re-render on every keystroke\n* can affect performance in very large forms\n\n#### ✅ 2. Uncontrolled Components\n\n###### 📌 Definition\n\n> An uncontrolled component stores its own state in the DOM, not in React\n\n##### ✅ Example (Uncontrolled input)\n\n```tsx\nfunction Form() {\n  const inputRef = useRef<HTMLInputElement>(null);\n\n  const handleSubmit = () => {\n    console.log(inputRef.current?.value);\n  };\n\n  return (\n    <>\n      <input ref={inputRef} />\n      <button onClick={handleSubmit}>Submit</button>\n    </>\n  );\n}\n```\n\n#### ✅ How it works\n\n```\nInput → DOM stores value → read via ref when needed\n```\n\n👉 React does NOT control the value\n\n##### ✅ Key characteristics\n\n* ✅ Uses `ref` instead of state\n* ✅ No re-renders on input change\n* ✅ Value read only when needed\n* ✅ Less React involvement\n\n#### ✅ Use cases\n\n* simple forms\n* performance-critical apps\n* integrating with non-React code\n* quick prototypes\n\n#### ❌ Downsides\n\n* harder to validate\n* less control\n* harder to sync UI\n* less predictable\n\n#### ⚔️ Controlled vs Uncontrolled (comparison)\n\n| Feature         | Controlled       | Uncontrolled |\n| --------------- | ---------------- | ------------ |\n| Source of truth | React state      | DOM          |\n| Value access    | always available | via ref      |\n| Re-renders      | yes              | no           |\n| Validation      | easy             | harder       |\n| Code complexity | higher           | lower        |\n\n#### 🔥 Real-world comparison\n\n##### ✅ Controlled\n\n```tsx\n<input\n  value={name}\n  onChange={(e) => setName(e.target.value)}\n/>\n```\n\n👉 best for:\n\n* forms with logic\n* validation\n* UI updates\n\n##### ✅ Uncontrolled\n\n```tsx\n<input ref={inputRef} />\n```\n\n👉 best for:\n\n* simple input capture\n* performance optimization\n\n#### ⚠️ Important rule\n\n> React recommends using **controlled components by default**\n\n#### 🧠 Hybrid usage (very common)\n\nSometimes you mix both:\n\n```tsx\n<input defaultValue=\"Hello\" ref={inputRef} />\n```\n\n#### 🎯 defaultValue vs value (important)\n\n| Prop           | Type         |\n| -------------- | ------------ |\n| `value`        | controlled   |\n| `defaultValue` | uncontrolled |\n\n#### ✅ Example\n\n```tsx\n<input defaultValue=\"Initial\" />\n```\n\n👉 React sets initial value only  \n👉 DOM manages the rest\n\n#### 🧠 Mental model\n\n```\nControlled = React controls input ✅\nUncontrolled = DOM controls input ✅\n```\n\n#### ✅ One-line takeaway\n\n> Controlled components store form data in React state, while uncontrolled components rely on the DOM to manage form data using refs.\n\n#### 🔥 As you build larger apps:\n\n* ✅ use **controlled** for most forms\n* ✅ use **uncontrolled** when performance matters"
+        }
+      ]
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Validation"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "All fields must have validation logic. Example"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Null checks",
+        "If value is currency, make sure decimal places are correct",
+        "String checks",
+        "Date format checks"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🟡 6. Data Fetching",
+      "id": "6-data-fetching"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "Prefer **framework data loading** (Server Components, route loaders) or a **client cache library** (TanStack Query, SWR). Manual `useEffect` + `fetch` is a last resort — useful to understand, easy to get wrong."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Recommended approaches"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Full-stack framework: fetch in a Server Component or route loader",
+        "SPA / client-heavy UI: TanStack Query or SWR for cache + status",
+        "Legacy / simple demo: `useEffect` with AbortController (see cleanup earlier)"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "If you fetch in an effect"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "useEffect(() => {\n  const controller = new AbortController();\n\n  async function load() {\n    try {\n      setStatus(\"loading\");\n      const res = await fetch(url, { signal: controller.signal });\n      if (!res.ok) throw new Error(\"Request failed\");\n      setData(await res.json());\n      setStatus(\"success\");\n    } catch (e) {\n      if (e.name === \"AbortError\") return;\n      setError(e);\n      setStatus(\"error\");\n    }\n  }\n\n  load();\n  return () => controller.abort();\n}, [url]);",
+      "language": "jsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Always account for:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Success / data state",
+        "Loading state",
+        "Error state",
+        "Cancellation / race conditions when `url` or ids change"
+      ]
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "Suspense + `use` (modern)"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "import { use, Suspense } from \"react\";\n\nfunction User({ userPromise }) {\n  const user = use(userPromise); // suspends until resolved\n  return <h1>{user.name}</h1>;\n}\n\n<Suspense fallback={<p>Loading…</p>}>\n  <User userPromise={fetchUser()} />\n</Suspense>",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Pair Suspense with an **Error Boundary** (next section) so failures have a UI path too."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🔵 7. Error Handling",
+      "id": "7-error-handling"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Render errors and failed async UI need a recovery path. **Error Boundaries** catch errors in the tree below them (class API or a small library wrapper)."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "import { Component } from \"react\";\n\nclass ErrorBoundary extends Component {\n  state = { hasError: false };\n\n  static getDerivedStateFromError() {\n    return { hasError: true };\n  }\n\n  componentDidCatch(error, info) {\n    console.error(error, info.componentStack);\n  }\n\n  render() {\n    if (this.state.hasError) {\n      return this.props.fallback ?? <p>Something went wrong.</p>;\n    }\n    return this.props.children;\n  }\n}\n\n<ErrorBoundary fallback={<p>Could not load profile.</p>}>\n  <Suspense fallback={<p>Loading…</p>}>\n    <Profile />\n  </Suspense>\n</ErrorBoundary>",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "**Why is this a class component?** React only exposes error-boundary lifecycles on classes: `static getDerivedStateFromError` (switch to a fallback UI) and `componentDidCatch` (log / report). There is no `useErrorBoundary` in React itself, so a function component cannot be an error boundary on its own. Children inside the boundary can still be function components — only the wrapper needs to be a class (or a thin class from a library like `react-error-boundary`). This is one of the few places modern React apps still use classes: not preference, but the only supported API today."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Wrap route segments or feature islands — not necessarily the entire app in one boundary",
+        "Suspense handles **loading**; Error Boundaries handle **failures**",
+        "Event-handler errors are not caught by boundaries — use try/catch there"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🔵 8. Debugging",
+      "id": "8-debugging"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Console logs (temporary; remove before merge)",
+        "Track re-renders (React DevTools Profiler / why-did-you-render sparingly)",
+        "VS Code and browser built-in debuggers",
+        "React DevTools (Components + Profiler)",
+        "Network tab + React Query/SWR devtools when using those libraries"
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🔵 9. Performance Optimization",
+      "id": "9-performance-optimization"
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "**Premature memoization** adds noise. Optimize list virtualization, bundle size, and waterfalls before sprinkling `useMemo` everywhere."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Measure first (React DevTools Profiler, browser Performance panel)",
+        "`useMemo` / `useCallback` / `React.memo` when profiling shows waste",
+        "`React.lazy` + `Suspense` for code splitting",
+        "`useTransition` / `useDeferredValue` for keeping input responsive",
+        "React Compiler (where enabled) can auto-memoize — less manual `memo`/`useMemo`"
+      ]
+    },
+    {
+      "componentType": "Accordion",
+      "sections": [
+        {
+          "title": "React.memo - prevent unnecessary re-renders",
+          "body": "`React.memo` is used to **prevent unnecessary re-renders** of functional components when props haven’t changed. Here are some **real-life scenarios** where it actually makes a difference 👇\n\n#### ✅ 1. List Rendering (Most Common Case)\n\n##### Scenario\n\nYou have a list of items (e.g. todo list, product list). When one item updates, **all items re-render** by default.\n\n##### Without `React.memo`\n\nEvery item re-renders → bad for performance (especially large lists)\n\n##### With `React.memo`\n\n```jsx\nconst ListItem = React.memo(({ item }) => {\n  console.log(\"Rendering:\", item.name);\n  return <div>{item.name}</div>;\n});\n```\n\n```jsx\nfunction List({ items }) {\n  return items.map(item => <ListItem key={item.id} item={item} />);\n}\n```\n\n✅ Now only the changed item re-renders  \n👉 Very useful for:\n\n* E-commerce product lists\n* Chat messages\n* Tables with many rows\n\n#### ✅ 2. Prevent Child Re-render due to Parent State Change\n\n##### Scenario\n\nParent state changes, but child props stay the same.\n\n```jsx\nfunction Parent() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <>\n      <button onClick={() => setCount(count + 1)}>Click</button>\n      <Child name=\"Abc\" />\n    </>\n  );\n}\n```\n\nWithout memo → `Child` re-renders every click  \nWith memo:\n\n```jsx\nconst Child = React.memo(({ name }) => {\n  console.log(\"Child rendered\");\n  return <div>{name}</div>;\n});\n```\n\n✅ Child won’t re-render unnecessarily\n\n#### ✅ 3. Expensive UI Components\n\n##### Scenario\n\nComponent has heavy computation or complex UI rendering (charts, maps, animations).\n\n```jsx\nconst Chart = React.memo(({ data }) => {\n  console.log(\"Rendering chart...\");\n  return <HeavyChart data={data} />;\n});\n```\n\n✅ Prevents costly re-renders when `data` is unchanged\n\n👉 Common in:\n\n* Analytics dashboards\n* Financial charts\n* Data visualizations\n\n#### ✅ 4. Forms with Many Inputs\n\n##### Scenario\n\nTyping in one field causes all fields to re-render.\n\n```jsx\nconst InputField = React.memo(({ label, value, onChange }) => {\n  console.log(label, \"rendered\");\n  return (\n    <input value={value} onChange={onChange} />\n  );\n});\n```\n\n✅ Only the changed input re-renders\n\n👉 Helps in:\n\n* Large enterprise forms\n* Multi-step forms\n\n#### ✅ 5. Reusable UI Components (Buttons, Cards)\n\n##### Scenario\n\nReusable components used everywhere (Card, Button, Avatar)\n\n```jsx\nconst Card = React.memo(({ title }) => {\n  return <div>{title}</div>;\n});\n```\n\n✅ Avoids unnecessary re-render across the app\n\n#### ✅ 6. Tables with Sorting / Filtering\n\n##### Scenario\n\nSorting/filtering triggers parent update, causing full table re-render.\n\n```jsx\nconst TableRow = React.memo(({ row }) => {\n  return <tr><td>{row.name}</td></tr>;\n});\n```\n\n✅ Only affected rows update\n\n#### ⚠️ When NOT to use `React.memo`\n\nAvoid if:\n\n###### ❌ Props change frequently\n\n```jsx\n<Child obj={{ name: \"Abc\" }} />\n```\n\nThis creates a new object every render → memo useless\n\n👉 Fix with `useMemo`:\n\n```jsx\nconst obj = useMemo(() => ({ name: \"Abc\" }), []);\n```\n\n###### ❌ Component is very small\n\nMemo adds overhead → might hurt performance\n\n###### ❌ You don’t have performance issues\n\nPremature optimization = unnecessary complexity\n\n#### 🔥 Bonus: Custom Comparison\n\n```jsx\nconst User = React.memo(\n  ({ user }) => <div>{user.name}</div>,\n  (prev, next) => prev.user.id === next.user.id\n);\n```\n\n✅ Useful when:\n\n* Props are complex objects\n* You want fine control over re-render logic\n\n#### ✅ Quick Mental Rule\n\nUse `React.memo` when:\n\n* Component re-renders often ✅\n* Props rarely change ✅\n* Render is costly ✅\n\n#### 🚀 Simple Summary\n\n| Use Case             | Benefit                     |\n| -------------------- | --------------------------- |\n| Lists                | Avoid rerendering all items |\n| Parent state changes | Protect unchanged children  |\n| Charts / heavy UI    | Improve performance         |\n| Forms                | Isolate input updates       |\n| Tables               | Efficient row updates       |"
+        },
+        {
+          "title": "React.lazy - code splitting",
+          "body": "`React.lazy` is used for **code splitting** — loading components **only when they are needed**, instead of bundling everything upfront.\n\nHere are **real-life use cases** where `React.lazy` makes a big difference 👇\n\n#### ✅ 1. Route-Based Lazy Loading (Most Common)\n\n##### Scenario\n\nYou have multiple pages:\n\n* Home\n* Dashboard\n* Settings\n\nWithout lazy → all pages load at startup 😬  \nWith lazy → load only when user visits page ✅\n\n```jsx\nimport { lazy, Suspense } from \"react\";\nimport { BrowserRouter, Routes, Route } from \"react-router-dom\";\n\nconst Home = lazy(() => import(\"./pages/Home\"));\nconst Dashboard = lazy(() => import(\"./pages/Dashboard\"));\nconst Settings = lazy(() => import(\"./pages/Settings\"));\n\nfunction App() {\n  return (\n    <BrowserRouter>\n      <Suspense fallback={<div>Loading...</div>}>\n        <Routes>\n          <Route path=\"/\" element={<Home />} />\n          <Route path=\"/dashboard\" element={<Dashboard />} />\n          <Route path=\"/settings\" element={<Settings />} />\n        </Routes>\n      </Suspense>\n    </BrowserRouter>\n  );\n}\n```\n\n✅ Huge performance boost for large apps  \n👉 Used in:\n\n* SaaS apps (admin panels)\n* E-commerce sites\n* Dashboards\n\n#### ✅ 2. Heavy Components (Charts, Maps, Editors)\n\n##### Scenario\n\nYou use expensive libraries like:\n\n* Chart.js\n* Google Maps\n* Rich text editors\n\n```jsx\nconst Chart = React.lazy(() => import(\"./Chart\"));\n\n<Suspense fallback={<p>Loading chart...</p>}>\n  <Chart />\n</Suspense>\n```\n\n✅ Chart loads only when needed  \n✅ Reduces initial bundle size\n\n👉 Perfect for:\n\n* Analytics dashboards\n* Reporting tools\n\n#### ✅ 3. Modal / Popup Components\n\n##### Scenario\n\nModal is **not always visible**, but still bundled by default.\n\n```jsx\nconst LoginModal = React.lazy(() => import(\"./LoginModal\"));\n\nfunction App() {\n  const [open, setOpen] = useState(false);\n\n  return (\n    <>\n      <button onClick={() => setOpen(true)}>Login</button>\n\n      {open && (\n        <Suspense fallback={<div>Loading modal...</div>}>\n          <LoginModal />\n        </Suspense>\n      )}\n    </>\n  );\n}\n```\n\n✅ Modal loads **only when opened**\n\n👉 Common in:\n\n* Login/signup popups\n* Settings dialogs\n* Help panels\n\n#### ✅ 4. Feature-Based Loading (Premium / Rare Features)\n\n##### Scenario\n\nSome features are rarely used:\n\n* Export to PDF\n* Advanced filters\n* Admin-only tools\n\n```jsx\nconst ExportPDF = React.lazy(() => import(\"./ExportPDF\"));\n\n{showExport && (\n  <Suspense fallback={<div>Preparing export...</div>}>\n    <ExportPDF />\n  </Suspense>\n)}\n```\n\n✅ Don’t load until user needs it  \n👉 Saves bandwidth and improves speed\n\n#### ✅ 5. Tabs Interface\n\n##### Scenario\n\nMultiple tabs but user views only one at a time.\n\n```jsx\nconst Profile = lazy(() => import(\"./tabs/Profile\"));\nconst Settings = lazy(() => import(\"./tabs/Settings\"));\n\nfunction Tabs({ activeTab }) {\n  return (\n    <Suspense fallback={<div>Loading tab...</div>}>\n      {activeTab === \"profile\" && <Profile />}\n      {activeTab === \"settings\" && <Settings />}\n    </Suspense>\n  );\n}\n```\n\n✅ Only active tab is loaded  \n👉 Great for:\n\n* User dashboards\n* Admin consoles\n\n#### ✅ 6. Large Forms / Multi-Step Forms\n\n##### Scenario\n\nMulti-step form with many sections\n\n```jsx\nconst StepOne = lazy(() => import(\"./StepOne\"));\nconst StepTwo = lazy(() => import(\"./StepTwo\"));\n```\n\n✅ Loads step-by-step instead of everything at once\n\n#### ✅ 7. Third-Party Libraries on Demand\n\n##### Scenario\n\nYou only need a library sometimes\n\n```jsx\nconst ImageEditor = lazy(() => import(\"./ImageEditor\"));\n```\n\n✅ Prevents loading big dependencies unless needed\n\n#### ⚠️ Important Rules\n\n##### 1. Must wrap with `Suspense`\n\n```jsx\n<Suspense fallback={<div>Loading...</div>}>\n  <LazyComponent />\n</Suspense>\n```\n\n##### 2. Works only for default exports\n\n✅ Correct:\n\n```jsx\nconst Comp = lazy(() => import(\"./Comp\"));\n```\n\n❌ Wrong:\n\n```jsx\n// named export won't work directly\n```\n\n##### 3. Only for client-side components\n\n(Not for SSR without extra setup like Next.js dynamic import)\n\n#### 🔥 Real Performance Impact\n\nWithout lazy:\n\n* Big JS bundle\n* Slow initial load\n\nWith lazy:\n\n* Smaller initial bundle ✅\n* Faster page load ✅\n* Better UX ✅\n\n#### ✅ Quick Summary\n\n| Use Case      | Why Use React.lazy           |\n| ------------- | ---------------------------- |\n| Routing       | Load pages only when visited |\n| Charts / maps | Avoid heavy initial load     |\n| Modals        | Load on demand               |\n| Tabs          | Load active content only     |\n| Forms         | Step-based loading           |\n| Rare features | Reduce bundle size           |\n\n#### 🚀 Mental Model\n\n> **\"Don't load what the user hasn’t asked for yet.\"**"
+        },
+        {
+          "title": "Suspense",
+          "body": "> **Suspense lets you show a fallback UI while something is \"waiting\" (loading).**\n\n###### ✅ React.lazy & Suspense (Code Splitting + Async UI)\n\n###### React.lazy\n\n```jsx\nconst Page = lazy(() => import(\"./Page\"));\n```\n\n###### Suspense\n\n```jsx\n<Suspense fallback={<Loading />}>\n  <Page />\n</Suspense>\n```\n\n👉 Think of it as:\n\n```\n\"If this part of the UI isn’t ready yet → show something else\"\n```\n\n###### 🎯 Where Suspense is Used (3 Core Use Cases)\n\n###### ✅ 1. Code Splitting (MOST COMMON)\n\n👉 Works with `React.lazy`\n\n###### Example\n\n```jsx\nconst Dashboard = React.lazy(() => import(\"./Dashboard\"));\n\nfunction App() {\n  return (\n    <Suspense fallback={<p>Loading dashboard...</p>}>\n      <Dashboard />\n    </Suspense>\n  );\n}\n```\n\n###### ✅ What’s happening:\n\n1. User loads page\n2. Dashboard JS is NOT loaded yet\n3. Suspense shows fallback\n4. When loaded → renders Dashboard\n\n###### 🧠 Why this matters\n\n* Smaller initial bundle ✅\n* Faster app load ✅\n* Better UX ✅\n\n###### ✅ 2. Route-Based Loading (Real-world standard)\n\n```jsx\nconst Home = lazy(() => import(\"./Home\"));\nconst Settings = lazy(() => import(\"./Settings\"));\n\n<Suspense fallback={<Spinner />}>\n  <Routes>\n    <Route path=\"/\" element={<Home />} />\n    <Route path=\"/settings\" element={<Settings />} />\n  </Routes>\n</Suspense>\n```\n\n👉 Only loads pages when visited\n\n###### ✅ 3. Data Fetching with Suspense (Modern React)\n\n👉 Supported with React 19 `use()`, frameworks (Next.js), and Suspense-aware libraries. Pair with an Error Boundary.\n\n```jsx\n<Suspense fallback={<Loading />}>\n  <UserProfile />\n</Suspense>\n```\n\n👉 Inside `UserProfile`:\n\n```jsx\nconst data = use(userPromise);\n```\n\n###### 🧠 What happens:\n\n```\nComponent \"suspends\" → Suspense fallback shows → data resolves → UI renders\n```\n\n###### 🔥 Real-Life Examples (When YOU Should Use It)\n\n###### ✅ Example 1: Dashboard App (your level)\n\n```jsx\nconst Chart = lazy(() => import(\"./Chart\"));\n\nfunction Dashboard() {\n  return (\n    <Suspense fallback={<p>Loading chart...</p>}>\n      <Chart />\n    </Suspense>\n  );\n}\n```\n\n👉 Chart (heavy) loads only when needed\n\n###### ✅ Example 2: Modal\n\n```jsx\nconst LoginModal = lazy(() => import(\"./LoginModal\"));\n\n{showModal && (\n  <Suspense fallback={<p>Opening...</p>}>\n    <LoginModal />\n  </Suspense>\n)}\n```\n\n👉 Modal loads only when opened\n\n###### ✅ Example 3: Tabs\n\n```jsx\n<Suspense fallback={<Spinner />}>\n  {tab === \"profile\" && <Profile />}\n  {tab === \"settings\" && <Settings />}\n</Suspense>\n```\n\n👉 Only active tab loads\n\n###### ✅ Example 4: Microfrontend / Large App (VERY relevant to you)\n\n```jsx\n<Suspense fallback={<Loader />}>\n  <RemoteApp />\n</Suspense>\n```\n\n👉 Remote module loads async (e.g. module federation)\n\n###### 🔥 Key Rule (VERY IMPORTANT)\n\n> ❗ **Any component that may “pause rendering” MUST be wrapped in Suspense**\n\n###### ⚠️ Common Mistakes\n\n###### ❌ Forgetting Suspense\n\n```jsx\nconst Page = lazy(() => import(\"./Page\"));\n\n<Page /> // ❌ crash\n```\n\n✅ Fix:\n\n```jsx\n<Suspense fallback={<p>Loading...</p>}>\n  <Page />\n</Suspense>\n```\n\n###### ❌ Wrapping too much\n\n```jsx\n<Suspense>\n  <EntireApp />\n</Suspense>\n```\n\n👉 Bad UX (whole app blocked)\n\n✅ Better:\n\n* wrap smaller parts (per route/component)\n\n###### ❌ Using Suspense for everything\n\n👉 Use only when:\n\n* lazy loading\n* async UI\n\nNOT for:\n\n* normal state loading (`useEffect` fetch)\n\n#### 🧠 Suspense vs useEffect Loading\n\n###### ❌ Traditional way\n\n```jsx\nconst [loading, setLoading] = useState(true);\n\nif (loading) return <Spinner />;\n```\n\n###### ✅ Suspense way\n\n```jsx\n<Suspense fallback={<Spinner />}>\n  <DataComponent />\n</Suspense>\n```\n\n👉 Suspense = **declarative loading UI**\n\n###### ✅ When to use Suspense\n\n* Lazy-loaded components ✅\n* Route-based loading ✅\n* Heavy components ✅\n* Microfrontends ✅\n* Data fetching (modern React) ✅\n\n###### ✅ Mental model\n\n```\nComponent not ready → show fallback → render when ready\n```\n\n###### ✅ One-line takeaway\n\n> Suspense lets you display fallback UI while waiting for lazy-loaded components or async data to be ready, improving performance and user experience.\n\n###### 🔥 Final Simple Mental Model\n\n```\nReact.lazy → load code later\nSuspense   → what to show while waiting\n```"
+        }
+      ]
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🔵 10. Routing",
+      "id": "10-routing"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Client SPAs often use **React Router**. Full-stack frameworks (Next.js App Router, Remix) own routing + data loading — learn both styles."
+    },
+    {
+      "componentType": "Heading",
+      "level": 3,
+      "content": "React Router (sketch)"
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "import { BrowserRouter, Routes, Route, Outlet, useParams, Link } from \"react-router-dom\";\n\nfunction App() {\n  return (\n    <BrowserRouter>\n      <Routes>\n        <Route path=\"/\" element={<Layout />}>\n          <Route index element={<Home />} />\n          <Route path=\"users/:id\" element={<User />} />\n          <Route path=\"settings\" element={<Settings />} />\n        </Route>\n      </Routes>\n    </BrowserRouter>\n  );\n}\n\nfunction Layout() {\n  return (\n    <>\n      <nav><Link to=\"/\">Home</Link></nav>\n      <Outlet />\n    </>\n  );\n}\n\nfunction User() {\n  const { id } = useParams();\n  return <h1>User {id}</h1>;\n}",
+      "language": "jsx"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Nested routes** + `<Outlet />` for shared layouts",
+        "**Params / search params** via `useParams` / `useSearchParams`",
+        "**Loaders & actions** (React Router 6.4+) move fetch/mutate next to the route",
+        "Lazy-load route elements with `React.lazy` + `Suspense` (see Performance)"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "info",
+      "body": "In Next.js App Router, folders define routes (`app/users/[id]/page.tsx`), Server Components fetch by default, and `loading.tsx` / `error.tsx` map to Suspense + error UI."
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🔵 11. Testing",
+      "id": "11-testing"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "**Vitest** (common with Vite) or **Jest**",
+        "**React Testing Library** — assert on behavior users see",
+        "**MSW** (Mock Service Worker) — realistic API mocking",
+        "**Playwright** / Cypress — end-to-end critical flows"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "✅ Focus on:"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Behavior (what the user sees and does), not implementation details",
+        "API mocking with MSW rather than mocking `fetch` ad hoc everywhere",
+        "Accessibility roles/labels in queries (`getByRole`, `getByLabelText`)"
+      ]
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "❌ Avoid testing (implementation details / brittle checks):"
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Internal state — e.g. `expect(component.state.count).toBe(1)` or peeking at `useState` values",
+        "That a specific hook or function was called — e.g. `expect(useEffect).toHaveBeenCalled()` / spying on `setCount`",
+        "CSS class names or Emotion/MUI generated class strings — they change and users don’t care",
+        "Component instance methods or `wrapper.find(Child)` / enzyme-style shallow tree shape",
+        "Exact markup structure — e.g. asserting a `<div>` wrapping a `<span>` when only the visible text matters",
+        "Private helpers inside the file that aren’t part of the public UI contract",
+        "Snapshots of large DOM trees — they break on harmless refactors and rarely catch real bugs"
+      ]
+    },
+    {
+      "componentType": "Callout",
+      "variant": "tip",
+      "body": "Rule of thumb: if a refactor that doesn’t change what the user sees breaks the test, the test was coupled to implementation. Prefer roles, labels, text, and user events."
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "import { render, screen } from \"@testing-library/react\";\nimport userEvent from \"@testing-library/user-event\";\nimport { Counter } from \"./Counter\";\n\ntest(\"increments\", async () => {\n  const user = userEvent.setup();\n  render(<Counter />);\n  await user.click(screen.getByRole(\"button\", { name: /increment/i }));\n  expect(screen.getByText(\"1\")).toBeInTheDocument();\n});",
+      "language": "tsx"
+    },
+    {
+      "componentType": "Divider"
+    },
+    {
+      "componentType": "Heading",
+      "level": 2,
+      "content": "🔵 12. Accessibility",
+      "id": "12-accessibility"
+    },
+    {
+      "componentType": "Paragraph",
+      "content": "Accessible UI is part of fundamentals — not an afterthought. React does not fix a11y for you."
+    },
+    {
+      "componentType": "List",
+      "ordered": false,
+      "items": [
+        "Use semantic HTML (`button`, `label`, headings) before ARIA",
+        "Every input needs a label (`<label htmlFor={id}>` or wrapping)",
+        "`useId()` for stable SSR-safe ids linking labels/controls",
+        "Keyboard: focusable controls, visible focus, Escape to dismiss dialogs",
+        "Manage focus when opening/closing modals (often via `ref` + `useEffect`)",
+        "Prefer Testing Library role queries — they push accessible markup"
+      ]
+    },
+    {
+      "componentType": "CodeBlock",
+      "code": "import { useId } from \"react\";\n\nfunction EmailField() {\n  const id = useId();\n  return (\n    <>\n      <label htmlFor={id}>Email</label>\n      <input id={id} type=\"email\" autoComplete=\"email\" />\n    </>\n  );\n}",
+      "language": "tsx"
+    }
+  ]
+}

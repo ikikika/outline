@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
+import {
+  COLOR_MODE_ATTR,
+  COLOR_MODE_STORAGE_KEY,
+  COLOR_SCHEME_STORAGE_KEY,
+} from "@/components/theme/colorModeStorage";
 import {
   defaultDescription,
   defaultTitle,
@@ -28,8 +34,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-color-mode="light" suppressHydrationWarning>
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        <InitColorSchemeScript
+          attribute={COLOR_MODE_ATTR}
+          modeStorageKey={COLOR_MODE_STORAGE_KEY}
+          colorSchemeStorageKey={COLOR_SCHEME_STORAGE_KEY}
+          defaultMode="system"
+        />
         <AppThemeProvider>
           <Box
             sx={{

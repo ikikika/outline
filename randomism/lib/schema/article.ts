@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+const bareFragmentIdSchema = z
+  .string()
+  .min(1)
+  .refine((value) => !/[/#:]/.test(value), {
+    message: "Fragment id must be bare (no #, /, or :)",
+  });
+
 const headingBlockSchema = z
   .object({
     componentType: z.literal("Heading"),
@@ -12,6 +19,7 @@ const headingBlockSchema = z
       z.literal(6),
     ]),
     content: z.string().min(1),
+    id: bareFragmentIdSchema.optional(),
   })
   .strict();
 
@@ -87,6 +95,20 @@ const dividerBlockSchema = z
   })
   .strict();
 
+const tocItemSchema = z
+  .object({
+    label: z.string().min(1),
+    href: bareFragmentIdSchema,
+  })
+  .strict();
+
+const tableOfContentsBlockSchema = z
+  .object({
+    componentType: z.literal("TableOfContents"),
+    items: z.array(tocItemSchema).min(1),
+  })
+  .strict();
+
 export const blockSchema = z.discriminatedUnion("componentType", [
   headingBlockSchema,
   paragraphBlockSchema,
@@ -97,7 +119,15 @@ export const blockSchema = z.discriminatedUnion("componentType", [
   listBlockSchema,
   calloutBlockSchema,
   dividerBlockSchema,
+  tableOfContentsBlockSchema,
 ]);
+
+const tagIdentitySchema = z
+  .string()
+  .min(1)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    message: "Tag must be lowercase hyphenated (e.g. react, coding-standards)",
+  });
 
 export const articleDocumentSchema = z
   .object({
@@ -106,6 +136,7 @@ export const articleDocumentSchema = z
     title: z.string().min(1),
     description: z.string().min(1),
     ogImage: z.string().min(1).optional(),
+    tags: z.array(tagIdentitySchema).optional().default([]),
     blocks: z.array(blockSchema).min(1),
   })
   .strict()
@@ -117,6 +148,18 @@ export const articleDocumentSchema = z
         path: ["publishDate"],
       });
     }
+
+    const seen = new Set<string>();
+    data.tags.forEach((tag, index) => {
+      if (seen.has(tag)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "tags must be unique within an article",
+          path: ["tags", index],
+        });
+      }
+      seen.add(tag);
+    });
   });
 
 export type Block = z.infer<typeof blockSchema>;

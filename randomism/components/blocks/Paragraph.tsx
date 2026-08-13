@@ -19,6 +19,24 @@ export function Paragraph({ block }: { block: ParagraphBlock }) {
           borderRadius: 0.5,
           bgcolor: "action.hover",
         },
+        "& table": {
+          width: "100%",
+          borderCollapse: "collapse",
+          my: 1.5,
+          fontSize: "0.9rem",
+        },
+        "& th, & td": {
+          border: 1,
+          borderColor: "divider",
+          px: 1.25,
+          py: 0.75,
+          textAlign: "left",
+          verticalAlign: "top",
+        },
+        "& th": {
+          bgcolor: "action.hover",
+          fontWeight: 600,
+        },
       }}
     >
       <MarkdownFull>{block.content}</MarkdownFull>

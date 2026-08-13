@@ -3,12 +3,11 @@
   "publishDate": "2026-08-03",
   "title": "SOLID Principles",
   "description": "Each SOLID principle explained, with expandable React examples — ready for other frameworks later.",
+  "tags": [
+    "software-design",
+    "react"
+  ],
   "blocks": [
-    {
-      "componentType": "Heading",
-      "level": 1,
-      "content": "SOLID Principles"
-    },
     {
       "componentType": "Paragraph",
       "content": "SOLID is five design guidelines that keep code easier to change and test. Each principle below has a short description, then a **React example** dropdown with a violation and a compliant rewrite. More framework examples can be added the same way."
@@ -81,14 +80,14 @@
     },
     {
       "componentType": "Paragraph",
-      "content": "Subtypes must honor the contract callers expect. Avoid specialized replacements that reject valid inputs, change required props, or throw where the base type would succeed — compose instead of pretending to substitute."
+      "content": "A drop-in replacement must accept the **same inputs** and keep the **same promises**. If it throws (or refuses) for values the original handled, it is not substitutable."
     },
     {
       "componentType": "Accordion",
       "sections": [
         {
           "title": "React example",
-          "body": "### ❌ Violation\n\n`IconButton` pretends to be a `Button` but rejects children and breaks layout consumers:\n\n```tsx\ntype ButtonProps = {\n  children: React.ReactNode; // callers may pass label text\n  onClick: () => void;\n  disabled?: boolean;\n};\n\nfunction Button({ children, onClick, disabled }: ButtonProps) {\n  return (\n    <button type=\"button\" onClick={onClick} disabled={disabled}>\n      {children}\n    </button>\n  );\n}\n\n// VIOLATION: IconButton is not substitutable for Button.\nfunction IconButton({ onClick }: { onClick: () => void }) {\n  // ❌ Drops `children` and `disabled` — breaks ButtonProps contract.\n  return (\n    <button type=\"button\" onClick={onClick} aria-label=\"icon\">\n      ★\n    </button>\n  );\n}\n\n// Expects any Action to accept ButtonProps (including children).\nfunction Toolbar({ Action }: { Action: React.ComponentType<ButtonProps> }) {\n  return <Action onClick={() => {}}>Save</Action>;\n}\n\n// ❌ Forced cast hides the LSP break; \"Save\" children are ignored / invalid.\n<Toolbar Action={IconButton as React.ComponentType<ButtonProps>} />\n```\n\n### ✅ Compliant\n\nCompose instead of violating the shared contract:\n\n```tsx\n// ✅ Compliant: IconButton does not pretend to be Button — it uses Button.\nfunction IconButton({ onClick, disabled, label }: {\n  onClick: () => void;\n  disabled?: boolean;\n  label: string;\n}) {\n  // ✅ Honors Button's contract: always passes valid children + optional disabled.\n  return (\n    <Button onClick={onClick} disabled={disabled}>\n      <span aria-hidden>★</span>\n      <span className=\"sr-only\">{label}</span>\n    </Button>\n  );\n}\n\n// ✅ Compliant: Toolbar accepts rendered nodes, not a fake Button subtype.\nfunction Toolbar({ action }: { action: React.ReactNode }) {\n  return <div className=\"toolbar\">{action}</div>;\n}\n\n// ✅ Compliant: compose the concrete component — no unsafe cast needed.\n<Toolbar action={<IconButton label=\"Favorite\" onClick={() => {}} />} />\n```"
+          "body": "### ❌ Violation\n\n`Price` works for any number, including `0` (free). `SalePrice` looks the same but rejects `0` — so it cannot safely replace `Price`:\n\n```tsx\nfunction Price({ cents }: { cents: number }) {\n  return <span>{(cents / 100).toFixed(2)}</span>;\n}\n\n// ❌ Breaks the contract: throws for 0, which Price allows.\nfunction SalePrice({ cents }: { cents: number }) {\n  if (cents <= 0) throw new Error(\"sale must be > 0\");\n  return <span className=\"sale\">{(cents / 100).toFixed(2)}</span>;\n}\n\nfunction Product({\n  PriceView,\n}: {\n  PriceView: React.ComponentType<{ cents: number }>;\n}) {\n  return <PriceView cents={0} />; // free item\n}\n\n<Product PriceView={Price} />;     // OK → \"0.00\"\n<Product PriceView={SalePrice} />; // ❌ throws\n```\n\n### ✅ Compliant\n\nKeep the same promise — or use a **different** component when the rules differ:\n\n```tsx\n// ✅ Same contract as Price: any number, including 0.\nfunction SalePrice({ cents }: { cents: number }) {\n  return <span className=\"sale\">{(cents / 100).toFixed(2)}</span>;\n}\n\n// ✅ Or don't plug it in as a Price — use it only for real sale amounts.\nfunction SaleBadge({ cents }: { cents: number }) {\n  return <span className=\"sale\">{(cents / 100).toFixed(2)}</span>;\n}\n\n<Product PriceView={SalePrice} />; // OK with free items\n<SaleBadge cents={499} />;         // OK — separate use case\n```"
         }
       ]
     },
