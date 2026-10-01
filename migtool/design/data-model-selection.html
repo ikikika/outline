@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Choose data models — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+  <style>
+    .model-intro { max-width: 920px; }
+    .source-pill, .count-pill, .type-pill, .link-count { display: inline-flex; align-items: center; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .source-pill { gap: 7px; padding: 6px 10px; background: var(--teal-soft); color: #086c65; }
+    .source-pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .count-pill { padding: 4px 8px; background: var(--paper-2); color: var(--ink-soft); }
+    .type-pill { padding: 3px 7px; background: #f0eee8; color: var(--muted); font-weight: 600; }
+    .link-count { padding: 4px 8px; background: var(--amber-soft); color: #8a5608; }
+    .workspace-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr); gap: 22px; align-items: start; }
+    .section-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .section-title h2 { margin: 0 0 4px; font-size: 18px; }
+    .section-title p { margin: 0; color: var(--muted); font-size: 13px; }
+    .file-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f7f6f2; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; }
+    .file-glyph { display: grid; place-items: center; width: 26px; height: 30px; border: 1px solid #cad9d4; border-radius: 4px; background: #e5f4ef; color: #08796d; font: 700 9px var(--mono); }
+    .file-bar strong { display: block; font-size: 13px; }
+    .file-bar small { display: block; margin-top: 1px; color: var(--muted); font-size: 11px; }
+    .json-tree { overflow: hidden; border: 1px solid var(--line); border-radius: 0 0 8px 8px; background: var(--white); }
+    .tree-line { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 8px 12px; border-bottom: 1px solid #efede7; }
+    .tree-line:last-child { border-bottom: 0; }
+    .tree-line.child { padding-left: 34px; background: #fcfbf8; }
+    .tree-line input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--teal); flex: 0 0 auto; }
+    .tree-main { min-width: 0; flex: 1; }
+    .tree-main strong { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; font-size: 13px; }
+    .tree-main small { display: block; margin-top: 2px; color: var(--muted); font: 11px var(--mono); overflow-wrap: anywhere; }
+    .tree-row-action { color: var(--muted); font-size: 11px; }
+    .detected-mark { color: #08796d; font-size: 11px; font-weight: 700; }
+    .model-list { display: grid; gap: 8px; }
+    .model-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); }
+    .model-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 6px; background: #e5f4ef; color: #08796d; font: 600 17px var(--mono); }
+    .model-row input[type="text"] { width: 100%; border: 0; outline: 0; color: var(--ink); font: 700 13px var(--font); padding: 1px 0; }
+    .model-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .empty-models { padding: 20px 12px; border: 1px dashed var(--line-strong); border-radius: 7px; color: var(--muted); font-size: 13px; text-align: center; }
+    .relationship-section { margin-top: 22px; }
+    .relationship-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+    .relationship-form { display: grid; gap: 14px; }
+    .rel-field { display: grid; gap: 6px; }
+    .rel-field label { color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+    .rel-field select, .rel-field input { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--white); color: var(--ink); }
+    .rel-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .rel-flow { display: grid; grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr); gap: 8px; align-items: end; }
+    .rel-arrow { height: 38px; display: grid; place-items: center; color: var(--teal); font-size: 20px; }
+    .cardinality { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: #f1efe9; border-radius: 7px; }
+    .cardinality button { min-height: 34px; padding: 5px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer; }
+    .cardinality button.on { background: var(--white); color: var(--ink); box-shadow: 0 1px 3px rgba(22,19,31,.12); }
+    .relation-list { display: grid; align-content: start; gap: 8px; }
+    .relation-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 24px; gap: 8px; align-items: center; padding: 10px 11px; border: 1px solid var(--line); border-radius: 7px; background: #fbfaf7; }
+    .relation-row strong { font-size: 12px; }
+    .relation-row small { display: block; margin-top: 3px; color: var(--muted); font: 10px var(--mono); overflow-wrap: anywhere; }
+    .relation-row button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 17px; }
+    .relation-empty { padding: 14px; border: 1px dashed var(--line-strong); border-radius: 7px; color: var(--muted); font-size: 12px; }
+    .relationship-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .manifest { margin-top: 22px; }
+    .manifest pre { max-height: 220px; overflow: auto; margin: 0; padding: 14px 16px; border-radius: 7px; background: #201e25; color: #e9e5dd; font: 11px/1.65 var(--mono); }
+    .manifest .json-key { color: #a7d8ca; }
+    .btn-add { display: inline-flex; align-items: center; gap: 7px; }
+    @media (max-width: 1050px) { .workspace-grid, .relationship-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .rel-flow { grid-template-columns: 1fr; } .rel-arrow { height: 18px; transform: rotate(90deg); } .rel-pair { grid-template-columns: 1fr; } .tree-line { align-items: flex-start; } .tree-row-action { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus targets</a>
+        <a class="active" href="data-model-selection.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="prepare-assets.html">Prepare assets</a>
+        <a href="collections.html">Collections</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Data models</strong></div>
+        <div class="target-switch"><label for="target">Target</label><select id="target"><option selected>Staging</option><option>Production</option></select></div>
+      </header>
+
+      <div class="content">
+        <div class="page-head">
+          <div class="model-intro">
+            <h1>Choose data models</h1>
+            <p>Pick the JSON objects that represent records, then connect reference fields between them.</p>
+          </div>
+          <span class="source-pill"><i></i> JSON scanned</span>
+        </div>
+
+        <ol class="flow-rail">
+          <li class="flow-step done"><span class="flow-n">1</span><div><small>Sources</small><b>Scan JSON</b></div></li>
+          <li class="flow-step on"><span class="flow-n">2</span><div><small>Models</small><b>Select objects</b></div></li>
+          <li class="flow-step"><span class="flow-n">3</span><div><small>Relations</small><b>Connect models</b></div></li>
+          <li class="flow-step"><span class="flow-n">4</span><div><small>Review</small><b>Confirm</b></div></li>
+          <li class="flow-step"><span class="flow-n">5</span><div><small>Directus</small><b>Apply</b></div></li>
+        </ol>
+
+        <div class="workspace-grid">
+          <section aria-labelledby="objects-title">
+            <div class="section-title">
+              <div><h2 id="objects-title">Objects in source JSON</h2><p>Select record collections. Paths point to the original data.</p></div>
+              <span class="count-pill">4 detected</span>
+            </div>
+            <div class="file-bar">
+              <span class="file-glyph">JSON</span>
+              <div><strong>acme-export.json</strong><small>1.8 MB · 4 candidate objects</small></div>
+            </div>
+            <div class="json-tree" role="group" aria-label="Detected JSON objects">
+              <label class="tree-line">
+                <input class="model-toggle" type="checkbox" checked data-path="/data/posts" data-name="posts" data-count="1,248">
+                <span class="tree-main"><strong>posts <span class="type-pill">array · objects</span><span class="detected-mark">Record list</span></strong><small>/data/posts</small></span>
+                <span class="tree-row-action">1,248 records</span>
+              </label>
+              <label class="tree-line">
+                <input class="model-toggle" type="checkbox" checked data-path="/data/authors" data-name="authors" data-count="84">
+                <span class="tree-main"><strong>authors <span class="type-pill">array · objects</span><span class="detected-mark">Record list</span></strong><small>/data/authors</small></span>
+                <span class="tree-row-action">84 records</span>
+              </label>
+              <label class="tree-line">
+                <input class="model-toggle" type="checkbox" checked data-path="/data/tags" data-name="tags" data-count="36">
+                <span class="tree-main"><strong>tags <span class="type-pill">array · objects</span><span class="detected-mark">Record list</span></strong><small>/data/tags</small></span>
+                <span class="tree-row-action">36 records</span>
+              </label>
+              <label class="tree-line">
+                <input class="model-toggle" type="checkbox" data-path="/settings" data-name="settings" data-count="1">
+                <span class="tree-main"><strong>settings <span class="type-pill">object</span></strong><small>/settings</small></span>
+                <span class="tree-row-action">Single object</span>
+              </label>
+            </div>
+          </section>
+
+          <section aria-labelledby="selected-title">
+            <div class="section-title">
+              <div><h2 id="selected-title">Selected models</h2><p>Model names can be changed before setup.</p></div>
+              <span id="model-count" class="count-pill">3 models</span>
+            </div>
+            <div id="model-list" class="model-list"></div>
+          </section>
+        </div>
+
+        <section class="flow-card relationship-section" aria-labelledby="relations-title">
+          <div class="section-title">
+            <div><div class="flow-kicker">Relationships</div><h2 id="relations-title">Connect reference fields</h2><p>Choose where a reference lives and which model key it points to.</p></div>
+            <span id="relation-count" class="link-count">1 relationship</span>
+          </div>
+
+          <div class="relationship-grid">
+            <form id="relation-form" class="relationship-form">
+              <div class="rel-flow">
+                <div class="rel-field"><label for="from-model">FROM MODEL</label><select id="from-model"></select></div>
+                <div class="rel-arrow" aria-hidden="true">→</div>
+                <div class="rel-field"><label for="to-model">TO MODEL</label><select id="to-model"></select></div>
+              </div>
+              <div class="rel-pair">
+                <div class="rel-field"><label for="from-field">REFERENCE FIELD</label><select id="from-field"><option value="author_id">author_id</option><option value="id">id</option><option value="tag_ids">tag_ids</option></select></div>
+                <div class="rel-field"><label for="to-field">MATCH AGAINST</label><select id="to-field"><option value="id">id · primary key</option><option value="legacy_id">legacy_id</option></select></div>
+              </div>
+              <div class="rel-field">
+                <label>RELATIONSHIP TYPE</label>
+                <div class="cardinality" role="group" aria-label="Relationship type">
+                  <button type="button" class="on" data-cardinality="many-to-one">Many to one</button>
+                  <button type="button" data-cardinality="one-to-many">One to many</button>
+                  <button type="button" data-cardinality="many-to-many">Many to many</button>
+                </div>
+              </div>
+              <div><button class="btn btn-secondary btn-add" type="submit"><span aria-hidden="true">＋</span> Add relationship</button></div>
+            </form>
+
+            <div>
+              <div class="meta" style="margin:0 0 8px">Configured relationships</div>
+              <div id="relation-list" class="relation-list"></div>
+            </div>
+          </div>
+          <div class="relationship-footer">
+            <span class="meta">References will be checked against the selected target key.</span>
+            <button class="btn btn-primary" type="button" onclick="document.getElementById('manifest').scrollIntoView({behavior:'smooth',block:'nearest'})">Review model setup <span aria-hidden="true">→</span></button>
+          </div>
+        </section>
+
+        <section class="manifest" aria-labelledby="manifest-title">
+          <div class="section-title"><div><h2 id="manifest-title">Model setup preview</h2><p>Selections and relationships are saved as a repeatable mapping.</p></div><span class="badge badge-ok">Valid JSON</span></div>
+          <pre id="manifest-preview" aria-live="polite"></pre>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const toggles = [...document.querySelectorAll('.model-toggle')]
+    const modelList = document.getElementById('model-list')
+    const fromModel = document.getElementById('from-model')
+    const toModel = document.getElementById('to-model')
+    const relationList = document.getElementById('relation-list')
+    const relations = [{ from: 'posts.author_id', to: 'authors.id', type: 'many-to-one', name: 'author' }]
+    let cardinality = 'many-to-one'
+
+    function selectedModels() {
+      return toggles.filter((toggle) => toggle.checked).map((toggle) => ({
+        toggle,
+        path: toggle.dataset.path,
+        name: toggle.dataset.name,
+        count: toggle.dataset.count,
+      }))
+    }
+
+    function renderModels() {
+      const models = selectedModels().map((model) => ({
+        ...model,
+        modelName: document.querySelector(`[data-model-path="${model.path}"]`)?.value.trim() || model.name,
+      }))
+      modelList.innerHTML = models.length ? models.map(({ toggle, path, name, modelName, count }) => `
+        <div class="model-row">
+          <span class="model-icon" aria-hidden="true">{ }</span>
+          <div><input type="text" aria-label="Model name for ${path}" value="${modelName}" data-model-path="${path}"><small>${path} · ${count} records</small></div>
+          <span class="type-pill">Model</span>
+        </div>`).join('') : '<div class="empty-models">Select an object from the source to add a model.</div>'
+      document.getElementById('model-count').textContent = `${models.length} ${models.length === 1 ? 'model' : 'models'}`
+      const previousFrom = fromModel.value
+      const previousTo = toModel.value
+      const options = models.map(({ toggle, modelName }) => `<option value="${toggle.dataset.name}">${modelName}</option>`).join('')
+      fromModel.innerHTML = options
+      toModel.innerHTML = options
+      if (models.some(({ toggle }) => toggle.dataset.name === previousFrom)) fromModel.value = previousFrom
+      else if (models[0]) fromModel.value = models[0].toggle.dataset.name
+      if (models.some(({ toggle }) => toggle.dataset.name === previousTo)) toModel.value = previousTo
+      else if (models[1]) toModel.value = models[1].toggle.dataset.name
+      renderRelations()
+      renderManifest()
+    }
+
+    function renderRelations() {
+      relationList.innerHTML = relations.length ? relations.map((relation, index) => `
+        <div class="relation-row">
+          <div><strong>${relation.name}</strong><small>${relation.from} → ${relation.to}</small></div>
+          <span class="type-pill">${relation.type.replaceAll('-', ' ')}</span>
+          <button type="button" aria-label="Remove ${relation.name} relationship" data-remove-relation="${index}">×</button>
+        </div>`).join('') : '<div class="relation-empty">No relationships yet. Add a reference mapping to connect selected models.</div>'
+      document.getElementById('relation-count').textContent = `${relations.length} ${relations.length === 1 ? 'relationship' : 'relationships'}`
+      renderManifest()
+    }
+
+    function renderManifest() {
+      const selected = selectedModels().map(({ toggle, path }) => ({
+        sourceName: toggle.dataset.name,
+        name: document.querySelector(`[data-model-path="${path}"]`)?.value.trim() || toggle.dataset.name,
+        source: 'acme-export.json',
+        pointer: path,
+      }))
+      const modelNames = Object.fromEntries(selected.map(({ sourceName, name }) => [sourceName, name]))
+      const manifest = {
+        version: 1,
+        models: selected.map(({ sourceName, ...model }) => model),
+        relationships: relations.map((relation) => ({
+          name: relation.name,
+          type: relation.type,
+          from: { model: modelNames[relation.from.split('.')[0]] || relation.from.split('.')[0], field: relation.from.split('.')[1] },
+          to: { model: modelNames[relation.to.split('.')[0]] || relation.to.split('.')[0], field: relation.to.split('.')[1] },
+        })),
+      }
+      document.getElementById('manifest-preview').textContent = JSON.stringify(manifest, null, 2)
+    }
+
+    toggles.forEach((toggle) => toggle.addEventListener('change', renderModels))
+    modelList.addEventListener('input', renderManifest)
+    document.querySelectorAll('[data-cardinality]').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[data-cardinality]').forEach((item) => item.classList.remove('on'))
+        button.classList.add('on')
+        cardinality = button.dataset.cardinality
+      })
+    })
+    document.getElementById('relation-form').addEventListener('submit', (event) => {
+      event.preventDefault()
+      const source = fromModel.value
+      const target = toModel.value
+      const sourceField = document.getElementById('from-field').value
+      const targetField = document.getElementById('to-field').value
+      if (!source || !target || source === target) return
+      relations.push({
+        name: sourceField.replace(/_id$/, '') || target,
+        from: `${source}.${sourceField}`,
+        to: `${target}.${targetField}`,
+        type: cardinality,
+      })
+      renderRelations()
+    })
+    relationList.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-remove-relation]')
+      if (!button) return
+      relations.splice(Number(button.dataset.removeRelation), 1)
+      renderRelations()
+    })
+
+    renderModels()
+  </script>
+</body>
+</html>

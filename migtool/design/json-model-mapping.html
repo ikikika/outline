@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JSON model mapping — Migtool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+  <style>
+    .mapping-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+    .mapping-head h1 { margin-bottom: 6px; }
+    .mapping-head p { max-width: 720px; margin: 0; color: var(--muted); }
+    .scan-status { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid #b9ded5; border-radius: 7px; background: var(--teal-soft); color: #086c65; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .scan-status i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .mapping-workspace { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 680px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--white); box-shadow: var(--shadow); }
+    .file-panel { padding: 18px 12px; border-right: 1px solid var(--line); background: #faf9f6; }
+    .panel-label { margin: 0 8px 10px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .file-group { display: flex; align-items: center; gap: 8px; padding: 8px 9px; color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+    .folder-icon { color: var(--amber); font-size: 15px; }
+    .file-list { display: grid; gap: 3px; }
+    .file-button { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; width: 100%; padding: 9px 8px 9px 20px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-soft); text-align: left; cursor: pointer; }
+    .file-button:hover { background: #f0eee8; }
+    .file-button.active { background: var(--teal-soft); color: #075e58; box-shadow: inset 2px 0 #0f8f86; }
+    .file-icon { display: grid; place-items: center; width: 18px; height: 22px; border: 1px solid #c9dcd5; border-radius: 3px; background: #fff; color: #08796d; font: 700 7px var(--mono); }
+    .file-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .file-size { color: var(--muted); font: 10px var(--mono); }
+    .file-summary { margin: 12px 8px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .right-panel { min-width: 0; padding: 20px 22px 24px; }
+    .file-titlebar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .file-title { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .file-title .file-icon { width: 28px; height: 34px; font-size: 9px; }
+    .file-title h2 { margin: 0; font-size: 18px; }
+    .file-title p { margin: 3px 0 0; color: var(--muted); font: 11px var(--mono); overflow-wrap: anywhere; }
+    .file-metrics { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+    .metric { padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink-soft); font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .structure-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 10px; }
+    .structure-heading h3 { margin: 0; font-size: 14px; }
+    .structure-heading span { color: var(--muted); font-size: 11px; }
+    .tree-card { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; }
+    .tree-topline { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: #f7f6f2; color: var(--muted); font: 10px var(--mono); }
+    .tree-topline .tree-file { color: var(--teal); font-weight: 600; }
+    .json-tree { max-height: 430px; overflow: auto; padding: 8px 0; }
+    .tree-item { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 5px; align-items: start; min-height: 28px; padding: 4px 12px; color: var(--ink-soft); font: 11px/1.5 var(--mono); }
+    .tree-item.indent-1 { padding-left: 32px; }
+    .tree-item.indent-2 { padding-left: 52px; }
+    .tree-item.indent-3 { padding-left: 72px; }
+    .tree-item.indent-4 { padding-left: 92px; }
+    .tree-item.indent-5 { padding-left: 112px; }
+    .twisty { color: #958e80; text-align: center; }
+    .json-key { color: #3d6384; }
+    .json-string { color: #34806b; }
+    .json-number { color: #b56a1a; }
+    .json-bool { color: #8b60ad; }
+    .json-bracket { color: #8a8376; }
+    .tree-value { overflow: hidden; color: #777168; text-overflow: ellipsis; white-space: nowrap; }
+    .tree-action { justify-self: end; margin-left: 8px; padding: 2px 6px; border: 1px solid #b9ded5; border-radius: 4px; background: #f0faf6; color: #08796d; font: 600 9px var(--font); white-space: nowrap; }
+    .tree-action button { border: 0; padding: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    .tree-item.selected-model { background: #eff8f4; }
+    .object-callout { display: flex; gap: 9px; margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--teal); background: #f2f8f5; color: var(--ink-soft); font-size: 11px; }
+    .object-callout strong { color: #086c65; }
+    .model-mapping { margin-top: 18px; }
+    .model-mapping h3 { margin: 0 0 9px; font-size: 14px; }
+    .mapping-row { display: grid; grid-template-columns: minmax(0, 1.2fr) 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px; background: #fbfaf7; }
+    .mapping-source { min-width: 0; }
+    .mapping-source strong { display: block; overflow: hidden; font: 600 11px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+    .mapping-source small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .mapping-arrow { color: var(--teal); text-align: center; }
+    .mapping-row input { min-width: 0; width: 100%; padding: 7px 8px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--ink); font-size: 12px; }
+    .mapping-row .mapped-state { color: #08796d; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .footer-actions { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 18px; }
+    .footer-actions p { margin: 0; color: var(--muted); font-size: 11px; }
+    .file-view { display: none; }
+    .file-view.active { display: block; }
+    @media (max-width: 850px) { .mapping-workspace { grid-template-columns: 210px minmax(0, 1fr); } .mapping-row { grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr); } .mapped-state { grid-column: 3; } }
+    @media (max-width: 620px) { .content { padding-left: 14px; padding-right: 14px; } .mapping-head { display: block; } .scan-status { margin-top: 12px; } .mapping-workspace { grid-template-columns: 1fr; } .file-panel { border-right: 0; border-bottom: 1px solid var(--line); padding: 12px; } .file-list { grid-template-columns: 1fr 1fr; } .file-button { padding-left: 8px; } .file-summary { display: none; } .right-panel { padding: 16px 12px; } .file-titlebar { display: block; } .file-metrics { justify-content: flex-start; margin-top: 12px; } .tree-item.indent-4 { padding-left: 66px; } .tree-item.indent-5 { padding-left: 78px; } .footer-actions { align-items: flex-start; flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand-mark" href="dashboard.html">
+        <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h7M13 7l7 5-7 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Migtool
+      </a>
+      <nav class="nav">
+        <div class="nav-label">Workspace</div>
+        <a href="dashboard.html">Projects</a>
+        <a href="settings.html">Settings</a>
+        <div class="nav-label">This project</div>
+        <a href="create-project.html">Source files</a>
+        <a href="connect-directus.html">Directus targets</a>
+        <a class="active" href="json-model-mapping.html">Data models</a>
+        <a href="field-mapping.html">Field mapping</a>
+        <a href="preview.html">Preview</a>
+        <a href="prepare-assets.html">Prepare assets</a>
+        <a href="collections.html">Collections</a>
+        <a href="migration-status.html">Migrate</a>
+        <a href="issues.html">Issues</a>
+      </nav>
+      <div class="sidebar-foot"><span class="avatar">MC</span><div>Maya Chen<small>Acme Magazine</small></div></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumbs">Acme Magazine rebuild / <strong>Data models</strong></div>
+        <div class="target-switch"><label for="target">Target</label><select id="target"><option selected>Staging</option><option>Production</option></select></div>
+      </header>
+
+      <div class="content">
+        <div class="mapping-head">
+          <div><h1>Map JSON objects to data models</h1><p>Select a source file to inspect its structure. Choose a record collection and map it to a Directus collection name.</p></div>
+          <span class="scan-status"><i></i> 3 JSON files scanned</span>
+        </div>
+
+        <ol class="flow-rail">
+          <li class="flow-step done"><span class="flow-n">1</span><div><small>Sources</small><b>Scan JSON</b></div></li>
+          <li class="flow-step on"><span class="flow-n">2</span><div><small>Models</small><b>Map objects</b></div></li>
+          <li class="flow-step"><span class="flow-n">3</span><div><small>Relations</small><b>Connect models</b></div></li>
+          <li class="flow-step"><span class="flow-n">4</span><div><small>Review</small><b>Confirm</b></div></li>
+          <li class="flow-step"><span class="flow-n">5</span><div><small>Directus</small><b>Apply</b></div></li>
+        </ol>
+
+        <div class="mapping-workspace">
+          <aside class="file-panel" aria-label="JSON source files">
+            <div class="panel-label">Uploaded JSON</div>
+            <div class="file-group"><span class="folder-icon" aria-hidden="true">▾</span><span>wp export</span></div>
+            <div class="file-list" role="tablist" aria-label="Choose a JSON file">
+              <button class="file-button active" type="button" role="tab" aria-selected="true" data-file="acf">
+                <span class="file-icon">JSON</span><span class="file-name">acf.json</span><span class="file-size">4</span>
+              </button>
+              <button class="file-button" type="button" role="tab" aria-selected="false" data-file="gutenberg">
+                <span class="file-icon">JSON</span><span class="file-name">gutenberg.json</span><span class="file-size">1</span>
+              </button>
+              <button class="file-button" type="button" role="tab" aria-selected="false" data-file="media">
+                <span class="file-icon">JSON</span><span class="file-name">media.json</span><span class="file-size">4</span>
+              </button>
+            </div>
+            <div class="file-summary">Click a file to inspect its JSON tree. Arrays of objects are suggested as model candidates.</div>
+          </aside>
+
+          <section class="right-panel" aria-live="polite">
+            <div class="file-view active" id="view-acf" role="tabpanel">
+              <div class="file-titlebar">
+                <div class="file-title"><span class="file-icon">JSON</span><div><h2>acf.json</h2><p>extracted/upload_4/wp/acf.json</p></div></div>
+                <div class="file-metrics"><span class="metric">Root: array</span><span class="metric">4 records</span><span class="metric">Nested objects: 3</span></div>
+              </div>
+              <div class="structure-heading"><h3>JSON structure</h3><span>Sample record · 0</span></div>
+              <div class="tree-card">
+                <div class="tree-topline"><span class="tree-file">acf.json</span><span>/</span><span>array · 4 items</span></div>
+                <div class="json-tree" role="tree" aria-label="acf.json structure">
+                  <div class="tree-item"><span class="twisty">▾</span><span><span class="json-bracket">[</span> root array <span class="json-bracket">]</span></span><span class="tree-action"><button type="button" data-map="acf-pages">Use as model</button></span></div>
+                  <div class="tree-item indent-1 selected-model"><span class="twisty">▾</span><span><span class="json-bracket">{ }</span> item 0 · <span class="json-string">"page"</span></span><span class="tree-value">record</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">id</span><span class="tree-value json-number">123</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">title</span><span class="tree-value json-string">"How Do You Feel About Your Marriage?"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">slug</span><span class="tree-value json-string">"how-do-you-feel-about-your-marriage"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">status</span><span class="tree-value json-string">"publish"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">parent</span><span class="tree-value json-number">120</span></div>
+                  <div class="tree-item indent-2"><span class="twisty">▾</span><span class="json-key">acf</span><span class="tree-value json-bracket">object</span></div>
+                  <div class="tree-item indent-3"><span class="twisty">▾</span><span class="json-key">page_components</span><span class="tree-value">array · 3 items</span></div>
+                  <div class="tree-item indent-4"><span class="twisty">▾</span><span><span class="json-bracket">{ }</span> item 0 · <span class="json-string">jumbotron</span></span><span class="tree-value">object</span></div>
+                  <div class="tree-item indent-5"><span class="twisty"></span><span class="json-key">image</span><span class="tree-value json-number">10</span></div>
+                  <div class="tree-item indent-4"><span class="twisty">▸</span><span><span class="json-bracket">{ }</span> item 1 · <span class="json-string">rich_text</span></span><span class="tree-value">object</span></div>
+                  <div class="tree-item indent-4"><span class="twisty">▾</span><span><span class="json-bracket">{ }</span> item 2 · <span class="json-string">resource_grid</span></span><span class="tree-value">object</span></div>
+                  <div class="tree-item indent-5"><span class="twisty">▾</span><span class="json-key">cards</span><span class="tree-value">array · 2 objects</span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▸</span><span><span class="json-bracket">{ }</span> item 1</span><span class="tree-value">id 124 · child page</span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▸</span><span><span class="json-bracket">{ }</span> item 2</span><span class="tree-value">id 125 · child page</span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▸</span><span><span class="json-bracket">{ }</span> item 3</span><span class="tree-value">id 120 · parent page</span></div>
+                </div>
+              </div>
+              <div class="object-callout"><span aria-hidden="true">↳</span><span><strong>Suggested model:</strong> The root array contains 4 page records with a consistent top-level shape.</span></div>
+              <div class="model-mapping">
+                <h3>Directus model mapping</h3>
+                <div class="mapping-row"><div class="mapping-source"><strong>/</strong><small>acf.json · array of 4 objects</small></div><span class="mapping-arrow">→</span><input aria-label="Directus collection name for acf.json" value="pages"><span class="mapped-state">Ready</span></div>
+              </div>
+            </div>
+
+            <div class="file-view" id="view-gutenberg" role="tabpanel">
+              <div class="file-titlebar">
+                <div class="file-title"><span class="file-icon">JSON</span><div><h2>gutenberg.json</h2><p>extracted/upload_4/wp/gutenberg.json</p></div></div>
+                <div class="file-metrics"><span class="metric">Root: array</span><span class="metric">1 record</span><span class="metric">Nested objects: 5</span></div>
+              </div>
+              <div class="structure-heading"><h3>JSON structure</h3><span>Sample record · 0</span></div>
+              <div class="tree-card">
+                <div class="tree-topline"><span class="tree-file">gutenberg.json</span><span>/</span><span>array · 1 item</span></div>
+                <div class="json-tree" role="tree" aria-label="gutenberg.json structure">
+                  <div class="tree-item"><span class="twisty">▾</span><span><span class="json-bracket">[</span> root array <span class="json-bracket">]</span></span><span class="tree-action"><button type="button" data-map="gutenberg-posts">Use as model</button></span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▾</span><span><span class="json-bracket">{ }</span> item 0 · <span class="json-string">"post"</span></span><span class="tree-value">record</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">id</span><span class="tree-value json-number">15</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">type</span><span class="tree-value json-string">"post"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">slug</span><span class="tree-value json-string">"guternberg"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty">▾</span><span class="json-key">title</span><span class="tree-value">object</span></div>
+                  <div class="tree-item indent-3"><span class="twisty"></span><span class="json-key">rendered</span><span class="tree-value json-string">"Guternberg"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty">▾</span><span class="json-key">content</span><span class="tree-value">object</span></div>
+                  <div class="tree-item indent-3"><span class="twisty"></span><span class="json-key">rendered</span><span class="tree-value">string · HTML content</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">author</span><span class="tree-value json-number">1</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">featured_media</span><span class="tree-value json-number">0</span></div>
+                  <div class="tree-item indent-2"><span class="twisty">▾</span><span class="json-key">categories</span><span class="tree-value">array · 1 item</span></div>
+                  <div class="tree-item indent-2"><span class="twisty">▾</span><span class="json-key">acf</span><span class="tree-value">object</span></div>
+                  <div class="tree-item indent-3"><span class="twisty"></span><span class="json-key">hero_title</span><span class="tree-value json-string">""</span></div>
+                  <div class="tree-item indent-2"><span class="twisty">▸</span><span class="json-key">_links</span><span class="tree-value">object · WordPress API links</span></div>
+                </div>
+              </div>
+              <div class="object-callout"><span aria-hidden="true">↳</span><span><strong>Suggested model:</strong> The root array contains a post record. Nested <span class="json-key">title.rendered</span> and <span class="json-key">content.rendered</span> can be mapped as fields.</span></div>
+              <div class="model-mapping">
+                <h3>Directus model mapping</h3>
+                <div class="mapping-row"><div class="mapping-source"><strong>/</strong><small>gutenberg.json · array of 1 object</small></div><span class="mapping-arrow">→</span><input aria-label="Directus collection name for gutenberg.json" value="posts"><span class="mapped-state">Ready</span></div>
+              </div>
+            </div>
+
+            <div class="file-view" id="view-media" role="tabpanel">
+              <div class="file-titlebar">
+                <div class="file-title"><span class="file-icon">JSON</span><div><h2>media.json</h2><p>extracted/upload_4/wp/media.json</p></div></div>
+                <div class="file-metrics"><span class="metric">Root: array</span><span class="metric">4 records</span><span class="metric">Nested objects: 6</span></div>
+              </div>
+              <div class="structure-heading"><h3>JSON structure</h3><span>Sample record · 0</span></div>
+              <div class="tree-card">
+                <div class="tree-topline"><span class="tree-file">media.json</span><span>/</span><span>array · 4 items</span></div>
+                <div class="json-tree" role="tree" aria-label="media.json structure">
+                  <div class="tree-item"><span class="twisty">▾</span><span><span class="json-bracket">[</span> root array <span class="json-bracket">]</span></span><span class="tree-action"><button type="button" data-map="media-items">Use as model</button></span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▾</span><span><span class="json-bracket">{ }</span> item 0 · <span class="json-string">"attachment"</span></span><span class="tree-value">record</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">id</span><span class="tree-value json-number">23</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">mime_type</span><span class="tree-value json-string">"image/png"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">source_url</span><span class="tree-value json-string">"http://localhost:8080/wp-content/uploads/…"</span></div>
+                  <div class="tree-item indent-2"><span class="twisty">▾</span><span class="json-key">media_details</span><span class="tree-value">object</span></div>
+                  <div class="tree-item indent-3"><span class="twisty"></span><span class="json-key">width</span><span class="tree-value json-number">803</span></div>
+                  <div class="tree-item indent-3"><span class="twisty"></span><span class="json-key">height</span><span class="tree-value json-number">624</span></div>
+                  <div class="tree-item indent-2"><span class="twisty"></span><span class="json-key">post</span><span class="tree-value json-number">null</span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▸</span><span><span class="json-bracket">{ }</span> item 1</span><span class="tree-value">id 22</span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▸</span><span><span class="json-bracket">{ }</span> item 2</span><span class="tree-value">id 10 · CSV file</span></div>
+                  <div class="tree-item indent-1"><span class="twisty">▸</span><span><span class="json-bracket">{ }</span> item 3</span><span class="tree-value">id 9</span></div>
+                </div>
+              </div>
+              <div class="object-callout"><span aria-hidden="true">↳</span><span><strong>Suggested model:</strong> Media records. The <span class="json-key">post</span> field appears to reference a post and can be mapped as a relationship.</span></div>
+              <div class="model-mapping">
+                <h3>Directus model mapping</h3>
+                <div class="mapping-row"><div class="mapping-source"><strong>/</strong><small>media.json · array of 4 objects</small></div><span class="mapping-arrow">→</span><input aria-label="Directus collection name for media.json" value="media"><span class="mapped-state">Ready</span></div>
+              </div>
+            </div>
+
+            <div class="footer-actions"><p>Mappings are saved as source file + JSON path, so they can be reviewed before preparation.</p><button class="btn btn-primary" type="button">Continue to relationships <span aria-hidden="true">→</span></button></div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const fileButtons = [...document.querySelectorAll('[data-file]')]
+    const fileViews = [...document.querySelectorAll('.file-view')]
+    fileButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        fileButtons.forEach((item) => {
+          const active = item === button
+          item.classList.toggle('active', active)
+          item.setAttribute('aria-selected', String(active))
+        })
+        fileViews.forEach((view) => view.classList.toggle('active', view.id === `view-${button.dataset.file}`))
+      })
+    })
+    document.querySelectorAll('[data-map]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const view = button.closest('.file-view')
+        view.querySelector('.mapping-row input').focus()
+      })
+    })
+  </script>
+</body>
+</html>
